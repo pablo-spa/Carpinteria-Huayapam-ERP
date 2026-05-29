@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Compras</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af;
+  }
+}
+body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; }
+.hdr { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
+.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
+.badge-ready { background: rgba(64,160,43,0.15); color: var(--green); }
+.btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity .15s; color: white; font-size: 12px; }
+.btn:hover { opacity: .8; }
+.btn-blue { background: var(--blue); }
+.btn-green { background: var(--green); }
+.item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; }
+.item-row input, .item-row select { padding: 6px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; width: 100%; }
+.item-row input:focus, .item-row select:focus { outline: none; border-color: var(--blue); }
+
+.card.authorized { border: 2px solid var(--green); }
+.card.unauthorized { border: 2px solid var(--amber); }
+.btn-disabled { opacity: 0.5; pointer-events: none; background: var(--surface1) !important; color: var(--base) !important; }
+.btn-amber { background: var(--amber); color: var(--mantle); }
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <h2>Panel de Gestión de Compras</h2>
+  </div>
+  <button class="btn" style="background:var(--surface0); color:var(--text);" onclick="crearOrden()">+ Nueva Orden Manual</button>
+</div>
+
+<div id="orders-list">
+  <div class="card authorized" id="comp1">
+    <div class="card-title">
+      <span>Pedido Aprobado: PRY-168</span>
+      <span class="badge badge-ready">Autorizado (Admin)</span>
+    </div>
+    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Material requerido urgente para instalar el martes.</div>
+    
+    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
+      <div>Item / Cantidad</div>
+      <div>Proveedor</div>
+      <div>Precio Unitario</div>
+      <div>Cuenta</div>
+    </div>
+    
+    <div class="item-row">
+      <div>10x Bisagras Inset <span style="color:var(--subtext)">(pza)</span></div>
+      <div><select><option>Herrajes León</option><option>Otro</option></select></div>
+      <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
+      <div>
+        <select class="val-acc">
+          <option value="">-- Cuenta --</option>
+          <option value="SATP (Operativa)">SATP (Operativa)</option>
+          <option value="CAJA (Administración)">CAJA (Administración)</option>
+          <option value="CHU (Fiscal)">CHU (Fiscal)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="item-row">
+      <div>2x Triplay 15mm Encino <span style="color:var(--subtext)">(pza)</span></div>
+      <div><select><option>Maderas del Sur</option><option>Otro</option></select></div>
+      <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
+      <div>
+        <select class="val-acc">
+          <option value="">-- Cuenta --</option>
+          <option value="SATP (Operativa)">SATP (Operativa)</option>
+          <option value="CAJA (Administración)">CAJA (Administración)</option>
+          <option value="CHU (Fiscal)">CHU (Fiscal)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      <button class="btn btn-blue" onclick="act('comp1', 'comprado')">1. Marcar como Comprado (Espera Física)</button>
+      <button class="btn btn-green" onclick="act('comp1', 'comprado_y_recibido')">2. Marcar Comprado y Recibido (Llegó a Taller)</button>
+    </div>
+  </div>
+
+  <div class="card unauthorized" id="comp2">
+    <div class="card-title">
+      <span>Pedido: STOCK GENERAL</span>
+      <span class="badge" style="background:var(--surface0); color:var(--subtext)">Falta Autorización</span>
+    </div>
+    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Reposición de stock mínimo alcanzado.</div>
+    
+    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
+      <div>Item / Cantidad</div>
+      <div>Proveedor</div>
+      <div>Precio Unitario</div>
+      <div>Cuenta</div>
+    </div>
+    
+    <div class="item-row">
+      <div>5x Galón Pegamento Blanco <span style="color:var(--subtext)">(gln)</span></div>
+      <div><select><option>Ferretería</option><option>Otro</option></select></div>
+      <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
+      <div>
+        <select class="val-acc">
+          <option value="">-- Cuenta --</option>
+          <option value="SATP (Operativa)">SATP (Operativa)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      <button class="btn btn-amber" onclick="alert('Precios guardados. Administración ya puede verlos para autorizar.')">💾 Guardar Precios para Autorizar</button>
+      <button class="btn btn-blue btn-disabled" onclick="alert('No autorizado')">1. Marcar como Comprado</button>
+      <button class="btn btn-green btn-disabled" onclick="alert('No autorizado')">2. Marcar Comprado y Recibido</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function validarOpciones(el) {
+  let valido = true;
+  const prices = el.querySelectorAll('.val-price');
+  const accs = el.querySelectorAll('.val-acc');
+  prices.forEach(p => { if(!p.value.trim() || Number(p.value) <= 0) valido = false; });
+  accs.forEach(a => { if(!a.value) valido = false; });
+  return valido;
+}
+
+function act(id, state) {
+  const el = document.getElementById(id);
+  
+  if(!validarOpciones(el)) {
+    alert('Por favor llene el Precio Unitario y seleccione una Cuenta Operativa en todos los renglones.');
+    return;
+  }
+
+  el.style.opacity = '0.5';
+  el.style.pointerEvents = 'none';
+  if(state === 'comprado_y_recibido') {
+    alert('Marcado como Comprado y Recibido. Se actualizó el inventario del Almacén.');
+  } else {
+    alert('Marcado como Comprado. La hoja pasa a Recepción de Almacén.');
+  }
+  setTimeout(() => el.style.display = 'none', 300);
+}
+
+let newId = 100;
+function crearOrden() {
+  const container = document.getElementById('orders-list');
+  const id = 'comp' + (++newId);
+  
+  const html = `
+    <div class="card-title">
+      <span>Orden de Compra Libre</span>
+      <span class="badge" style="background:var(--surface0); color:var(--text);">Manual - Falta Autorización</span>
+    </div>
+    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Generada directamente en Compras. Para proceder, pide a Administración que la autorice.</div>
+    
+    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
+      <div>Item / Descripción</div>
+      <div>Proveedor</div>
+      <div>Precio Unitario</div>
+      <div>Cuenta</div>
+    </div>
+    
+    <div class="item-row">
+      <div><input type="text" placeholder="Ej. Lijas grano 120..."></div>
+      <div><input type="text" placeholder="Ej. Ferretería El Centro..."></div>
+      <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
+      <div>
+        <select class="val-acc">
+          <option value="">-- Cuenta --</option>
+          <option value="SATP (Operativa)">SATP (Operativa)</option>
+          <option value="CAJA (Administración)">CAJA (Administración)</option>
+          <option value="CHU (Fiscal)">CHU (Fiscal)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      <button class="btn btn-amber" onclick="alert('Precios guardados. Administración ya puede verlos para autorizar.')">💾 Guardar Precios para Autorizar</button>
+      <button class="btn btn-blue btn-disabled" onclick="alert('No autorizado todavía')">1. Marcar como Comprado</button>
+      <button class="btn btn-green btn-disabled" onclick="alert('No autorizado todavía')">2. Marcar Comprado y Recibido</button>
+    </div>`;
+  
+  const div = document.createElement('div');
+  div.className = "card unauthorized";
+  div.id = id;
+  div.innerHTML = html.trim();
+  container.insertBefore(div, container.firstChild);
+}
+</script>
+</body>
+</html>

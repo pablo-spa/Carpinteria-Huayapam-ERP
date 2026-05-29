@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recepción de Material</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af;
+  }
+}
+body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; }
+.hdr { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
+.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
+.badge-purchased { background: rgba(30,102,245,0.15); color: var(--blue); }
+.btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity .15s; color: white; font-size: 12px; }
+.btn:hover { opacity: .8; }
+.btn-green { background: var(--green); }
+.item-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); }
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h2>Recepción de Material (Almacén)</h2>
+</div>
+
+<div class="card" id="rec1">
+  <div class="card-title">
+    <span>Pedido En Transito: PRY-168</span>
+    <span class="badge badge-purchased">Comprado por Compras</span>
+  </div>
+  <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Llegan en camioneta de Maderas del Sur.</div>
+  <div class="item-row">
+    <div>
+      <input type="checkbox" id="chk1" checked> 
+      <label for="chk1">10x Bisagras Bidimensionales Inset</label>
+    </div>
+    <span style="color:var(--subtext)">pza</span>
+  </div>
+  <div class="item-row">
+    <div>
+      <input type="checkbox" id="chk2" checked> 
+      <label for="chk2">2x Triplay 15mm Encino</label>
+    </div>
+    <span style="color:var(--subtext)">pza</span>
+  </div>
+  <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+    <button class="btn btn-green" onclick="act('rec1')">✓ Registrar Entradas (Añadir a Inventario)</button>
+  </div>
+</div>
+
+<script>
+function act(id) {
+  const el = document.getElementById(id);
+  el.style.opacity = '0.5';
+  el.style.pointerEvents = 'none';
+  alert('Se han añadido los materiales confirmados al inventario general.');
+  setTimeout(() => el.style.display = 'none', 300);
+}
+</script>
+</body>
+</html>

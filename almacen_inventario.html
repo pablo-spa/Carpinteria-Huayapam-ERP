@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario General — Huayapam ERP</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --amber: #df8e1d; --red: #d20f39;
+  --green-bg: rgba(64,160,43,0.15); --amber-bg: rgba(223,142,29,0.15); --red-bg: rgba(210,15,57,0.15);
+  --blue: #1e66f5; --radius-lg: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --amber: #f9e2af; --red: #f38ba8;
+    --green-bg: rgba(166,218,149,0.15); --amber-bg: rgba(249,226,175,0.15); --red-bg: rgba(243,139,168,0.15);
+    --blue: #8caaee;
+  }
+}
+
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
+
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.hdr-title { font-size: 18px; font-weight: 800; }
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; min-width: 240px; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; margin-left: 8px; }
+
+.filters { display: flex; gap: 8px; overflow-x: auto; padding: 16px 24px; background: var(--base); border-bottom: 1px solid var(--crust); }
+.filters::-webkit-scrollbar { display: none; }
+.f-btn { padding: 6px 14px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; }
+.f-btn:hover { background: var(--surface0); color: var(--text); }
+.f-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
+
+.main { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
+.table-wrap { overflow-x: auto; width: 100%; }
+.inv-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+.inv-table th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); }
+.inv-table td { padding: 14px 16px; vertical-align: middle; border-bottom: 1px solid var(--crust); font-size: 13px; font-weight: 500; }
+.inv-table tr:hover { background: var(--surface0); }
+.inv-table tr:last-child td { border-bottom: none; }
+
+.pill { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.pill-ok { background: var(--green-bg); color: var(--green); }
+.pill-low { background: var(--amber-bg); color: var(--amber); }
+.pill-out { background: var(--red-bg); color: var(--red); }
+
+.modal-input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--crust);
+  background: var(--base);
+  color: var(--text);
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 13px;
+  height: 40px;
+}
+.modal-input:focus { outline: none; border-color: var(--blue); }
+
+.td-hint { color: var(--subtext); font-size: 11px; font-weight: 600; display: block; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
+    <div class="hdr-title">Inventario General</div>
+  </div>
+  <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar insumos, códigos..." autofocus></div>
+</div>
+
+<div class="filters">
+  <div style="display:flex; flex-direction:column; gap:4px;">
+    <label style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase;">Filtrar por Categoría</label>
+    <select id="f-cat" style="padding:6px 10px; background:var(--mantle); border:1px solid var(--crust); border-radius:6px; color:var(--text); font-size:13px; font-family:inherit; box-sizing:border-box; height:34px;">
+      <option value="all">Todas las categorías</option>
+      <!-- Populated by JS -->
+    </select>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:4px; margin-left:16px;">
+    <label style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase;">Estado de Stock</label>
+    <select id="f-stock" style="padding:6px 10px; background:var(--mantle); border:1px solid var(--crust); border-radius:6px; color:var(--text); font-size:13px; font-family:inherit; box-sizing:border-box; height:34px;">
+      <option value="all">Todos</option>
+      <option value="low">Stock Bajo o Cero</option>
+      <option value="ok">Con Stock</option>
+    </select>
+  </div>
+</div>
+
+<div class="main">
+  <div class="card">
+    <div class="table-wrap">
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Descripción del Artículo</th>
+            <th>Categoría</th>
+            <th>Stock Actual</th>
+            <th>Última Compra</th>
+            <th>Costo Actual</th>
+            <th>Asignado a</th>
+            <th>Ubicación</th>
+          </tr>
+        </thead>
+        <tbody id="inv-body">
+          <!-- Rendered by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="mod-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div class="modal" style="background:var(--mantle); border:1px solid var(--crust); border-radius:12px; width:100%; max-width:650px; padding:24px; display:flex; flex-direction:column; gap:16px; max-height:90vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--crust); padding-bottom:12px;">
+      <h2 id="mod-title" style="font-size:18px;">Editar Insumo / Herramienta</h2>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--subtext);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="m-id">
+    
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Nombre</label>
+        <input type="text" id="m-name" class="modal-input">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Código</label>
+        <input type="text" id="m-code" class="modal-input">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Categoría</label>
+        <select id="m-cat" class="modal-input"></select>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Ubicación</label>
+        <input type="text" id="m-loc" class="modal-input">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Unidad</label>
+        <select id="m-unit" class="modal-input"></select>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Aviso Stock Bajo (Mínimo)</label>
+        <input type="number" id="m-min" class="modal-input" step="0.1">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Costo Principal ($)</label>
+        <input type="number" id="m-cost" class="modal-input" step="0.01">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Asignado a (Personal)</label>
+        <select id="m-assigned" class="modal-input">
+          <option value="">-- Sin asignar --</option>
+          <!-- Populated worker list -->
+        </select>
+      </div>
+    </div>
+
+    <!-- Historial y Stock -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+      
+      <div style="border:1px solid var(--crust); padding:16px; border-radius:8px; background:var(--base);">
+        <h3 style="font-size:13px; font-weight:800; margin-bottom:8px;">Ajuste de Stock Manual</h3>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <div><span style="font-size:11px; color:var(--subtext);">Actual:</span> <span id="m-stock-disp" style="font-size:20px; font-weight:800; color:var(--text);">0</span></div>
+          <button id="btn-unlock-stock" onclick="unlockStock()" style="padding:6px 12px; font-size:11px; font-weight:700; border:1px solid var(--crust); border-radius:6px; background:var(--mantle); color:var(--subtext); cursor:pointer;">🔒 Editar Manualmente</button>
+        </div>
+        <div id="stock-edit-box" style="display:none; flex-direction:column; gap:8px;">
+          <input type="number" id="m-stock" step="any" placeholder="Nuevo valor de stock" style="padding:10px;border-radius:6px;border:1px solid var(--amber);background:var(--base);color:var(--text);font-weight:700; width:100%; box-sizing:border-box;">
+          <div style="font-size:10px; color:var(--amber);">* Alerta: Solo modificar para mermas o recuentos. Las compras y consumos deben registrarse en sus respectivos módulos.</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--crust); padding:16px; border-radius:8px; background:var(--base);">
+        <h3 style="font-size:13px; font-weight:800; margin-bottom:8px;">Historial de Compras (Precios)</h3>
+        <div style="font-size:12px; margin-bottom:8px; color:var(--text);">Última Compra: <strong id="m-last-date">-</strong></div>
+        <div id="m-price-hist" style="font-size:12px; max-height:100px; overflow-y:auto; border:1px solid var(--crust); background:var(--mantle); padding:8px; border-radius:6px;">
+          <!-- Hist rows -->
+        </div>
+      </div>
+
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:12px; border-top:1px solid var(--crust); padding-top:16px;">
+      <button onclick="closeModal()" style="padding:10px 16px;background:var(--base);color:var(--text);border:1px solid var(--crust);border-radius:6px;font-weight:600;cursor:pointer;">Cancelar</button>
+      <button onclick="saveItem()" style="padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;">Guardar y Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+  let currentFilter = 'all';
+  let currentStockFilter = 'all';
+
+  document.getElementById('srch').addEventListener('input', applyFilters);
+  document.getElementById('f-cat').addEventListener('change', (e) => { currentFilter = e.target.value; applyFilters(); });
+  document.getElementById('f-stock').addEventListener('change', (e) => { currentStockFilter = e.target.value; applyFilters(); });
+
+  function initSelects() {
+    const d = window.DB.get();
+    
+    // Category format
+    let catHtml = '<option value="all">Todas las categorías</option>';
+    d.concept_categories.forEach(c => {
+      catHtml += `<option value="${c}">${c}</option>`;
+    });
+    document.getElementById('f-cat').innerHTML = catHtml;
+    
+    // Modal Selects
+    document.getElementById('m-cat').innerHTML = d.concept_categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('m-unit').innerHTML = d.concept_units.map(u => `<option value="${u}">${u}</option>`).join('');
+    
+    // Workers Select
+    document.getElementById('m-assigned').innerHTML = '<option value="">-- Sin asignar --</option>' + d.workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+  }
+
+  function renderTable() {
+    const d = window.DB.get();
+    const tbody = document.getElementById('inv-body');
+    tbody.innerHTML = d.inventory.map((i, idx) => {
+      let pillClass = 'pill-ok';
+      if (i.stock === 0) pillClass = 'pill-out';
+      else if (i.stock <= i.min) pillClass = 'pill-low';
+      
+      const isLow = i.stock <= i.min;
+      const worker = i.assignedTo ? d.workers.find(w => w.id === i.assignedTo) : null;
+      let assignedBadge = worker ? `<span class="pill" style="background:var(--surface1); color:var(--text);">${worker.name}</span>` : '-';
+
+      return `
+        <tr style="cursor:pointer;" onclick="openModal('${i.id}')" data-cat="${i.category}" data-low="${isLow}">
+          <td><span style="font-family:monospace;font-weight:700;">${i.code}</span></td>
+          <td><div style="font-weight:700;">${i.name}</div><div class="td-hint">${i.details || ''}</div></td>
+          <td>${i.category}</td>
+          <td><span class="pill ${pillClass}">${i.stock}</span> <span class="td-hint">Mín: ${i.min}</span></td>
+          <td>${i.lastPurchaseDate || '-'}</td>
+          <td>$${i.cost.toFixed(2)}</td>
+          <td>${assignedBadge}</td>
+          <td>${i.location || '-'}</td>
+        </tr>
+      `;
+    }).join('');
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const term = document.getElementById('srch').value.toLowerCase();
+    const rows = document.querySelectorAll('#inv-body tr');
+    
+    rows.forEach(tr => {
+      const textMatch = tr.innerText.toLowerCase().includes(term);
+      let catMatch = true;
+
+      if (currentFilter !== 'all') {
+        catMatch = tr.getAttribute('data-cat') === currentFilter;
+      }
+      
+      let stockMatch = true;
+      if (currentStockFilter === 'low') stockMatch = tr.getAttribute('data-low') === 'true';
+      if (currentStockFilter === 'ok') stockMatch = tr.getAttribute('data-low') !== 'true';
+      
+      tr.style.display = (textMatch && catMatch && stockMatch) ? '' : 'none';
+    });
+  }
+
+  function unlockStock() {
+    document.getElementById('btn-unlock-stock').style.display = 'none';
+    document.getElementById('stock-edit-box').style.display = 'flex';
+  }
+
+  function openModal(id) {
+    const item = window.DB.get().inventory.find(x => x.id === id);
+    if (!item) return;
+
+    document.getElementById('m-id').value = item.id;
+    document.getElementById('m-name').value = item.name;
+    document.getElementById('m-code').value = item.code;
+    document.getElementById('m-cat').value = item.category;
+    document.getElementById('m-loc').value = item.location || '';
+    document.getElementById('m-min').value = item.min;
+    document.getElementById('m-unit').value = item.unit;
+    document.getElementById('m-cost').value = item.cost;
+    
+    document.getElementById('m-stock-disp').textContent = item.stock;
+    document.getElementById('m-stock').value = item.stock;
+    
+    document.getElementById('btn-unlock-stock').style.display = 'block';
+    document.getElementById('stock-edit-box').style.display = 'none';
+    
+    document.getElementById('m-assigned').value = item.assignedTo || '';
+    document.getElementById('m-last-date').textContent = item.lastPurchaseDate || 'Sin registro';
+
+    // Price History
+    let histHtml = '<div style="color:var(--subtext);">- No hay historial registrado -</div>';
+    if(item.priceHistory && item.priceHistory.length > 0) {
+      histHtml = item.priceHistory.slice().reverse().map(h => 
+        `<div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="color:var(--subtext);">${h.date}</span>
+          <span style="font-weight:700;">$${parseFloat(h.price).toFixed(2)}</span>
+        </div>`
+      ).join('');
+    }
+    document.getElementById('m-price-hist').innerHTML = histHtml;
+
+    document.getElementById('mod-overlay').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('mod-overlay').style.display = 'none';
+  }
+
+  function saveItem() {
+    const d = window.DB.get();
+    const id = document.getElementById('m-id').value;
+    const item = d.inventory.find(x => x.id === id);
+    if (!item) return;
+
+    item.name = document.getElementById('m-name').value;
+    item.code = document.getElementById('m-code').value;
+    item.category = document.getElementById('m-cat').value;
+    item.location = document.getElementById('m-loc').value;
+    item.min = parseFloat(document.getElementById('m-min').value);
+    item.unit = document.getElementById('m-unit').value;
+    
+    // Save New Cost if changed
+    const newCost = parseFloat(document.getElementById('m-cost').value);
+    if (newCost !== item.cost) {
+      item.cost = newCost;
+    }
+    
+    const assigned = document.getElementById('m-assigned').value;
+    if (assigned) item.assignedTo = assigned;
+    else delete item.assignedTo;
+
+    // Stock manually changed?
+    const sBox = document.getElementById('stock-edit-box').style.display;
+    if (sBox !== 'none') {
+      item.stock = parseFloat(document.getElementById('m-stock').value);
+    }
+
+    // Save
+    window.DB.updateInventoryItem(item);
+    closeModal();
+    renderTable();
+  }
+  
+  initSelects();
+  renderTable();
+</script>
+</body>
+</html>

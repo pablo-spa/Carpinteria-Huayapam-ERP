@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nueva Cotización — Huayapam ERP</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --green-bg: rgba(64,160,43,0.15);
+  --amber: #df8e1d; --amber-bg: rgba(223,142,29,0.15);
+  --red: #d20f39; --red-bg: rgba(210,15,57,0.15);
+  --blue: #1e66f5; --blue-bg: rgba(30,102,245,0.15);
+  --radius: 10px; --radius-lg: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
+    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
+    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15);
+    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
+  }
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); min-height: 100vh; padding-bottom: 240px; }
+
+/* Header */
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; position: sticky; top: 0; z-index: 20; }
+.hdr-brand { font-size: 13px; font-weight: 600; color: var(--subtext); white-space: nowrap; padding-right: 16px; border-right: 1px solid var(--crust); }
+.hdr-fields { display: flex; gap: 8px; flex: 1; min-width: 280px; }
+.hdr-input, .hdr-select { flex: 1; padding: 8px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; box-sizing:border-box; min-height:40px; }
+.hdr-input:focus, .hdr-select:focus { outline: none; border-color: var(--blue); }
+.hdr-num { font-size: 12px; color: var(--subtext); font-weight: 600; white-space: nowrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--mantle); color: var(--text); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap; transition: all .15s; }
+.btn:hover { background: var(--surface0); border-color: var(--surface1); }
+.btn-dark { background: var(--surface0); color: var(--text); border-color: var(--surface1); }
+.btn-dark:hover { background: var(--surface1); border-color: var(--subtext); }
+.btn-blue { background: var(--blue); color: var(--base); border-color: var(--blue); }
+.btn-blue:hover { opacity: 0.9; background: var(--blue); }
+.btn-green { background: var(--green); color: var(--base); border-color: var(--green); }
+.btn-green:hover { opacity: 0.9; background: var(--green); }
+@media (max-width: 768px) {
+  .hdr { flex-direction: column; align-items: stretch; }
+  .hdr-brand { border: none; padding-bottom: 8px; border-bottom: 1px solid var(--crust); }
+  .hdr-fields { flex-direction: column; }
+}
+
+/* Fix layout and make it more compact to prevent sideways scrolling */
+.main { max-width: 1000px; margin: 0 auto; padding: 24px 20px; }
+
+/* AI Add Box - make it less bulky */
+.ai-box { display: flex; gap: 8px; align-items: center; border: 1px solid var(--blue); border-radius: 8px; background: var(--blue-bg); padding: 8px 12px; flex: 1; min-width: 280px; }
+.ai-lbl { font-size: 13px; font-weight: 700; color: var(--blue); white-space: nowrap; }
+.ai-input { flex: 1; border: 1px solid var(--surface0); border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; background: var(--base); color: var(--text); min-width: 120px; box-sizing:border-box; min-height:40px; }
+.ai-input:focus { outline: none; border-color: var(--blue); }
+
+/* Add piece bar / config bar */
+.top-action-bar { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; align-items: center; background: var(--mantle); padding: 12px; border: 1px solid var(--crust); border-radius: 12px; }
+
+.add-manual { display: flex; gap: 8px; align-items: center; }
+.type-sel { padding: 8px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; max-width: 200px; box-sizing:border-box; min-height:40px; }
+
+/* Global Configs */
+.global-configs { display: flex; gap: 12px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+.cfg-group { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--subtext); background: var(--base); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--crust); }
+.inline-cfg { width: 44px; padding: 4px; background: var(--mantle); color: var(--text); border: 1px solid var(--surface0); border-radius: 4px; font-size: 12px; font-weight: 700; font-family: inherit; text-align: center; }
+.inline-cfg:focus { border-color: var(--blue); outline: none; }
+
+/* Table Wrapper for mobile */
+.table-wrap { width: 100%; margin-top: 12px; overflow-x: auto; }
+.mat-cols { display: grid; grid-template-columns: minmax(140px, 3fr) 60px 50px 80px 32px; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--crust); min-width: 480px; }
+.mat-row { display: grid; grid-template-columns: minmax(140px, 3fr) 60px 50px 80px 32px; gap: 8px; align-items: center; margin-top: 8px; min-width: 480px; }
+select.mat-name, input.mat-qty { padding: 8px 6px; border: 1px solid var(--surface0); border-radius: 6px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; box-sizing:border-box; min-height:40px; }
+select.mat-name:focus, input.mat-qty:focus { outline: none; border-color: var(--blue); }
+.mat-unit { font-size: 11px; color: var(--subtext); overflow: hidden; text-overflow: ellipsis; }
+.mat-subtotal { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; }
+.mat-del { background: var(--base); border: 1px solid var(--surface0); border-radius: 6px; color: var(--subtext); font-size: 16px; cursor: pointer; line-height: 1; height: 34px; width: 32px; display: flex; align-items: center; justify-content: center; }
+.mat-del:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+.add-mat-btn { display: inline-block; width: 100%; margin-top: 12px; padding: 10px; border: 1px dashed var(--surface1); border-radius: 6px; background: transparent; color: var(--subtext); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
+.add-mat-btn:hover { background: var(--surface0); color: var(--text); border-color: var(--surface1); }
+
+/* Hours */
+.hrs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 12px; }
+.hr-item { background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.hr-item label { font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+.hr-rate { font-size: 9px; color: var(--surface1); font-weight: 500; }
+input.hr-val { width: 100%; padding: 6px; border: 1px solid var(--crust); border-radius: 4px; background: var(--mantle); color: var(--text); font-size: 14px; font-weight: 700; text-align: right; font-family: inherit; box-sizing:border-box; min-height:36px; }
+input.hr-val:focus { outline: none; border-color: var(--blue); }
+
+/* Empty */
+.empty { text-align: center; padding: 48px 24px; color: var(--subtext); background: var(--mantle); border: 1px dashed var(--surface1); border-radius: var(--radius-lg); margin-top: 16px; }
+.empty-ico { font-size: 40px; margin-bottom: 12px; opacity: 0.8; }
+.empty-t { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+.empty-s { font-size: 14px; }
+
+/* Piece card */
+.piece { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden; }
+.piece-hdr { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; transition: background .15s; }
+.piece-hdr:hover { background: var(--surface0); }
+.p-badge { font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--text); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.p-name { font-size: 14px; font-weight: 700; flex: 1; color: var(--text); }
+.p-price { font-size: 16px; font-weight: 700; color: var(--green); min-width: 80px; text-align: right; }
+.p-arrow { color: var(--subtext); font-size: 10px; transition: transform 0.15s; }
+.p-arrow.open { transform: rotate(180deg); }
+.piece-body { border-top: 1px solid var(--crust); padding: 16px; }
+.sub-hdr { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; margin-bottom: 12px; margin-top: 24px; }
+.sub-hdr:first-child { margin-top: 0; }
+
+/* Breakdown */
+.breakdown { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 16px; margin-top: 24px; }
+.br-row { display: flex; justify-content: space-between; align-items: flex-end; padding: 6px 0; font-size: 13px; color: var(--subtext); gap: 12px; }
+.br-row.sep { border-top: 1px solid var(--crust); padding-top: 12px; margin-top: 6px; color: var(--text); font-weight: 700; }
+.br-row.final { color: var(--green); font-weight: 800; font-size: 16px; padding-top: 12px; border-top: 1px solid var(--crust); margin-top: 6px; }
+.br-empty { font-size: 12px; color: var(--subtext); text-align: center; padding: 8px 0; }
+.br-configs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* Piece footer */
+.piece-foot { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--crust); }
+
+/* Footer bar */
+.footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--mantle); border-top: 1px solid var(--crust); padding: 16px 24px; z-index: 20; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
+.footer-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 240px; gap: 24px; align-items: end; }
+@media (max-width: 768px) {
+  .footer-inner { grid-template-columns: 1fr; gap: 16px; }
+  .ft-total-area { border-top: 1px solid var(--crust); padding-top: 12px; }
+}
+.ft-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtext); margin-bottom: 8px; }
+.ft-formula-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--subtext); padding: 3px 0; }
+.ft-formula-row span:last-child { font-weight: 600; color: var(--text); }
+.ft-pay-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: var(--text); font-weight: 500; }
+.ft-pay-row span:first-child { color: var(--subtext); font-weight: 400; }
+.ft-total { text-align: right; }
+.ft-total-val { font-size: 36px; font-weight: 800; color: var(--text); line-height: 1; letter-spacing: -0.02em; }
+.ft-total-sub { font-size: 13px; font-weight: 600; color: var(--subtext); margin-top: 8px; }
+
+/* Print Modal */
+.print-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: stretch; justify-content: flex-end; }
+.print-panel { width: 100%; max-width: 800px; background: var(--base); height: 100%; display: flex; flex-direction: column; box-shadow: -4px 0 24px rgba(0,0,0,0.1); animation: slideIn 0.3s ease; overflow: hidden; }
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.print-hdr { padding: 16px 20px; border-bottom: 1px solid var(--crust); display: flex; justify-content: space-between; align-items: center; background: var(--mantle); }
+.print-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; color: #000; } /* white bg for print preview */
+.print-ai-bar { padding: 16px; background: var(--mantle); border-top: 1px solid var(--crust); display: flex; flex-direction: column; gap: 12px; }
+
+.print-preview-content { max-width: 700px; margin: 0 auto; font-family: 'Inter', sans-serif; font-size: 11px; }
+.print-piece { border-bottom: 1px solid #eee; padding: 12px 0; }
+.print-piece-hdr { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+.print-piece-desc { color: #555; white-space: pre-wrap; font-size: 12px; }
+.print-totals { border-top: 2px solid #000; margin-top: 24px; padding-top: 12px; display: flex; justify-content: flex-end; gap: 40px; }
+.print-totals-col { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+.print-totals-row { display: flex; justify-content: space-between; gap: 24px; }
+.print-grand { font-size: 16px; font-weight: bold; margin-top: 8px; }
+
+.print-cond-box { margin-top: 24px; padding-top: 16px; border-top: 2px solid #000; }
+.print-cond-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; }
+.print-cond-text { font-size: 11px; color: #333; white-space: pre-wrap; }
+
+@media print {
+  body * { visibility: hidden; }
+  .print-body, .print-body * { visibility: visible; }
+  .print-body { position: absolute; left: 0; top: 0; width: 100%; background: white !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">Huayapam ERP</div>
+  <div class="hdr-fields" style="display:flex; gap:8px; flex:1;">
+    <select class="hdr-select" id="clientInput" onchange="S.client=this.options[this.selectedIndex].text; renderFooter()"></select>
+    <select class="hdr-select" id="projectInput"></select>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button class="btn btn-dark" onclick="showPrintPreview(true)">🖨 Cliente</button>
+    <button class="btn btn-dark" onclick="showPrintPreview(false)">🖨 Taller</button>
+    <button class="btn btn-green" onclick="saveQuoteToProject()">Aprobar Cotización ↗</button>
+  </div>
+</div>
+
+<div class="main">
+  
+  <!-- Add / Config Bar -->
+  <div class="top-action-bar" style="flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 20px; background: none; border: none; padding: 0;">
+    <!-- Fila del Asistente AI -->
+    <div class="ai-box">
+      <div class="ai-lbl">✨ Asistente IA</div>
+      <input type="text" class="ai-input" id="ai-prompt" placeholder="Ej: Dos libreros de tzalam...">
+      <button class="btn btn-blue" onclick="simulateAI()" style="padding:6px 12px;">Generar</button>
+    </div>
+    
+    <!-- Fila Manual -->
+    <div style="display: flex; gap: 16px; align-items: center; background: var(--mantle); padding: 12px; border: 1px solid var(--crust); border-radius: 12px;">
+      <div class="add-manual">
+        <select class="type-sel" id="typeSelect">
+          <option value="">Ingreso manual...</option>
+        </select>
+        <button class="btn btn-dark" onclick="addPiece()" style="padding:6px 12px;">+</button>
+      </div>
+    </div>
+
+    <!-- Configuración Global -->
+    <div style="background: var(--mantle); padding: 16px; border: 1px solid var(--crust); border-radius: 12px;">
+      <div style="font-size: 13px; font-weight: 700; color: var(--text); border-bottom: 1px solid var(--crust); padding-bottom: 8px; margin-bottom: 12px;">Ajustes Globales (Márgenes y Extras)</div>
+      <div style="display: flex; gap: 24px;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext);">
+          <span>Gastos Extra (%)</span>
+          <input type="number" class="inline-cfg global-margin-sync" data-key="extras" value="7" onchange="syncMargins(this)" style="width: 60px;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext);">
+          <span>Utilidad (%)</span>
+          <input type="number" class="inline-cfg global-margin-sync" data-key="margin" value="20" onchange="syncMargins(this)" style="width: 60px;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext);">
+          <span>Margen de Error (%)</span>
+          <input type="number" class="inline-cfg global-margin-sync" data-key="error" value="7" onchange="syncMargins(this)" style="width: 60px;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); border-left: 1px solid var(--crust); padding-left: 24px;">
+          <input type="checkbox" id="cfg-tax" checked onchange="updateCfg()" style="width:16px; height:16px; accent-color:var(--primary);">
+          <label for="cfg-tax" style="cursor:pointer; color:var(--text);">Cobrar IVA (16%)</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="pieces"></div>
+</div>
+
+<div class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="ft-label">Márgenes y Fórmula Global</div>
+      <div class="ft-formula-row"><span>Materiales netos + Herramienta (8%)</span><span id="f-sub1">—</span></div>
+      <div class="ft-formula-row"><span>Mano de obra indirecta</span><span id="f-labor">—</span></div>
+      <div class="ft-formula-row"><span>Overhead Taller ($37.3/hr)</span><span id="f-overhead">—</span></div>
+      <div class="ft-formula-row"><span>Márgenes (Ext+Util+Err)</span><span id="f-margins">—</span></div>
+      <div class="ft-formula-row" id="row-fee" style="display:none;">
+        <span>Comisión sin IVA (3%)</span>
+        <span id="f-fee">—</span>
+      </div>
+      <div class="ft-formula-row" id="row-tax">
+        <span>Impuesto IVA (16%)</span>
+        <span id="f-tax">—</span>
+      </div>
+    </div>
+    <div class="ft-total-area ft-total">
+      <div class="ft-label">Total Cotización</div>
+      <div class="ft-total-val" id="ft-total">$0</div>
+      <div class="ft-total-sub" id="ft-sub">Sin piezas</div>
+    </div>
+  </div>
+</div>
+
+<!-- Print Modal -->
+<div class="print-modal" id="print-modal">
+  <div class="print-panel">
+    <div class="print-hdr">
+      <div style="font-weight:700; color:var(--text); font-size:16px;" id="print-title">Vista Previa (PDF)</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-dark" onclick="closePrintPreview()">Cerrar</button>
+        <button class="btn btn-green" onclick="window.print()">Imprimir / Guardar PDF</button>
+      </div>
+    </div>
+    <div class="print-body" id="print-body">
+      <div class="print-preview-content" id="print-preview-content">
+        <!-- populated from JS -->
+      </div>
+    </div>
+    <div class="print-ai-bar">
+      <div style="font-size:12px; font-weight:700; color:var(--text);">✨ Asistente IA (Condiciones)</div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" class="ai-input" id="ai-print-prompt" placeholder="Ej: Pago 60/40, entrega en 4 semanas..." style="flex:1;">
+        <button class="btn btn-blue" onclick="simulatePrintAI()">Generar Condiciones</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+const RATES = { maestroA:105, maestroB:98, oficialA:84, aprendiz:60, barniz:90, pulido:58, empaque:65, chofer:70 };
+const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Oficial A', aprendiz:'Aprendiz', barniz:'Barniz', pulido:'Pulido', empaque:'Empaque', chofer:'Chofer' };
+const OVERHEAD = 37.3, TOOL = 0.08;
+
+let EXTRAS = 0.07, MARGIN = 0.20, ERROR = 0.07, TAX = 0.16, COMMISSION = 0;
+
+const PIECE_TYPES = [
+  ['AL','Alacena'],['AR','Archivero'],['CJ','Cajonera'],['CR','Credenza'],
+  ['LI','Librero'],['RO','Ropero'],['VI','Vitrina'],
+  ['PC','Puerta corrediza'],['PTA','Puerta abatible'],['PPL','Puerta plegable'],
+  ['MC','Mesa comedor'],['ET','Escritorio'],['MA','Mesa auxiliar'],
+  ['MB','Mesa de bar'],['MR','Mesa centro'],['ND','No definido'],
+];
+
+const MATS = [
+  {n:'Tablero MDF 15mm',u:'lámina',p:185},{n:'Tablero MDF 18mm',u:'lámina',p:210},
+  {n:'Tripay 9mm',u:'lámina',p:145},{n:'Tripay 18mm',u:'lámina',p:215},
+  {n:'Madera pino 1a 1×8',u:'pieza',p:238},{n:'Madera tzalam maciza',u:'pt',p:850},
+  {n:'Madera encino maciza',u:'pt',p:720},{n:'Madera roble maciza',u:'pt',p:680},
+  {n:'Jalador acero inox',u:'pieza',p:45},{n:'Bisagra clip 110°',u:'pieza',p:38},
+  {n:'Riel Blum full ext',u:'par',p:185},{n:'Riel Blum soft-close',u:'par',p:220},
+  {n:'Lija 120',u:'pliego',p:8},{n:'Lija 220',u:'pliego',p:12},
+  {n:'Resanador COMEX',u:'bote',p:76},{n:'Laca blanca satín',u:'gal',p:380},
+  {n:'Barniz brillante',u:'lt',p:220},{n:'Thinner',u:'lt',p:52},
+  {n:'Tornillo 3/4"',u:'caja',p:18},{n:'Clavillo M-10',u:'caja',p:54},
+  {n:'Pegamento blanco',u:'bote',p:85},{n:'Sellador nitro',u:'lt',p:185},
+];
+
+const S = { client:'', project:'', pieces:[], typeCounts:{}, nextId:1 };
+
+function updateCfg() {
+  const isChecked = document.getElementById('cfg-tax').checked;
+  TAX = isChecked ? 0.16 : 0;
+  COMMISSION = isChecked ? 0 : 0.03;
+
+  S.pieces.forEach(p => updatePiece(p.id));
+  renderFooter();
+  render();
+}
+
+function simulateAI() {
+  const input = document.getElementById('ai-prompt');
+  const text = input.value;
+  if(!text) { input.focus(); return; }
+  
+  const original = input.value;
+  input.value = "Consultando base de datos y creando desglose...";
+  input.disabled = true;
+  
+  setTimeout(() => {
+    // Generate Puerta
+    S.typeCounts['PTA'] = (S.typeCounts['PTA']||0)+1;
+    S.pieces.unshift({
+      id: S.nextId++,
+      code: 'PTA' + S.typeCounts['PTA'],
+      name: 'Puerta abatible con herrajes IA', 
+      mats: [
+        { n: 'Tablero MDF 15mm', u: 'lámina', p: 185, qty: 1.5 },
+        { n: 'Madera tzalam maciza', u: 'pt', p: 850, qty: 12 },
+        { n: 'Barniz brillante', u: 'lt', p: 220, qty: 1 },
+        { n: 'Bisagra clip 110°', u: 'pieza', p: 38, qty: 4 },
+        { n: 'Jalador acero inox', u: 'pieza', p: 45, qty: 1 },
+      ],
+      hrs: { maestroA: 8, oficialA: 4, barniz: 3, pulido: 2, chofer: 1 },
+      open: true,
+    });
+    
+    input.value = "";
+    input.disabled = false;
+    updateCfg();
+  }, 1000);
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX', {minimumFractionDigits:2}); }
+
+function calc(piece) {
+  const matTotal = piece.mats.reduce((s,m) => s + (m.qty||0)*m.p, 0);
+  const sub1 = matTotal * (1+TOOL);
+  const hrs = piece.hrs;
+  const totalHrs = Object.keys(RATES).reduce((s,k) => s+(hrs[k]||0), 0);
+  const labor = Object.keys(RATES).reduce((s,k) => s+(hrs[k]||0)*RATES[k], 0);
+  const oh = totalHrs * OVERHEAD;
+  const sub3 = sub1 + labor + oh;
+  const ex = sub3*EXTRAS, mg = sub3*MARGIN, er = sub3*ERROR;
+  const total = sub3 + ex + mg + er;
+  const tax = total * TAX;
+  const fee = total * COMMISSION;
+  const final = Math.round((total+Math.round(tax)+fee)/50)*50;
+  return { matTotal, sub1, labor, totalHrs, oh, sub3, ex, mg, er, total, tax, fee, final };
+}
+
+function addPiece() {
+  const sel = document.getElementById('typeSelect');
+  const val = sel.value;
+  if (!val) { sel.focus(); return; }
+  const [code, name] = PIECE_TYPES.find(([c]) => c === val);
+  S.typeCounts[code] = (S.typeCounts[code]||0)+1;
+  const piece = {
+    id: S.nextId++,
+    code: code + S.typeCounts[code],
+    name, mats: [],
+    hrs: { maestroA:0, maestroB:0, oficialA:0, aprendiz:0, barniz:0, pulido:0, empaque:0, chofer:0 },
+    open: true,
+  };
+  S.pieces.push(piece);
+  sel.value = '';
+  render();
+}
+
+function removePiece(id) {
+  S.pieces = S.pieces.filter(p => p.id !== id);
+  render();
+}
+
+function togglePiece(id) {
+  const p = S.pieces.find(p => p.id === id);
+  if (p) p.open = !p.open;
+  render();
+}
+
+function addMat(id) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  const m = MATS[0];
+  p.mats.push({ n:m.n, u:m.u, p:m.p, qty:1 });
+  render();
+}
+
+function setMatName(id, i, v) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  const m = MATS.find(m => m.n === v);
+  if (m) { p.mats[i].n = m.n; p.mats[i].u = m.u; p.mats[i].p = m.p; }
+  updatePiece(id);
+}
+
+function setMatQty(id, i, v) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.mats[i].qty = parseFloat(v)||0;
+  updatePiece(id);
+}
+
+function delMat(id, i) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.mats.splice(i,1);
+  render();
+}
+
+function setHr(id, k, v) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.hrs[k] = parseFloat(v)||0;
+  updatePiece(id);
+}
+
+function updatePiece(id) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  const c = calc(p);
+  const prEl = document.getElementById('pp-'+id);
+  if (prEl) prEl.textContent = c.final > 0 ? fmt(c.final) : '—';
+  const brEl = document.getElementById('br-'+id);
+  if (brEl) brEl.innerHTML = brHtml(c);
+  for (let i=0; i<p.mats.length; i++) {
+    const st = document.getElementById('mst-'+id+'-'+i);
+    if (st) st.textContent = fmt((p.mats[i].qty||0)*p.mats[i].p);
+  }
+  renderFooter();
+}
+
+function brHtml(c) {
+  if (c.final === 0) return '<div class="br-empty">Agrega materiales u horas para calcular</div>';
+  return `
+    <div class="br-row"><span>Materiales (${fmt(c.matTotal)}) + herramienta 8%</span><span>${fmt(c.sub1)}</span></div>
+    <div class="br-row"><span>Mano de obra (${c.totalHrs.toFixed(1)} hrs)</span><span>${fmt(c.labor)}</span></div>
+    <div class="br-row"><span>Overhead (${c.totalHrs.toFixed(1)} hrs × $37.3)</span><span>${fmt(c.oh)}</span></div>
+    <div class="br-row sep"><span>Subtotal base</span><span>${fmt(c.sub3)}</span></div>
+    <div class="br-row">
+      <span>Márgenes (Ext ${Math.round(EXTRAS*100)}% + Util ${Math.round(MARGIN*100)}% + Err ${Math.round(ERROR*100)}%)</span>
+      <span>${fmt(c.ex+c.mg+c.er)}</span>
+    </div>
+    <div class="br-row"><span>+ Impuesto ${Math.round(TAX*100)}%</span><span>${fmt(c.tax)}</span></div>
+    <div class="br-row final"><span>Precio de venta (redondeado)</span><span>${fmt(c.final)}</span></div>`;
+}
+
+window.syncMargins = function(el) {
+  const key = el.getAttribute('data-key');
+  const val = parseFloat(el.value)||0;
+  if(key === 'extras') EXTRAS = val/100;
+  if(key === 'margin') MARGIN = val/100;
+  if(key === 'error')  ERROR  = val/100;
+  
+  // Also sync the visual inputs if there are multiple elements bound to this (though we moved it to top)
+  document.querySelectorAll('.global-margin-sync[data-key="'+key+'"]').forEach(i => {
+    if(i !== el) i.value = val;
+  });
+
+  S.pieces.forEach(p => updatePiece(p.id));
+  renderFooter();
+};
+
+function renderPiece(piece) {
+  const c = calc(piece);
+  const matRows = piece.mats.map((m,i) => `
+    <div class="mat-row">
+      <select class="mat-name" onchange="setMatName(${piece.id},${i},this.value)">
+        ${MATS.map(mt=>`<option value="${mt.n}"${mt.n===m.n?' selected':''}>${mt.n}</option>`).join('')}
+      </select>
+      <input class="mat-qty" type="number" value="${m.qty}" min="0" step="0.25" onchange="setMatQty(${piece.id},${i},this.value)">
+      <span class="mat-unit">${m.u}</span>
+      <span class="mat-subtotal" id="mst-${piece.id}-${i}">${fmt((m.qty||0)*m.p)}</span>
+      <button class="mat-del" onclick="delMat(${piece.id},${i})">×</button>
+    </div>`).join('');
+
+  const hrInputs = Object.keys(RATES).map(k=>`
+    <div class="hr-item">
+      <label>${RATE_LABELS[k]}<br><span class="hr-rate">$${RATES[k]}/hr</span></label>
+      <input class="hr-val" type="number" value="${piece.hrs[k]||''}" min="0" step="0.5" placeholder="0" onchange="setHr(${piece.id},'${k}',this.value)">
+    </div>`).join('');
+
+  return `
+    <div class="piece" id="piece-${piece.id}">
+      <div class="piece-hdr" onclick="togglePiece(${piece.id})">
+        <span class="p-badge">${piece.code}</span>
+        <span class="p-name">${piece.name}</span>
+        <span class="p-price" id="pp-${piece.id}">${c.final>0?fmt(c.final):'—'}</span>
+        <span class="p-arrow ${piece.open?'open':''}">▼</span>
+      </div>
+      ${piece.open ? `
+      <div class="piece-body">
+        <div class="sub-hdr">Lista de Materiales</div>
+        <div class="table-wrap">
+          <div class="mat-cols">
+            <span class="mat-col-hdr">Material</span>
+            <span class="mat-col-hdr">Cantidad</span>
+            <span class="mat-col-hdr">Unidad</span>
+            <span class="mat-col-hdr" style="text-align:right;">Subtotal</span>
+            <span></span>
+          </div>
+          ${matRows}
+          <button class="add-mat-btn" onclick="addMat(${piece.id})">+ Agregar material extra</button>
+        </div>
+
+        <div class="sub-hdr">Mano de Obra (Horas)</div>
+        <div class="hrs-grid">${hrInputs}</div>
+
+        <div class="breakdown" id="br-${piece.id}">${brHtml(c)}</div>
+
+        <div class="piece-foot">
+          <button class="btn" style="color:var(--red);border-color:var(--surface1);background:transparent;" onclick="removePiece(${piece.id})">✕ Eliminar pieza</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+}
+
+function render() {
+  const container = document.getElementById('pieces');
+  if (S.pieces.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-ico">📋</div><div class="empty-t">Sin piezas todavía</div><div class="empty-s">Usa la IA o selecciona debajo un tipo de pieza manual.</div></div>`;
+  } else {
+    container.innerHTML = S.pieces.map(renderPiece).join('');
+  }
+  renderFooter();
+}
+
+function renderFooter() {
+  if (S.pieces.length === 0) {
+    ['f-sub1','f-labor','f-overhead','f-margins','f-tax','f-fee'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.textContent = '—';
+    });
+    document.getElementById('ft-total').textContent = '$0';
+    document.getElementById('ft-sub').textContent = 'Sin piezas';
+    return;
+  }
+  const tot = S.pieces.reduce((acc,p) => {
+    const c = calc(p);
+    return { sub1:acc.sub1+c.sub1, labor:acc.labor+c.labor, oh:acc.oh+c.oh, margins:acc.margins+c.ex+c.mg+c.er, tax:acc.tax+c.tax, fee:acc.fee+c.fee, final:acc.final+c.final };
+  }, {sub1:0,labor:0,oh:0,margins:0,tax:0,fee:0,final:0});
+
+  document.getElementById('f-sub1').textContent = fmt(tot.sub1);
+  document.getElementById('f-labor').textContent = fmt(tot.labor);
+  document.getElementById('f-overhead').textContent = fmt(tot.oh);
+  document.getElementById('f-margins').textContent = fmt(tot.margins);
+  document.getElementById('f-tax').textContent = fmt(tot.tax);
+  document.getElementById('f-fee').textContent = fmt(tot.fee);
+  
+  if (COMMISSION > 0) {
+    document.getElementById('row-fee').style.display = 'flex';
+    document.getElementById('row-tax').style.display = 'none';
+  } else {
+    document.getElementById('row-fee').style.display = 'none';
+    document.getElementById('row-tax').style.display = 'flex';
+  }
+  
+  document.getElementById('ft-total').textContent = fmt(tot.final);
+  document.getElementById('ft-sub').textContent =
+    S.pieces.length + (S.pieces.length===1?' pieza':' piezas') + (S.client && S.client !== '— Seleccionar Cliente —' ? ' · '+S.client : '');
+}
+
+let currentPrintConds = "• Las piezas se entregan e instalan en el domicilio del cliente.\n• La vigencia de esta cotización es de 15 días.\n• El tiempo estimado de entrega se cuenta a partir de la recepción del anticipo.\n• La madera puede presentar variaciones naturales de veta y color.";
+
+function showPrintPreview(isClient) {
+  document.getElementById('print-modal').style.display = 'flex';
+  document.getElementById('print-title').textContent = isClient ? 'Vista Previa - Para Cliente' : 'Vista Previa - Para Taller';
+  
+  const content = document.getElementById('print-preview-content');
+  let html = `<h2 style="margin:0 0 4px 0;">Cotización de Mobiliario</h2>`;
+  html += `<div style="color:#555; margin-bottom:24px;">Cliente: ${S.client || 'Sin especificar'}</div>`;
+
+  let grandTotal = 0;
+
+  S.pieces.forEach((p, i) => {
+    const c = calc(p);
+    grandTotal += c.final;
+    html += `<div class="print-piece">
+      <div class="print-piece-hdr">
+        <span>${i + 1}. ${p.type} ${p.n?'- '+p.n:''}</span>
+        <span>${isClient ? fmt(c.final) : ''}</span>
+      </div>
+      <div class="print-piece-desc">${p.desc || ''}</div>
+    </div>`;
+  });
+
+  if (isClient) {
+    html += `<div class="print-totals">
+      <div class="print-totals-col">
+        <div class="print-totals-row"><span>Subtotal:</span><span>${fmt(grandTotal)}</span></div>
+        <div class="print-totals-row print-grand"><span>Total:</span><span>${fmt(grandTotal)}</span></div>
+      </div>
+    </div>`;
+    
+    html += `<div class="print-cond-box">
+      <div class="print-cond-title">Condiciones Generales y de Pago</div>
+      <div class="print-cond-text" id="print-cond-live">${currentPrintConds}</div>
+    </div>`;
+  }
+
+  content.innerHTML = html;
+}
+
+function closePrintPreview() {
+  document.getElementById('print-modal').style.display = 'none';
+}
+
+function simulatePrintAI() {
+  const input = document.getElementById('ai-print-prompt');
+  const val = input.value.trim();
+  if(!val) { input.focus(); return; }
+  
+  input.value = "Generando...";
+  input.disabled = true;
+  
+  setTimeout(() => {
+    currentPrintConds = `• Condiciones basadas en: "${val}"\n• El anticipo requerido es del 60% para iniciar producción.\n• El segundo pago del 20% se realiza a mitad de obra.\n• El saldo restante (20%) contra entrega.\n• Precios ${document.getElementById('cfg-tax').checked ? 'incluyen IVA (16%)' : 'no incluyen IVA'}.`;
+    
+    const condBox = document.getElementById('print-cond-live');
+    if(condBox) condBox.textContent = currentPrintConds;
+    
+    input.value = "";
+    input.disabled = false;
+  }, 1000);
+}
+
+// Global DB Load
+let Q_state = { baseQuoteId: null, isViewMode: false };
+
+function loadOptions() {
+  const d = window.DB.get();
+  
+  const cSel = document.getElementById('clientInput');
+  cSel.innerHTML = '<option value="">— Seleccionar Cliente —</option>' + d.contacts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  
+  const pSel = document.getElementById('projectInput');
+  pSel.innerHTML = '<option value="">— Crear Proyecto Nuevo —</option>' + d.projects.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+}
+
+function saveQuoteToProject() {
+  const d = window.DB.get();
+  const cId = document.getElementById('clientInput').value;
+  const pId = document.getElementById('projectInput').value;
+  
+  if(!cId) return alert('Debes seleccionar un cliente.');
+  if(!pId) return alert('Debes seleccionar un proyecto (o modificar el flujo para crearlo primero).');
+  if(!S.pieces || S.pieces.length === 0) return alert('No hay piezas cotizadas.');
+  
+  const tot = S.pieces.reduce((acc,p) => acc + calc(p).final, 0);
+  const hrs = S.pieces.reduce((acc,p) => { let t=0; Object.values(p.hrs||{}).forEach(v => t += v); return acc + t; }, 0);
+  const mPt = S.pieces.reduce((acc,p) => { let pt=0; (p.mats||[]).forEach(m => { if(m.u==='pt' || m.u==='pza' || m.u.includes('TAB')) pt += (m.qty||0)*2 }); return acc + pt; }, 0);
+
+  const statusStr = Q_state.baseQuoteId ? 'Esperando Autorización' : 'Esperando Autorización'; // Changed to Esperando Autorización generally to match the new behavior.
+
+  const quote = {
+    id: 'q' + Date.now() + Math.floor(Math.random()*1000),
+    projectId: pId,
+    clientId: cId,
+    date: new Date().toISOString().slice(0,10),
+    pieces: JSON.parse(JSON.stringify(S.pieces)),
+    total: tot,
+    globalCfg: { EXTRAS, MARGIN, ERROR, TAX, COMMISSION },
+    status: statusStr // could be given options
+  };
+
+  if(Q_state.baseQuoteId) {
+    const baseIdx = (d.quotations||[]).findIndex(q => q.id === Q_state.baseQuoteId);
+    if(baseIdx > -1) {
+      d.quotations[baseIdx].status = 'En Pausa';
+    }
+  }
+
+  window.DB.addQuote(quote);
+  
+  alert('Cotización guardada exitosamente.');
+  window.location.href = 'proyecto_detalle.html?id=' + pId;
+}
+
+function processURLParams() {
+  const params = new URLSearchParams(window.location.search);
+  const pId = params.get('projectId');
+  const cloneId = params.get('cloneQuoteId');
+  const viewId = params.get('viewId');
+  
+  const d = window.DB.get();
+  
+  if(pId) {
+    document.getElementById('projectInput').value = pId;
+    const proj = d.projects.find(p => p.id === pId);
+    if(proj && proj.contactId) {
+      document.getElementById('clientInput').value = proj.contactId;
+    }
+  }
+  
+  let loadQ = null;
+  if(cloneId) {
+    loadQ = (d.quotations||[]).find(q => q.id === cloneId);
+    Q_state.baseQuoteId = cloneId;
+  } else if(viewId) {
+    loadQ = (d.quotations||[]).find(q => q.id === viewId);
+    Q_state.isViewMode = true;
+    document.querySelector('.top-action-bar').style.display = 'none';
+    const hdrBtns = document.querySelectorAll('.hdr .btn');
+    if(hdrBtns.length>2) hdrBtns[2].style.display = 'none'; // hide aprobar
+    document.getElementById('clientInput').disabled = true;
+    document.getElementById('projectInput').disabled = true;
+  }
+  
+  if(loadQ) {
+    if(loadQ.globalCfg) {
+       EXTRAS = loadQ.globalCfg.EXTRAS || 0.07;
+       MARGIN = loadQ.globalCfg.MARGIN || 0.20;
+       ERROR = loadQ.globalCfg.ERROR || 0.07;
+       TAX = loadQ.globalCfg.TAX !== undefined ? loadQ.globalCfg.TAX : 0.16;
+       COMMISSION = loadQ.globalCfg.COMMISSION || 0;
+       
+       document.querySelector('[data-key="extras"]').value = EXTRAS*100;
+       document.querySelector('[data-key="margin"]').value = MARGIN*100;
+       document.querySelector('[data-key="error"]').value = ERROR*100;
+       document.getElementById('cfg-tax').checked = TAX > 0;
+       if (document.getElementById('cfg-tax-piece')) document.getElementById('cfg-tax-piece').value = TAX*100;
+    }
+    
+    if(loadQ.pieces) {
+      S.pieces = JSON.parse(JSON.stringify(loadQ.pieces));
+      // In view mode, we might want to also disable all piece edits.
+      S.pieces.forEach(p => p.open = false); // collapse all
+    }
+    
+    if(loadQ.clientId) document.getElementById('clientInput').value = loadQ.clientId;
+    if(loadQ.projectId) document.getElementById('projectInput').value = loadQ.projectId;
+  }
+}
+
+// Init
+PIECE_TYPES.forEach(([code,name]) => {
+  const o = document.createElement('option');
+  o.value = code; o.textContent = code+' — '+name;
+  document.getElementById('typeSelect').appendChild(o);
+});
+
+loadOptions();
+processURLParams();
+updateCfg();
+render();
+</script>
+</body>
+</html>

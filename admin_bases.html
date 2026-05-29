@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Bases de Datos</title>
+  <style>
+    :root {
+      --base: #eff1f5;
+      --mantle: #e6e9ef;
+      --crust: #dce0e8;
+      --surface0: #ccd0da;
+      --surface1: #bcc0cc;
+      --text: #4c4f69;
+      --subtext: #8c8fa1;
+      --green: #40a02b;
+      --brand: #1e66f5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --base: #1e1e2e;
+        --mantle: #181825;
+        --crust: #11111b;
+        --surface0: #313244;
+        --surface1: #45475a;
+        --text: #cdd6f4;
+        --subtext: #a6adc8;
+        --green: #a6da95;
+        --brand: #8caaee;
+      }
+    }
+    
+    body { margin:0; padding:20px; font-family:"Inter",sans-serif; background:var(--base); color:var(--text); }
+    .header { font-size:24px; font-weight:800; margin-bottom:20px; display:flex; align-items:center; gap:12px; }
+    
+    .db-section {
+      background: var(--surface0);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      border: 1px solid var(--surface1);
+    }
+    .db-header {
+      padding: 16px;
+      background: var(--surface1);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+    .db-header:hover { background: var(--surface2); }
+    .db-body {
+      padding: 16px;
+      display: none;
+      background: var(--base);
+      overflow-x: auto;
+    }
+    .db-body.open { display: block; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border: 1px solid var(--surface1); padding: 8px 12px; text-align: left; }
+    th { background: var(--mantle); font-weight: 600; text-transform: uppercase; font-size: 11px; color: var(--subtext); }
+    tr:nth-child(even) { background: var(--mantle); }
+    tr:hover { background: var(--surface0); }
+    
+    .empty { color: var(--subtext); font-style: italic; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span>🗄️</span> Visor de Bases de Datos (Admin)
+  </div>
+  
+  <div style="margin-bottom:20px; color:var(--subtext); font-size:14px;">
+    Información en crudo de todas las colecciones almacenadas en el sistema.
+  </div>
+
+  <div id="db-container"></div>
+
+  <script src="db.js"></script>
+  <script>
+    function renderDB() {
+      const d = window.DB.get();
+      const cont = document.getElementById('db-container');
+      cont.innerHTML = '';
+      
+      const keys = Object.keys(d);
+      
+      keys.forEach(k => {
+        const sec = document.createElement('div');
+        sec.className = 'db-section';
+        
+        let arr = Array.isArray(d[k]) ? d[k] : [d[k]];
+        let count = Array.isArray(d[k]) ? d[k].length : Object.keys(d[k]).length;
+        
+        const head = document.createElement('div');
+        head.className = 'db-header';
+        head.innerHTML = `<span>${k}</span> <span style="font-size:12px; color:var(--subtext); font-weight:400;">(${count} elementos) ▾</span>`;
+        
+        const body = document.createElement('div');
+        body.className = 'db-body';
+        
+        if(count === 0) {
+          body.innerHTML = `<span class="empty">Colección vacía</span>`;
+        } else {
+          // If it is an array of primitives, map it to format it better
+          if (arr.length > 0 && typeof arr[0] !== 'object') {
+            body.innerHTML = `<table style="width: auto;">
+              <thead><tr><th>Value</th></tr></thead>
+              <tbody>${arr.map(val => `<tr><td>${val}</td></tr>`).join('')}</tbody>
+            </table>`;
+          } else if (arr.length > 0) {
+            // Find all columns across objects in the array (sometimes they can vary)
+            const allCols = new Set();
+            arr.forEach(item => {
+              if (item) Object.keys(item).forEach(c => allCols.add(c));
+            });
+            const cols = Array.from(allCols);
+            
+            let html = `<table><thead><tr>`;
+            cols.forEach(c => html += `<th>${c}</th>`);
+            html += `</tr></thead><tbody>`;
+            
+            arr.forEach(item => {
+              html += `<tr>`;
+              cols.forEach(c => {
+                let val = item ? item[c] : '';
+                if (typeof val === 'object' && val !== null) val = JSON.stringify(val);
+                if (val === undefined || val === null) val = '';
+                html += `<td>${val}</td>`;
+              });
+              html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+            body.innerHTML = html;
+          } else {
+            body.innerHTML = `<span class="empty">Colección vacía</span>`;
+          }
+        }
+        
+        head.onclick = () => {
+          body.classList.toggle('open');
+          head.innerHTML = `<span>${k}</span> <span style="font-size:12px; color:var(--subtext); font-weight:400;">(${count} elementos) ${body.classList.contains('open') ? '▴' : '▾'}</span>`;
+        };
+        
+        sec.appendChild(head);
+        sec.appendChild(body);
+        cont.appendChild(sec);
+      });
+    }
+    
+    renderDB();
+  </script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalle de Proyecto</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+      --surface0: #ccd0da; --surface1: #bcc0cc;
+      --text: #4c4f69; --subtext: #8c8fa1;
+      --green: #40a02b; --green-bg: #e5f4e3;
+      --blue: #1e66f5; --blue-bg: #e6eaf6;
+      --amber: #df8e1d; --amber-bg: #fdf3e5;
+      --red: #d20f39; --radius: 8px; --radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+        --surface0: #313244; --surface1: #45475a;
+        --text: #cdd6f4; --subtext: #a6adc8;
+        --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
+        --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
+        --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
+        --red: #f38ba8;
+      }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--base); color: var(--text); padding-bottom: 40px;
+    }
+
+    .hdr {
+      background: var(--mantle); border-bottom: 1px solid var(--crust);
+      padding: 16px 24px; display: flex; align-items: center; gap: 16px;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .back-btn {
+      background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--subtext);
+    }
+    .back-btn:hover { color: var(--text); }
+    .hdr-title { font-size: 18px; font-weight: 800; color: var(--text); flex: 1; }
+
+    .btn {
+      padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: opacity .15s; border: none; font-family: inherit;
+    }
+    .btn-blue { background: var(--blue); color: #fff; }
+    .btn-dark { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+    .btn:hover { opacity: 0.9; }
+
+    .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+    @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+    .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; }
+    .card-title { font-size: 14px; font-weight: 800; color: var(--subtext); text-transform: uppercase; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--crust); padding-bottom: 8px; }
+
+    .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .f-field { display: flex; flex-direction: column; gap: 6px; }
+    .f-field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+    .f-field input, .f-field select { background: var(--base); border: 1px solid var(--crust); padding: 8px 12px; border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px; width: 100%; box-sizing: border-box; min-height: 40px; }
+    .f-field input:focus, .f-field select:focus { outline: none; border-color: var(--blue); }
+
+    .drive-link { display: flex; align-items: center; gap: 8px; background: var(--surface0); padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 13px; margin-top: 16px; border: 1px solid var(--surface1); }
+    .drive-link:hover { background: var(--surface1); }
+
+    .prog-slider { width: 100%; cursor: pointer; }
+    .prog-val { font-size: 24px; font-weight: 800; color: var(--green); text-align: right; }
+
+    .timeline { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+    .tl-item { display: flex; gap: 12px; }
+    .tl-dot { width: 12px; height: 12px; background: var(--blue); border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .tl-content { background: var(--base); padding: 12px; border-radius: 8px; flex: 1; border: 1px solid var(--crust); }
+    .tl-date { font-size: 11px; color: var(--subtext); font-weight: 600; margin-bottom: 4px; }
+    .tl-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+
+    .milestones { display: flex; flex-direction: column; gap: 8px; }
+    .ms-item { display: flex; align-items: center; gap: 12px; background: var(--base); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--crust); }
+    .ms-chk { width: 18px; height: 18px; cursor: pointer; }
+    .ms-title { flex: 1; font-size: 13px; font-weight: 600; }
+    .ms-date { font-size: 12px; color: var(--subtext); }
+    .ms-delete { background: none; border: none; color: var(--red); cursor: pointer; opacity: 0.6; }
+    .ms-delete:hover { opacity: 1; }
+    .ms-add { margin-top: 8px; display: flex; gap: 8px; }
+    .ms-add input { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 12px; flex: 1; }
+
+  </style>
+</head>
+<body>
+
+  <div class="hdr">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div class="hdr-title" id="h-title">Cargando Proyecto...</div>
+    <button class="btn btn-blue" onclick="saveData()">Guardar Cambios</button>
+  </div>
+
+  <div class="main">
+    
+    <!-- Left Column -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- Info General -->
+      <div class="card">
+        <div class="card-title">Información General</div>
+        <div class="f-row">
+          <div class="f-field"><label>Código / Folio</label><input type="text" id="f-code"></div>
+          <div class="f-field"><label>Nombre del Proyecto</label><input type="text" id="f-name"></div>
+        </div>
+        <div class="f-row">
+          <div class="f-field"><label>Cliente / Contacto</label><select id="f-contact"></select></div>
+          <div class="f-field"><label>Estado</label>
+            <select id="f-status">
+              <option value="Planificación">Planificación</option>
+              <option value="En Producción">En Producción</option>
+              <option value="Terminado">Terminado / Entregado</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-row">
+          <div class="f-field"><label>Fecha Inicio</label><input type="date" id="f-start"></div>
+          <div class="f-field"><label>Fecha Fin (Estimada)</label><input type="date" id="f-end"></div>
+        </div>
+        
+        <div class="f-field" style="margin-top:12px;">
+          <label>Enlace a Carpeta de Google Drive</label>
+          <input type="text" id="f-drive" placeholder="https://drive.google.com/drive/folders/...">
+          <a href="#" id="l-drive" target="_blank" class="drive-link" style="display:none;">📁 Abrir Carpeta en Drive</a>
+        </div>
+      </div>
+
+      <!-- Progreso y Milestones -->
+      <div class="card">
+        <div class="card-title">Avance Manual y Fechas Clave</div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-size:13px; font-weight:700;">Porcentaje de Avance (Estimado)</div>
+          <div class="prog-val" id="p-val">0%</div>
+        </div>
+        <input type="range" id="f-progress" min="0" max="100" value="0" class="prog-slider" oninput="document.getElementById('p-val').textContent = this.value + '%'">
+
+        <div style="margin-top:24px; font-size:13px; font-weight:700; margin-bottom:12px;">Hitos / Fechas Importantes</div>
+        <div class="milestones" id="ms-list"></div>
+        
+        <div class="ms-add">
+          <input type="text" id="ms-new-title" placeholder="Ej: Pago de 1er anticipo">
+          <input type="date" id="ms-new-date" style="max-width:130px;">
+          <button class="btn btn-dark" style="padding:6px 12px; font-size:11px;" onclick="addMilestone()">Añadir</button>
+        </div>
+      </div>
+      
+      <!-- Cotizaciones -->
+      <div class="card">
+        <div class="card-title">
+          Cotizaciones
+          <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="newQuote()">+ Nueva Cot.</button>
+        </div>
+        <div id="quotes-list" style="display:flex; flex-direction:column; gap:12px;">
+          <!-- JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- Finanzas / Horas -->
+      <div class="card">
+        <div class="card-title">Asignación y Costos</div>
+        <div class="f-field" style="margin-bottom:12px;"><label>Valor Cotizado Total ($)</label><input type="number" id="f-val" step="any"></div>
+        <div class="f-field" style="margin-bottom:12px;"><label>Pagos / Anticipos Recibidos ($)</label><input type="number" id="f-pay" step="any"></div>
+        <div class="f-field" style="margin-bottom:12px;"><label>Horas Estimadas de Trabajo</label><input type="number" id="f-hrs-est" step="any"></div>
+        <div class="f-field"><label>Pies Tablares Estimados (Madera)</label><input type="number" id="f-wood-est" step="any"></div>
+      </div>
+
+      <!-- Timeline Logs -->
+      <div class="card">
+        <div class="card-title">Timeline de Trabajo (Bitácora)</div>
+        <div style="font-size:12px; color:var(--subtext);">Historial de horas invertidas según el reporte de producción diaria.</div>
+        <div class="timeline" id="tl-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="db.js"></script>
+  <script>
+    let projId = null;
+    let projData = null;
+
+    function goBack() { window.location.href = 'proyectos.html'; }
+
+    function loadURLData() {
+      const params = new URLSearchParams(window.location.search);
+      if(params.get('id')) {
+        projId = params.get('id');
+      } else if(params.get('new')){
+        projId = null; // means new project
+      } else {
+        goBack();
+      }
+    }
+
+    function renderSelects() {
+      const d = window.DB.get();
+      const sel = document.getElementById('f-contact');
+      sel.innerHTML = '<option value="">-- Sin contacto --</option>' + 
+        d.contacts.map(c => `<option value="${c.id}">${c.name} (${c.type})</option>`).join('');
+    }
+
+    function renderMilestones() {
+      const lst = document.getElementById('ms-list');
+      lst.innerHTML = '';
+      if(!projData.milestones) projData.milestones = [];
+      projData.milestones.sort((a,b) => new Date(a.date) - new Date(b.date));
+      
+      projData.milestones.forEach((m, i) => {
+        const item = document.createElement('div');
+        item.className = 'ms-item';
+        item.innerHTML = `
+          <input type="checkbox" class="ms-chk" ${m.done ? 'checked' : ''} onchange="toggleMilestone(${i}, this.checked)">
+          <div class="ms-title" style="text-decoration:${m.done?'line-through':'none'}; color:${m.done?'var(--subtext)':'var(--text)'}">${m.title}</div>
+          <div class="ms-date">${m.date || ''}</div>
+          <button class="ms-delete" onclick="deleteMilestone(${i})">✕</button>
+        `;
+        lst.appendChild(item);
+      });
+    }
+
+    function addMilestone() {
+      const title = document.getElementById('ms-new-title').value.trim();
+      const date = document.getElementById('ms-new-date').value;
+      if(!title) return;
+      projData.milestones.push({ title, date, done: false });
+      document.getElementById('ms-new-title').value = '';
+      document.getElementById('ms-new-date').value = '';
+      renderMilestones();
+    }
+
+    function toggleMilestone(i, checked) {
+      if(projData.milestones[i]) {
+        projData.milestones[i].done = checked;
+        renderMilestones();
+      }
+    }
+
+    function deleteMilestone(i) {
+      projData.milestones.splice(i, 1);
+      renderMilestones();
+    }
+
+    function detectDriveLink() {
+      const val = document.getElementById('f-drive').value.trim();
+      const lnk = document.getElementById('l-drive');
+      if(val && val.startsWith('http')) {
+        lnk.href = val;
+        lnk.style.display = 'flex';
+      } else {
+        lnk.style.display = 'none';
+      }
+    }
+    document.getElementById('f-drive').addEventListener('input', detectDriveLink);
+
+    function renderQuotes() {
+      const d = window.DB.get();
+      const qList = document.getElementById('quotes-list');
+      if(!projId) {
+        qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>';
+        return;
+      }
+      const quotes = d.quotations ? d.quotations.filter(q => q.projectId === projId) : [];
+      if(quotes.length === 0) {
+        qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay cotizaciones registradas.</div>';
+        return;
+      }
+      
+      quotes.sort((a,b) => new Date(b.date) - new Date(a.date));
+      let hs = '';
+      
+      const stColor = {
+        'Activa': 'var(--green)',
+        'Cancelada': 'var(--red)',
+        'En Pausa': 'var(--amber)',
+        'Esperando Autorización': 'var(--blue)'
+      };
+
+      quotes.forEach(q => {
+        hs += `
+          <div style="background:var(--base); border:1px solid var(--crust); border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <strong style="font-size:14px;">Cotización ${q.id}</strong>
+              <span style="font-size:11px; font-weight:700; color:${stColor[q.status]||'var(--text)'};">${q.status}</span>
+            </div>
+            <div style="font-size:12px; color:var(--subtext); margin-bottom:8px;">
+              Fecha: ${q.date} &nbsp; | &nbsp; Monto: $${(q.total||0).toLocaleString('es-MX', {minimumFractionDigits:2})}
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="window.open('cotizacion.html?viewId=${q.id}','_blank')">Imprimir PDF</button>
+              <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reviseQuote('${q.id}')">Realizar Cambio</button>
+              ${q.status === 'Esperando Autorización' ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--green);" onclick="acceptQuote('${q.id}')">Aceptar</button>` : ''}
+              ${q.status !== 'Cancelada' ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="cancelQuote('${q.id}')">Cancelar</button>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      qList.innerHTML = hs;
+    }
+
+    function newQuote() {
+      if(!projId) return alert('Primero guarda el proyecto.');
+      window.location.href = 'cotizacion.html?projectId=' + projId;
+    }
+
+    function reviseQuote(qId) {
+      if(!projId) return;
+      window.location.href = 'cotizacion.html?projectId=' + projId + '&cloneQuoteId=' + qId;
+    }
+
+    function acceptQuote(qId) {
+      const d = window.DB.get();
+      const idx = d.quotations.findIndex(q => q.id === qId);
+      if(idx > -1) {
+        // Find existing 'Activa' and cancel or pause it? Wait, rule: accepting new quote cancels old ones that are in pause?
+        // Or just let's mark it Activa and mark others Cancelada since only one should be active.
+        d.quotations.filter(q => q.projectId === projId && q.id !== qId && q.status === 'En Pausa').forEach(q => q.status = 'Cancelada');
+        
+        d.quotations[idx].status = 'Activa';
+        
+        // Update project total value if desired
+        const projIdx = d.projects.findIndex(p => p.id === projId);
+        if(projIdx > -1) {
+          d.projects[projIdx].totalValue = d.quotations[idx].total;
+          
+          let mPt = 0, hrs = 0;
+          if(d.quotations[idx].pieces) {
+             d.quotations[idx].pieces.forEach(p => {
+                let t = 0;
+                Object.values(p.hrs||{}).forEach(v => t += v);
+                hrs += t;
+                (p.mats||[]).forEach(m => { if(m.u==='pt' || m.u==='pza' || m.u.includes('TAB')) mPt += (m.qty||0)*2 });
+             });
+          }
+          d.projects[projIdx].estimatedHours = hrs;
+          d.projects[projIdx].estimatedWoodPt = mPt;
+        }
+        
+        window.DB.save(d);
+        renderQuotes();
+      }
+    }
+    
+    function cancelQuote(qId) {
+      const d = window.DB.get();
+      const idx = d.quotations.findIndex(q => q.id === qId);
+      if(idx > -1) {
+        d.quotations[idx].status = 'Cancelada';
+        window.DB.save(d);
+        renderQuotes();
+      }
+    }
+
+    function renderTimeline() {
+      const d = window.DB.get();
+      const tlList = document.getElementById('tl-list');
+      if(!projData || !projData.code) {
+        tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>';
+        return;
+      }
+      
+      let logs = [];
+      // Combine all attendance that mentions this project
+      d.attendance.forEach(att => {
+        let workersInProj = [];
+        let totalHrsDay = 0;
+        att.workers.forEach(w => {
+          let pLogs = w.projects.filter(p => p.p === projData.code);
+          if(pLogs.length > 0) {
+            let h = pLogs.reduce((sum, pl) => sum + parseFloat(pl.t || 0), 0);
+            let descs = pLogs.map(pl => pl.desc).filter(Boolean).join(', ');
+            totalHrsDay += h;
+            const wName = (d.workers.find(wk => wk.id === w.wId) || {}).name || w.wId;
+            workersInProj.push(`${wName} (${h}h)${descs ? ': '+descs : ''}`);
+          }
+        });
+        
+        if(workersInProj.length > 0) {
+          logs.push({
+            date: att.date,
+            totalHrsDay,
+            details: workersInProj.join('<br>')
+          });
+        }
+      });
+
+      logs.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      if(logs.length === 0) {
+        tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay registros de horas trabajadas para este proyecto en la bitácora aún.</div>';
+        return;
+      }
+
+      tlList.innerHTML = logs.map(l => `
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-content">
+            <div class="tl-date">${l.date} — ${l.totalHrsDay.toFixed(1)} hrs invertidas</div>
+            <div class="tl-text">${l.details}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function init() {
+      loadURLData();
+      renderSelects();
+      
+      const d = window.DB.get();
+      if(projId) {
+        projData = d.projects.find(p => p.id === projId) || null;
+      }
+      
+      if(!projData) {
+        projData = {
+          code: 'PRY-' + Math.floor(Math.random()*1000),
+          name: '',
+          status: 'Planificación',
+          startDate: new Date().toISOString().slice(0,10),
+          progress: 0,
+          milestones: []
+        };
+        document.getElementById('h-title').textContent = 'Nuevo Proyecto';
+      } else {
+        document.getElementById('h-title').textContent = `${projData.code} - ${projData.name}`;
+      }
+
+      // Populate forms
+      document.getElementById('f-code').value = projData.code || '';
+      document.getElementById('f-name').value = projData.name || '';
+      document.getElementById('f-contact').value = projData.contactId || '';
+      document.getElementById('f-status').value = projData.status || 'Planificación';
+      document.getElementById('f-start').value = projData.startDate || '';
+      document.getElementById('f-end').value = projData.endDate || '';
+      document.getElementById('f-drive').value = projData.driveLink || '';
+      
+      document.getElementById('f-progress').value = projData.progress || 0;
+      document.getElementById('p-val').textContent = (projData.progress||0) + '%';
+      
+      document.getElementById('f-val').value = projData.totalValue || '';
+      document.getElementById('f-pay').value = projData.payments || '';
+      document.getElementById('f-hrs-est').value = projData.estimatedHours || '';
+      document.getElementById('f-wood-est').value = projData.estimatedWoodPt || '';
+      
+      detectDriveLink();
+      renderMilestones();
+      renderTimeline();
+      renderQuotes();
+    }
+
+    function saveData() {
+      const code = document.getElementById('f-code').value.trim();
+      const name = document.getElementById('f-name').value.trim();
+      
+      if(!code || !name) return alert('El código y el nombre son obligatorios.');
+
+      projData.code = code;
+      projData.name = name;
+      projData.contactId = document.getElementById('f-contact').value;
+      projData.status = document.getElementById('f-status').value;
+      projData.startDate = document.getElementById('f-start').value;
+      projData.endDate = document.getElementById('f-end').value;
+      projData.driveLink = document.getElementById('f-drive').value.trim();
+      
+      projData.progress = parseInt(document.getElementById('f-progress').value) || 0;
+      
+      projData.totalValue = parseFloat(document.getElementById('f-val').value) || 0;
+      projData.payments = parseFloat(document.getElementById('f-pay').value) || 0;
+      projData.estimatedHours = parseFloat(document.getElementById('f-hrs-est').value) || 0;
+      projData.estimatedWoodPt = parseFloat(document.getElementById('f-wood-est').value) || 0;
+
+      if(projId) {
+        window.DB.updateProject(projData);
+        alert('Proyecto actualizado correctamente.');
+        document.getElementById('h-title').textContent = `${projData.code} - ${projData.name}`;
+      } else {
+        projData.id = 'p' + Date.now() + Math.random();
+        projId = projData.id;
+        window.DB.addProject(projData);
+        alert('Proyecto creado exitosamente.');
+        document.getElementById('h-title').textContent = `${projData.code} - ${projData.name}`;
+      }
+      
+      renderTimeline(); // reload timeline to catch new code if changed
+      renderQuotes();
+    }
+
+    init();
+  </script>
+</body>
+</html>

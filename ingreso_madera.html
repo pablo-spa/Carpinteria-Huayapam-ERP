@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escanear Madera — Huayapam ERP</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --blue: #1e66f5; --amber: #df8e1d;
+  --radius: 10px; --radius-lg: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --blue: #8caaee; --amber: #f9e2af;
+  }
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); padding-bottom: 60px; min-height: 100vh; }
+
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; position: sticky; top: 0; z-index: 10; }
+.hdr h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+
+.main { max-width: 600px; margin: 24px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
+
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: all 0.3s ease; }
+
+.c-title { font-size: 13px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; border-bottom: 1px solid var(--crust); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.input-grp { display: flex; flex-direction: column; gap: 6px; }
+.lbl { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+select.inp, input.inp-txt { padding: 10px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 14px; font-weight: 500; font-family: inherit; width: 100%; transition: border-color .15s; }
+select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue); }
+
+.btn { width: 100%; padding: 14px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s; border: none; font-family: inherit; }
+.btn-blue { background: var(--blue); color: var(--base); }
+.btn-dark { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.btn:hover { opacity: 0.9; }
+
+/* Inactive State for Scan Card */
+#scan-card { opacity: 0.4; pointer-events: none; }
+
+.dim-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; background: var(--base); padding: 16px; border-radius: 8px; border: 1px solid var(--surface0); margin-bottom: 20px; }
+.dim-col { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.dim-col label { font-size: 10px; color: var(--subtext); font-weight: 700; text-transform: uppercase; }
+.dim-col input { width: 100%; padding: 8px; border: 1px solid var(--crust); border-radius: 6px; background: var(--mantle); color: var(--text); font-size: 16px; font-weight: 600; text-align: center; font-family: inherit; }
+.dim-col input:focus { outline: none; border-color: var(--blue); }
+
+.bcode-inp { width: 100%; border: 2px solid var(--surface1); border-radius: 8px; background: var(--base); color: var(--text); font-size: 20px; font-weight: 700; padding: 12px 16px; font-family: ui-monospace, monospace; text-align: center; letter-spacing: 0.1em; transition: all .15s; }
+.bcode-inp:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,102,245,0.2); }
+.bcode-inp::placeholder { color: var(--surface1); font-weight: 400; }
+
+.pt-res { text-align: center; margin-bottom: 20px; }
+.pt-big { font-size: 32px; font-weight: 800; color: var(--green); line-height: 1; }
+.pt-sub { font-size: 11px; font-weight: 700; color: var(--subtext); margin-top: 4px; text-transform: uppercase; }
+
+/* History */
+.hist { margin-top: 16px; }
+.h-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; margin-bottom: 8px; font-size: 13px; animation: popIn 0.2s ease; }
+@keyframes popIn { from { transform: scale(0.95); opacity:0; } to { transform: scale(1); opacity:1; } }
+.h-id { font-family: monospace; font-weight: 700; color: var(--text); font-size: 14px; }
+.h-det { color: var(--subtext); font-size: 11px; }
+.h-pt { color: var(--green); font-weight: 800; font-size: 14px; }
+
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
+    <h1>Ingreso al Inventario Rápidazo</h1>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- STEP 1: Context -->
+  <div class="card" id="ctx-card">
+    <div class="c-title">Paso 1: Contexto del Ingreso <span id="ctx-status">🔓</span></div>
+    
+    <div class="row-2">
+      <div class="input-grp">
+        <label class="lbl">Tipo de Pieza</label>
+        <select class="inp" id="ctx-format" tabindex="1"></select>
+      </div>
+      <div class="input-grp">
+        <label class="lbl">Especie / Material</label>
+        <select class="inp" id="ctx-species" tabindex="1"></select>
+      </div>
+      <div class="input-grp">
+        <label class="lbl">Identificador de Lote</label>
+        <input type="text" id="ctx-lote" class="inp-txt" placeholder="Ej: L-805" value="L-805" tabindex="2">
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="input-grp">
+        <label class="lbl">Calidad</label>
+        <select class="inp" id="ctx-quality" tabindex="3"></select>
+      </div>
+      <div class="input-grp">
+        <label class="lbl">Ubicación Destino</label>
+        <select class="inp" id="ctx-loc" tabindex="4"></select>
+      </div>
+      <div class="input-grp">
+        <label class="lbl">Fecha de Entrada</label>
+        <input type="date" class="inp-txt" id="ctx-date" tabindex="5">
+      </div>
+    </div>
+
+    <button class="btn btn-blue" id="btn-lock" onclick="toggleContext()" tabindex="5">Fijar Contexto e Iniciar Escaneo</button>
+  </div>
+
+  <!-- STEP 2: Dimensions & Scanner -->
+  <div class="card" id="scan-card">
+    <div class="c-title">Paso 2: Dimensiones y Etiqueta</div>
+
+    <div class="pt-res">
+      <div class="pt-big" id="pt-val">6.00</div>
+      <div class="pt-sub">Pies Tablares (Calculado)</div>
+    </div>
+
+    <div class="dim-grid">
+      <div class="dim-col"><label>Grosor (plg)</label><input type="number" id="dim-t" value="1.5" step="0.5" oninput="calc()" tabindex="6"></div>
+      <div class="dim-col"><label>Ancho (plg)</label><input type="number" id="dim-w" value="6" step="0.5" oninput="calc()" tabindex="7"></div>
+      <div class="dim-col"><label>Largo (pies)</label><input type="number" id="dim-l" value="8" step="1" oninput="calc()" tabindex="8"></div>
+    </div>
+
+    <div class="input-grp">
+      <label class="lbl" style="text-align:center;">Escanea la etiqueta / Ingresa ID & Presiona Enter</label>
+      <input type="text" class="bcode-inp" id="barcode" placeholder="|||| ||| |||||" onkeydown="handleScan(event)" tabindex="9">
+    </div>
+
+  </div>
+
+  <!-- History -->
+  <div class="hist">
+    <div class="c-title" style="border:none; margin:0;">Tablas ingresadas (Esta sesión)</div>
+    <div id="hist-list"></div>
+  </div>
+
+</div>
+
+<script src="db.js"></script>
+<script>
+  let isLocked = false;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const d = window.DB.get();
+    document.getElementById('ctx-format').innerHTML = (d.wood_formats || []).map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-species').innerHTML = (d.wood_types || []).map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-quality').innerHTML = (d.wood_quality || []).map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-loc').innerHTML = (d.wood_locations || []).map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-date').value = new Date().toISOString().split('T')[0];
+  });
+
+  function toggleContext() {
+    isLocked = !isLocked;
+    const ctx = document.getElementById('ctx-card');
+    const scan = document.getElementById('scan-card');
+    const btn = document.getElementById('btn-lock');
+    const status = document.getElementById('ctx-status');
+
+    ctx.querySelectorAll('input, select').forEach(el => el.disabled = isLocked);
+
+    if (isLocked) {
+      scan.style.opacity = '1';
+      scan.style.pointerEvents = 'auto';
+      btn.className = 'btn btn-dark';
+      btn.textContent = 'Desbloquear y Cambiar Contexto';
+      status.textContent = '🔒 Fijo';
+      document.getElementById('barcode').focus();
+    } else {
+      scan.style.opacity = '0.4';
+      scan.style.pointerEvents = 'none';
+      btn.className = 'btn btn-blue';
+      btn.textContent = 'Fijar Contexto e Iniciar Escaneo';
+      status.textContent = '🔓';
+    }
+  }
+
+  function calc() {
+    const t = parseFloat(document.getElementById('dim-t').value) || 0;
+    const w = parseFloat(document.getElementById('dim-w').value) || 0;
+    const l = parseFloat(document.getElementById('dim-l').value) || 0;
+    const pt = (t * w * l) / 12;
+    document.getElementById('pt-val').textContent = pt > 0 ? pt.toFixed(2) : '0.00';
+  }
+
+  function handleScan(e) {
+    if (e.key === 'Enter') {
+      const code = document.getElementById('barcode').value.trim();
+      if (!code) return;
+
+      const pt = document.getElementById('pt-val').textContent;
+      const fmtType = document.getElementById('ctx-format').value;
+      const sp = document.getElementById('ctx-species').value;
+      const lt = document.getElementById('ctx-lote').value;
+      const ql = document.getElementById('ctx-quality').value;
+      const dt = document.getElementById('ctx-date').value;
+      const loc = document.getElementById('ctx-loc').value;
+      const thick = parseFloat(document.getElementById('dim-t').value) || 0;
+      const width = parseFloat(document.getElementById('dim-w').value) || 0;
+      const length = parseFloat(document.getElementById('dim-l').value) || 0;
+      
+      // Save to DB
+      window.DB.addWood({
+        code: code,
+        lote: lt,
+        format: fmtType,
+        species: sp,
+        t: thick,
+        w: width,
+        l: length,
+        pt: parseFloat(pt),
+        quality: ql,
+        entryDate: dt,
+        location: loc
+      });
+
+      // Add to UI history
+      const list = document.getElementById('hist-list');
+      const el = document.createElement('div');
+      el.className = 'h-item';
+      el.innerHTML = `
+        <div>
+          <div class="h-id">${code}</div>
+          <div class="h-det">${fmtType} | ${sp} (Lote: ${lt})</div>
+        </div>
+        <div class="h-pt">+${pt} pt</div>
+      `;
+      list.prepend(el);
+
+      // Reset scanner keeping dimensions
+      document.getElementById('barcode').value = '';
+      
+      // Optional: Flash background green quickly to confirm
+      const inp = document.getElementById('barcode');
+      inp.style.backgroundColor = 'var(--green-bg)';
+      setTimeout(() => inp.style.backgroundColor = 'var(--base)', 150);
+    }
+  }
+
+  calc();
+</script>
+</body>
+</html>

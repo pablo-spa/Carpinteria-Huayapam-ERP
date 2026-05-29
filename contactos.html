@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contactos CRM — Huayapam ERP</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --green-bg: rgba(64,160,43,0.15);
+  --blue: #1e66f5; --blue-bg: rgba(30,102,245,0.15);
+  --radius: 10px; --radius-lg: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
+    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
+  }
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); padding-bottom: 40px; }
+
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
+.hdr h1 { font-size: 18px; font-weight: 700; color: var(--text); padding-right: 16px; border-right: 1px solid var(--crust); margin: 0; }
+
+.search-box { flex: 1; display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 8px 12px; min-width: 200px; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-family: inherit; font-size: 14px; margin-left: 8px; }
+
+.filters { display: flex; gap: 8px; overflow-x: auto; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); }
+.filters::-webkit-scrollbar { display: none; }
+.f-btn { padding: 6px 14px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; }
+.f-btn:hover { background: var(--surface0); color: var(--text); }
+.f-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
+.btn:hover { background: var(--surface0); border-color: var(--surface1); }
+.btn-blue { background: var(--blue); color: var(--base); border-color: var(--blue); }
+.btn-blue:hover { opacity: 0.9; background: var(--blue); }
+
+.main { max-width: 1000px; margin: 24px auto; padding: 0 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: all 0.2s; cursor: pointer; }
+.card:hover { transform: translateY(-2px); border-color: var(--surface0); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+.c-head { display: flex; align-items: center; gap: 12px; }
+.c-avt { width: 42px; height: 42px; border-radius: 50%; background: var(--surface0); color: var(--text); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid var(--surface1); flex-shrink: 0; }
+.c-title { flex: 1; }
+.c-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.c-type { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--subtext); letter-spacing: 0.05em; }
+
+.c-body { font-size: 13px; color: var(--subtext); display: flex; flex-direction: column; gap: 6px; }
+.c-row { display: flex; align-items: flex-start; gap: 8px; }
+.c-row .ico { opacity: 0.6; font-size: 12px; margin-top: 2px; }
+
+.c-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; pointer-events: none; }
+.tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: var(--surface0); color: var(--text); }
+.tag-vip { background: var(--blue-bg); color: var(--blue); }
+
+/* Modal */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(2px); }
+.modal { background: var(--base); width: 100%; max-width: 500px; border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; animation: flyIn 0.2s ease-out; }
+@keyframes flyIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.m-hdr { padding: 16px 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: space-between; align-items: center; }
+.m-hdr h2 { font-size: 16px; font-weight: 800; }
+.m-close { cursor: pointer; background: transparent; border: none; font-size: 20px; color: var(--subtext); }
+.m-close:hover { color: var(--text); }
+.m-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.m-field { display: flex; flex-direction: column; gap: 6px; }
+.m-field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+.m-field input, .m-field textarea, .m-field select { background: var(--mantle); border: 1px solid var(--crust); padding: 10px 12px; border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; box-sizing: border-box; min-height: 40px; }
+.m-field input:focus, .m-field textarea:focus, .m-field select:focus { outline: none; border-color: var(--blue); }
+.m-foot { padding: 16px 24px; border-top: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: flex-end; gap: 12px; }
+
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Directorio CRM</h1>
+  <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar clientes o proveedores..."></div>
+  <button class="btn btn-blue" onclick="openModal()">+ Nuevo Contacto</button>
+</div>
+
+<div class="filters">
+  <div class="f-btn act" onclick="filterData('all')">Todos</div>
+  <div class="f-btn" onclick="filterData('Cliente')">Solo Clientes</div>
+  <div class="f-btn" onclick="filterData('Proveedor')">Solo Proveedores</div>
+  <div class="f-btn" onclick="filterData('Empleado')">Solo Empleados</div>
+  <div class="f-btn" onclick="filterData('VIP')">Etiqueta VIP</div>
+</div>
+
+<div class="main">
+  <div class="grid" id="c-grid">
+    <!-- Rendered by JS -->
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="mod-overlay">
+  <div class="modal">
+    <div class="m-hdr">
+      <h2 id="mod-title" style="display:flex; align-items:center; gap:12px; flex:1;">
+        <span>Contacto</span>
+        <button id="m-btn-edit" class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="enableEditMode()">✏️ Editar</button>
+      </h2>
+      <button class="m-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="m-body">
+      <input type="hidden" id="m-id">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="m-field">
+          <label>Tipo</label>
+          <select id="m-type">
+            <option value="Cliente">Cliente</option>
+            <option value="Proveedor">Proveedor</option>
+            <option value="Empleado">Empleado</option>
+          </select>
+        </div>
+        <div class="m-field"><label>Etiquetas (separadas por coma)</label><input type="text" id="m-tags" placeholder="VIP, Frecuente"></div>
+      </div>
+      <div class="m-field"><label>Nombre de Empresa / Contacto</label><input type="text" id="m-name"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="m-field"><label>Teléfono</label><input type="text" id="m-phone"></div>
+        <div class="m-field"><label>Email</label><input type="email" id="m-email"></div>
+      </div>
+      <div class="m-field"><label>Persona de Enlace</label><input type="text" id="m-person"></div>
+      <div class="m-field"><label>Notas / Dirección</label><textarea rows="3" id="m-addr"></textarea></div>
+      <div class="m-field" style="margin-top:8px;">
+        <label>Campos Adicionales (Web, Tel 2, Banco, etc.)</label>
+        <div id="custom-fields-container" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
+        <button id="m-btn-add-cf" class="btn btn-dark" style="align-self:flex-start; padding:6px 10px; font-size:11px;" onclick="addCustomField()">+ Añadir campo</button>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn" onclick="closeModal()">Cerrar</button>
+      <button id="m-btn-save" class="btn btn-blue" onclick="saveContact()">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+  let currentFilter = 'all';
+
+  document.getElementById('srch').addEventListener('input', applyFilters);
+
+  function getMergedContacts() {
+    const d = window.DB.get();
+    let merged = [...(d.contacts || [])];
+    if (d.workers) {
+      d.workers.forEach(w => {
+        merged.push({
+          _isWorker: true,
+          id: w.id,
+          name: w.name,
+          type: 'Empleado',
+          tags: [w.role],
+          person: w.nss && w.nss !== '-' ? 'NSS: '+w.nss : '',
+          phone: w.phone,
+          email: '',
+          address: w.emergencyContact ? 'Eme: '+w.emergencyContact : ''
+        });
+      });
+    }
+    return merged;
+  }
+
+  function renderContacts() {
+    const allContacts = getMergedContacts();
+    const grid = document.getElementById('c-grid');
+    grid.innerHTML = allContacts.map(c => {
+      const avt = c.name ? c.name.substring(0,2).toUpperCase() : '??';
+      const isProv = c.type === 'Proveedor';
+      const isEmp = c.type === 'Empleado';
+      let typeClr = isProv ? 'color:var(--green)' : '';
+      if (isEmp) typeClr = 'color:var(--mauve)';
+      
+      const tagsHtm = (c.tags||[]).map(t => {
+        if(t && t.toLowerCase()==='vip') return `<span class="tag tag-vip">VIP</span>`;
+        if(t) return `<span class="tag">${t}</span>`;
+        return '';
+      }).join('');
+      
+      const phoneHtm = c.phone ? `<div class="c-row"><span class="ico">📞</span> ${c.phone}</div>` : '';
+      const emailHtm = c.email ? `<div class="c-row"><span class="ico">📧</span> ${c.email}</div>` : '';
+      const addrHtm  = c.address ? `<div class="c-row"><span class="ico">📍</span> ${c.address}</div>` : '';
+      const psnHtm   = c.person ? `<div class="c-row"><span class="ico">👤</span> ${c.person}</div>` : '';
+      const cfHtm    = (c.customFields||[]).map(cf => `<div class="c-row"><span class="ico">🔹</span> <span><b>${cf.lbl}:</b> ${cf.val}</span></div>`).join('');
+
+      return `
+        <div class="card" data-type="${c.type}" data-tags="${(c.tags||[]).join(' ')}" onclick="openModal('${c.id}')">
+          <div class="c-head">
+            <div class="c-avt">${avt}</div>
+            <div class="c-title"><div class="c-name">${c.name}</div><div class="c-type" style="${typeClr}">${c.type}</div></div>
+          </div>
+          <div class="c-body">
+            ${psnHtm}${phoneHtm}${emailHtm}${addrHtm}${cfHtm}
+          </div>
+          <div class="c-tags">${tagsHtm}</div>
+        </div>
+      `;
+    }).join('');
+    applyFilters();
+  }
+
+  function filterData(type) {
+    currentFilter = type;
+    document.querySelectorAll('.f-btn').forEach(b => {
+      b.classList.remove('act');
+      if (b.textContent.includes(type) || (type==='all' && b.textContent==='Todos')) b.classList.add('act');
+    });
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const term = document.getElementById('srch').value.toLowerCase();
+    document.querySelectorAll('.card').forEach(c => {
+      const isMatchStr = c.textContent.toLowerCase().includes(term);
+      const typ = c.getAttribute('data-type');
+      const tags = c.getAttribute('data-tags');
+      let isMatchCat = true;
+      if (currentFilter !== 'all') {
+        if (currentFilter === 'VIP' && !tags.includes('VIP')) isMatchCat = false;
+        else if (currentFilter !== 'VIP' && typ !== currentFilter) isMatchCat = false;
+      }
+      c.style.display = (isMatchStr && isMatchCat) ? 'flex' : 'none';
+    });
+  }
+
+  function setEditMode(isEdit) {
+    const inputs = document.querySelectorAll('#mod-overlay input, #mod-overlay select, #mod-overlay textarea');
+    inputs.forEach(i => {
+      // Don't disable hidden inputs or we might lose their value easily
+      if(i.type !== 'hidden') i.disabled = !isEdit;
+    });
+    
+    document.getElementById('m-btn-edit').style.display = isEdit ? 'none' : 'block';
+    document.getElementById('m-btn-save').style.display = isEdit ? 'block' : 'none';
+    document.getElementById('m-btn-add-cf').style.display = isEdit ? 'block' : 'none';
+    
+    const rmBtns = document.querySelectorAll('.cf-rm-btn');
+    rmBtns.forEach(b => b.style.display = isEdit ? 'block' : 'none');
+  }
+
+  function enableEditMode() {
+    setEditMode(true);
+  }
+
+  function openModal(id) {
+    document.getElementById('mod-overlay').style.display = 'flex';
+    document.getElementById('custom-fields-container').innerHTML = '';
+
+    if(id) {
+      const allContacts = getMergedContacts();
+      const c = allContacts.find(x => x.id === id);
+      document.getElementById('m-id').value = c.id;
+      document.getElementById('m-name').value = c.name || '';
+      document.getElementById('m-type').value = c.type || 'Cliente';
+      document.getElementById('m-tags').value = (c.tags||[]).join(', ');
+      document.getElementById('m-phone').value = c.phone || '';
+      document.getElementById('m-email').value = c.email || '';
+      document.getElementById('m-person').value = c.person || '';
+      document.getElementById('m-addr').value = c.address || '';
+      if(c.customFields) c.customFields.forEach(cf => addCustomField(cf.lbl, cf.val));
+      setEditMode(false);
+      
+      // If it's a worker, don't allow editing from here
+      if (c._isWorker || c.type === 'Empleado') {
+        document.getElementById('m-btn-edit').style.display = 'none';
+        document.getElementById('m-btn-save').style.display = 'none';
+      }
+    } else {
+      document.getElementById('m-id').value = '';
+      document.getElementById('m-name').value = '';
+      document.getElementById('m-type').value = 'Cliente';
+      document.getElementById('m-tags').value = '';
+      document.getElementById('m-phone').value = '';
+      document.getElementById('m-email').value = '';
+      document.getElementById('m-person').value = '';
+      document.getElementById('m-addr').value = '';
+      setEditMode(true);
+    }
+  }
+
+  function closeModal() {
+    document.getElementById('mod-overlay').style.display = 'none';
+  }
+
+  function saveContact() {
+    const id = document.getElementById('m-id').value;
+    
+    const customFields = [];
+    document.querySelectorAll('#custom-fields-container > div').forEach(row => {
+      const lbl = row.querySelector('.cf-lbl').value.trim();
+      const val = row.querySelector('.cf-val').value.trim();
+      if(lbl && val) customFields.push({lbl, val});
+    });
+
+    const c = {
+      name: document.getElementById('m-name').value.trim(),
+      type: document.getElementById('m-type').value,
+      tags: document.getElementById('m-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+      phone: document.getElementById('m-phone').value.trim(),
+      email: document.getElementById('m-email').value.trim(),
+      person: document.getElementById('m-person').value.trim(),
+      address: document.getElementById('m-addr').value.trim(),
+      customFields: customFields
+    };
+    if(!c.name) return alert('El nombre es obligatorio');
+    
+    if(id) {
+      c.id = id;
+      window.DB.updateContact(c);
+    } else {
+      window.DB.addContact(c);
+    }
+    closeModal();
+    renderContacts();
+  }
+
+  function addCustomField(lbl = '', val = '') {
+    const cf = document.getElementById('custom-fields-container');
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.innerHTML = `
+      <input type="text" class="cf-lbl" placeholder="Etiq (ej. Web)" value="${lbl}" style="width:110px; background:var(--mantle); border:1px solid var(--crust); padding:8px; border-radius:6px; color:var(--text); font-size:13px; font-family:inherit;">
+      <input type="text" class="cf-val" placeholder="Valor" value="${val}" style="flex:1; background:var(--mantle); border:1px solid var(--crust); padding:8px; border-radius:6px; color:var(--text); font-size:13px; font-family:inherit;">
+      <button class="cf-rm-btn" onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:16px;">✕</button>
+    `;
+    cf.appendChild(row);
+    // Inherit the disabled state if we are currently in view mode
+    const isEdit = document.getElementById('m-btn-edit').style.display === 'none';
+    if(!isEdit) {
+      row.querySelectorAll('input').forEach(i => i.disabled = true);
+      row.querySelector('.cf-rm-btn').style.display = 'none';
+    }
+  }
+
+  renderContacts();
+</script>
+</body>
+</html>

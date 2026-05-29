@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoja de Pedido</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --blue: #1e66f5; --green: #40a02b; --red: #d20f39;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --blue: #8caaee; --green: #a6da95; --red: #f38ba8;
+  }
+}
+body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding-bottom: 80px; }
+.hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; }
+.main { max-width: 800px; margin: 24px auto; padding: 24px; background: var(--mantle); border-radius: 12px; border: 1px solid var(--crust); }
+.field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.field label { font-size: 13px; font-weight: 700; color: var(--subtext); }
+.field input, .field select, .field textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 14px; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); }
+.btn { padding: 10px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: opacity .15s; }
+.btn:hover { opacity: .8; }
+.btn-blue { background: var(--blue); }
+.items-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.items-table th, .items-table td { padding: 10px; text-align: left; border-bottom: 1px solid var(--crust); font-size: 14px; }
+.items-table th { font-weight: 700; color: var(--subtext); font-size: 12px; text-transform: uppercase; }
+.items-table input, .items-table select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); }
+.items-table input:focus { outline: none; border-color: var(--blue); }
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <h2 style="font-size: 18px;">Hoja de Pedido (Petición)</h2>
+  </div>
+  <button class="btn btn-blue" onclick="save()">↗ Enviar a Confirmación</button>
+</div>
+<div class="main">
+  <div class="field">
+    <label>Proyecto / Destino</label>
+    <select id="proj">
+      <option value="STOCK">General (Stock Almacén)</option>
+      <option value="PRY-01">Proyecto PRY-01</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Notas o justificación</label>
+    <textarea id="notes" rows="3" placeholder="Ej. Material requerido para armar cocina según planos..."></textarea>
+  </div>
+  <h3 style="margin-top:24px; margin-bottom:8px; font-size:15px; color:var(--text);">Materiales Solicitados</h3>
+  
+  <datalist id="matsList"></datalist>
+
+  <table class="items-table">
+    <thead><tr><th style="width:50%">Material</th><th style="width:25%">Cantidad</th><th style="width:25%">Unidad</th></tr></thead>
+    <tbody id="itemsList">
+      <tr>
+        <td><input type="text" list="matsList" placeholder="Empezar a escribir... Ej. Tornillo"></td>
+        <td><input type="number" min="1" placeholder="0"></td>
+        <td>
+          <select>
+            <option value="pza">Pieza</option><option value="caja">Caja</option><option value="mt">Metros</option><option value="gln">Galón</option>
+          </select>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <button class="btn" style="background:var(--surface0); color:var(--text); margin-top:16px;" onclick="add()">+ Añadir renglón</button>
+</div>
+
+<script src="db.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const d = window.DB.get();
+  // si materials_catalog esta vacio, ponemos unos dummies para demo
+  if(!d.materials_catalog || d.materials_catalog.length === 0) {
+    d.materials_catalog = [
+      { name: "Tornillo Spax 2\" cabeza plana" },
+      { name: "Tornillo 1\" negro para tablaroca" },
+      { name: "Tornillo 1 5/8\" Kreg" },
+      { name: "Pegamento blanco 850 (Galón)" },
+      { name: "Bisagra Bidimensional Inset" },
+      { name: "Triplay de Encino 15mm" },
+      { name: "MDF 15mm 1.22 x 2.44m" },
+      { name: "Corredera extensión total 45cm" }
+    ];
+  }
+  
+  const dl = document.getElementById('matsList');
+  dl.innerHTML = d.materials_catalog.map(m => `<option value="${m.name}"></option>`).join('');
+});
+
+function add() {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text" list="matsList" placeholder="Empezar a escribir..."></td><td><input type="number" min="1" placeholder="0"></td><td><select><option value="pza">Pieza</option><option value="caja">Caja</option><option value="mt">Metros</option><option value="gln">Galón</option></select></td>`;
+  document.getElementById('itemsList').appendChild(tr);
+}
+function save() {
+  alert('Pedido enviado a Operaciones. (Estado: Revisión)');
+  if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}
+}
+</script>
+</body>
+</html>

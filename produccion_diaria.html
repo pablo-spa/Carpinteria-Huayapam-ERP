@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Producción Diaria — Carpintería Huayapam</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f0f0ee; --surface: #ffffff;
+  --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1a1a; --muted: #6b6b6b; --hint: #bbb;
+  --green: #1D9E75; --green-bg: #E1F5EE; --green-text: #0F6E56;
+  --amber: #C97B00; --amber-bg: #FEF3DA; --amber-text: #7A4A00;
+  --red: #B33030; --red-bg: #FDEAEA; --red-text: #7A1010;
+  --blue: #185FA5; --blue-bg: #E6F1FB; --blue-text: #185FA5;
+  --radius: 10px; --radius-lg: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a; --surface: #222228;
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.14);
+    --text: #e8e8e4; --muted: #999; --hint: #555;
+    --green: #27c98e; --green-bg: #0b2820; --green-text: #3de0a5;
+    --amber: #f0a940; --amber-bg: #2a1e04; --amber-text: #f0a940;
+    --red: #e06060; --red-bg: #2a0a0a; --red-text: #e06060;
+    --blue: #5ba3f5; --blue-bg: #0a1f38; --blue-text: #7dbcff;
+  }
+}
+
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; min-height: 100vh; }
+
+/* Header */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--surface); border-bottom: 1px solid var(--border-strong);
+  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.header-brand { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.header-date { font-size: 18px; font-weight: 800; }
+.header-left { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.date-input { background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; padding: 4px 8px; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
+.date-input:focus { outline: none; border-color: var(--green); }
+.badge { background: var(--green-bg); color: var(--green-text); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px; white-space: nowrap; }
+.btn { cursor: pointer; border: none; border-radius: var(--radius); padding: 10px 18px; font-size: 14px; font-weight: 700; font-family: inherit; min-height: 44px; transition: opacity .15s; }
+.btn:active { opacity: .75; transform: scale(.97); }
+.btn-primary { background: var(--green); color: #fff; }
+.btn-ghost   { background: transparent; border: 1.5px solid var(--border-strong); color: var(--text); }
+
+/* Quick Calendar */
+.quick-cal {
+  display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 4px; background: var(--surface); border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.quick-cal::-webkit-scrollbar { display: none; }
+.cal-day {
+  flex-shrink: 0; min-width: 64px; text-align: center; padding: 8px; border-radius: 12px; border: 1.5px solid var(--border-strong); cursor: pointer; transition: all 0.2s;
+}
+.cal-day.active { background: var(--green-bg); border-color: var(--green); color: var(--green-text); }
+.cal-day.closed { opacity: 0.6; background: var(--bg); }
+.cal-day-name { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+.cal-day-num { font-size: 18px; font-weight: 800; }
+.cal-day-status { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 4px; border-radius: 4px; padding: 2px 4px; }
+.status-green { background: var(--green); color: #fff; }
+.status-amber { background: var(--amber); color: #fff; }
+
+/* Main */
+.main { max-width: 780px; margin: 0 auto; padding: 14px 12px 120px; display: flex; flex-direction: column; gap: 6px; }
+.section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 8px 4px 4px; }
+
+/* Worker card */
+.worker-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+  transition: border-color .18s;
+}
+.worker-card.st-trabajo   { border-color: var(--green); }
+.worker-card.st-falta     { border-color: var(--red);   opacity: .75; }
+.worker-card.st-retardo   { border-color: var(--amber); }
+.worker-card.st-vacaciones{ border-color: var(--blue);  }
+
+/* Worker row */
+.worker-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; min-height: 62px; cursor: pointer; }
+.worker-avatar {
+  width: 40px; height: 40px; border-radius: 99px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; letter-spacing: -.5px;
+  background: var(--bg); color: var(--muted); transition: background .18s, color .18s;
+}
+.worker-card.st-trabajo   .worker-avatar { background: var(--green-bg); color: var(--green-text); }
+.worker-card.st-falta     .worker-avatar { background: var(--red-bg);   color: var(--red-text);   }
+.worker-card.st-retardo   .worker-avatar { background: var(--amber-bg); color: var(--amber-text); }
+.worker-card.st-vacaciones .worker-avatar{ background: var(--blue-bg);  color: var(--blue-text);  }
+
+.worker-info { flex: 1; min-width: 0; }
+.worker-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.worker-sub  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+/* Summary chips (visible when collapsed but complete) */
+.summary-chips { display: flex; gap: 5px; flex-wrap: wrap; flex-shrink: 0; }
+.chip { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+.chip-green  { background: var(--green-bg); color: var(--green-text); }
+.chip-amber  { background: var(--amber-bg); color: var(--amber-text); }
+.chip-red    { background: var(--red-bg);   color: var(--red-text);   }
+.chip-blue   { background: var(--blue-bg);  color: var(--blue-text);  }
+.chip-gray   { background: var(--bg);       color: var(--muted); border: 1px solid var(--border-strong); }
+
+/* Status buttons */
+.status-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.sbtn {
+  cursor: pointer; border: 1.5px solid var(--border-strong);
+  border-radius: 8px; background: var(--bg); color: var(--muted);
+  font-size: 14px; font-weight: 700; font-family: inherit;
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+}
+.sbtn:active { transform: scale(.88); }
+.sbtn.on-trabajo   { background: var(--green); border-color: var(--green); color: #fff; }
+.sbtn.on-falta     { background: var(--red);   border-color: var(--red);   color: #fff; }
+.sbtn.on-retardo   { background: var(--amber); border-color: var(--amber); color: #fff; }
+.sbtn.on-vacaciones{ background: var(--blue);  border-color: var(--blue);  color: #fff; }
+
+/* Edit button (for cards in registrados) */
+.edit-btn {
+  cursor: pointer; background: var(--bg); border: 1.5px solid var(--border-strong);
+  border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: 700;
+  padding: 6px 10px; font-family: inherit; white-space: nowrap; flex-shrink: 0;
+}
+.edit-btn:active { opacity: .7; }
+
+/* Detail section */
+.worker-detail {
+  border-top: 1px solid var(--border);
+  padding: 16px 14px 18px;
+  display: none; /* hidden by default */
+  flex-direction: column; gap: 16px;
+}
+.worker-detail.open { display: flex; }
+
+/* Field */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.field input, .field select {
+  background: var(--bg); border: 1.5px solid var(--border-strong);
+  border-radius: 8px; padding: 9px 12px; color: var(--text);
+  font-size: 14px; font-family: inherit; min-height: 46px; width: 100%; box-sizing: border-box;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--green); }
+
+/* Hours */
+.hours-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.hour-wrap { display: flex; flex-direction: column; gap: 5px; }
+.hour-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.hour-input {
+  background: var(--bg); border: 2px solid var(--border-strong);
+  border-radius: 8px; padding: 10px; color: var(--text);
+  font-size: 22px; font-weight: 800; text-align: center; font-family: inherit;
+  width: 100%; min-height: 56px; box-sizing: border-box;
+}
+.hour-input:focus { outline: none; }
+.hour-x1  { border-color: var(--green); }
+.hour-x15 { border-color: var(--amber); }
+.hour-x2  { border-color: var(--red); }
+.hours-total { font-size: 12px; font-weight: 600; color: var(--muted); text-align: center; margin-top: 2px; }
+
+/* Retardo */
+.retardo-row { display: flex; align-items: center; gap: 10px; }
+.retardo-input {
+  background: var(--bg); border: 2px solid var(--amber);
+  border-radius: 8px; padding: 9px 12px; color: var(--text);
+  font-size: 18px; font-weight: 700; text-align: center; font-family: inherit;
+  width: 100px; min-height: 46px;
+}
+.retardo-input:focus { outline: none; }
+
+/* Projects */
+.project-rows { display: flex; flex-direction: column; gap: 8px; }
+.project-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.f-proy  { flex: 1; min-width: 140px; }
+.f-pieza { flex: 1; min-width: 140px; }
+.rm-btn {
+  cursor: pointer; background: none; border: 1.5px solid var(--border-strong);
+  border-radius: 8px; color: var(--muted); font-size: 16px;
+  width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
+}
+.rm-btn:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+.add-proj {
+  cursor: pointer; background: var(--bg); border: 1.5px dashed var(--border-strong);
+  border-radius: 8px; color: var(--muted); font-size: 13px; font-weight: 600;
+  padding: 10px 14px; font-family: inherit; width: 100%; text-align: left;
+  transition: all .15s;
+}
+.add-proj:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+/* Listo button */
+.listo-row { display: flex; gap: 8px; padding-top: 4px; border-top: 1px dashed var(--border-strong); }
+.btn-listo { flex: 1; background: var(--green); color: #fff; }
+.btn-colapsar { background: var(--bg); border: 1.5px solid var(--border-strong); color: var(--muted); }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 20px; color: var(--hint); font-size: 13px; font-weight: 600; }
+
+/* Footer */
+.footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-top: 2px solid var(--border-strong);
+  padding: 11px 16px; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.footer-stats { display: flex; gap: 18px; }
+.stat { display: flex; flex-direction: column; }
+.stat .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+.stat .val { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.val-green { color: var(--green); }
+.val-red   { color: var(--red); }
+.val-amber { color: var(--amber); }
+
+/* Toast */
+.toast-wrap { position: fixed; top: 70px; right: 14px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--text); color: var(--surface); padding: 10px 16px; border-radius: var(--radius); font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.2); animation: tin .2s; max-width: 290px; }
+.toast.ok { background: var(--green); }
+.toast.warn { background: var(--amber); color: #000; }
+@keyframes tin { from { transform: translateX(110%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+</style>
+</head>
+<body>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-brand">Carpintería Huayapam · Registro de Producción</div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <input type="date" class="date-input" id="fecha" onchange="onDateChange()">
+      <span id="dia-label" style="font-size:13px;color:var(--muted);font-weight:600;"></span>
+    </div>
+  </div>
+  <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+    <span class="badge" id="hdr-badge">0 / 23</span>
+    <button class="btn btn-ghost" onclick="collapseAll()">Colapsar todo</button>
+    <button class="btn btn-primary" onclick="cerrarDia()">✓ Cerrar día</button>
+  </div>
+</div>
+
+<div class="quick-cal" id="quick-cal">
+  <!-- Filled dynamically -->
+</div>
+
+<div class="main">
+  <!-- Mensaje si está cerrado o estamos en otro día -->
+  <div id="msg-dia-cerrado" style="display:none; padding:12px; background:var(--green-bg); color:var(--green-text); font-weight:700; border-radius:10px; margin-bottom:10px;">
+    ✓ Este día ya fue cerrado. No se permiten más modificaciones.
+  </div>
+
+  <div class="section-label" id="lbl-pendientes">Sin registrar (23)</div>
+  <div id="list-pendientes"></div>
+
+  <div id="registrados-section" style="display:none;">
+    <div class="section-label" id="lbl-registrados">Registrados hoy (0)</div>
+    <div id="list-registrados"></div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="footer-stats">
+    <div class="stat"><span class="lbl">Trabajaron</span><span class="val val-green" id="f-t">0</span></div>
+    <div class="stat"><span class="lbl">Faltas</span><span class="val val-red" id="f-f">0</span></div>
+    <div class="stat"><span class="lbl">Retardos</span><span class="val val-amber" id="f-r">0</span></div>
+    <div class="stat"><span class="lbl">Horas equiv.</span><span class="val" id="f-h">0.0</span></div>
+    <div class="stat"><span class="lbl">Sin registrar</span><span class="val" id="f-p" style="color:var(--muted)">23</span></div>
+  </div>
+  <button class="btn btn-primary" onclick="cerrarDia()">✓ Cerrar día</button>
+</div>
+
+<script src="db.js"></script>
+<script>
+// ── Datos ─────────────────────────────────────────────────────────────────────
+let WORKERS = [];
+
+function loadWorkersFromDB() {
+  const d = window.DB.get();
+  WORKERS = d.workers.map(w => {
+    const parts = w.name.split(' ');
+    const nombre = parts[0];
+    const ape = parts.slice(1).join(' ');
+    const ini = w.name.substring(0, 2).toUpperCase();
+    return { id: w.id, nombre: nombre, ape: ape, cat: w.role, ini: ini };
+  });
+}
+
+let PROYECTOS = [];
+
+function loadProjectsFromDB() {
+  const d = window.DB.get();
+  PROYECTOS = d.projects.map(p => {
+    return {id: p.code, n: p.code + ' — ' + p.name};
+  });
+  PROYECTOS.push({id:'gen',n:'Trabajo general / sin proyecto'});
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let STATE_POR_DIA = {};
+let currentDate = '';
+let diaCerrado = false;
+
+function initDailyState() {
+  const S = {};
+  WORKERS.forEach(w => {
+    S[w.id] = { status:'', x1:'', x15:'', x2:'', retMin:'', proyectos:[{p:'',pieza:''}], notas:'', done:false };
+  });
+  return S;
+}
+
+function getS() {
+  if (!STATE_POR_DIA[currentDate]) {
+    STATE_POR_DIA[currentDate] = { cerrado: false, data: initDailyState() };
+  }
+  return STATE_POR_DIA[currentDate].data;
+}
+
+// ── Visual Calendar ───────────────────────────────────────────────────────────
+const DIAS_CORTOS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+function buildCalendar() {
+  const cal = document.getElementById('quick-cal');
+  const d = new Date();
+  
+  // mock a week (say, from last Monday to this Sunday)
+  const toMon = d.getDay() === 0 ? -6 : 1 - d.getDay();
+  const start = new Date(d); start.setDate(d.getDate() + toMon);
+  
+  let html = '';
+  for(let i=0; i<6; i++) {
+    const iterDate = new Date(start); iterDate.setDate(start.getDate() + i);
+    const dateStr = iterDate.toISOString().slice(0,10);
+    
+    // Simulate previous days being "closed"
+    let statusClass = 'status-amber';
+    let statusTxt = 'PENDIENTE';
+    let isClosed = false;
+    
+    if (i < 3) {
+      statusClass = 'status-green';
+      statusTxt = 'CERRADO';
+      isClosed = true;
+      if(!STATE_POR_DIA[dateStr]) STATE_POR_DIA[dateStr] = { cerrado: true, data: initDailyState() };
+    }
+    
+    const isActive = dateStr === currentDate;
+    const closedClass = isClosed ? 'closed' : '';
+    
+    html += `
+      <div class="cal-day ${isActive ? 'active' : ''} ${closedClass}" onclick="setDate('${dateStr}')">
+        <div class="cal-day-name">${DIAS_CORTOS[iterDate.getDay()]}</div>
+        <div class="cal-day-num">${iterDate.getDate()}</div>
+        <div class="cal-day-status ${statusClass}">${statusTxt}</div>
+      </div>
+    `;
+  }
+  cal.innerHTML = html;
+}
+
+function setDate(dateStr) {
+  if(dateStr === currentDate) return;
+  document.getElementById('fecha').value = dateStr;
+  onDateChange();
+  toast('Fecha cambiada al ' + dateStr, 'ok');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+
+function onDateChange(){
+  currentDate = document.getElementById('fecha').value;
+  const d = new Date(currentDate+'T12:00:00');
+  document.getElementById('dia-label').textContent = DIAS[d.getDay()];
+  
+  buildCalendar();
+
+  const dayInfo = STATE_POR_DIA[currentDate];
+  diaCerrado = dayInfo ? dayInfo.cerrado : false;
+  
+  document.getElementById('msg-dia-cerrado').style.display = diaCerrado ? 'block' : 'none';
+  const btnsPrimary = document.querySelectorAll('.btn-primary');
+  btnsPrimary.forEach(b => {
+    if (diaCerrado) {
+       b.textContent = '✓ Día cerrado';
+       b.disabled = true;
+       b.style.opacity = '.6';
+    } else {
+       b.textContent = '✓ Cerrar día';
+       b.disabled = false;
+       b.style.opacity = '1';
+    }
+  });
+
+  renderAll();
+}
+
+function proyOpts(sel){
+  return '<option value="">— Sin proyecto —</option>'+PROYECTOS.map(p=>`<option value="${p.id}"${sel===p.id?' selected':''}>${p.n}</option>`).join('');
+}
+function horasEq(id){
+  const s=getS()[id];
+  return (parseFloat(s.x1)||0)+(parseFloat(s.x15)||0)*1.5+(parseFloat(s.x2)||0)*2;
+}
+function isComplete(id){
+  const s=getS()[id];
+  if(!s.status) return false;
+  if(s.status==='falta'||s.status==='vacaciones') return true;
+  // trabajo / retardo: necesita al menos alguna hora
+  return (parseFloat(s.x1)||0)+(parseFloat(s.x15)||0)+(parseFloat(s.x2)||0) > 0;
+}
+
+// ── Build card DOM (called once per worker) ───────────────────────────────────
+function buildCard(w){
+  const s=getS()[w.id];
+  const div = document.createElement('div');
+  div.className = `worker-card${s.status?' st-'+s.status:''}`;
+  div.id = `card-${w.id}`;
+  div.innerHTML = `
+    <!-- Row -->
+    <div class="worker-row" onclick="togDet('${w.id}', event)">
+      <div class="worker-avatar" id="av-${w.id}">${w.ini}</div>
+      <div class="worker-info">
+        <div class="worker-name">${w.nombre} <span style="font-weight:500;color:var(--muted)">${w.ape}</span></div>
+        <div class="worker-sub">${w.cat}</div>
+      </div>
+      <div class="summary-chips" id="chips-${w.id}"></div>
+      <div class="status-btns">
+        <button class="sbtn${s.status==='trabajo'?' on-trabajo':''}" id="sb-trabajo-${w.id}"   onclick="event.stopPropagation(); setStatus('${w.id}','trabajo')"    title="Trabajó">✓</button>
+        <button class="sbtn${s.status==='falta'?' on-falta':''}" id="sb-falta-${w.id}"     onclick="event.stopPropagation(); setStatus('${w.id}','falta')"      title="Falta">✗</button>
+        <button class="sbtn${s.status==='retardo'?' on-retardo':''}" id="sb-retardo-${w.id}"   onclick="event.stopPropagation(); setStatus('${w.id}','retardo')"    title="Retardo">⏰</button>
+        <button class="sbtn${s.status==='vacaciones'?' on-vacaciones':''}" id="sb-vacaciones-${w.id}"onclick="event.stopPropagation(); setStatus('${w.id}','vacaciones')" title="Vacaciones">☀</button>
+      </div>
+      <button class="edit-btn" id="edit-${w.id}" onclick="event.stopPropagation(); openDetail('${w.id}')" style="display:none">Editar</button>
+    </div>
+    <!-- Detail -->
+    <div class="worker-detail" id="det-${w.id}">
+      <!-- Retardo row (only for retardo) -->
+      <div id="retrow-${w.id}" style="display:${s.status==='retardo'?'':'none'}">
+        <div class="retardo-row">
+          <span style="color:var(--amber);font-weight:700;font-size:13px;">⏰ Retardo</span>
+          <input type="number" class="retardo-input" min="0" max="480" placeholder="min"
+            value="${s.retMin}"
+            oninput="getS()['${w.id}'].retMin=this.value" onclick="this.select()">
+          <span style="font-size:13px;color:var(--muted)">minutos</span>
+        </div>
+      </div>
+      <!-- Hours -->
+      <div>
+        <div class="section-label" style="padding-top:0;margin-bottom:8px;">Horas del día</div>
+        <div class="hours-grid">
+          <div class="hour-wrap">
+            <div class="hour-label" style="color:var(--green)">Normal ×1</div>
+            <input type="number" class="hour-input hour-x1" id="h1-${w.id}" min="0" max="16" step="0.5"
+              placeholder="9" value="${s.x1}" oninput="getS()['${w.id}'].x1=this.value;updHrsTotal('${w.id}')" onclick="this.select()">
+          </div>
+          <div class="hour-wrap">
+            <div class="hour-label" style="color:var(--amber)">Extra ×1.5</div>
+            <input type="number" class="hour-input hour-x15" id="h15-${w.id}" min="0" max="8" step="0.5"
+              placeholder="0" value="${s.x15}" oninput="getS()['${w.id}'].x15=this.value;updHrsTotal('${w.id}')" onclick="this.select()">
+          </div>
+          <div class="hour-wrap">
+            <div class="hour-label" style="color:var(--red)">Doble ×2</div>
+            <input type="number" class="hour-input hour-x2" id="h2-${w.id}" min="0" max="8" step="0.5"
+              placeholder="0" value="${s.x2}" oninput="getS()['${w.id}'].x2=this.value;updHrsTotal('${w.id}')" onclick="this.select()">
+          </div>
+        </div>
+        <div class="hours-total" id="htot-${w.id}">Ingresa las horas trabajadas</div>
+      </div>
+      <!-- Projects -->
+      <div>
+        <div class="section-label" style="padding-top:0;margin-bottom:8px;">Proyecto del día <span style="color:var(--hint);font-weight:500;text-transform:none">(opcional)</span></div>
+        <div class="project-rows" id="proys-${w.id}"></div>
+        <button class="add-proj" onclick="addProy('${w.id}')">+ Agregar otro proyecto</button>
+      </div>
+      <!-- Notes -->
+      <div class="field">
+        <label>Notas <span style="color:var(--hint);font-weight:400;text-transform:none">(opcional)</span></label>
+        <input type="text" placeholder="Observaciones, trabajo especial, incidentes..."
+          value="${s.notas}"
+          oninput="getS()['${w.id}'].notas=this.value">
+      </div>
+      <!-- Action buttons -->
+      <div class="listo-row">
+        <button class="btn btn-listo btn-primary" onclick="marcarListo('${w.id}')">✓ Listo</button>
+        <button class="btn btn-colapsar btn-ghost" onclick="closeDetail('${w.id}')">Colapsar</button>
+      </div>
+    </div>`;
+  return div;
+}
+
+// ── Project rows ─────────────────────────────────────────────────────────────
+function renderProyRows(id){
+  const s = getS()[id];
+  const cont = document.getElementById(`proys-${id}`);
+  if(!cont) return;
+  cont.innerHTML = s.proyectos.map((p,i)=>`
+    <div class="project-row">
+      <div class="field f-proy">
+        <label>Proyecto</label>
+        <select onchange="getS()['${id}'].proyectos[${i}].p=this.value">${proyOpts(p.p)}</select>
+      </div>
+      <div class="field f-pieza">
+        <label>Pieza (opcional)</label>
+        <input type="text" placeholder="ej: 170-MC1" value="${p.pieza}"
+          oninput="getS()['${id}'].proyectos[${i}].pieza=this.value">
+      </div>
+      ${s.proyectos.length>1?`<button class="rm-btn" onclick="removeProy('${id}',${i})">✕</button>`:''}
+    </div>`).join('');
+}
+function addProy(id){
+  getS()[id].proyectos.push({p:'',pieza:''});
+  renderProyRows(id);
+}
+function removeProy(id,i){
+  getS()[id].proyectos.splice(i,1);
+  renderProyRows(id);
+}
+
+// ── Hours total label ─────────────────────────────────────────────────────────
+function updHrsTotal(id){
+  const eq = horasEq(id);
+  const el = document.getElementById(`htot-${id}`);
+  if(el) el.innerHTML = eq>0 ? `<b style="color:var(--green)">${eq.toFixed(1)} horas equivalentes</b>` : 'Ingresa las horas trabajadas';
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────────
+function setStatus(id, newStatus){
+  if(diaCerrado) { toast('Día cerrado, modificaciones deshabilitadas','warn'); return; }
+  
+  const s = getS()[id];
+  const prev = s.status;
+
+  if(s.done){
+    undoDone(id);
+  }
+
+  if(prev === newStatus){
+    s.status = '';
+    closeDetail(id);
+  } else {
+    s.status = newStatus;
+    ['trabajo','falta','retardo','vacaciones'].forEach(st=>{
+      const btn = document.getElementById(`sb-${st}-${id}`);
+      if(btn) btn.className = `sbtn${s.status===st?' on-'+st:''}`;
+    });
+    const card = document.getElementById(`card-${id}`);
+    card.className = `worker-card${s.status?' st-'+s.status:''}`;
+    const rr = document.getElementById(`retrow-${id}`);
+    if(rr) rr.style.display = s.status==='retardo'?'':'none';
+
+    if(s.status==='trabajo'||s.status==='retardo'){
+      if(!s.x1){
+        s.x1='9';
+        const h1 = document.getElementById(`h1-${id}`);
+        if(h1) h1.value='9';
+        updHrsTotal(id);
+      }
+    } else {
+      const h1 = document.getElementById(`h1-${id}`);
+      if(h1) h1.value='';
+      getS()[id].x1=0; getS()[id].x15=0; getS()[id].x2=0;
+    }
+    openDetail(id);
+  }
+  updateFooter();
+}
+
+// ── Open / close detail (in-place, no scroll) ─────────────────────────────────
+function togDet(id, e){
+  // Check if click was on buttons to prevent double toggling
+  if (e.target.closest('.status-btns') || e.target.closest('.edit-btn')) return;
+  const det = document.getElementById(`det-${id}`);
+  if(det){ 
+     if(det.classList.contains('open')) closeDetail(id);
+     else openDetail(id);
+  }
+}
+function openDetail(id){
+  const det = document.getElementById(`det-${id}`);
+  if(det){ det.classList.add('open'); }
+  const edit = document.getElementById(`edit-${id}`);
+  if(edit) edit.style.display='none';
+}
+function closeDetail(id){
+  const det = document.getElementById(`det-${id}`);
+  if(det){ det.classList.remove('open'); }
+}
+
+// ── Mark done → move card to "Registrados hoy" ───────────────────────────────
+function marcarListo(id){
+  const s = getS()[id];
+  if(!isComplete(id)){
+    toast('⚠ Ingresa al menos las horas trabajadas','warn');
+    document.getElementById(`h1-${id}`)?.focus();
+    return;
+  }
+  closeDetail(id);
+  markDone(id);
+  toast(`✓ ${WORKERS.find(w=>w.id===id).nombre} registrado`);
+}
+
+function markDone(id){
+  const s = getS()[id];
+  s.done = true;
+  const card = document.getElementById(`card-${id}`);
+  const listReg = document.getElementById('list-registrados');
+  if(card && listReg) listReg.appendChild(card);
+
+  const statusBtns = document.querySelector(`#card-${id} .status-btns`);
+  if(statusBtns) statusBtns.style.display='none';
+  const edit = document.getElementById(`edit-${id}`);
+  if(edit) edit.style.display='';
+
+  buildChips(id);
+
+  document.getElementById('registrados-section').style.display='';
+  updateLabels();
+  updateFooter();
+}
+
+function undoDone(id){
+  const s = getS()[id];
+  s.done = false;
+  const card = document.getElementById(`card-${id}`);
+  if(card) {
+      document.getElementById('list-pendientes').appendChild(card);
+      const statusBtns = document.querySelector(`#card-${id} .status-btns`);
+      if(statusBtns) statusBtns.style.display='';
+      const edit = document.getElementById(`edit-${id}`);
+      if(edit) edit.style.display='none';
+      const chips = document.getElementById(`chips-${id}`);
+      if(chips) chips.innerHTML='';
+  }
+  updateLabels();
+  updateFooter();
+}
+
+function buildChips(id){
+  const s = getS()[id];
+  const cont = document.getElementById(`chips-${id}`);
+  if(!cont) return;
+  let html = '';
+  if(s.status==='falta')      html=`<span class="chip chip-red">✗ Falta</span>`;
+  if(s.status==='vacaciones') html=`<span class="chip chip-blue">☀ Vacaciones</span>`;
+  if(s.status==='trabajo'||s.status==='retardo'){
+    const eq = horasEq(id);
+    const color = s.status==='retardo'?'chip-amber':'chip-green';
+    const label = s.status==='retardo'?`⏰ ${eq.toFixed(1)}h`:`✓ ${eq.toFixed(1)}h`;
+    html += `<span class="chip ${color}">${label}</span>`;
+    
+    // Add unique projects assigned
+    const uniqueProys = [...new Set(s.proyectos.map(p=>p.p).filter(Boolean))];
+    uniqueProys.forEach(pId => {
+       const prj = PROYECTOS.find(pr=>pr.id===pId);
+       if(prj) {
+            const nombre = prj.n.split('—')[0].trim();
+            html += `<span class="chip chip-gray">${nombre}</span>`;
+       }
+    });
+  }
+  cont.innerHTML = html;
+}
+
+// ── Labels and footer ─────────────────────────────────────────────────────────
+function updateLabels(){
+  const total = WORKERS.length;
+  const done  = Object.values(getS()).filter(s=>s.done).length;
+  const pend  = total - done;
+  document.getElementById('lbl-pendientes').textContent  = `Sin registrar (${pend})`;
+  document.getElementById('lbl-registrados').textContent = `Registrados hoy (${done})`;
+  document.getElementById('hdr-badge').textContent = `${done} / ${total}`;
+}
+function updateFooter(){
+  const sState = getS();
+  const vals = Object.values(sState);
+  const t  = vals.filter(s=>s.status==='trabajo').length;
+  const r  = vals.filter(s=>s.status==='retardo').length;
+  const f  = vals.filter(s=>s.status==='falta').length;
+  const v  = vals.filter(s=>s.status==='vacaciones').length;
+  const p  = vals.filter(s=>!s.status).length;
+  
+  let hrs  = 0;
+  WORKERS.forEach(w=>{ 
+      if(sState[w.id].status==='trabajo'||sState[w.id].status==='retardo') 
+          hrs+=horasEq(w.id); 
+  });
+  
+  document.getElementById('f-t').textContent  = t+r;
+  document.getElementById('f-f').textContent  = f;
+  document.getElementById('f-r').textContent  = r;
+  document.getElementById('f-h').textContent  = hrs.toFixed(1);
+  document.getElementById('f-p').textContent  = p;
+}
+
+// ── Collapse all (open details) ───────────────────────────────────────────────
+function collapseAll(){
+  WORKERS.forEach(w=>closeDetail(w.id));
+}
+
+// ── Cerrar día ────────────────────────────────────────────────────────────────
+function cerrarDia(){
+  if(diaCerrado) return;
+  const sState = getS();
+  const pend = WORKERS.filter(w=>!sState[w.id].status);
+  if(pend.length>0){
+    const ns = pend.slice(0,3).map(w=>w.nombre).join(', ')+(pend.length>3?` y ${pend.length-3} más`:'');
+    if(!confirm(`${pend.length} sin registrar:\n${ns}\n\n¿Cerrar el día de todas formas?`)) return;
+  }
+  const t = WORKERS.filter(w=>sState[w.id].status==='trabajo'||sState[w.id].status==='retardo').length;
+  const f = WORKERS.filter(w=>sState[w.id].status==='falta').length;
+  
+  // Save to DB
+  WORKERS.forEach(w => {
+    const s = sState[w.id];
+    if(s.status) {
+      window.DB.addAttendance({
+        date: currentDate,
+        workerId: w.id,
+        status: s.status,
+        hours: horasEq(w.id),
+        projects: s.proyectos
+      });
+      // Add equivalence hours to worker
+      if ((s.status==='trabajo' || s.status==='retardo') && window.DB) {
+        const d = window.DB.get();
+        const storedW = d.workers.find(x => x.id === w.id);
+        if (storedW) {
+          storedW.savedHours = (storedW.savedHours || 0) + horasEq(w.id);
+          window.DB.updateWorker(storedW);
+        }
+      }
+    }
+  });
+
+  toast(`✓ Día cerrado — ${t} trabajaron, ${f} faltas`);
+  STATE_POR_DIA[currentDate].cerrado = true;
+  onDateChange();
+}
+
+function renderAll() {
+  const listPend = document.getElementById('list-pendientes');
+  const listReg = document.getElementById('list-registrados');
+  listPend.innerHTML = '';
+  listReg.innerHTML = '';
+  
+  document.getElementById('registrados-section').style.display='none';
+  
+  WORKERS.forEach(w => { 
+      const card = buildCard(w);
+      if (getS()[w.id].done) {
+          listReg.appendChild(card);
+          document.querySelector(`#card-${w.id} .status-btns`).style.display='none';
+          document.getElementById(`edit-${w.id}`).style.display='';
+          buildChips(w.id);
+          document.getElementById('registrados-section').style.display='';
+      } else {
+          listPend.appendChild(card);
+      }
+      renderProyRows(w.id);
+      updHrsTotal(w.id);
+  });
+  
+  updateLabels();
+  updateFooter();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type=''){
+  const c=document.getElementById('toasts');
+  const el=document.createElement('div');
+  el.className='toast'+(type==='warn'?' warn':type===''?' ok':'');
+  el.textContent=msg;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadWorkersFromDB();
+loadProjectsFromDB();
+document.getElementById('fecha').value = todayStr();
+onDateChange();
+</script>
+</body>
+</html>

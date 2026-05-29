@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP Carpintería Huayapam</title>
+<style>
+  :root {
+    /* Catppuccin Latte */
+    --base: #eff1f5;
+    --mantle: #e6e9ef;
+    --crust: #dce0e8;
+    --surface0: #ccd0da;
+    --surface1: #bcc0cc;
+    --text: #4c4f69;
+    --subtext: #8c8fa1;
+    --green: #40a02b;
+    --brand: #1e66f5;
+    --nav-active-bg: rgba(64, 160, 43, 0.12);
+    --nav-active-text: #40a02b;
+    --sidebar-w: 260px;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Catppuccin Mocha */
+      --base: #1e1e2e;
+      --mantle: #181825;
+      --crust: #11111b;
+      --surface0: #313244;
+      --surface1: #45475a;
+      --text: #cdd6f4;
+      --subtext: #a6adc8;
+      --green: #a6da95;
+      --brand: #8caaee;
+      --nav-active-bg: rgba(166, 218, 149, 0.15);
+      --nav-active-text: #a6da95;
+    }
+  }
+
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+    background: var(--base); 
+    color: var(--text); 
+    height: 100vh; 
+    display: flex; 
+    overflow: hidden; 
+    margin: 0; 
+  }
+
+  /* SIDEBAR */
+  aside {
+    width: var(--sidebar-w);
+    background: var(--mantle);
+    border-right: 1px solid var(--crust);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 24px 20px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--surface0);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; border: 1px solid var(--surface1);
+  }
+  .logo-text { color: var(--text); }
+  .logo-text strong { font-size: 14px; font-weight: 700; letter-spacing: .02em; display: block; }
+  .logo-text span   { font-size: 11px; color: var(--subtext); }
+
+  .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    scrollbar-width: none;
+  }
+  .sidebar-content::-webkit-scrollbar { display: none; }
+
+  .category {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .category-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--subtext);
+    font-weight: 700;
+    padding: 0 12px 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all .15s;
+    user-select: none;
+  }
+  .nav-item:hover {
+    background: var(--surface0);
+  }
+  .nav-item.over {
+    border: 1px dashed var(--blue);
+    opacity: 0.8;
+  }
+  .nav-item.active {
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
+    font-weight: 600;
+  }
+  .nav-item .icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; opacity: 0.8; }
+  .nav-item.active .icon { opacity: 1; }
+  
+  .nav-item.soon {
+    opacity: .5;
+    cursor: default;
+    pointer-events: none;
+  }
+  .nav-item.soon .tag {
+    margin-left: auto;
+    font-size: 9px;
+    background: var(--surface0);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 2px 6px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .user-profile {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--crust);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .avatar {
+    width: 32px; height: 32px;
+    background: var(--surface0);
+    border-radius: 50%; border: 1px solid var(--surface1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--text);
+  }
+  .user-info { flex: 1; }
+  .user-info .name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .user-info .role { font-size: 11px; color: var(--subtext); }
+
+  /* CONTENT AREA */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background: var(--base);
+  }
+
+  /* WELCOME SCREEN */
+  #welcome {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 40px;
+  }
+  .welcome-icon { font-size: 48px; margin-bottom: 8px; }
+  #welcome h1 { font-size: 24px; color: var(--text); font-weight: 700; margin: 0; }
+  #welcome p  { font-size: 14px; color: var(--subtext); max-width: 440px; text-align: center; line-height: 1.6; margin: 0 0 24px; }
+  
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 640px;
+  }
+  .module-card {
+    background: var(--mantle);
+    border: 1px solid var(--crust);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .module-card:hover { border-color: var(--surface1); background: var(--surface0); }
+  .module-card .mc-icon {
+    font-size: 22px;
+    background: var(--base);
+    border-radius: 8px;
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; border: 1px solid var(--crust);
+  }
+  .module-card .mc-text strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+  .module-card .mc-text span  { font-size: 13px; color: var(--subtext); line-height: 1.4; display: block; }
+
+  /* IFRAME WRAPPER */
+  #frame-wrapper {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .frame-topbar {
+    background: var(--base);
+    border-bottom: 1px solid var(--crust);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .frame-topbar .breadcrumb {
+    font-size: 13px;
+    color: var(--subtext);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+  .frame-topbar .breadcrumb span { color: var(--text); font-weight: 600; }
+  .crumb-link {
+    color: var(--subtext);
+    text-decoration: none;
+    transition: color 0.15s;
+    cursor: pointer;
+  }
+  .crumb-link:hover {
+    color: var(--text);
+  }
+  .btn-back {
+    margin-left: auto;
+    background: var(--mantle);
+    border: 1px solid var(--crust);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text);
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+  }
+  .btn-back:hover { background: var(--surface0); border-color: var(--surface1); }
+  iframe { flex: 1; border: none; width: 100%; background: var(--base); }
+</style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="sidebar-header">
+      <div class="logo-icon">🪵</div>
+      <div class="logo-text">
+        <strong>Huayapam ERP</strong>
+        <span>Sistema de Gestión</span>
+      </div>
+    </div>
+
+    <div class="sidebar-content" id="sidebar-content">
+      <!-- Dynamic menu goes here -->
+    </div>
+
+    <div class="user-profile">
+      <div class="avatar">AD</div>
+      <div class="user-info">
+        <div class="name">Administración</div>
+        <div class="role">Administrador</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="main-content">
+    
+    <!-- Welcome -->
+    <div id="welcome">
+      <div class="welcome-icon">🪵</div>
+      <h1>Huayapam ERP Workspace</h1>
+      <p>Selecciona un módulo en el menú lateral o desde los accesos rápidos para comenzar a trabajar.</p>
+      
+      <div class="module-grid">
+        <div class="module-card" onclick="openModule('produccion_diaria.html','Registro del Día')">
+          <div class="mc-icon">🔨</div>
+          <div class="mc-text"><strong>Trabajos del Día</strong><span>Registro de asistencia y horas.</span></div>
+        </div>
+        <div class="module-card" onclick="openModule('cotizacion.html','Nueva Cotización')">
+          <div class="mc-icon">📋</div>
+          <div class="mc-text"><strong>Cotización</strong><span>Generación de presupuestos con IA.</span></div>
+        </div>
+        <div class="module-card" onclick="openModule('finanzas.html','Contabilidad / Movimientos')">
+          <div class="mc-icon">💰</div>
+          <div class="mc-text"><strong>Contabilidad</strong><span>Libro mayor y categorización IA.</span></div>
+        </div>
+        <div class="module-card" onclick="openModule('proyectos.html','Proyectos Activos')">
+          <div class="mc-icon">📁</div>
+          <div class="mc-text"><strong>Proyectos</strong><span>Seguimiento y cronogramas.</span></div>
+        </div>
+        <div class="module-card" onclick="openModule('contactos.html','Directorio CRM')">
+          <div class="mc-icon">👥</div>
+          <div class="mc-text"><strong>Contactos CRM</strong><span>Directorio de clientes y proveedores.</span></div>
+        </div>
+        <div class="module-card" onclick="openModule('almacen_hub.html','Portal Almacén')">
+          <div class="mc-icon">🏭</div>
+          <div class="mc-text"><strong>Portal Almacén</strong><span>Centro de entradas, salidas e inventario.</span></div>
+        </div>
+        <div class="module-card" onclick="openModule('control_madera.html','Almacén de Madera')">
+          <div class="mc-icon">🌲</div>
+          <div class="mc-text"><strong>Almacén de Madera</strong><span>Inventario por pieza individual.</span></div>
+        </div>
+        <div class="module-card" onclick="openModule('ingreso_madera.html','Escanear Madera')">
+          <div class="mc-icon">📟</div>
+          <div class="mc-text"><strong>Escanear Madera</strong><span>Ingreso de tablas al inventario.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Iframe wrapper -->
+    <div id="frame-wrapper">
+      <div class="frame-topbar">
+        <div class="breadcrumb">
+          <a href="#" onclick="goHome(); return false;" class="crumb-link">Workspace</a> 
+          <span style="opacity:.4">/</span> 
+          <span id="frame-cat" style="display:none;"></span>
+          <span id="frame-cat-sep" style="opacity:.4; display:none;">/</span>
+          <span id="frame-label">—</span>
+        </div>
+        <button class="btn-back" onclick="goHome()">← Salir del módulo</button>
+      </div>
+      <iframe id="main-frame" src="" title="Módulo"></iframe>
+    </div>
+
+  </main>
+
+<script>
+  let dragSrcEl = null;
+
+  const defaultMenuLayout = [
+    {
+      id: 'cat-favoritos', title: '⭐ Favoritos',
+      items: []
+    },
+    {
+      id: 'cat-admin', title: 'Administración',
+      items: [
+        { id: 'nav-dashboard', html: `<span class="icon">📈</span> Dashboard`, file: 'dashboard.html', label: 'Dashboard' },
+        { id: 'nav-contactos', html: `<span class="icon">👥</span> Directorio CRM`, file: 'contactos.html', label: 'Directorio CRM' },
+        { id: 'nav-rentabilidad', html: `<span class="icon">📊</span> Rentabilidad`, file: 'proyectos_rentabilidad.html', label: 'Rentabilidad de Proyectos' },
+        { id: 'nav-aprobacion', html: `<span class="icon">🛡️</span> Autorizar Pedidos`, file: 'rq_admin_aprobacion.html', label: 'Autorizar Pedidos' }
+      ]
+    },
+    {
+      id: 'cat-contabilidad', title: 'Contabilidad y RRHH',
+      items: [
+        { id: 'nav-finanzas', html: `<span class="icon">💰</span> Movimientos`, file: 'finanzas.html', label: 'Movimientos' },
+        { id: 'nav-nomina', html: `<span class="icon">💵</span> Nómina Semanal`, file: 'nomina_semanal.html', label: 'Nómina Semanal' },
+        { id: 'nav-trabajadores', html: `<span class="icon">👷‍♂️</span> Trabajadores`, file: 'rh_trabajadores.html', label: 'Trabajadores' }
+      ]
+    },
+    {
+      id: 'cat-diseno', title: 'Diseño',
+      items: [
+        { id: 'nav-cotizacion', html: `<span class="icon">📋</span> Nueva Cotización`, file: 'cotizacion.html', label: 'Nueva Cotización' },
+        { id: 'nav-proyectos', html: `<span class="icon">📁</span> Proyectos`, file: 'proyectos.html', label: 'Proyectos Activos' }
+      ]
+    },
+    {
+      id: 'cat-compras', title: 'Compras y Almacén',
+      items: [
+        { id: 'nav-almacen-hub', html: `<span class="icon">📦</span> Portal Almacén`, file: 'almacen_hub.html', label: 'Portal Almacén' },
+        { id: 'nav-compras-panel', html: `<span class="icon">🧾</span> Panel de Compras`, file: 'rq_compras.html', label: 'Panel de Compras' },
+        { id: 'nav-historial', html: `<span class="icon">📚</span> Historial de Compras`, file: 'historial_compras.html', label: 'Historial de Compras' },
+        { id: 'nav-madera', html: `<span class="icon">🌲</span> Almacén de Madera`, file: 'control_madera.html', label: 'Almacén de Madera' },
+        { id: 'nav-ingreso-madera', html: `<span class="icon">📟</span> Escanear Madera`, file: 'ingreso_madera.html', label: 'Ingreso de Tablas' }
+      ]
+    },
+    {
+      id: 'cat-operaciones', title: 'Operaciones',
+      items: [
+        { id: 'nav-produccion', html: `<span class="icon">🔨</span> Trabajos del Día`, file: 'produccion_diaria.html', label: 'Registro del Día' },
+        { id: 'nav-confirmacion', html: `<span class="icon">✅</span> Confirmar Pedidos`, file: 'rq_operaciones.html', label: 'Confirmación de Pedidos' }
+      ]
+    },
+    {
+      id: 'cat-bd', title: 'Bases de Datos',
+      items: [
+        { id: 'nav-db', html: `<span class="icon">⚙️</span> Esquema de DB`, file: 'admin_db.html', label: 'Gestión de Esquemas' },
+        { id: 'nav-listas', html: `<span class="icon">📋</span> Editar Listas`, file: 'admin_listas.html', label: 'Editar Listas de Sistema' },
+        { id: 'nav-admin', html: `<span class="icon">🗄️</span> Bases (Old)`, file: 'admin_bases.html', label: 'Visor Antiguo' }
+      ]
+    }
+  ];
+
+  let menuLayout = [];
+
+  function loadMenu() {
+    const saved = localStorage.getItem('erp_menu_layout');
+    if (saved) {
+      try {
+        menuLayout = JSON.parse(saved);
+      } catch(e) {
+        menuLayout = JSON.parse(JSON.stringify(defaultMenuLayout));
+      }
+    } else {
+      menuLayout = JSON.parse(JSON.stringify(defaultMenuLayout));
+    }
+    renderMenu();
+  }
+
+  function saveMenu() {
+    localStorage.setItem('erp_menu_layout', JSON.stringify(menuLayout));
+  }
+
+  function renderMenu() {
+    const container = document.getElementById('sidebar-content');
+    container.innerHTML = '';
+    
+    menuLayout.forEach((cat, cIdx) => {
+      const cDiv = document.createElement('div');
+      cDiv.className = 'category';
+      cDiv.innerHTML = `<div class="category-title">${cat.title}</div>`;
+      
+      const list = document.createElement('div');
+      list.className = 'nav-list';
+      list.setAttribute('data-cidx', cIdx);
+      
+      // Allow dropping into empty categories
+      list.addEventListener('dragover', handleDragOverList);
+      list.addEventListener('drop', handleDropList);
+      
+      cat.items.forEach((item, iIdx) => {
+        const iDiv = document.createElement('div');
+        iDiv.className = 'nav-item';
+        iDiv.id = item.id;
+        iDiv.innerHTML = item.html;
+        iDiv.draggable = true;
+        iDiv.setAttribute('data-cidx', cIdx);
+        iDiv.setAttribute('data-iidx', iIdx);
+        
+        iDiv.onclick = () => openModule(item.file, item.label);
+        
+        // Drag events
+        iDiv.addEventListener('dragstart', handleDragStart);
+        iDiv.addEventListener('dragenter', handleDragEnter);
+        iDiv.addEventListener('dragover', handleDragOver);
+        iDiv.addEventListener('dragleave', handleDragLeave);
+        iDiv.addEventListener('drop', handleDrop);
+        iDiv.addEventListener('dragend', handleDragEnd);
+
+        list.appendChild(iDiv);
+      });
+      
+      if(cat.items.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.padding = '10px 16px';
+        empty.style.fontSize = '12px';
+        empty.style.color = 'var(--surface1)';
+        empty.textContent = '(Arrastra aquí)';
+        list.appendChild(empty);
+      }
+
+      cDiv.appendChild(list);
+      container.appendChild(cDiv);
+    });
+    
+    // Highlight currently active module
+    const currentFile = document.getElementById('main-frame').getAttribute('data-loaded');
+    if(currentFile) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const activeObj = menuLayout.flatMap(c => c.items).find(i => i.file === currentFile);
+      if(activeObj) {
+        const actEl = document.getElementById(activeObj.id);
+        if(actEl) actEl.classList.add('active');
+      }
+    }
+  }
+
+  function handleDragStart(e) {
+    this.style.opacity = '0.4';
+    dragSrcEl = this;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      cIdx: parseInt(this.getAttribute('data-cidx')),
+      iIdx: parseInt(this.getAttribute('data-iidx'))
+    }));
+  }
+
+  function handleDragOver(e) {
+    if (e.preventDefault) {
+      e.preventDefault(); 
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+  }
+  
+  function handleDragOverList(e) {
+    if (e.preventDefault) e.preventDefault();
+    return false;
+  }
+
+  function handleDragEnter(e) {
+    this.classList.add('over');
+  }
+
+  function handleDragLeave(e) {
+    this.classList.remove('over');
+  }
+
+  function handleDrop(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    
+    if (dragSrcEl != this) {
+      const srcData = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const destCidx = parseInt(this.getAttribute('data-cidx'));
+      const destIidx = parseInt(this.getAttribute('data-iidx'));
+      
+      // remove from source
+      const item = menuLayout[srcData.cIdx].items.splice(srcData.iIdx, 1)[0];
+      // insert at destination
+      menuLayout[destCidx].items.splice(destIidx, 0, item);
+      
+      saveMenu();
+      renderMenu();
+    }
+    return false;
+  }
+  
+  function handleDropList(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    // Drop into empty list
+    const destCidx = parseInt(this.getAttribute('data-cidx'));
+    if(menuLayout[destCidx].items.length === 0) {
+        const srcData = JSON.parse(e.dataTransfer.getData('text/plain'));
+        const item = menuLayout[srcData.cIdx].items.splice(srcData.iIdx, 1)[0];
+        menuLayout[destCidx].items.push(item);
+        saveMenu();
+        renderMenu();
+    }
+    return false;
+  }
+
+  function handleDragEnd(e) {
+    this.style.opacity = '1';
+    document.querySelectorAll('.nav-item').forEach(function (item) {
+      item.classList.remove('over');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadMenu);
+
+  let navHistory = [];
+
+  const MODULES = {
+    'dashboard.html':         'nav-dashboard',
+    'proyectos_rentabilidad.html': 'nav-rentabilidad',
+    'rq_admin_aprobacion.html': 'nav-aprobacion',
+    'produccion_diaria.html': 'nav-produccion',
+    'rq_operaciones.html':    'nav-confirmacion',
+    'nomina_semanal.html':    'nav-nomina',
+    'rh_trabajadores.html':   'nav-trabajadores',
+    'cotizacion.html':        'nav-cotizacion',
+    'almacen_hub.html':       'nav-almacen-hub',
+    'rq_compras.html':        'nav-compras-panel',
+    'control_madera.html':    'nav-madera',
+    'ingreso_madera.html':    'nav-ingreso-madera',
+    'contactos.html':         'nav-contactos',
+    'admin_bases.html':       'nav-admin',
+    'admin_db.html':          'nav-db',
+    'admin_listas.html':      'nav-listas',
+    'historial_compras.html': 'nav-historial',
+    'finanzas.html':          'nav-finanzas',
+    'proyectos.html':         'nav-proyectos'
+  };
+
+  function renderBreadcrumbs() {
+    const bcContainer = document.querySelector('.breadcrumb');
+    let html = `<a href="#" onclick="goHome(); return false;" class="crumb-link">Workspace</a>`;
+    
+    if (navHistory.length > 0) {
+      const topFile = navHistory[0].file;
+      const navId = MODULES[topFile];
+      if (navId) {
+        const activeObj = menuLayout.find(c => c.items.some(i => i.id === navId));
+        if (activeObj) {
+          html += ` <span style="opacity:.4">/</span> <span style="color:var(--subtext);">${activeObj.title}</span>`;
+        }
+      }
+    }
+
+    navHistory.forEach((step, idx) => {
+      html += ` <span style="opacity:.4">/</span> `;
+      if (idx === navHistory.length - 1) {
+        html += `<span style="font-weight:600; color:var(--text);">${step.label}</span>`;
+      } else {
+        html += `<a href="#" onclick="goHistory(${idx}); return false;" class="crumb-link">${step.label}</a>`;
+      }
+    });
+
+    bcContainer.innerHTML = html;
+  }
+
+  function goHistory(idx) {
+    const step = navHistory[idx];
+    navHistory = navHistory.slice(0, idx);
+    openModule(step.file, step.label, true);
+  }
+
+  function openModule(file, label, fromHistory = false) {
+    if (!fromHistory) {
+      if (MODULES[file]) {
+        navHistory = [{ file, label }];
+      } else {
+        if (navHistory.length === 0 || navHistory[navHistory.length-1].file !== file) {
+          navHistory.push({ file, label });
+        }
+      }
+    } else {
+      navHistory.push({ file, label });
+    }
+
+    renderBreadcrumbs();
+    
+    document.getElementById('welcome').style.display = 'none';
+    const fw = document.getElementById('frame-wrapper');
+    fw.style.display = 'flex';
+
+    const frame = document.getElementById('main-frame');
+    if (frame.getAttribute('data-loaded') !== file) {
+      frame.src = file;
+      frame.setAttribute('data-loaded', file);
+    }
+
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const navIdId = MODULES[navHistory[0].file];
+    if (navIdId) {
+      const el = document.getElementById(navIdId);
+      if(el) el.classList.add('active');
+    }
+  }
+
+  function goHome() {
+    document.getElementById('welcome').style.display = 'flex';
+    document.getElementById('frame-wrapper').style.display = 'none';
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('main-frame').removeAttribute('data-loaded');
+    document.getElementById('main-frame').src = '';
+  }
+</script>
+</body>
+</html>

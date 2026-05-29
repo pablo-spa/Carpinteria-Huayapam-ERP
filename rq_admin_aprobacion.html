@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autorizar Pedidos</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d; --red: #d20f39;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af; --red: #f38ba8;
+  }
+}
+body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; }
+.hdr { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
+.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
+.badge-ready { background: rgba(30,102,245,0.15); color: var(--blue); }
+.badge-quoted { background: rgba(223,142,29,0.15); color: var(--amber); }
+.btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity .15s; color: white; font-size: 12px; }
+.btn:hover { opacity: .8; }
+.btn-green { background: var(--green); }
+.btn-red { background: var(--red); }
+.item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; }
+.item-subtext { color: var(--subtext); font-size: 11px; }
+.total-row { display: flex; justify-content: flex-end; font-weight: 700; font-size: 15px; padding-top: 12px; }
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h2>Autorizar Pedidos (Administración)</h2>
+</div>
+
+<div id="orders-list">
+  <div class="card" id="req2">
+    <div class="card-title">
+      <span>Pedido Operaciones: STOCK GENERAL</span>
+      <span class="badge badge-quoted">Cotizado por Compras</span>
+    </div>
+    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Reposición de stock mínimo alcanzado. Compras ya subió los costos.</div>
+    
+    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
+      <div>Item / Cantidad</div>
+      <div>Proveedor</div>
+      <div>P. Unitario</div>
+      <div>Subtotal / Cuenta</div>
+    </div>
+
+    <div class="item-row">
+      <div>5x Galón Pegamento Blanco <span class="item-subtext">(gln)</span></div>
+      <div>Ferretería El C.</div>
+      <div>$ 250.00</div>
+      <div>
+        <div>$ 1,250.00</div>
+        <div class="item-subtext">SATP (Operativa)</div>
+      </div>
+    </div>
+
+    <div class="item-row">
+      <div>2x Caja Tornillo Spax 2" <span class="item-subtext">(caja)</span></div>
+      <div>Herrajes Del R.</div>
+      <div>$ 180.00</div>
+      <div>
+        <div>$ 360.00</div>
+        <div class="item-subtext">SATP (Operativa)</div>
+      </div>
+    </div>
+
+    <div class="total-row">
+      Total a Autorizar: $ 1,610.00
+    </div>
+
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      <button class="btn btn-red" onclick="act('req2', 'rechazado')">✕ Rechazar / Re-Cotizar</button>
+      <button class="btn btn-green" onclick="act('req2', 'autorizado')">✓ Aprobar Monto: $ 1,610.00</button>
+    </div>
+  </div>
+
+  <div class="card" id="req1">
+    <div class="card-title">
+      <span>Pedido Operaciones: PRY-168</span>
+      <span class="badge badge-ready">Esperando Cotización</span>
+    </div>
+    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Material requerido urgente para instalar el martes.</div>
+    
+    <div class="item-row" style="border:none;">
+      <div>10x Bisagras Bidimensionales Inset <span class="item-subtext">(pza)</span></div>
+      <div style="grid-column: span 3; color:var(--amber); font-size:11px; text-align:right;">Compras aún no ingresa precio</div>
+    </div>
+    <div class="item-row">
+      <div>2x Triplay 15mm Encino <span class="item-subtext">(pza)</span></div>
+      <div style="grid-column: span 3; color:var(--amber); font-size:11px; text-align:right;">Compras aún no ingresa precio</div>
+    </div>
+
+    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+      <button class="btn btn-red" onclick="act('req1', 'rechazado')">✕ Cancelar Pedido</button>
+      <button class="btn btn-green" style="opacity:0.5; pointer-events:none;">Aprobar (Faltan Precios)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function act(id, state) {
+  const el = document.getElementById(id);
+  el.style.opacity = '0.5';
+  el.style.pointerEvents = 'none';
+  if(state === 'autorizado') {
+    alert('Pedido Autorizado. Se desbloqueará para que Compras pueda marcarlo como Comprado.');
+  } else {
+    alert('Pedido Rechazado o enviado a Re-Cotizar.');
+  }
+  setTimeout(() => el.style.display = 'none', 300);
+}
+</script>
+</body>
+</html>

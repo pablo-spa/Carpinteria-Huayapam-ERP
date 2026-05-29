@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Pedidos — Kanban</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --blue: #1e66f5; --amber: #df8e1d;
+  --red: #d20f39; --radius: 8px; --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --blue: #8caaee; --amber: #f9e2af;
+    --red: #f38ba8;
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--base); color: var(--text);
+  display: flex; flex-direction: column; min-height: 100vh;
+}
+
+.hdr {
+  background: var(--mantle); border-bottom: 1px solid var(--crust);
+  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.hdr-title { font-size: 18px; font-weight: 800; color: var(--text); }
+.btn {
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s; border: none; font-family: inherit;
+}
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-dark { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.btn:hover { opacity: 0.9; }
+
+.kanban-board {
+  display: flex; gap: 16px; padding: 24px; flex: 1; overflow-x: auto;
+}
+
+.kanban-col {
+  background: var(--mantle); border-radius: var(--radius-lg); border: 1px solid var(--crust);
+  min-width: 300px; width: 300px; display: flex; flex-direction: column;
+}
+
+.col-hdr {
+  padding: 16px; border-bottom: 1px solid var(--crust);
+  font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtext);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.col-count {
+  background: var(--surface0); padding: 2px 8px; border-radius: 6px; color: var(--text); font-size: 11px;
+}
+
+.col-body {
+  padding: 12px; display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto; flex: 1;
+}
+
+.k-card {
+  background: var(--base); border: 1px solid var(--crust); border-radius: var(--radius);
+  padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 8px;
+}
+.k-card:hover { transform: translateY(-2px); border-color: var(--surface0); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.c-head { display: flex; justify-content: space-between; align-items: center; }
+.c-folio { font-family: monospace; font-size: 13px; font-weight: 700; color: var(--text); }
+.c-date { font-size: 11px; color: var(--subtext); }
+.c-title { font-size: 14px; font-weight: 700; }
+.c-sub { font-size: 12px; color: var(--subtext); }
+.c-items { font-size: 12px; color: var(--subtext); margin-top: 4px; padding-top: 8px; border-top: 1px dashed var(--crust); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); display: none; align-items: flex-start; justify-content: center;
+  z-index: 1000; padding: 40px 20px; overflow-y: auto; backdrop-filter: blur(2px);
+}
+.modal {
+  background: var(--base); width: 100%; max-width: 640px; border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; animation: flyIn 0.2s ease-out; margin: auto;
+}
+@keyframes flyIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.m-hdr { padding: 16px 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: space-between; align-items: center; }
+.m-hdr h2 { font-size: 16px; font-weight: 800; display:flex; gap:12px; align-items:center; }
+.m-close { cursor: pointer; background: transparent; border: none; font-size: 20px; color: var(--subtext); }
+.m-close:hover { color: var(--text); }
+.m-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.m-foot { padding: 16px 24px; border-top: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+.m-field { display: flex; flex-direction: column; gap: 6px; }
+.m-field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+.m-field input, .m-field select { background: var(--mantle); border: 1px solid var(--crust); padding: 10px 12px; border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; }
+.m-field input:focus, .m-field select:focus { outline: none; border-color: var(--blue); }
+
+.items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.items-table th { text-align: left; padding: 8px; font-size: 11px; color: var(--subtext); text-transform: uppercase; border-bottom: 2px solid var(--crust); }
+.items-table td { padding: 8px; border-bottom: 1px solid var(--crust); }
+.items-table input { width: 100%; padding: 6px; border: 1px solid var(--crust); border-radius: 4px; background: var(--mantle); color: var(--text); font-family: inherit;font-size:13px; }
+
+.wflow-bar { display:flex; gap:8px; align-items:center; padding:12px 16px; background:var(--mantle); border-radius:8px; border:1px solid var(--crust); margin-bottom:16px; }
+.w-step { font-size:12px; font-weight:700; color:var(--surface1); flex:1; text-align:center; position:relative; }
+.w-step.act { color:var(--text); }
+.w-step.done { color:var(--green); }
+.w-arrow { color:var(--surface1); font-size:14px; }
+
+.pill { display:inline-flex; padding:4px 8px; border-radius:99px; font-size:11px; font-weight:800; text-transform:uppercase; }
+.pill-red { background:var(--surface0); color:var(--subtext); }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
+    <div class="hdr-title">Gestión de Pedidos</div>
+  </div>
+  <button class="btn btn-blue" onclick="openOrderModal()">+ Nuevo Pedido</button>
+</div>
+
+<div class="kanban-board">
+  
+  <div class="kanban-col" id="col-Pedido">
+    <div class="col-hdr">
+      <span>1. Pedido</span>
+      <span class="col-count" id="cnt-Pedido">0</span>
+    </div>
+    <div class="col-body" id="list-Pedido"></div>
+  </div>
+
+  <div class="kanban-col" id="col-Confirmado">
+    <div class="col-hdr">
+      <span>2. Confirmado / Planta</span>
+      <span class="col-count" id="cnt-Confirmado">0</span>
+    </div>
+    <div class="col-body" id="list-Confirmado"></div>
+  </div>
+
+  <div class="kanban-col" id="col-Comprado">
+    <div class="col-hdr">
+      <span>3. Comprado / Compras</span>
+      <span class="col-count" id="cnt-Comprado">0</span>
+    </div>
+    <div class="col-body" id="list-Comprado"></div>
+  </div>
+
+  <div class="kanban-col" id="col-Recibido">
+    <div class="col-hdr">
+      <span>4. Recibido / Almacén</span>
+      <span class="col-count" id="cnt-Recibido">0</span>
+    </div>
+    <div class="col-body" id="list-Recibido"></div>
+  </div>
+
+  <div class="kanban-col" id="col-Entregado">
+    <div class="col-hdr">
+      <span>5. Entregado / Carpintero</span>
+      <span class="col-count" id="cnt-Entregado">0</span>
+    </div>
+    <div class="col-body" id="list-Entregado"></div>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="mod-overlay">
+  <div class="modal">
+    <div class="m-hdr">
+      <h2 id="mod-title">
+        <span id="m-folio-lbl">Nuevo Pedido</span>
+        <span id="m-stock-badge" class="pill pill-red" style="display:none"></span>
+      </h2>
+      <button class="m-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="m-body">
+      
+      <div class="wflow-bar" id="w-flow">
+        <div class="w-step act">Pedido</div>
+        <div class="w-arrow">→</div>
+        <div class="w-step">Confirmado</div>
+        <div class="w-arrow">→</div>
+        <div class="w-step">Comprado</div>
+        <div class="w-arrow">→</div>
+        <div class="w-step">Recibido</div>
+        <div class="w-arrow">→</div>
+        <div class="w-step">Entregado</div>
+      </div>
+
+      <input type="hidden" id="m-id">
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="m-field"><label>Fecha</label><input type="date" id="m-date"></div>
+        <div class="m-field"><label>Estado</label>
+          <select id="m-status" onchange="updateWflowVisuals()">
+            <option value="Pedido">1. Pedido (Solicitado)</option>
+            <option value="Confirmado">2. Confirmado (Jefe Planta)</option>
+            <option value="Comprado">3. Comprado (Compras)</option>
+            <option value="Recibido">4. Recibido (Almacén)</option>
+            <option value="Entregado">5. Entregado (Carpintero)</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="m-field"><label>Solicitante</label>
+          <select id="m-req">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+        <div class="m-field"><label>Proyecto Destino</label>
+          <select id="m-proj">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+      </div>
+      
+      <div class="m-field" style="margin-top:8px;">
+        <label style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Materiales / Artículos</span>
+          <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="addModalItem()">+ Fila</button>
+        </label>
+        <table class="items-table" id="m-items">
+          <thead>
+            <tr>
+              <th style="width:20%">Código</th>
+              <th style="width:35%">Concepto (Inventario)</th>
+              <th style="width:10%">Cant.</th>
+              <th style="width:10%">Unidad</th>
+              <th style="width:15%" class="col-price" style="display:none;">Precio U. ($)</th>
+              <th style="width:10%" class="col-price" style="display:none;">Total</th>
+              <th style="width:5%"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        
+        <!-- New Concept Inline Pane -->
+        <div id="new-concept-pane" style="display:none; background:var(--mantle); padding:12px; border-radius:8px; border:1px dashed var(--surface1); margin-top:8px;">
+          <div style="font-size:11px; font-weight:800; color:var(--text); margin-bottom:8px;">CREAR NUEVO CONCEPTO EN INVENTARIO</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:8px;">
+            <div class="m-field"><label>Categoría</label>
+              <select id="nc-cat"></select>
+            </div>
+            <div class="m-field"><label>Unidad</label>
+              <select id="nc-unit"></select>
+            </div>
+            <div class="m-field"><label>Nombre del Concepto</label><input type="text" id="nc-name" placeholder="Ej: Tornillo M6x20"></div>
+            <div class="m-field"><label>Código Autogenerado</label><input type="text" id="nc-code" readonly style="background:var(--crust); color:var(--subtext1);"></div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="document.getElementById('new-concept-pane').style.display='none'">Cancelar</button>
+            <button class="btn btn-blue" style="padding:4px 8px; font-size:11px;" onclick="saveInlineConcept()">Guardar Concepto</button>
+          </div>
+          <!-- hidden tracker to know which row triggered this -->
+          <input type="hidden" id="nc-target-row-idx">
+        </div>
+      </div>
+
+    </div>
+    <div class="m-foot">
+      <div id="stock-warn" style="font-size:12px; color:var(--amber); font-weight:700; display:none;">
+        ⚠ Mover a 'Recibido' sumará automáticamente al inventario.
+      </div>
+      <div style="margin-left:auto; display:flex; gap:12px;">
+        <button class="btn btn-dark" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-blue" onclick="saveOrder()">Guardar Pedido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+  const COLS = ['Pedido', 'Confirmado', 'Comprado', 'Recibido', 'Entregado'];
+
+  function renderKanban() {
+    const db = window.DB.get();
+    let counts = { Pedido:0, Confirmado:0, Comprado:0, Recibido:0, Entregado:0 };
+    
+    // Populate Selects if empty
+    const reqSel = document.getElementById('m-req');
+    if(reqSel.options.length === 0) {
+      reqSel.innerHTML = '<option value="">-- Seleccionar --</option>' + db.workers.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
+      const projSel = document.getElementById('m-proj');
+      projSel.innerHTML = '<option value="">-- Stock General / Sin Proyecto --</option>' + db.projects.map(p => `<option value="${p.code} - ${p.name}">${p.code} - ${p.name}</option>`).join('');
+    }
+    
+    COLS.forEach(c => { document.getElementById('list-'+c).innerHTML = ''; });
+
+    db.orders.forEach(o => {
+      let st = o.status;
+      if(!counts[st] && counts[st] !== 0) st = 'Pedido'; // fallback
+      counts[st]++;
+      
+      const el = document.createElement('div');
+      el.className = 'k-card';
+      
+      let hasMissingCode = false;
+      let hasMissingPrice = false;
+      
+      if(!o.items || o.items.length === 0) {
+        hasMissingCode = true;
+      } else {
+        o.items.forEach(i => {
+          if(!i.code || !i.unit || i.code === '_custom') hasMissingCode = true;
+          if(typeof i.price === 'undefined' || parseFloat(i.price) <= 0) hasMissingPrice = true;
+        });
+      }
+      
+      let bColor = 'var(--crust)';
+      if(hasMissingCode) bColor = 'var(--red)';
+      else if(hasMissingPrice) bColor = 'var(--amber)';
+      else bColor = 'var(--green)';
+      
+      el.style.border = `2px solid ${bColor}`;
+      
+      el.draggable = true;
+      el.ondragstart = (e) => {
+        e.dataTransfer.setData('text/plain', o.id);
+        setTimeout(() => el.style.opacity = '0.5', 0);
+      };
+      el.ondragend = (e) => {
+        el.style.opacity = '1';
+      };
+      el.onclick = () => openOrderModal(o.id);
+      
+      const itmStr = o.items.map(i => `${i.qty} ${i.unit} ${i.name}`).join(', ');
+      
+      el.innerHTML = `
+        <div class="c-head">
+          <span class="c-folio">${o.folio}</span>
+          <span class="c-date">${o.date}</span>
+        </div>
+        <div class="c-title">${o.project || 'Stock General'}</div>
+        <div class="c-sub">Sol: ${o.requester || '-'}</div>
+        <div class="c-items">${itmStr.substring(0,60)}${itmStr.length>60?'...':''}</div>
+      `;
+      document.getElementById('list-'+st).appendChild(el);
+    });
+
+    COLS.forEach(c => { document.getElementById('cnt-'+c).textContent = counts[c]; });
+  }
+
+  function updateWflowVisuals() {
+    const mstatus = document.getElementById('m-status').value;
+    const steps = document.querySelectorAll('#w-flow .w-step');
+    let found = false;
+    steps.forEach((s, i) => {
+      s.className = 'w-step';
+      if(COLS[i] === mstatus) {
+        s.classList.add('act');
+        found = true;
+      } else if (!found) {
+        s.classList.add('done');
+      }
+    });
+
+    // Check stock warning and price visibility
+    const id = document.getElementById('m-id').value;
+    const d = window.DB.get();
+    const curr = d.orders.find(x => x.id === id);
+    
+    document.getElementById('stock-warn').style.display = 'none';
+    if(mstatus === 'Recibido' && (!curr || !curr.stockAdded)) {
+      document.getElementById('stock-warn').style.display = 'block';
+    }
+
+    const showPrice = ['Comprado', 'Recibido', 'Entregado'].includes(mstatus);
+    document.querySelectorAll('.col-price').forEach(el => el.style.display = showPrice ? 'table-cell' : 'none');
+    document.querySelectorAll('.td-price').forEach(el => el.style.display = showPrice ? 'table-cell' : 'none');
+  }
+
+  function recalcRowTotal(input) {
+    const tr = input.closest('tr');
+    const qty = parseFloat(tr.querySelector('.i-qty').value) || 0;
+    const price = parseFloat(tr.querySelector('.i-price').value) || 0;
+    tr.querySelector('.i-total').textContent = '$' + (qty * price).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function openOrderModal(id) {
+    document.getElementById('mod-overlay').style.display = 'flex';
+    document.getElementById('m-items').querySelector('tbody').innerHTML = '';
+
+    if(id) {
+      const c = window.DB.get().orders.find(x => x.id === id);
+      document.getElementById('m-folio-lbl').textContent = c.folio;
+      document.getElementById('m-id').value = c.id;
+      document.getElementById('m-date').value = c.date;
+      document.getElementById('m-status').value = c.status;
+      document.getElementById('m-req').value = c.requester || '';
+      document.getElementById('m-proj').value = c.project || '';
+      
+      const badge = document.getElementById('m-stock-badge');
+      if(c.stockAdded) {
+        badge.style.display = ''; badge.textContent = 'En Inventario';
+        badge.style.background = 'var(--green-bg)'; badge.style.color = 'var(--green)';
+      } else {
+        badge.style.display = 'none';
+      }
+
+      c.items.forEach(i => addModalItem(i));
+    } else {
+      document.getElementById('m-folio-lbl').textContent = 'Nuevo Pedido';
+      document.getElementById('m-stock-badge').style.display = 'none';
+      document.getElementById('m-id').value = '';
+      document.getElementById('m-date').value = new Date().toISOString().slice(0,10);
+      document.getElementById('m-status').value = 'Pedido';
+      document.getElementById('m-req').value = '';
+      document.getElementById('m-proj').value = '';
+      addModalItem(); // 1 empty row
+    }
+    updateWflowVisuals();
+  }
+
+  function addModalItem(itm={code:'',name:'',qty:1,unit:'pza',price:0}) {
+    const d = window.DB.get();
+    const invOpts = d.inventory.map(inv => `<option value="${inv.code}" data-name="${inv.name}" data-unit="${inv.unit}">${inv.code} - ${inv.name}</option>`).join('');
+    
+    const exists = itm.code && d.inventory.find(i => i.code === itm.code);
+    const selVal = exists ? itm.code : ((itm.name || itm.code) ? '_custom' : '');
+
+    const tbody = document.getElementById('m-items').querySelector('tbody');
+    const tr = document.createElement('tr');
+    tr.dataset.idx = Date.now() + Math.random();
+    
+    const displayStyle = ['Comprado', 'Recibido', 'Entregado'].includes(document.getElementById('m-status').value) ? 'table-cell' : 'none';
+    
+    tr.innerHTML = `
+      <td><input type="text" class="i-code" value="${itm.code||''}" readonly style="background:transparent; border:none; width:100%; text-overflow:ellipsis;"></td>
+      <td>
+        <select class="i-name-sel" style="width:100%; border:none; background:transparent; font-size:13px; color:var(--text);" onchange="handleConceptChange(this)">
+          <option value="">-- Seleccionar / Buscar --</option>
+          ${invOpts}
+          <option value="_new" style="font-weight:bold; color:var(--blue);">+ Crear Nuevo Concepto...</option>
+        </select>
+        <div class="i-custom-name" style="display:none;">${itm.name||''}</div>
+      </td>
+      <td><input type="number" class="i-qty" value="${itm.qty}" min="0.01" step="any" oninput="recalcRowTotal(this)" style="background:transparent; border:none; border-bottom:1px solid #444; width:100%;"></td>
+      <td><input type="text" class="i-unit" value="${itm.unit||'pza'}" readonly style="background:transparent; border:none; width:100%;"></td>
+      <td class="td-price" style="display:${displayStyle}"><input type="number" class="i-price" value="${itm.price||0}" min="0" step="any" oninput="recalcRowTotal(this)" placeholder="$0.00" style="background:transparent; border:none; border-bottom:1px solid #444; width:100%;"></td>
+      <td class="td-price i-total" style="display:${displayStyle}; text-align:right; font-weight:bold; font-size:12px; color:var(--text);">$0.00</td>
+      <td style="text-align:right;"><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+    
+    const sel = tr.querySelector('.i-name-sel');
+    if (exists) {
+      sel.value = itm.code;
+    } else if (selVal === '_custom') {
+      const opt = document.createElement('option');
+      opt.value = itm.code || '_custom';
+      opt.dataset.name = itm.name;
+      opt.dataset.unit = itm.unit;
+      opt.textContent = itm.code ? `${itm.code} - ${itm.name}` : itm.name;
+      sel.insertBefore(opt, sel.lastElementChild);
+      sel.value = opt.value;
+    }
+
+    recalcRowTotal(tr.querySelector('.i-qty'));
+  }
+
+  function handleConceptChange(sel) {
+    const tr = sel.closest('tr');
+    if (sel.value === '_new') {
+      sel.value = ''; 
+      document.getElementById('nc-target-row-idx').value = tr.dataset.idx;
+      
+      const d = window.DB.get();
+      document.getElementById('nc-cat').innerHTML = d.concept_categories.map(c => `<option value="${c}">${c}</option>`).join('');
+      document.getElementById('nc-unit').innerHTML = d.concept_units.map(u => `<option value="${u}">${u}</option>`).join('');
+      document.getElementById('nc-name').value = '';
+      document.getElementById('nc-code').value = 'Autogenerado...';
+      
+      document.getElementById('new-concept-pane').style.display = 'block';
+      document.getElementById('nc-name').focus();
+    } else {
+      const opt = sel.options[sel.selectedIndex];
+      if (opt && opt.value) {
+        tr.querySelector('.i-code').value = opt.value === '_custom' ? '' : opt.value;
+        tr.querySelector('.i-unit').value = opt.dataset.unit || 'pza';
+        tr.querySelector('.i-custom-name').textContent = opt.dataset.name || '';
+      } else {
+        tr.querySelector('.i-code').value = '';
+        tr.querySelector('.i-unit').value = '';
+        tr.querySelector('.i-custom-name').textContent = '';
+      }
+    }
+  }
+
+  function saveInlineConcept() {
+    const cat = document.getElementById('nc-cat').value;
+    const unit = document.getElementById('nc-unit').value;
+    const name = document.getElementById('nc-name').value.trim();
+    if (!name) return alert('Por favor, ingresa el nombre del concepto.');
+    
+    const prefix = cat.substring(0, 3).toUpperCase();
+    const d = window.DB.get();
+    const count = d.inventory.filter(i => i.category === cat).length + 1;
+    const code = `${prefix}-${String(count).padStart(3, '0')}`;
+    
+    const newItem = {
+      id: 'inv' + Date.now(),
+      code: code,
+      name: name,
+      category: cat,
+      unit: unit,
+      stock: 0,
+      min: 0,
+      cost: 0
+    };
+    window.DB.addOrUpdateInventory(newItem);
+    
+    document.getElementById('new-concept-pane').style.display = 'none';
+    updateAllConceptSelects();
+    
+    const targetIdx = document.getElementById('nc-target-row-idx').value;
+    const tr = document.querySelector(`tr[data-idx="${targetIdx}"]`);
+    if(tr) {
+      const sel = tr.querySelector('.i-name-sel');
+      sel.value = code;
+      handleConceptChange(sel);
+    }
+  }
+
+  function updateAllConceptSelects() {
+    const d = window.DB.get();
+    const invOpts = d.inventory.map(inv => `<option value="${inv.code}" data-name="${inv.name}" data-unit="${inv.unit}">${inv.code} - ${inv.name}</option>`).join('');
+    
+    document.querySelectorAll('.i-name-sel').forEach(sel => {
+      const currentVal = sel.value;
+      let customOpt = '';
+      if (currentVal && currentVal !== '_new' && !d.inventory.find(i=>i.code === currentVal)) {
+          const opt = sel.options[sel.selectedIndex];
+          if(opt) customOpt = `<option value="${opt.value}" data-name="${opt.dataset.name}" data-unit="${opt.dataset.unit}">${opt.textContent}</option>`;
+      }
+      sel.innerHTML = `
+        <option value="">-- Seleccionar / Buscar --</option>
+        ${invOpts}
+        ${customOpt}
+        <option value="_new" style="font-weight:bold; color:var(--blue);">+ Crear Nuevo Concepto...</option>
+      `;
+      sel.value = currentVal;
+    });
+  }
+
+  function closeModal() {
+    document.getElementById('mod-overlay').style.display = 'none';
+    document.getElementById('new-concept-pane').style.display = 'none';
+  }
+
+  function saveOrder() {
+    const id = document.getElementById('m-id').value;
+    const mstatus = document.getElementById('m-status').value;
+    const items = [];
+    const requirePrice = ['Comprado', 'Recibido', 'Entregado'].includes(mstatus);
+    let missingPrice = false;
+
+    document.querySelectorAll('#m-items tbody tr').forEach(tr => {
+      const code = tr.querySelector('.i-code').value.trim();
+      // To get the name properly from select:
+      const sel = tr.querySelector('.i-name-sel');
+      let name = '';
+      if (sel.value && sel.value !== '_custom') {
+         const opt = sel.options[sel.selectedIndex];
+         name = opt.dataset.name;
+      } else {
+         name = tr.querySelector('.i-custom-name').textContent || tr.querySelector('.i-code').value; // fallback
+      }
+      
+      const qty = parseFloat(tr.querySelector('.i-qty').value);
+      const unit = tr.querySelector('.i-unit').value.trim();
+      const price = parseFloat(tr.querySelector('.i-price').value) || 0;
+      
+      if(name && qty) {
+        if(requirePrice && price <= 0) missingPrice = true;
+        items.push({code, name, qty, unit, price});
+      }
+    });
+
+    if(items.length === 0) return alert('Debes agregar al menos un artículo.');
+    if(missingPrice && requirePrice) return alert('A partir de este estado (Comprado/Recibido), es obligatorio registrar el precio unitario de todos los artículos.');
+
+    const o = {
+      date: document.getElementById('m-date').value,
+      status: mstatus,
+      requester: document.getElementById('m-req').value,
+      project: document.getElementById('m-proj').value,
+      items: items
+    };
+
+    if (id) {
+      const existing = window.DB.get().orders.find(x => x.id === id);
+      o.id = id;
+      o.folio = existing.folio;
+      o.stockAdded = existing.stockAdded || false;
+      
+      // Stock logic
+      if (o.status === 'Recibido' && !o.stockAdded) {
+        // Add to inventory
+        o.items.forEach(itm => {
+          if(itm.code) {
+             const d = window.DB.get();
+             const invItm = d.inventory.find(inv => inv.code === itm.code);
+             if(invItm) {
+               window.DB.logInventoryPurchase(itm.code, itm.qty, itm.price, o.date);
+             } else {
+               // Create new
+               window.DB.addOrUpdateInventory({
+                 id: 'inv' + Date.now() + Math.random(),
+                 code: itm.code,
+                 name: itm.name,
+                 category: 'Compras Rápidas',
+                 stock: itm.qty,
+                 min: 0,
+                 unit: itm.unit,
+                 cost: itm.price || 0,
+                 lastPurchaseDate: o.date,
+                 priceHistory: itm.price ? [{date: o.date, price: itm.price}] : []
+               });
+             }
+          }
+        });
+        o.stockAdded = true;
+      }
+
+      window.DB.updateOrder(o);
+    } else {
+      o.stockAdded = false;
+      window.DB.addOrder(o);
+    }
+
+    closeModal();
+    renderKanban();
+  }
+
+  function initDragAndDrop() {
+    document.querySelectorAll('.col-body').forEach(col => {
+      col.addEventListener('dragover', e => {
+        e.preventDefault();
+        col.style.background = 'var(--surface1)';
+      });
+      col.addEventListener('dragleave', e => {
+        col.style.background = '';
+      });
+      col.addEventListener('drop', e => {
+        e.preventDefault();
+        col.style.background = '';
+        const orderId = e.dataTransfer.getData('text/plain');
+        if(!orderId) return;
+        const newStatus = col.id.replace('list-', '');
+        
+        const d = window.DB.get();
+        const order = d.orders.find(o => o.id === orderId);
+        if(!order || order.status === newStatus) return;
+        
+        const requirePrice = ['Comprado', 'Recibido', 'Entregado'].includes(newStatus);
+        let missingPrice = false;
+        if (order.items) {
+          order.items.forEach(itm => {
+            if(requirePrice && (!itm.price || itm.price <= 0)) missingPrice = true;
+          });
+        }
+        
+        if(requirePrice && missingPrice) {
+          alert(`No se puede mover a '${newStatus}' porque faltan precios unitarios. Por favor abre el pedido y completalos.`);
+          return;
+        }
+
+        order.status = newStatus;
+        if(newStatus === 'Recibido' && !order.stockAdded) {
+          order.items.forEach(itm => {
+            if(itm.code) {
+               const currentDB = window.DB.get();
+               const invItm = currentDB.inventory.find(inv => inv.code === itm.code);
+               if(invItm) {
+                 window.DB.logInventoryPurchase(itm.code, itm.qty, itm.price, order.date);
+               } else {
+                 window.DB.addOrUpdateInventory({
+                   id: 'inv' + Date.now() + Math.random(),
+                   code: itm.code,
+                   name: itm.name,
+                   category: 'Compras Rápidas',
+                   stock: itm.qty,
+                   min: 0,
+                   unit: itm.unit,
+                   cost: itm.price || 0,
+                   lastPurchaseDate: order.date,
+                   priceHistory: itm.price ? [{date: order.date, price: itm.price}] : []
+                 });
+               }
+            }
+          });
+          order.stockAdded = true;
+        }
+
+        window.DB.updateOrder(order);
+        renderKanban();
+      });
+    });
+  }
+
+  initDragAndDrop();
+  renderKanban();
+</script>
+</body>
+</html>

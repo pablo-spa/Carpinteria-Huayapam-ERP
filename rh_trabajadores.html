@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Directorio RH - Trabajadores</title>
+  <style>
+    :root {
+      --bg: #eff1f5;
+      --surface: #ffffff;
+      --border: #dce0e8;
+      --border-strong: #bcc0cc;
+      --text: #4c4f69;
+      --muted: #8c8fa1;
+      --primary: #1e66f5;
+      --primary-hover: #1e66f5e6;
+      --radius: 8px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e2e;
+        --surface: #181825;
+        --border: #313244;
+        --border-strong: #45475a;
+        --text: #cdd6f4;
+        --muted: #a6adc8;
+        --primary: #8caaee;
+        --primary-hover: #8caaeed9;
+      }
+    }
+    
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    
+    .table-container {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: rgba(0,0,0,0.02);
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    @media (prefers-color-scheme: dark) {
+      th { background: rgba(255,255,255,0.02); }
+    }
+    tr:last-child th, tr:last-child td { border-bottom: none; }
+    
+    tbody tr { cursor: pointer; transition: background 0.15s; }
+    tbody tr:hover { background: rgba(0,0,0,0.02); }
+    @media (prefers-color-scheme: dark) {
+      tbody tr:hover { background: rgba(255,255,255,0.03); }
+    }
+    
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--text);
+    }
+    
+    /* Modal Ficha */
+    .modal-overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.4);
+      display: none; justify-content: center; align-items: center;
+      backdrop-filter: blur(2px);
+      z-index: 1000;
+    }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid var(--border-strong);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.02);
+    }
+    @media (prefers-color-scheme: dark) {
+      .modal-header { background: rgba(255,255,255,0.02); }
+    }
+    .modal-title { font-weight: 700; font-size: 18px; }
+    .modal-close {
+      background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted);
+    }
+    .modal-body { padding: 20px; }
+    
+    .ficha-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    .f-field { display: flex; flex-direction: column; gap: 4px; }
+    .f-field.full { grid-column: 1 / -1; }
+    .f-field.half { grid-column: span 2; }
+    
+    .f-field label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+    .f-input {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px 12px;
+      border-radius: 6px; font-family: inherit; font-size: 14px; width: 100%; box-sizing: border-box;
+      min-height: 40px;
+    }
+    .f-input:disabled { opacity: 0.7; background: rgba(0,0,0,0.05); }
+    .f-input:focus { outline: none; border-color: var(--primary); }
+    
+    .ficha-profile {
+      display: flex; gap: 16px; align-items: center; margin-bottom: 24px;
+    }
+    .ficha-avatar {
+      width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;
+    }
+    
+    .modal-footer {
+      padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1><span>👷‍♂️</span> Directorio de Trabajadores</h1>
+    <button class="btn" onclick="openFicha()">+ Nuevo Trabajador</button>
+  </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:50px;"></th>
+                <th>ID Personal</th>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>RFC</th>
+                <th>Celular</th>
+                <th>Fecha Ingreso</th>
+                <th>Años</th>
+                <th>Vacaciones Disponibles</th>
+                <th>Sueldo Diario</th>
+                <th>Sueldo Semanal ($)</th>
+              </tr>
+            </thead>
+            <tbody id="worker-list">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+
+  <!-- Ficha Modal -->
+  <div class="modal-overlay" id="ficha-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="ficha-title">Ficha de Trabajador</div>
+        <button class="modal-close" onclick="closeFicha()">✕</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto; max-height:80vh;">
+        <div class="ficha-profile">
+          <div class="ficha-avatar" id="f-avatar">N</div>
+          <div>
+            <div style="font-size:18px; font-weight:700;" id="f-display-name">Nuevo Trabajador</div>
+            <div style="font-size:13px; color:var(--muted);" id="f-id-pers">-</div>
+          </div>
+        </div>
+        
+        <input type="hidden" id="f-id">
+        <div class="ficha-grid">
+          <div class="f-field">
+            <label>Nombre(s)</label>
+            <input type="text" class="f-input" id="f-given-name" oninput="recalcValues()">
+          </div>
+          <div class="f-field">
+            <label>Apellido Paterno</label>
+            <input type="text" class="f-input" id="f-paterno" oninput="recalcValues()">
+          </div>
+          <div class="f-field">
+            <label>Apellido Materno</label>
+            <input type="text" class="f-input" id="f-materno" oninput="recalcValues()">
+          </div>
+          <div class="f-field full">
+            <label>Nombre Completo</label>
+            <input type="text" class="f-input" id="f-name" disabled>
+          </div>
+          <div class="f-field">
+            <label>ID Personal</label>
+            <input type="text" class="f-input" id="f-id-personal" disabled>
+          </div>
+          <div class="f-field">
+            <label>Fecha de Nacimiento</label>
+            <input type="date" class="f-input" id="f-birth" onchange="recalcValues()">
+          </div>
+          <div class="f-field">
+            <label>RFC</label>
+            <input type="text" class="f-input" id="f-rfc" style="text-transform:uppercase;">
+          </div>
+          
+          <div class="f-field">
+            <label>Categoría</label>
+            <select class="f-input" id="f-role"></select>
+          </div>
+          <div class="f-field">
+            <label>Empleado en Carpintería</label>
+            <select class="f-input" id="f-in-workshop">
+              <option value="Si">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="f-field">
+            <label>Medir Asistencia</label>
+            <select class="f-input" id="f-measure-att">
+              <option value="Si">Sí</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          
+          <div class="f-field">
+            <label>Número Celular</label>
+            <input type="text" class="f-input" id="f-phone">
+          </div>
+          <div class="f-field">
+            <label>Contacto Emergencia</label>
+            <input type="text" class="f-input" id="f-emergency" placeholder="Nombre - Tel">
+          </div>
+          <div class="f-field">
+            <label>NSS</label>
+            <input type="text" class="f-input" id="f-nss">
+          </div>
+          
+          <div class="f-field full"><hr style="border:0; border-top:1px dashed var(--border); margin:4px 0;"></div>
+          
+          <div class="f-field">
+            <label>Fecha de Entrada</label>
+            <input type="date" class="f-input" id="f-start-date" onchange="recalcValues()">
+          </div>
+          <div class="f-field">
+            <label>Años Trabajados</label>
+            <input type="text" class="f-input" id="f-years-worked" disabled>
+          </div>
+          <div class="f-field">
+            <label>Fecha de Salida</label>
+            <input type="date" class="f-input" id="f-end-date">
+          </div>
+          
+          <div class="f-field">
+            <label>Vacaciones (Acumuladas)</label>
+            <input type="number" class="f-input" id="f-vacation" step="1" min="0" disabled>
+          </div>
+          <div class="f-field half">
+            <label>Días agregados al mes (Ene 2025)</label>
+            <input type="number" class="f-input" id="f-vac-added" step="0.5" value="0">
+          </div>
+          
+          <div class="f-field full"><hr style="border:0; border-top:1px dashed var(--border); margin:4px 0;"></div>
+
+          <div class="f-field">
+            <label>Horas Semanales</label>
+            <input type="number" class="f-input" id="f-hours-week" step="1" value="48" oninput="recalcValues()">
+          </div>
+          <div class="f-field">
+            <label>Sueldo Semanal ($)</label>
+            <input type="number" class="f-input" id="f-salary" step="any" min="0" oninput="recalcValues()">
+          </div>
+          <div class="f-field">
+            <label>Sueldo x Hora ($)</label>
+            <input type="text" class="f-input" id="f-salary-hr" disabled>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" style="background:var(--bg); border:1px solid var(--border); color:var(--text);" onclick="closeFicha()">Cancelar</button>
+        <button class="btn" onclick="saveFicha()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script>
+    function renderList() {
+      const d = window.DB.get();
+      let dbUpdated = false;
+      d.workers.forEach(w => {
+        if(!w.personalId) {
+          // Attempt to generate if missing
+          const g = w.givenName || (w.name ? w.name.split(' ')[0] : '');
+          const p = w.paterno || (w.name && w.name.split(' ').length > 1 ? w.name.split(' ')[1] : '');
+          const bDate = w.birthDate || '2000-01-01'; // Fallback to 00 if no birth date
+          
+          if(g) {
+            let part1 = g.substring(0,2).toUpperCase();
+            if (part1.length === 1) part1 += 'X';
+            let part2 = p ? p.substring(0,1).toUpperCase() : 'X';
+            let part3 = bDate.substring(2,4);
+            w.personalId = `${part1}${part2}${part3}`;
+            dbUpdated = true;
+          }
+        }
+      });
+      if(dbUpdated) window.DB.save(d);
+
+      const tbody = document.getElementById('worker-list');
+      tbody.innerHTML = '';
+      
+      d.workers.forEach(w => {
+        const namePart = w.name ? w.name.charAt(0).toUpperCase() : 'N';
+        
+        let yr = 0;
+        if(w.startDate) {
+          const ms = Date.now() - new Date(w.startDate).getTime();
+          yr = Math.floor(ms / (1000*3600*24*365.25));
+          if(yr < 0) yr = 0;
+        }
+
+        const hrsWeek = w.hoursWeek || 48;
+        const sDir = (w.baseSalary && hrsWeek > 0) ? ((w.baseSalary / hrsWeek) * 8) : 0;
+        
+        const tr = document.createElement('tr');
+        tr.onclick = () => openFicha(w);
+        
+        tr.innerHTML = `
+          <td><div class="avatar">${namePart}</div></td>
+          <td><b>${w.personalId || '-'}</b></td>
+          <td style="font-weight:600;">${w.name || '-'}</td>
+          <td>${w.role || '-'}</td>
+          <td>${w.rfc || '-'}</td>
+          <td>${w.phone || '-'}</td>
+          <td>${w.startDate || '-'}</td>
+          <td>${yr}</td>
+          <td style="font-weight:bold;">${w.vacationDays !== undefined ? w.vacationDays : '-'} d</td>
+          <td>$${parseFloat(sDir).toLocaleString('es-MX')}</td>
+          <td style="color:var(--primary); font-weight:600;">$${parseFloat(w.baseSalary||0).toLocaleString('es-MX')}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    
+    function recalcValues() {
+      const g = document.getElementById('f-given-name').value.trim();
+      const p = document.getElementById('f-paterno').value.trim();
+      const m = document.getElementById('f-materno').value.trim();
+      
+      const full = [p, m, g].filter(Boolean).join(' ');
+      document.getElementById('f-name').value = full;
+      
+      document.getElementById('f-display-name').textContent = full || 'Nuevo Trabajador';
+      document.getElementById('f-avatar').textContent = full ? full.charAt(0).toUpperCase() : 'N';
+      
+      const bDate = document.getElementById('f-birth').value;
+      if(p && g && bDate) {
+        let part1 = g.substring(0,2).toUpperCase();
+        let part2 = p.substring(0,1).toUpperCase();
+        let part3 = bDate.substring(2,4); // YY
+        document.getElementById('f-id-personal').value = `${part1}${part2}${part3}`;
+      } else {
+        document.getElementById('f-id-personal').value = '';
+      }
+      document.getElementById('f-id-pers').textContent = document.getElementById('f-id-personal').value || '-';
+      
+      const eDate = document.getElementById('f-start-date').value;
+      let yr = 0;
+      let vDays = 0;
+      if(eDate) {
+        const ms = Date.now() - new Date(eDate).getTime();
+        yr = Math.floor(ms / (1000*3600*24*365.25));
+        if(yr < 0) yr = 0;
+        
+        if (yr === 1) vDays = 12;
+        else if (yr === 2) vDays = 14;
+        else if (yr === 3) vDays = 16;
+        else if (yr === 4) vDays = 18;
+        else if (yr === 5) vDays = 20;
+        else if (yr >= 6 && yr <= 10) vDays = 22;
+        else if (yr >= 11 && yr <= 15) vDays = 24;
+        else if (yr >= 16 && yr <= 20) vDays = 26;
+        else if (yr >= 21 && yr <= 25) vDays = 28;
+        else if (yr >= 26) vDays = 30;
+      }
+      document.getElementById('f-years-worked').value = yr;
+      
+      const vAdd = parseFloat(document.getElementById('f-vac-added').value) || 0;
+      document.getElementById('f-vacation').value = Math.max(0, vDays + vAdd);
+      
+      const hrs = parseFloat(document.getElementById('f-hours-week').value) || 0;
+      const sal = parseFloat(document.getElementById('f-salary').value) || 0;
+      document.getElementById('f-salary-hr').value = (hrs > 0) ? (sal / hrs).toFixed(2) : '0.00';
+    }
+
+    function openFicha(w = null) {
+      document.getElementById('ficha-modal').style.display = 'flex';
+      
+      const d = window.DB.get();
+      document.getElementById('f-role').innerHTML = '<option value="">-- Seleccionar Puesto --</option>' + (d.worker_roles || []).map(r => `<option value="${r}">${r}</option>`).join('');
+      
+      if(w) {
+        document.getElementById('ficha-title').textContent = 'Editar Trabajador';
+        document.getElementById('f-id').value = w.id;
+        document.getElementById('f-given-name').value = w.givenName || '';
+        document.getElementById('f-paterno').value = w.paterno || '';
+        document.getElementById('f-materno').value = w.materno || '';
+        document.getElementById('f-name').value = w.name || '';
+        document.getElementById('f-birth').value = w.birthDate || '';
+        document.getElementById('f-rfc').value = w.rfc || '';
+        document.getElementById('f-role').value = w.role || '';
+        document.getElementById('f-in-workshop').value = w.inWorkshop || 'Si';
+        document.getElementById('f-measure-att').value = w.measureAtt || 'Si';
+        document.getElementById('f-phone').value = w.phone || '';
+        document.getElementById('f-start-date').value = w.startDate || '';
+        document.getElementById('f-end-date').value = w.endDate || '';
+        document.getElementById('f-vac-added').value = w.vacAdded || 0;
+        document.getElementById('f-hours-week').value = w.hoursWeek || 48;
+        document.getElementById('f-salary').value = w.baseSalary || 0;
+        document.getElementById('f-emergency').value = w.emergencyContact || '';
+        document.getElementById('f-nss').value = w.nss || '';
+        
+        document.getElementById('f-display-name').textContent = w.name || 'Trabajador';
+        document.getElementById('f-display-role').textContent = w.role || '-';
+        document.getElementById('f-avatar').textContent = w.name ? w.name.charAt(0).toUpperCase() : 'N';
+      } else {
+        document.getElementById('ficha-title').textContent = 'Nuevo Trabajador';
+        document.getElementById('f-id').value = '';
+        document.getElementById('f-given-name').value = '';
+        document.getElementById('f-paterno').value = '';
+        document.getElementById('f-materno').value = '';
+        document.getElementById('f-name').value = '';
+        document.getElementById('f-birth').value = '';
+        document.getElementById('f-rfc').value = '';
+        document.getElementById('f-role').value = '';
+        document.getElementById('f-in-workshop').value = 'Si';
+        document.getElementById('f-measure-att').value = 'Si';
+        document.getElementById('f-phone').value = '';
+        document.getElementById('f-start-date').value = '';
+        document.getElementById('f-end-date').value = '';
+        document.getElementById('f-vac-added').value = 0;
+        document.getElementById('f-hours-week').value = 48;
+        document.getElementById('f-salary').value = '';
+        document.getElementById('f-emergency').value = '';
+        document.getElementById('f-nss').value = '';
+        
+        document.getElementById('f-display-name').textContent = 'Nuevo Trabajador';
+        document.getElementById('f-display-role').textContent = '-';
+        document.getElementById('f-avatar').textContent = 'N';
+      }
+      
+      recalcValues();
+    }
+    
+    function closeFicha() {
+      document.getElementById('ficha-modal').style.display = 'none';
+    }
+    
+    function saveFicha() {
+      const g = document.getElementById('f-given-name').value.trim();
+      const p = document.getElementById('f-paterno').value.trim();
+      const nameStr = document.getElementById('f-name').value.trim();
+      if(!g || !p) return alert('Nombre(s) y Apellido Paterno son obligatorios');
+      
+      const d = window.DB.get();
+      const id = document.getElementById('f-id').value;
+      
+      const wData = {
+        givenName: g,
+        paterno: p,
+        materno: document.getElementById('f-materno').value.trim(),
+        name: nameStr,
+        personalId: document.getElementById('f-id-personal').value,
+        birthDate: document.getElementById('f-birth').value,
+        rfc: document.getElementById('f-rfc').value.trim().toUpperCase(),
+        role: document.getElementById('f-role').value.trim(),
+        inWorkshop: document.getElementById('f-in-workshop').value,
+        measureAtt: document.getElementById('f-measure-att').value,
+        phone: document.getElementById('f-phone').value.trim(),
+        startDate: document.getElementById('f-start-date').value,
+        endDate: document.getElementById('f-end-date').value,
+        vacationDays: parseInt(document.getElementById('f-vacation').value) || 0,
+        vacAdded: parseFloat(document.getElementById('f-vac-added').value) || 0,
+        hoursWeek: parseFloat(document.getElementById('f-hours-week').value) || 0,
+        baseSalary: parseFloat(document.getElementById('f-salary').value) || 0,
+        emergencyContact: document.getElementById('f-emergency').value.trim(),
+        nss: document.getElementById('f-nss').value.trim()
+      };
+      
+      if(id) {
+        const idx = d.workers.findIndex(x => x.id === id);
+        if(idx >= 0) {
+          d.workers[idx] = { ...d.workers[idx], ...wData };
+        }
+      } else {
+        wData.id = 'w' + Date.now();
+        wData.loanBalance = 0;
+        wData.savedHours = 0;
+        d.workers.push(wData);
+      }
+      
+      window.DB.save(d);
+      closeFicha();
+      renderList();
+    }
+    
+    // Init
+    renderList();
+  </script>
+</body>
+</html>

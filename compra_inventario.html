@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movimientos — Almacén</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --green-bg: rgba(64,160,43,0.15);
+  --amber: #df8e1d; --amber-bg: rgba(223,142,29,0.15);
+  --red: #d20f39; --red-bg: rgba(210,15,57,0.15);
+  --blue: #1e66f5; --blue-bg: rgba(30,102,245,0.15);
+  --radius: 10px; --radius-lg: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
+    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
+    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15);
+    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
+  }
+}
+
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; padding-bottom: 140px; }
+
+/* Header */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--mantle); border-bottom: 1px solid var(--crust);
+  padding: 14px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.header-title { font-size: 16px; font-weight: 700; flex: 1; color: var(--text); }
+.header-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.tag { background: var(--surface0); color: var(--text); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
+.btn { cursor: pointer; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; transition: opacity .15s; font-family: inherit; }
+.btn:hover { opacity: .8; }
+.btn-ghost { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.btn-primary { background: var(--green); color: var(--base); }
+.btn-blue { background: var(--blue); color: var(--base); }
+
+/* Status */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.badge-borrador { background: var(--surface0); color: var(--subtext); }
+.badge-pagado   { background: var(--green-bg); color: var(--green); }
+
+select.state-select { padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; background: var(--base); border: 1px solid var(--surface1); color: var(--text); }
+select.state-select:focus { outline: none; border-color: var(--blue); }
+
+/* Main layout */
+.main { max-width: 960px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; }
+
+/* Cards */
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
+.card-header { padding: 16px 20px; border-bottom: 1px solid var(--crust); display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.card-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); }
+.card-body { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+/* Forms */
+.row-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: start; }
+
+.field { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.field label { font-size: 12px; font-weight: 700; color: var(--subtext); }
+.field input, .field select, .field textarea {
+  background: var(--base); border: 1px solid var(--surface0);
+  border-radius: 8px; padding: 10px 12px; color: var(--text);
+  font-size: 14px; font-family: inherit; width: 100%; height: 42px;
+  transition: border-color .15s;
+}
+.field textarea { resize: vertical; height: auto; min-height: 80px; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); }
+
+.info-note { background: var(--blue-bg); color: var(--blue); border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.5; border: 1px solid rgba(30,102,245,0.2); }
+.info-note strong { display: block; margin-bottom: 4px; font-size: 14px; font-weight: 700; }
+
+/* Table */
+.table-wrap { overflow-x: auto; margin: -20px; padding: 20px; padding-bottom: 0px; }
+.items-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+.items-table th {
+  text-align: left; font-size: 11px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--subtext); padding: 8px 10px;
+  border-bottom: 2px solid var(--crust);
+}
+.items-table td { padding: 10px; vertical-align: middle; border-bottom: 1px solid var(--crust); }
+.items-table tr:last-child td { border-bottom: none; }
+.items-table input, .items-table select {
+  background: var(--base); border: 1px solid var(--surface0);
+  border-radius: 6px; padding: 6px 10px; color: var(--text);
+  font-size: 13px; font-family: inherit; width: 100%;
+}
+.items-table input:focus, .items-table select:focus { outline: none; border-color: var(--blue); }
+
+.num-right { text-align: right; font-variant-numeric: tabular-nums; }
+.del-btn { cursor: pointer; background: var(--surface0); border: 1px solid var(--surface1); border-radius: 6px; color: var(--subtext); font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.del-btn:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+/* Stock pill */
+.stock-pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; }
+.stock-ok   { background: var(--green-bg); color: var(--green); }
+.stock-low  { background: var(--amber-bg); color: var(--amber); }
+.stock-none { background: var(--red-bg); color: var(--red); }
+
+/* Add item row */
+.add-item-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; padding-top: 20px; border-top: 1px dashed var(--surface1); margin: 0 -20px; padding: 20px; background: var(--mantle); }
+
+/* Stock preview panel */
+.stock-panel { border: 1px solid var(--crust); border-radius: 8px; overflow: hidden; background: var(--base); }
+.stock-row { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--crust); }
+.stock-row:last-child { border-bottom: none; }
+.stock-name { flex: 1; font-size: 14px; font-weight: 700; color: var(--text); }
+.stock-detail { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+.stock-numbers { display: flex; gap: 16px; align-items: center; text-align: right; }
+.stock-arrow { font-size: 16px; font-weight: 800; color: var(--subtext); }
+.stock-before { font-size: 13px; color: var(--subtext); text-decoration: line-through; }
+.stock-after  { font-size: 15px; font-weight: 800; color: var(--green); }
+
+/* Summary bar */
+.summary-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--mantle); border-top: 1px solid var(--crust);
+  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  z-index: 100; flex-wrap: wrap; box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+}
+.summary-pills { display: flex; gap: 24px; flex-wrap: wrap; }
+.summary-stat { display: flex; flex-direction: column; }
+.summary-stat .s-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); font-weight: 800; margin-bottom: 4px; }
+.summary-stat .s-val { font-size: 20px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1; }
+.summary-stat .s-val.green { color: var(--green); font-size: 24px; }
+.summary-actions { display: flex; gap: 12px; align-items: center; }
+
+/* Toast */
+.toast-container { position: fixed; top: 70px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--text); color: var(--base); padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; box-shadow: 0 4px 16px rgba(0,0,0,.2); animation: slideIn .2s; }
+.toast.green { background: var(--green); }
+@keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toasts"></div>
+
+<div class="header">
+  <div style="display:flex; align-items:center; gap:16px; flex:1;">
+    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
+    <div class="header-title">Transacción y Movimiento</div>
+  </div>
+  <div class="header-meta">
+    <span class="badge badge-borrador" id="status-badge">● Pedido</span>
+    <span class="tag" id="folio-tag">OC-0047</span>
+    <select class="state-select" id="estado-global" onchange="onStateChange()">
+        <option value="pedido">Modo: Compra a Proveedor ( Compras )</option>
+        <option value="entaller">Modo: Confirmado En Taller ( Almacén )</option>
+        <option value="usado">Modo: Extracción para Uso ( Carpintero )</option>
+    </select>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Información del Movimiento</span></div>
+    <div class="card-body">
+      <div class="row-grid">
+        <div class="field">
+          <label>Proveedor</label>
+          <select id="proveedor" onchange="onProveedorChange()">
+            <option value="">— Selecciona —</option>
+            <option value="maderas_del_sur">Maderas del Sur</option>
+            <option value="maderex">Maderex Oaxaca</option>
+            <option value="ferretera_central">Ferretera Central</option>
+            <option value="pinturas_comex">Pinturas Comex</option>
+            <option value="herrajes_leon">Herrajes León</option>
+            <option value="otro">Otro proveedor…</option>
+          </select>
+        </div>
+        <div class="field" id="proveedor-otro-wrap" style="display:none;">
+          <label>Nombre del proveedor</label>
+          <input type="text" id="proveedor-otro" placeholder="Escribe el nombre...">
+        </div>
+        <div class="field">
+          <label>Fecha del Documento</label>
+          <input type="date" id="fecha" value="">
+        </div>
+        <div class="field">
+          <label>Número de Factura / Remisión</label>
+          <input type="text" id="factura" placeholder="Ej. FAC-2024-003812">
+        </div>
+      </div>
+
+      <div class="row-grid">
+        <div class="field">
+          <label>Forma de Pago</label>
+          <select id="forma-pago" onchange="onFormaPagoChange()">
+            <option value="">— Selecciona —</option>
+            <option value="CHU">CHU (cuenta empresa fiscal)</option>
+            <option value="SATP">SATP (cuenta operativa carpintería)</option>
+            <option value="CAJA">CAJA (efectivo operativo)</option>
+            <option value="TERM">TERM (Minerva Tello)</option>
+            <option value="credito">Crédito del proveedor</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Recibido / Operado por</label>
+          <select id="recibe">
+            <option value="">— Selecciona —</option>
+            <option value="compras">Compras (SATP)</option>
+            <option value="administracion">Administración / Caja</option>
+            <option value="almacen">Almacén Taller</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Notas Adicionales</label>
+        <textarea id="notas" placeholder="Condiciones de entrega, pendientes, etc..."></textarea>
+      </div>
+
+      <div class="info-note" id="pago-note" style="display:none;">
+        <strong id="pago-note-title"></strong>
+        <span id="pago-note-body"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Listado de Materiales</span></div>
+    <div class="card-body" style="padding:0;">
+      
+      <div class="table-wrap">
+        <table class="items-table" id="items-table">
+          <thead>
+            <tr>
+              <th style="width:25%">Material</th>
+              <th style="width:20%">Proyecto Asignado</th>
+              <th style="width:10%">Cantidad</th>
+              <th style="width:8%">Unidad</th>
+              <th style="width:12%" class="num-right">Precio unit.</th>
+              <th style="width:12%" class="num-right">Subtotal</th>
+              <th style="width:10%">Stock Real</th>
+              <th style="width:4%"></th>
+            </tr>
+          </thead>
+          <tbody id="items-body"></tbody>
+        </table>
+      </div>
+
+      <div class="add-item-row">
+        <div class="field" style="flex:2; min-width:200px;">
+          <label>Agregar Material</label>
+          <select id="add-mat" onchange="onMatSelect()">
+            <option value="">— Buscar en catálogo —</option>
+            <optgroup label="Tableros">
+              <option value="mdf15" data-u="pza" data-p="185" data-s="47">MDF 15mm (2.44×1.22)</option>
+              <option value="trip15" data-u="pza" data-p="175" data-s="18">Tripay 15mm</option>
+            </optgroup>
+            <optgroup label="Maderas macizas">
+              <option value="tzal" data-u="pt" data-p="850" data-s="120">Tzalam (pt)</option>
+              <option value="pino" data-u="pt" data-p="185" data-s="210">Pino común (pt)</option>
+              <option value="encino" data-u="pt" data-p="590" data-s="34">Encino (pt)</option>
+            </optgroup>
+            <optgroup label="Herrajes y Acabados">
+              <option value="bisag" data-u="par" data-p="38" data-s="142">Bisagra clip 110°</option>
+              <option value="corr" data-u="par" data-p="95" data-s="67">Corredera telescópica 18"</option>
+              <option value="barniz" data-u="lt" data-p="220" data-s="8">Barniz brillante (lt)</option>
+            </optgroup>
+            <option value="otro">Otro (especificar manual)…</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1; min-width:140px;">
+          <label>Proyecto</label>
+          <select id="add-proj">
+            <option value="ALMACEN">Stock Almacén</option>
+            <option value="PRY-168">PRY-168</option>
+            <option value="PRY-169">PRY-169</option>
+          </select>
+        </div>
+        <div class="field" style="flex:0.5; min-width:80px;">
+          <label>Cant.</label>
+          <input type="number" id="add-qty" min="0" step="any" placeholder="0">
+        </div>
+        <div class="field" style="flex:0.5; min-width:80px;">
+          <label>Unidad</label>
+          <select id="add-unit" onchange="checkNewUnit(this)" style="padding-top:8px; padding-bottom:8px;">
+            <option value="pza">pza</option>
+            <option value="caja">caja</option>
+            <option value="m2">m2</option>
+            <option value="ml">ml</option>
+            <option value="lote">lote</option>
+            <option value="lt">lt</option>
+            <option value="gln">gln</option>
+            <option value="par">par</option>
+            <option value="_new">+ Nueva...</option>
+          </select>
+        </div>
+        <div class="field" style="flex:0.8; min-width:100px;">
+          <label>Costo unit.</label>
+          <input type="number" id="add-price" min="0" step="any" placeholder="0.00">
+        </div>
+        <div style="padding-bottom:1px;">
+          <button class="btn btn-blue" onclick="addItem()" style="height:42px;">+ Add</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card" id="stock-preview-card" style="display:none;">
+    <div class="card-header"><span class="card-title">Impacto en Inventario Logístico</span></div>
+    <div class="card-body">
+      <div class="stock-panel" id="stock-panel"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="summary-bar">
+  <div class="summary-pills">
+    <div class="summary-stat">
+      <span class="s-label">Total renglones</span>
+      <span class="s-val" id="sum-items">0</span>
+    </div>
+    <div class="summary-stat">
+      <span class="s-label">Importe del movimiento</span>
+      <span class="s-val green" id="sum-total">$0</span>
+    </div>
+    <div class="summary-stat" id="sum-cuenta-wrap" style="display:none;">
+      <span class="s-label">Cuenta Operativa</span>
+      <span class="s-val" id="sum-cuenta" style="padding-top:4px;">—</span>
+    </div>
+  </div>
+  <div class="summary-actions">
+    <button class="btn btn-ghost" onclick="window.print()">🖨 Imprimir</button>
+    <button class="btn btn-primary" onclick="confirmar()" id="btn-confirm">✓ Confirmar Movimiento</button>
+  </div>
+</div>
+
+<script>
+let items = [];
+let nextId = 1;
+
+document.getElementById('fecha').value = new Date().toISOString().slice(0, 10);
+
+const STOCK = { mdf15:'47', trip15:'18', tzal:'120', pino:'210', encino:'34', bisag:'142', corr:'67', barniz:'8', otro:'?' };
+
+function fmt(n) { return '$' + Number(n).toLocaleString('es-MX', {minimumFractionDigits:2}); }
+
+function stockPill(val) {
+  const n = parseInt(val);
+  if (isNaN(n) || val === '?') return `<span class="stock-pill" style="background:var(--surface0);color:var(--text)">? N/A</span>`;
+  if (n === 0) return `<span class="stock-pill stock-none">✕ vacío</span>`;
+  if (n < 10)  return `<span class="stock-pill stock-low">⚠ ${n}</span>`;
+  return `<span class="stock-pill stock-ok">✓ ${n}</span>`;
+}
+
+function onProveedorChange() {
+  document.getElementById('proveedor-otro-wrap').style.display = document.getElementById('proveedor').value === 'otro' ? '' : 'none';
+}
+
+function onStateChange() {
+  const estado = document.getElementById('estado-global').value;
+  const badge = document.getElementById('status-badge');
+  if (estado==='pedido') {
+      badge.textContent = "● Pedido en Curso"; badge.className = "badge badge-borrador";
+  } else if (estado==='entaller') {
+      badge.textContent = "✓ Aceptado en Taller"; badge.className = "badge badge-pagado";
+  } else {
+      badge.textContent = "→ Extraído para Producción"; badge.className = "badge badge-pagado";
+  }
+  renderStockPreview();
+}
+
+const PAGO_NOTES = {
+  CHU: { title:'💳 CHU (Fiscal)', body:'Gasto aplicable en cuenta fiscal, requerimos factura oficial con UUID.' },
+  SATP:{ title:'🏦 SATP (Operativo)', body:'Transferencia operativa interna (Caja general banco).' },
+  CAJA:{ title:'💵 CAJA EFECTIVO', body:'Salida descontada del fondo de caja en efectivo de producción.' },
+  TERM:{ title:'🏦 TERM (Apoyo Socio)', body:'Pago realizado directamente por cuenta personal de Minerva.' },
+  credito:{ title:'📋 Crédito Abierto', body:'La compra se ingresa como deuda a pagar a corto plazo.' }
+};
+
+function onFormaPagoChange() {
+  const v = document.getElementById('forma-pago').value;
+  const note = document.getElementById('pago-note');
+  if (!v || !PAGO_NOTES[v]) { note.style.display = 'none'; return; }
+  document.getElementById('pago-note-title').textContent = PAGO_NOTES[v].title;
+  document.getElementById('pago-note-body').textContent  = PAGO_NOTES[v].body;
+  note.style.display = '';
+  updateSummary();
+}
+
+function checkNewUnit(sel) {
+  if (sel.value === '_new') {
+    const val = prompt('Escribe la nueva unidad (ej. kilo, paquete):');
+    if (val && val.trim()) {
+      const opt = document.createElement('option');
+      opt.value = val.trim().toLowerCase();
+      opt.textContent = val.trim().toLowerCase();
+      sel.insertBefore(opt, sel.lastElementChild);
+      sel.value = opt.value;
+    } else {
+      sel.value = 'pza';
+    }
+  }
+}
+
+function onMatSelect() {
+  const sel = document.getElementById('add-mat');
+  const opt = sel.options[sel.selectedIndex];
+  if(opt) {
+      document.getElementById('add-unit').value = opt.dataset.u || '';
+      document.getElementById('add-price').value = opt.dataset.p || '';
+      document.getElementById('add-qty').focus();
+  }
+}
+
+function addItem() {
+  const sel   = document.getElementById('add-mat');
+  const opt   = sel.options[sel.selectedIndex];
+  const qty   = parseFloat(document.getElementById('add-qty').value);
+  const unit  = document.getElementById('add-unit').value.trim();
+  const price = parseFloat(document.getElementById('add-price').value);
+  const proj  = document.getElementById('add-proj').value;
+
+  if (!sel.value) { toast('Selecciona el material del catálogo', false); return; }
+  if (!qty) { toast('La cantidad es obligación', false); return; }
+
+  const name = sel.value === 'otro' ? (prompt('Ingresa nombre descriptivo:') || 'Extra') : opt.text;
+
+  items.push({ id: nextId++, matId: sel.value, name, qty, proj, unit: unit||'pza', price: isNaN(price)?0:price, stockBefore: STOCK[sel.value] ?? '?' });
+
+  sel.value = '';
+  document.getElementById('add-qty').value = '';
+  document.getElementById('add-unit').value = '';
+  document.getElementById('add-price').value = '';
+  render(); toast('Renglón agregado', true);
+}
+
+function removeItem(id) { items = items.filter(i => i.id !== id); render(); }
+
+function updateItem(id, field, val) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  if (field === 'qty')   item.qty   = parseFloat(val) || 0;
+  if (field === 'price') item.price = parseFloat(val) || 0;
+  if (field === 'proj')  item.proj = val;
+  const subtot = document.getElementById(`sub-${id}`);
+  if (subtot) subtot.textContent = fmt(item.qty * item.price);
+  updateSummary(); renderStockPreview();
+}
+
+function render() {
+  const tbody = document.getElementById('items-body');
+  if (items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--subtext);">Sin movimientos. Utiliza el buscador para agregar producto.</td></tr>`;
+  } else {
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td><span style="font-weight:700;color:var(--text)">${item.name}</span></td>
+        <td>
+           <select onchange="updateItem(${item.id},'proj',this.value)">
+               <option value="ALMACEN" ${item.proj==='ALMACEN'?'selected':''}>Almacén General (Stock)</option>
+               <option value="PRY-168" ${item.proj==='PRY-168'?'selected':''}>PRY-168 (Cocina)</option>
+               <option value="PRY-169" ${item.proj==='PRY-169'?'selected':''}>PRY-169 (Closets)</option>
+           </select>
+        </td>
+        <td><input type="number" value="${item.qty}" min="0" step="any" onchange="updateItem(${item.id},'qty',this.value)"></td>
+        <td style="color:var(--subtext);font-weight:600;">${item.unit}</td>
+        <td class="num-right"><input type="number" value="${item.price}" min="0" step="any" onchange="updateItem(${item.id},'price',this.value)" style="text-align:right;"></td>
+        <td class="num-right" id="sub-${item.id}" style="font-weight:700;">${fmt(item.qty * item.price)}</td>
+        <td>${stockPill(item.stockBefore)}</td>
+        <td><button class="del-btn" onclick="removeItem(${item.id})">✕</button></td>
+      </tr>`).join('');
+  }
+  updateSummary(); renderStockPreview();
+}
+
+function renderStockPreview() {
+  const card = document.getElementById('stock-preview-card');
+  if (items.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const panel = document.getElementById('stock-panel');
+  const isExt = document.getElementById('estado-global').value === 'usado';
+  const verb = isExt ? "descontará" : "ingresará";
+
+  panel.innerHTML = items.map(item => {
+    const before = parseInt(item.stockBefore);
+    const after  = isNaN(before) ? '?' : before + (item.qty * (isExt ? -1 : 1));
+    return `
+    <div class="stock-row">
+      <div>
+        <div class="stock-name">${item.name}</div>
+        <div class="stock-detail">Se ${verb} ${item.qty} ${item.unit}</div>
+      </div>
+      <div class="stock-numbers">
+        <span class="stock-before">${isNaN(before)?'?':before} ${item.unit}</span>
+        <span class="stock-arrow">→</span>
+        <span class="stock-after" style="${isExt ? 'color:var(--red)' : ''}">${after} ${item.unit}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateSummary() {
+  const total = items.reduce((s, i) => s + (i.qty * i.price), 0);
+  document.getElementById('sum-items').textContent = items.length;
+  document.getElementById('sum-total').textContent = fmt(total);
+
+  const cuenta = document.getElementById('forma-pago').value;
+  const cw = document.getElementById('sum-cuenta-wrap');
+  if (cuenta) {
+    cw.style.display = '';
+    const lbls = { CHU:'CHU', SATP:'SATP', CAJA:'CAJA', TERM:'TERM', credito:'CréditoP' };
+    document.getElementById('sum-cuenta').textContent = lbls[cuenta] || cuenta;
+  } else { cw.style.display = 'none'; }
+}
+
+function confirmar() {
+  if (items.length === 0) { toast('La lista está vacía', false); return; }
+  document.getElementById('folio-tag').textContent = `OC-0048`;
+  toast('✓ Movimiento guardado correctamente.', true);
+}
+
+function toast(msg, ok=true) {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast' + (ok ? ' green' : '');
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+render();
+</script>
+</body>
+</html>

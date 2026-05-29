@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historial de Compras</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af;
+  }
+}
+body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; }
+.hdr { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
+.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
+.badge-done { background: rgba(64,160,43,0.15); color: var(--green); }
+.item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; }
+.item-subtext { color: var(--subtext); font-size: 11px; }
+.total-row { display: flex; justify-content: flex-end; font-weight: 700; font-size: 14px; padding-top: 12px; }
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h2>Historial de Compras (Completadas)</h2>
+  <div style="display:flex; gap:8px;">
+    <input type="text" placeholder="Buscar por Folio, Proveedor..." style="padding:8px 12px; border-radius:6px; border:1px solid var(--surface0); background:var(--base); color:var(--text); font-size:13px;">
+  </div>
+</div>
+
+<div id="orders-list">
+  <div class="card">
+    <div class="card-title">
+      <span>Folio OC-1004 / PRY-165</span>
+      <span class="badge badge-done">Comprado y Recibido ✓</span>
+    </div>
+    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Comprado por Compras. Fecha: 28/May/2026</div>
+    
+    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
+      <div>Item / Cantidad</div>
+      <div>Proveedor</div>
+      <div>P. Unitario</div>
+      <div>Subtotal / Cuenta</div>
+    </div>
+    
+    <div class="item-row">
+      <div>20x Bisagras Inset <span class="item-subtext">(pza)</span></div>
+      <div>Herrajes León</div>
+      <div>$ 35.00</div>
+      <div>
+        <div>$ 700.00</div>
+        <div class="item-subtext">SATP (Operativa)</div>
+      </div>
+    </div>
+
+    <div class="item-row">
+      <div>5x Correderas 45cm <span class="item-subtext">(par)</span></div>
+      <div>Herrajes León</div>
+      <div>$ 85.00</div>
+      <div>
+        <div>$ 425.00</div>
+        <div class="item-subtext">SATP (Operativa)</div>
+      </div>
+    </div>
+    
+    <div class="total-row">
+      Total de la Orden: $ 1,125.00
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span>Folio OC-1003 / MANTENIMIENTO TALLER</span>
+      <span class="badge badge-done">Comprado y Recibido ✓</span>
+    </div>
+    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Comprado por Compras. Fecha: 25/May/2026</div>
+    
+    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
+      <div>Item / Cantidad</div>
+      <div>Proveedor</div>
+      <div>P. Unitario</div>
+      <div>Subtotal / Cuenta</div>
+    </div>
+    
+    <div class="item-row">
+      <div>1x Disco Sierra Diablo 12" <span class="item-subtext">(pza)</span></div>
+      <div>Home Depot</div>
+      <div>$ 1,450.00</div>
+      <div>
+        <div>$ 1,450.00</div>
+        <div class="item-subtext">CAJA (Administración)</div>
+      </div>
+    </div>
+
+    <div class="total-row">
+      Total de la Orden: $ 1,450.00
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Base de Datos - H</title>
+<style>
+  :root {
+    --bg: #11111b; --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --text: #cdd6f4; --subtext: #a6adc8; --muted: #7f849c;
+    --blue: #89b4fa; --green: #a6e3a1; --red: #f38ba8; --amber: #f9e2af;
+    --surface0: #313244; --surface1: #45475a; --surface2: #585b70;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; }
+
+  .layout { display: flex; height: 100vh; }
+  .sidebar { width: 280px; background: var(--mantle); border-right: 1px solid var(--crust); display: flex; flex-direction: column; }
+  .sb-header { padding: 16px; border-bottom: 1px solid var(--crust); font-weight: 700; font-size: 14px; color: var(--subtext); text-transform: uppercase; }
+  .sb-list { flex: 1; overflow-y: auto; padding: 12px; }
+  .table-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; color: var(--subtext); font-size: 13px; font-weight: 600; margin-bottom: 4px; transition: 0.1s; display: flex; justify-content: space-between; align-items: center; }
+  .table-item:hover { background: var(--surface0); color: var(--text); }
+  .table-item.act { background: var(--blue); color: #fff; }
+  .badge { background: var(--crust); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+
+  .main { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; }
+  .title { font-size: 24px; font-weight: 800; }
+  .subtitle { font-size: 13px; color: var(--subtext); margin-top: 4px; }
+  
+  .card { background: var(--base); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--blue); text-transform: uppercase; }
+
+  .cols-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .col-pill { background: var(--mantle); border: 1px solid var(--crust); padding: 10px; border-radius: 8px; font-size: 13px; font-family: monospace; font-weight: 600; display: flex; justify-content: space-between; }
+  
+  .form-row { display: flex; gap: 12px; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+  .input { background: var(--mantle); border: 1px solid var(--crust); padding: 10px 12px; border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; }
+  .input:focus { outline: none; border-color: var(--blue); }
+  .btn { background: var(--blue); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; }
+  
+  .raw-preview { background: var(--crust); padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; color: var(--subtext); max-height: 300px; overflow-y: auto; }
+
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-header">Tablas (Colecciones)</div>
+    <div class="sb-list" id="table-list"></div>
+    <div style="padding: 12px; border-top: 1px solid var(--crust); display: flex; flex-direction: column; gap: 8px;">
+      <input type="text" id="new-table-input" class="input" placeholder="Nombre de tabla" style="width:100%; border:1px solid var(--crust); background:var(--base);">
+      <button class="btn" style="width:100%;" onclick="createNewTable()">+ Crear Tabla</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div id="no-sel" style="text-align:center; padding:100px; color:var(--muted);">
+      <div style="font-size:20px; font-weight:800; color:var(--text); margin-bottom:8px;">Esquema de Bases de Datos</div>
+      <div style="max-width:500px; margin:0 auto; line-height:1.5;">Esta es una herramienta para desarrolladores y administradores. Aquí puedes ver la estructura interna de las diferentes tablas donde se guardan tus datos (como proyectos, trabajadores, etc.), y puedes agregar nuevas columnas a todos los registros existentes si necesitas ampliar la información. Selecciona una tabla a la izquierda para comenzar.</div>
+    </div>
+    
+    <div id="sel-view" style="display:none; flex-direction:column; gap:24px;">
+      <div class="head">
+        <div>
+          <div class="title" id="t-name">projects</div>
+          <div class="subtitle" id="t-count">0 registros en esta tabla</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Columnas Detectadas (Esquema Inferido)</div>
+        <div class="cols-grid" id="t-cols"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Agregar Nueva Columna</div>
+        <div class="form-row">
+          <div class="field">
+            <label>Nombre de la Columna (ej: cliente_id, importe)</label>
+            <input type="text" id="new-col-name" class="input" placeholder="nombre_campo">
+          </div>
+          <div class="field">
+            <label>Valor por defecto (opcional)</label>
+            <input type="text" id="new-col-def" class="input" placeholder="ej: 0, false, o dejar vacío">
+          </div>
+          <button class="btn" onclick="saveNewColumn()">Añadir a todos</button>
+        </div>
+        <div style="font-size:11px; color:var(--subtext); margin-top:8px;">* Esto agregará el campo a todos los registros existentes en esta tabla. Los registros futuros también deberán incluirlo en tu código si es requerido.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Vista Previa (Primeros 3 Registros)</div>
+        <div class="raw-preview" id="t-raw"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+  let currentTable = null;
+
+  function renderTables() {
+    const d = window.DB.get();
+    const list = document.getElementById('table-list');
+    
+    // Sort array keys vs object keys safely
+    const keys = Object.keys(d).filter(k => Array.isArray(d[k])).sort();
+    
+    list.innerHTML = keys.map(k => `
+      <div class="table-item${currentTable===k?' act':''}" onclick="selectTable('${k}')">
+        <span>${k}</span>
+        <span class="badge">${d[k].length}</span>
+      </div>
+    `).join('');
+  }
+
+  function selectTable(t) {
+    currentTable = t;
+    renderTables();
+    document.getElementById('no-sel').style.display = 'none';
+    document.getElementById('sel-view').style.display = 'flex';
+    
+    document.getElementById('t-name').textContent = t;
+    const d = window.DB.get();
+    const records = d[t];
+    document.getElementById('t-count').textContent = `${records.length} registros`;
+
+    // Infer schema
+    const cols = new Set();
+    records.forEach(r => {
+      if (r !== null && typeof r === 'object') {
+        Object.keys(r).forEach(k => cols.add(k));
+      } else {
+        cols.add('Valor (Primitivo)');
+      }
+    });
+    
+    const cg = document.getElementById('t-cols');
+    if (cols.size === 0) {
+      cg.innerHTML = `<div style="color:var(--muted); font-size:13px;">No hay registros o no tienen columnas. Agrega columnas o inserta datos primero.</div>`;
+    } else {
+      cg.innerHTML = Array.from(cols).sort().map(c => `<div class="col-pill"><span>${c}</span></div>`).join('');
+    }
+
+    document.getElementById('t-raw').textContent = records.length ? JSON.stringify(records.slice(0,3), null, 2) : '[]';
+  }
+
+  function saveNewColumn() {
+    if (!currentTable) return;
+    const name = document.getElementById('new-col-name').value.trim();
+    const def = document.getElementById('new-col-def').value;
+    if (!name) return; // alert blocked
+    
+    // Convert def to correct type if possible
+    let finalDef = def;
+    if (def === 'true') finalDef = true;
+    else if (def === 'false') finalDef = false;
+    else if (def === '[]') finalDef = [];
+    else if (def === '{}') finalDef = {};
+    else if (def !== '' && !isNaN(def)) finalDef = Number(def);
+    
+    window.DB.addColumn(currentTable, name, finalDef);
+    
+    document.getElementById('new-col-name').value = '';
+    document.getElementById('new-col-def').value = '';
+    selectTable(currentTable);
+  }
+
+  function createNewTable() {
+    const input = document.getElementById('new-table-input');
+    const t = input.value;
+    if (t && t.trim() !== '') {
+      window.DB.addTable(t.trim());
+      input.value = '';
+      renderTables();
+      selectTable(t.trim());
+    }
+  }
+
+  renderTables();
+</script>
+</body>
+</html>

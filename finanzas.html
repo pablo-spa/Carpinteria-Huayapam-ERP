@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contabilidad / Movimientos — Ventana Tre</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --green-bg: #e5f4e3;
+  --blue: #1e66f5; --blue-bg: #e6eaf6;
+  --amber: #df8e1d; --amber-bg: #fdf3e5;
+  --red: #d20f39; --red-bg: #f8e1e7;
+  --purple: #8839ef; --purple-bg: #f0e6fc;
+  --radius: 8px; --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
+    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
+    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
+    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15);
+    --purple: #cba6f7; --purple-bg: rgba(203,166,247,0.15);
+  }
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); overflow-x: hidden; }
+
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 10; }
+.hdr-title { font-size: 18px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 12px; }
+
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s; border: none; font-family: inherit; }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-dark { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--crust); }
+.btn:hover { opacity: 0.9; }
+
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+
+/* Tarjetas de Cuenta */
+.acc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 800px) { .acc-grid { grid-template-columns: repeat(2, 1fr); } }
+.acc-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
+.acc-card:hover { border-color: var(--blue); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.acc-card.act { border-color: var(--blue); background: var(--blue-bg); }
+.acc-name { font-size: 13px; font-weight: 800; color: var(--subtext); letter-spacing: 0.5px; }
+.acc-bal { font-size: 26px; font-weight: 800; color: var(--text); margin-top: 4px; }
+.acc-meta { font-size: 11px; color: var(--subtext); margin-top: 8px; display: flex; justify-content: space-between; }
+.acc-var { font-weight: 700; }
+
+/* Avisos */
+.notice-block { background: var(--amber-bg); border: 1px solid var(--amber); border-radius: 12px; padding: 16px; display: none; }
+.notice-title { font-size: 13px; font-weight: 800; color: var(--amber); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.notice-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.notice-item { font-size: 13px; color: var(--text); display: flex; justify-content: space-between; background: var(--base); padding: 8px 12px; border-radius: 6px; align-items: center; }
+
+/* Filtros */
+.filters { display: flex; gap: 12px; flex-wrap: wrap; background: var(--mantle); padding: 12px; border-radius: 12px; border: 1px solid var(--crust); align-items: center; }
+.filter-input { background: var(--base); border: 1px solid var(--crust); padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
+.filter-input:focus { border-color: var(--blue); }
+
+/* Lista Movimientos */
+.mov-list { display: flex; flex-direction: column; gap: 8px; }
+.mov-row-wrap { display: flex; flex-direction: column; }
+.mov-row { background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; display: grid; grid-template-columns: 85px 60px 2fr 1.5fr minmax(100px, 1fr) 100px; gap: 16px; padding: 12px 16px; align-items: center; cursor: pointer; transition: background 0.15s; }
+.mov-row.active { border-color: var(--blue); border-radius: 8px 8px 0 0; border-bottom: none; }
+.mov-row:hover:not(.active) { background: var(--surface0); }
+@media (max-width: 800px) {
+  .mov-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hide-mob { display: none; }
+}
+.m-date { font-size: 12px; color: var(--subtext); }
+.m-acc { font-size: 11px; font-weight: 800; padding: 3px 6px; border-radius: 4px; background: var(--base); text-align: center; border: 1px solid var(--crust); }
+.m-concept { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; }
+.m-subtitle { font-size: 11px; font-weight: 500; color: var(--subtext); margin-top: 2px; }
+.m-amt { font-size: 15px; font-weight: 800; text-align: right; }
+.amt-in { color: var(--green); }
+.amt-out { color: var(--text); }
+.amt-neu { color: var(--subtext); }
+
+.pill { padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; text-transform: uppercase; display: inline-block; white-space: nowrap; text-align: center; }
+.pill-gray { background: var(--surface0); color: var(--text); }
+.pill-blue { background: var(--blue-bg); color: var(--blue); }
+.pill-green { background: var(--green-bg); color: var(--green); }
+.pill-amber { background: var(--amber-bg); color: var(--amber); }
+.pill-purple { background: var(--purple-bg); color: var(--purple); }
+
+/* Detalle Expandido */
+.mov-detail { background: var(--base); border: 1px solid var(--blue); border-top: 1px dashed var(--crust); padding: 16px; border-radius: 0 0 8px 8px; margin-top: 0; margin-bottom: 8px; display: none; }
+.det-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 13px; }
+.det-lbl { color: var(--subtext); font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+.det-val { font-weight: 700; color: var(--text); opacity: 0.9; }
+.det-actions { border-top: 1px solid var(--crust); margin-top: 12px; padding-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Floating Action Button */
+.fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: var(--text); color: var(--base); display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; border: none; z-index: 99; transition: 0.2s; }
+.fab:hover { transform: scale(1.05); }
+@media (min-width: 800px) { .fab { display: none; } }
+
+/* Side Panel */
+.panel-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(2px); display: flex; justify-content: flex-end; }
+.panel-overlay.open { opacity: 1; pointer-events: auto; }
+.side-panel { width: 100%; max-width: 500px; height: 100vh; background: var(--base); box-shadow: -4px 0 24px rgba(0,0,0,0.2); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1001; display: flex; flex-direction: column; }
+.panel-overlay.open .side-panel { transform: translateX(0); }
+.sp-hdr { padding: 20px 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: space-between; align-items: center; }
+.sp-hdr h2 { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.sp-close { background: none; border: none; font-size: 20px; color: var(--subtext); cursor: pointer; }
+.sp-close:hover { color: var(--text); }
+.sp-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.sp-foot { padding: 16px 24px; border-top: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+/* Panel Form Elements */
+.type-selector { display: flex; gap: 4px; background: var(--mantle); padding: 4px; border-radius: 8px; border: 1px solid var(--crust); }
+.ts-btn { flex: 1; padding: 8px; text-align: center; font-size: 12px; font-weight: 700; color: var(--subtext); cursor: pointer; border-radius: 6px; transition: 0.2s; border: 1px solid transparent; }
+.ts-btn.act { background: var(--base); color: var(--text); border-color: var(--surface1); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.ts-btn.act.t-inc { background: var(--green); color: #fff; }
+.ts-btn.act.t-exp { background: var(--red); color: #fff; }
+.ts-btn.act.t-tra { background: var(--surface1); color: var(--base); }
+
+
+.f-row { display: flex; flex-direction: column; gap: 6px; }
+.f-row.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.f-lbl { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+.f-input { background: var(--mantle); border: 1px solid var(--crust); padding: 10px 12px; border-radius: 6px; font-size: 14px; color: var(--text); font-family: inherit; outline: none; transition: border 0.15s; width: 100%; box-sizing: border-box; min-height: 40px; }
+.f-input:focus { border-color: var(--blue); }
+.f-input:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.llm-box { margin-top: -12px; background: var(--purple-bg); border: 1px solid var(--purple); padding: 12px 14px; border-radius: 6px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; color: var(--text); animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+.link-sect { border: 1px dashed var(--surface1); padding: 16px; border-radius: 8px; background: var(--mantle); }
+.link-hdr { font-size: 12px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">
+    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('index.html','Inicio')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer; transition:0.15s;">←</button>
+    Movimientos
+  </div>
+  <button class="btn btn-dark" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Nuevo Movimiento</button>
+</div>
+
+<div class="main">
+  
+  <!-- Tarjetas de Cuenta -->
+  <div class="acc-grid">
+    <div class="acc-card act" id="acard-ALL" onclick="filterAccount('ALL')">
+      <div class="acc-name">TODAS LAS CUENTAS</div>
+      <div class="acc-bal" id="bal-ALL">$0.00</div>
+      <div class="acc-meta">Consolidado general</div>
+    </div>
+    <div class="acc-card" id="acard-CHU" onclick="filterAccount('CHU')">
+      <div class="acc-name">CHU (Banco)</div>
+      <div class="acc-bal" id="bal-CHU">$0.00</div>
+      <div class="acc-meta"><span class="acc-var" style="color:var(--green)">+0%</span> últ. 7d</div>
+    </div>
+    <div class="acc-card" id="acard-SMTP" onclick="filterAccount('SMTP')">
+      <div class="acc-name">SMTP (Banco)</div>
+      <div class="acc-bal" id="bal-SMTP">$0.00</div>
+      <div class="acc-meta"><span class="acc-var" style="color:var(--red)">-0%</span> últ. 7d</div>
+    </div>
+    <div class="acc-card" id="acard-CAJA" onclick="filterAccount('CAJA')">
+      <div class="acc-name">CAJA Efectivo</div>
+      <div class="acc-bal" id="bal-CAJA">$0.00</div>
+      <div class="acc-meta"><span class="acc-var" style="color:var(--subtext)">0%</span> últ. 7d</div>
+    </div>
+    <div class="acc-card" id="acard-OTROS" onclick="filterAccount('OTROS')">
+      <div class="acc-name">OTROS</div>
+      <div class="acc-bal" id="bal-OTROS">$0.00</div>
+      <div class="acc-meta"><span class="acc-var" style="color:var(--green)">+0%</span> últ. 7d</div>
+    </div>
+  </div>
+
+  <!-- Avisos / Pendientes -->
+  <div class="notice-block" id="notice-block">
+    <div class="notice-title"><span>⚠️</span> Pendiente de tu atención</div>
+    <ul class="notice-list" id="notice-list">
+      <!-- Injected -->
+    </ul>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters">
+    <input type="text" id="f-search" class="filter-input" placeholder="Buscar concepto, cantidad..." style="flex:1; min-width:200px;" oninput="renderList()">
+    <select id="f-cat" class="filter-input" onchange="renderList()">
+      <option value="">Todas las categorías</option>
+      <option value="pending">⚠️ Solo pendientes categorizar</option>
+    </select>
+    <select id="f-type" class="filter-input" onchange="renderList()">
+      <option value="">Todos los tipos</option>
+      <option value="Ingreso">Ingresos</option>
+      <option value="Gasto">Gastos</option>
+      <option value="Transferencia">Transferencias</option>
+    </select>
+  </div>
+
+  <!-- Lista -->
+  <div class="mov-list" id="mov-list"></div>
+
+  <div style="text-align:center; padding:24px; color:var(--subtext); font-size:13px;">
+    — Fin del libro mayor (V1) —
+  </div>
+</div>
+
+<button class="fab" onclick="openPanel()">+</button>
+
+<!-- Panel Lateral -->
+<div class="panel-overlay" id="panel-overlay">
+  <div class="side-panel" id="side-panel">
+    <div class="sp-hdr">
+      <h2 id="sp-title">Nuevo Movimiento</h2>
+      <button class="sp-close" onclick="closePanel()">✕</button>
+    </div>
+    
+    <div class="sp-body">
+      <input type="hidden" id="f-id">
+      
+      <!-- Type Selection -->
+      <div class="type-selector" id="p-type-sel">
+        <div class="ts-btn act t-exp" onclick="setPanelType('Gasto')">Gasto</div>
+        <div class="ts-btn" onclick="setPanelType('Ingreso')">Ingreso</div>
+        <div class="ts-btn" onclick="setPanelType('Transferencia')">Transfer.</div>
+      </div>
+      <input type="hidden" id="f-type-val" value="Gasto">
+
+      <div class="f-row grid2">
+        <div class="f-row">
+          <label class="f-lbl">Fecha</label>
+          <input type="date" id="f-date" class="f-input">
+        </div>
+        <div class="f-row">
+          <label class="f-lbl">Monto ($)</label>
+          <input type="number" id="f-amount" class="f-input" step="0.01">
+        </div>
+      </div>
+
+      <div class="f-row grid2">
+        <div class="f-row">
+          <label class="f-lbl" id="lbl-acc">Cuenta Origen</label>
+          <select id="f-acc" class="f-input">
+            <option value="CHU">CHU (Banco)</option>
+            <option value="SMTP">SMTP (Banco)</option>
+            <option value="CAJA">CAJA Efectivo</option>
+            <option value="OTROS">OTROS</option>
+          </select>
+        </div>
+        <div class="f-row" id="dest-wrap" style="display:none;">
+          <label class="f-lbl">Cuenta Destino</label>
+          <select id="f-dest" class="f-input">
+            <option value="CAJA">CAJA Efectivo</option>
+            <option value="CHU">CHU (Banco)</option>
+            <option value="SMTP">SMTP (Banco)</option>
+            <option value="OTROS">OTROS</option>
+          </select>
+        </div>
+        <div class="f-row" id="method-wrap">
+          <label class="f-lbl">Forma de Pago</label>
+          <select id="f-method" class="f-input">
+            <option>Transferencia Bancaria</option>
+            <option>Efectivo</option>
+            <option>Tarjeta Crédito/Débito</option>
+            <option>Cheque</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="f-row" id="entity-wrap">
+        <label class="f-lbl" id="lbl-entity">Beneficiario</label>
+        <div style="display:flex; gap:8px;">
+          <select id="f-entity" class="f-input" style="flex:1;" onchange="filterOrdersByEntity()">
+            <!-- Populated via JS -->
+          </select>
+          <button class="btn btn-dark" onclick="showNewContactPane()" style="padding:4px 12px; font-size:11px;">+ Nuevo</button>
+        </div>
+        
+        <div id="new-contact-pane" style="display:none; background:var(--mantle); padding:12px; border-radius:8px; border:1px dashed var(--surface1); margin-top:8px;">
+          <div style="font-size:11px; font-weight:800; color:var(--text); margin-bottom:8px;">CREAR NUEVO CONTACTO</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="f-row"><label class="f-lbl">Nombre / Empresa</label><input type="text" id="mc-name" class="f-input"></div>
+            <div class="f-row"><label class="f-lbl">Teléfono/Correo</label><input type="text" id="mc-phone" class="f-input"></div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="document.getElementById('new-contact-pane').style.display='none'">Cancelar</button>
+            <button class="btn btn-blue" style="padding:4px 8px; font-size:11px;" onclick="saveInlineContact()">Guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="f-row">
+        <label class="f-lbl">Concepto</label>
+        <textarea id="f-concept" class="f-input" rows="2" placeholder="Escribe el concepto..." oninput="triggerLLM()"></textarea>
+      </div>
+
+      <!-- Magic Box -->
+      <div id="llm-box" style="display:none;"></div>
+
+      <div class="f-row" id="cat-wrap">
+        <label class="f-lbl">Categoría</label>
+        <select id="f-cat-input" class="f-input">
+          <option value="">-- Sin categorizar (Pendiente) --</option>
+        </select>
+      </div>
+
+      <div class="f-row">
+        <label class="f-lbl">Notas internas (Opcional)</label>
+        <textarea id="f-notes" class="f-input" rows="2" placeholder="Cosas que no van al concepto..."></textarea>
+      </div>
+
+      <!-- Links -->
+      <div class="f-row grid2" id="links-body" style="margin-top: 8px;">
+        <div class="f-row" id="proj-wrap">
+          <label class="f-lbl">Vincular a Proyecto</label>
+          <select id="f-proj" class="f-input"></select>
+        </div>
+        <div class="f-row" id="oc-wrap">
+          <label class="f-lbl">Vincular a Orden de Compra</label>
+          <select id="f-oc" class="f-input"></select>
+        </div>
+      </div>
+
+    </div>
+    
+    <div class="sp-foot">
+      <div id="status-badge" class="pill pill-amber" style="display:none;">Borrador</div>
+      <div style="display:flex; gap:8px; margin-left:auto;">
+        <button class="btn btn-outline" onclick="closePanel()">Cancelar</button>
+        <button class="btn btn-outline" id="btn-draft" onclick="saveMov(false)" style="background:var(--base)">Guardar Borrador</button>
+        <button class="btn btn-blue" id="btn-confirm" onclick="saveMov(true)">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+  let DBm = []; // local var holding movements
+  let currentAccFilter = 'ALL';
+  let llmTimer = null;
+
+  function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
+
+  // Init Data Layer
+  function initData() {
+    const d = window.DB.get();
+    
+    // Simulate first boot data
+    if(!d.accounting_movements) {
+      d.accounting_movements = [
+        { id:'m1', type:'Ingreso', date:'2026-05-15', account:'CHU', amount:80000, concept:'Anticipo Cocina Ramírez Factura 045', category:'Ingreso operativo', entity:'Juan Ramírez', status:'confirmed', projectId:'p1', notes:'' },
+        { id:'m2', type:'Gasto', date:'2026-05-16', account:'CHU', amount:9216, concept:'Pago mensualidad CFE taller', category:'Servicios públicos', entity:'CFE', status:'confirmed', notes:'Llegó caro este mes' },
+        { id:'m3', type:'Transferencia', date:'2026-05-20', account:'SMTP', destAccount:'CAJA', amount:15000, concept:'Retiro cajero para fondo nómina y caja chica', category:'Transferencia para CAJA', entity:'', status:'confirmed', notes:'' },
+        { id:'m4', type:'Gasto', date:'2026-05-22', account:'CAJA', amount:12500, concept:'Nómina Semanal Sem 21', category:'Nómina semanal', entity:'Trabajadores', status:'draft', notes:'' },
+        { id:'m5', type:'Gasto', date:'2026-05-25', account:'SMTP', amount:380, concept:'Pintura laca blanca', category:'', entity:'Bricomart', status:'draft', orderId:'o2', notes:'' } 
+      ];
+      // In first boot, try to bring old payments and map them? The prompt implies 
+      // replace "finanzas.html" functionality entirely.
+      window.DB.save(d);
+    }
+    DBm = d.accounting_movements;
+
+    // Load selects
+    const pSel = document.getElementById('f-proj');
+    pSel.innerHTML = '<option value="">-- Seleccionar --</option>' + 
+      d.projects.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+      
+    // Populate expense categories
+    let ingHtml = '<optgroup label="Ingresos">';
+    let gasHtml = '<optgroup label="Gastos">';
+    let transHtml = '<optgroup label="Transferencias">';
+    (d.expense_categories || []).forEach(c => {
+      const type = c.type;
+      const nm = c.name;
+      const opt = `<option value="${nm}">${nm}</option>`;
+      if (type === 'ingreso') ingHtml += opt;
+      else if (type === 'gasto') gasHtml += opt;
+      else if (type === 'transferencia') transHtml += opt;
+    });
+    ingHtml += '</optgroup>';
+    gasHtml += '</optgroup>';
+    transHtml += '</optgroup>';
+    
+    document.getElementById('f-cat').innerHTML = '<option value="">Todas las categorías</option><option value="pending">⚠️ Solo pendientes categorizar</option>' + ingHtml + gasHtml + transHtml;
+    document.getElementById('f-cat-input').innerHTML = '<option value="">-- Sin categorizar (Pendiente) --</option>' + ingHtml + gasHtml + transHtml;
+
+    populateContacts();
+    populateOrders();
+
+    if(window.innerWidth > 800) document.getElementById('desktop-new-btn').style.display = 'block';
+    
+    calcBalances();
+    renderList();
+  }
+
+  function populateContacts() {
+    const d = window.DB.get();
+    const cSel = document.getElementById('f-entity');
+    const prev = cSel.value;
+    cSel.innerHTML = '<option value="">-- Seleccionar / Varios --</option>' + 
+      d.contacts.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    if(prev) cSel.value = prev;
+  }
+
+  function populateOrders() {
+    const d = window.DB.get();
+    const oSel = document.getElementById('f-oc');
+    const entity = document.getElementById('f-entity')?.value || '';
+    
+    // Filter orders by entity if one is selected, but not strictly needed, 
+    // maybe we just sort them or show all if empty. We will show all but highlight matching supplier.
+    let availableOrders = d.orders;
+    if (entity) {
+      const filtered = d.orders.filter(o => o.supplier === entity);
+      if (filtered.length > 0) availableOrders = filtered;
+    }
+
+    oSel.innerHTML = '<option value="">-- Sin vincular --</option>' + 
+      availableOrders.map(o => {
+        let totalVal = 0;
+        if(o.items) {
+          o.items.forEach(itm => totalVal += (itm.qty * (itm.price||0)));
+        }
+        return `<option value="${o.id}">${o.folio} - ${o.supplier} (${fmt(totalVal)})</option>`;
+      }).join('');
+  }
+
+  function filterOrdersByEntity() {
+    populateOrders();
+  }
+
+  function showNewContactPane() {
+    document.getElementById('new-contact-pane').style.display = 'block';
+    document.getElementById('mc-name').value = '';
+    document.getElementById('mc-phone').value = '';
+  }
+
+  function saveInlineContact() {
+    const name = document.getElementById('mc-name').value.trim();
+    const phone = document.getElementById('mc-phone').value.trim();
+    if(!name) return alert('Nombre obligatorio');
+
+    const nc = {
+      id: 'c' + Date.now(),
+      name: name,
+      phone: phone,
+      type: 'Proveedor',
+      tags: [],
+      person: '',
+      email: '',
+      address: ''
+    };
+    
+    const d = window.DB.get();
+    d.contacts.push(nc);
+    window.DB.save(d);
+
+    populateContacts();
+    document.getElementById('f-entity').value = name;
+    document.getElementById('new-contact-pane').style.display = 'none';
+    filterOrdersByEntity();
+  }
+
+  // Calculate Balances
+  function calcBalances() {
+    let bal = { CHU: 0, SMTP: 0, CAJA: 0, OTROS: 0, ALL: 0 };
+    DBm.forEach(m => {
+      // we sum if confirmed OR if it's a draft we still don't?
+      // In many systems balance is only confirmed.
+      if(m.status === 'confirmed') {
+        if(m.type === 'Ingreso') {
+          if (bal[m.account] !== undefined) { bal[m.account] += m.amount; bal.ALL += m.amount; }
+        } else if (m.type === 'Gasto') {
+          if (bal[m.account] !== undefined) { bal[m.account] -= m.amount; bal.ALL -= m.amount; }
+        } else if (m.type === 'Transferencia') {
+          if (bal[m.account] !== undefined) bal[m.account] -= m.amount; 
+          if(bal[m.destAccount] !== undefined) bal[m.destAccount] += m.amount;
+        }
+      }
+    });
+    
+    ['CHU','SMTP','CAJA','OTROS','ALL'].forEach(ac => {
+      document.getElementById('bal-'+ac).textContent = fmt(bal[ac]);
+      if(bal[ac] < 0) document.getElementById('bal-'+ac).style.color = 'var(--red)';
+      else document.getElementById('bal-'+ac).style.color = 'var(--text)';
+    });
+
+    // Check Notices
+    const drafts = DBm.filter(m => m.status === 'draft');
+    const uncategorized = DBm.filter(m => m.status === 'confirmed' && (!m.category || m.category==='pending' || m.category===''));
+    
+    const notList = document.getElementById('notice-list');
+    notList.innerHTML = '';
+    let hasNotice = false;
+    
+    drafts.forEach(d => {
+      hasNotice = true;
+      notList.innerHTML += `<li class="notice-item"><span><b>Borrador:</b> ${d.concept} ${fmt(d.amount)}</span> <button class="btn btn-outline" style="padding:4px 8px;font-size:11px;background:var(--mantle)" onclick="openPanel('${d.id}')">Revisar y Confirmar</button></li>`;
+    });
+    
+    if(uncategorized.length > 0) {
+      hasNotice = true;
+      notList.innerHTML += `<li class="notice-item"><span>Tienes <b>${uncategorized.length}</b> movimientos confirmados sin categorizar.</span> <button class="btn btn-outline" style="padding:4px 8px;font-size:11px;background:var(--mantle)" onclick="document.getElementById('f-cat').value='pending';renderList();">Ver todos</button></li>`;
+    }
+
+    document.getElementById('notice-block').style.display = hasNotice ? 'block' : 'none';
+  }
+
+  // Filter List
+  function filterAccount(ac) {
+    currentAccFilter = ac;
+    document.querySelectorAll('.acc-card').forEach(c => c.classList.remove('act'));
+    document.getElementById('acard-'+ac).classList.add('act');
+    renderList();
+  }
+
+  function renderList() {
+    const list = document.getElementById('mov-list');
+    list.innerHTML = '';
+    
+    const term = document.getElementById('f-search').value.toLowerCase();
+    const typeF = document.getElementById('f-type').value;
+    const catF = document.getElementById('f-cat').value;
+
+    const sorted = [...DBm].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+    sorted.forEach(m => {
+      // Filtering logic
+      if(currentAccFilter !== 'ALL' && m.account !== currentAccFilter && m.destAccount !== currentAccFilter) return;
+      if(typeF && m.type !== typeF) return;
+      if(catF) {
+        if(catF==='pending' && m.category && m.category!=='') return;
+        if(catF!=='pending' && m.category !== catF) return;
+      }
+      if(term && !m.concept.toLowerCase().includes(term) && !m.amount.toString().includes(term)) return;
+
+      const d = document.createElement('div');
+      d.className = 'mov-row-wrap';
+      
+      let amtColor = 'amt-out'; let sign = '-';
+      if(m.type==='Ingreso') { amtColor = 'amt-in'; sign = '+'; }
+      if(m.type==='Transferencia') { amtColor = 'amt-neu'; sign = ''; }
+
+      let accLabel = m.account;
+      if(m.type==='Transferencia') accLabel = `${m.account} &rarr; ${m.destAccount}`;
+
+      let statPill = '';
+      if(m.status === 'draft') statPill = '<span class="pill pill-amber hide-mob" style="margin-left:6px">Borrador</span>';
+      else if(m.orderId || m.projectId) statPill = '<span class="pill pill-blue hide-mob" style="margin-left:6px">Vinculado</span>';
+      
+      let catPill = m.category ? `<span class="pill pill-gray">${m.category}</span>` : `<span class="pill pill-gray" style="opacity:0.6;">Sin categorizar</span>`;
+
+      // Expandable Row
+      d.innerHTML = `
+        <div class="mov-row" onclick="toggleDet('${m.id}')" id="row-${m.id}">
+          <div class="m-date">${m.date}</div>
+          <div class="m-acc">${accLabel}</div>
+          <div class="m-concept">
+            <span style="opacity: ${m.status==='draft'?'0.7':'1'}; font-style: ${m.status==='draft'?'italic':'normal'};">${m.concept || '—'}</span>
+            <div class="m-subtitle" style="display:flex;align-items:center;margin-top:4px;">${catPill} ${statPill}</div>
+          </div>
+          <div class="hide-mob">
+             <div style="font-size:12px;color:var(--text);font-weight:600">${m.entity || '--'}</div>
+             ${m.method ? `<div style="font-size:10px;color:var(--subtext)">${m.method}</div>` : ''}
+          </div>
+          <div class="hide-mob" style="text-align:right;">${m.status==='confirmed'?'<span class="pill pill-green">Confirmado</span>':''}</div>
+          <div class="m-amt ${amtColor}">${sign}${fmt(m.amount)}</div>
+        </div>
+        <div class="mov-detail" id="det-${m.id}">
+          <div class="det-grid">
+            <div><div class="det-lbl">Concepto Completo</div><div class="det-val">${m.concept}</div></div>
+            <div><div class="det-lbl">Beneficiario/A</div><div class="det-val">${m.entity||'-'}</div></div>
+            <div><div class="det-lbl">Vínculos</div><div class="det-val" style="color:var(--blue)">${m.projectId?'Proyecto '+m.projectId:''} ${m.orderId?'OC / Compra '+m.orderId:''} ${(!m.projectId && !m.orderId)?'Ninguno':''}</div></div>
+            <div><div class="det-lbl">Notas internas</div><div class="det-val" style="font-style:italic;color:var(--subtext)">${m.notes||'Sin notas'}</div></div>
+          </div>
+          <div class="det-actions">
+            <button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="openPanel('${m.id}')">✏️ Editar Registro</button>
+          </div>
+        </div>
+      `;
+      list.appendChild(d);
+    });
+
+    if(list.children.length === 0) list.innerHTML = '<div style="padding:24px; text-align:center; color:var(--subtext);">No se encontraron movimientos.</div>';
+  }
+
+  function toggleDet(id) {
+    const row = document.getElementById('row-'+id);
+    const det = document.getElementById('det-'+id);
+    if(det.style.display === 'block') {
+      det.style.display = 'none';
+      row.classList.remove('active');
+    } else {
+      // close all
+      document.querySelectorAll('.mov-detail').forEach(e => e.style.display='none');
+      document.querySelectorAll('.mov-row').forEach(e => e.classList.remove('active'));
+      
+      det.style.display = 'block';
+      row.classList.add('active');
+    }
+  }
+
+  // LLM Simulation
+  function triggerLLM() {
+    clearTimeout(llmTimer);
+    const box = document.getElementById('llm-box');
+    box.style.display = 'none';
+    
+    const c = document.getElementById('f-concept').value.toLowerCase();
+    if(c.length < 5) return;
+    
+    llmTimer = setTimeout(() => {
+      let sug = '';
+      const t = document.getElementById('f-type-val').value;
+      if(t === 'Transferencia') {
+        if(c.includes('caja')) sug = 'Transferencia para CAJA';
+        else sug = 'Transferencia entre cuentas propias';
+      } else if (t === 'Ingreso') {
+        if(c.includes('anticipo') || c.includes('finiquito')) sug = 'Ingreso Cliente';
+        else sug = 'Venta Directa / Stock';
+      } else {
+        if(c.includes('banorte') || c.includes('cuota') || c.includes('prestamo')) sug = 'Financieros';
+        else if(c.includes('cfe') || c.includes('luz') || c.includes('agua')) sug = 'Servicios Públicos';
+        else if(c.includes('nomina') || c.includes('sueldo')) sug = 'Nómina y Mano de Obra';
+        else if(c.includes('socia') || c.includes('minerva honorarios')) sug = 'Honorarios/Pago socia';
+        else if(c.includes('madera') || c.includes('barniz') || c.includes('herraje')) sug = 'Materiales y Materia Prima';
+        else sug = 'Gastos Operativos';
+      }
+      
+      box.innerHTML = `
+        <div style="flex:1">🤖 Sugerencia IA: <strong>${sug}</strong></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-dark" style="padding:4px 8px;font-size:11px" onclick="acceptLLM('${sug}')">Sí</button>
+        </div>
+      `;
+      box.style.display = 'flex';
+    }, 800);
+  }
+
+  function acceptLLM(cat) {
+    // If option doesn't exist, this fails gracefully or sets to empty, but we matched the options list mostly.
+    const sel = document.getElementById('f-cat-input');
+    const opts = Array.from(sel.options).map(o => o.value);
+    if(opts.includes(cat)) sel.value = cat;
+    document.getElementById('llm-box').style.display = 'none';
+  }
+
+  // Panel Logic
+  function openPanel(id=null) {
+    document.getElementById('panel-overlay').classList.add('open');
+    document.getElementById('llm-box').style.display = 'none';
+    document.getElementById('links-body').style.display = 'none';
+    
+    // Enable inputs
+    document.querySelectorAll('.f-input').forEach(i => i.disabled = false);
+    document.querySelectorAll('.ts-btn').forEach(b => b.style.pointerEvents = 'auto');
+    
+    if(id) {
+      const m = DBm.find(x => x.id === id);
+      document.getElementById('sp-title').innerHTML = `Editar Movimiento`;
+      document.getElementById('f-id').value = m.id;
+      setPanelType(m.type);
+      document.getElementById('f-date').value = m.date;
+      document.getElementById('f-amount').value = m.amount;
+      document.getElementById('f-acc').value = m.account;
+      if(m.destAccount) document.getElementById('f-dest').value = m.destAccount;
+      document.getElementById('f-method').value = m.method || 'Transferencia Bancaria';
+      document.getElementById('f-entity').value = m.entity || '';
+      document.getElementById('f-concept').value = m.concept || '';
+      document.getElementById('f-cat-input').value = m.category || '';
+      document.getElementById('f-notes').value = m.notes || '';
+      document.getElementById('f-proj').value = m.projectId || '';
+      document.getElementById('f-oc').value = m.orderId || '';
+      
+      if(m.projectId || m.orderId) {
+        // No hidden container anymore, just bind values
+      }
+
+      const badge = document.getElementById('status-badge');
+      badge.style.display = 'block';
+      if(m.status === 'confirmed') {
+        badge.className='pill pill-green'; badge.textContent='Confirmado (Abre solo lectura parcial)';
+        // Disable somewhat to enforce explicit changes
+        document.getElementById('sp-title').innerHTML = `Editar Registro Cerrado <span style="font-size:12px;color:var(--amber)">⚠️</span>`;
+      } else {
+        badge.className='pill pill-amber'; badge.textContent='Borrador (Edición Libre)';
+      }
+
+    } else {
+      document.getElementById('sp-title').textContent = 'Nuevo Movimiento';
+      document.getElementById('f-id').value = '';
+      setPanelType('Gasto');
+      document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+      document.getElementById('f-amount').value = '';
+      document.getElementById('f-acc').value = 'CHU';
+      document.getElementById('f-dest').value = 'CAJA';
+      document.getElementById('f-method').value = 'Transferencia Bancaria';
+      document.getElementById('f-entity').value = '';
+      document.getElementById('f-concept').value = '';
+      document.getElementById('f-cat-input').value = '';
+      document.getElementById('f-notes').value = '';
+      document.getElementById('status-badge').style.display = 'none';
+      document.getElementById('f-proj').value = '';
+      document.getElementById('f-oc').value = '';
+    }
+  }
+
+  function closePanel() {
+    document.getElementById('panel-overlay').classList.remove('open');
+  }
+
+  function setPanelType(type) {
+    document.getElementById('f-type-val').value = type;
+    const btns = document.querySelectorAll('.ts-btn');
+    btns.forEach(b => b.className = 'ts-btn');
+    
+    document.getElementById('dest-wrap').style.display = 'none';
+    document.getElementById('method-wrap').style.display = 'flex';
+    document.getElementById('entity-wrap').style.display = 'flex';
+    document.getElementById('proj-wrap').style.display = 'flex';
+    document.getElementById('lbl-acc').textContent = 'Cuenta';
+    
+    if(type === 'Ingreso') {
+      btns[1].classList.add('act', 't-inc');
+      document.getElementById('lbl-entity').textContent = 'Depositante / Cliente';
+      document.getElementById('oc-wrap').style.display = 'none';
+      document.getElementById('f-oc').value = '';
+    } else if(type === 'Gasto') {
+      btns[0].classList.add('act', 't-exp');
+      document.getElementById('lbl-entity').textContent = 'Beneficiario / Proveedor';
+      document.getElementById('oc-wrap').style.display = 'flex';
+    } else {
+      btns[2].classList.add('act', 't-tra');
+      document.getElementById('dest-wrap').style.display = 'flex';
+      document.getElementById('method-wrap').style.display = 'none';
+      document.getElementById('entity-wrap').style.display = 'none';
+      document.getElementById('proj-wrap').style.display = 'none';
+      document.getElementById('oc-wrap').style.display = 'none';
+      document.getElementById('f-proj').value = '';
+      document.getElementById('f-oc').value = '';
+      document.getElementById('lbl-acc').textContent = 'Cuenta Origen';
+      document.getElementById('f-cat-input').value = 'Transferencia entre cuentas propias';
+    }
+  }
+
+  function saveMov(isConfirm) {
+    const id = document.getElementById('f-id').value;
+    const type = document.getElementById('f-type-val').value;
+    
+    const m = {
+      type: type,
+      date: document.getElementById('f-date').value,
+      amount: parseFloat(document.getElementById('f-amount').value),
+      account: document.getElementById('f-acc').value,
+      concept: document.getElementById('f-concept').value.trim(),
+      category: document.getElementById('f-cat-input').value,
+      notes: document.getElementById('f-notes').value.trim(),
+      status: isConfirm ? 'confirmed' : 'draft',
+      projectId: document.getElementById('f-proj').value,
+      orderId: document.getElementById('f-oc').value
+    };
+
+    if(type === 'Transferencia') {
+      m.destAccount = document.getElementById('f-dest').value;
+      if(m.account === m.destAccount) return alert('Origen y destino deben ser distintas.');
+    } else {
+      m.method = document.getElementById('f-method').value;
+      m.entity = document.getElementById('f-entity').value.trim();
+    }
+
+    if(isNaN(m.amount) || m.amount <= 0) return alert('El monto es inválido.');
+    if(!m.date) return alert('Debes elegir una fecha.');
+    if(isConfirm && m.type !== 'Transferencia' && !m.concept) return alert('Concepto es requerido para confirmar.');
+
+    const d = window.DB.get();
+    
+    if(isConfirm && m.type === 'Ingreso' && m.projectId) {
+      // Check if it's new confirmation vs existing? 
+      // Si antes era draft, o nuevo. Vamos a simplificar.
+      const p = d.projects.find(x => x.id === m.projectId);
+      if(p) { p.payments = (p.payments||0) + m.amount; window.DB.save(d); }
+    }
+    
+    if(id) {
+       m.id = id;
+       const idx = DBm.findIndex(x => x.id === id);
+       DBm[idx] = m;
+    } else {
+       m.id = 'm'+Date.now();
+       DBm.push(m);
+    }
+    
+    d.accounting_movements = DBm;
+    window.DB.save(d);
+    
+    closePanel();
+    calcBalances();
+    renderList();
+  }
+
+  initData();
+</script>
+</body>
+</html>

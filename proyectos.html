@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proyectos — Ventana Tre</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --green-bg: #e5f4e3;
+  --blue: #1e66f5; --blue-bg: #e6eaf6;
+  --amber: #df8e1d; --amber-bg: #fdf3e5;
+  --red: #d20f39; --radius: 8px; --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
+    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
+    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
+    --red: #f38ba8;
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--base); color: var(--text);
+}
+
+.hdr {
+  background: var(--mantle); border-bottom: 1px solid var(--crust);
+  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  position: sticky; top: 0; z-index: 10;
+}
+.hdr-title { font-size: 18px; font-weight: 800; color: var(--text); }
+.btn {
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s; border: none; font-family: inherit;
+}
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-dark { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.btn:hover { opacity: 0.9; }
+
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.search-bar {
+  display: flex; gap: 12px; align-items: center; background: var(--mantle);
+  padding: 8px 16px; border-radius: 99px; border: 1px solid var(--crust);
+}
+.search-bar input {
+  flex: 1; background: transparent; border: none; font-size: 14px; color: var(--text); outline: none;
+}
+.status-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.f-btn {
+  background: var(--mantle); border: 1px solid var(--crust); padding: 6px 12px;
+  border-radius: 99px; font-size: 12px; font-weight: 700; color: var(--subtext);
+  cursor: pointer; transition: 0.2s;
+}
+.f-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
+
+.proj-list { display: flex; flex-direction: column; gap: 12px; }
+
+.row-card {
+  background: var(--mantle); border: 1px solid var(--crust);
+  border-radius: var(--radius-lg); padding: 16px 20px;
+  display: grid; grid-template-columns: 80px 3fr 2fr 180px; gap: 16px;
+  align-items: center; cursor: pointer; transition: 0.2s;
+}
+.row-card:hover { transform: translateY(-2px); border-color: var(--surface0); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+.r-code { font-family: monospace; font-size: 16px; font-weight: 800; color: var(--blue); }
+.r-main { display: flex; flex-direction: column; gap: 4px; }
+.r-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.r-sub { font-size: 12px; color: var(--subtext); display: flex; gap: 8px; align-items: center; }
+
+.r-dates { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--subtext); }
+
+.r-prog-wrap { display: flex; flex-direction: column; gap: 6px; }
+.r-prog-meta { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--subtext); }
+.prog-track { height: 6px; background: var(--crust); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.3s; }
+
+/* Status variants */
+.pill { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; white-space: nowrap; display: inline-block; }
+.pill-gray { background: var(--surface0); color: var(--text); }
+.pill-blue { background: var(--blue-bg); color: var(--blue); }
+.pill-green { background: var(--green-bg); color: var(--green); }
+.pill-amber { background: var(--amber-bg); color: var(--amber); }
+
+@media (max-width: 768px) {
+  .row-card { grid-template-columns: 1fr; gap: 12px; }
+  .r-code { display: none; }
+  .r-title::before { content: attr(data-code) " - "; color: var(--blue); font-family: monospace; }
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); display: none; align-items: flex-start; justify-content: center;
+  z-index: 1000; padding: 40px 20px; overflow-y: auto; backdrop-filter: blur(4px);
+}
+.modal {
+  background: var(--base); width: 100%; max-width: 800px; border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; margin: auto;
+}
+.m-hdr { padding: 20px 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: space-between; align-items: center; }
+.m-hdr h2 { font-size: 18px; font-weight: 800; display:flex; gap:12px; align-items:center; flex:1; }
+.m-close { cursor: pointer; background: transparent; border: none; font-size: 20px; color: var(--subtext); }
+.m-close:hover { color: var(--text); }
+
+.m-body { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+.m-foot { padding: 16px 24px; border-top: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+/* Grid Sections */
+.m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 600px) { .m-grid { grid-template-columns: 1fr; gap: 16px; } }
+
+.m-section { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 16px; }
+.m-sec-title { font-size: 11px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; border-bottom: 1px solid var(--crust); padding-bottom: 8px; display: flex; justify-content: space-between; }
+
+.kv-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--crust); font-size: 13px; }
+.kv-row:last-child { border-bottom: none; }
+.kv-lbl { color: var(--subtext); font-weight: 500; }
+.kv-val { color: var(--text); font-weight: 700; text-align: right; }
+
+.m-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.m-field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+.m-field input, .m-field select { background: var(--base); border: 1px solid var(--crust); padding: 8px 12px; border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px; }
+.m-field input:focus, .m-field select:focus { outline: none; border-color: var(--blue); }
+
+.progress-large { height: 8px; background: var(--crust); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+.progress-large .fill { height: 100%; background: var(--green); transition: 0.3s; }
+
+.tag-list { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { background: var(--surface0); color: var(--text); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">Proyectos (Cronograma & Control)</div>
+  <button class="btn btn-blue" onclick="window.location.href='proyecto_detalle.html?new=true'">+ Nuevo Proyecto</button>
+</div>
+
+<div class="main">
+  
+  <div class="search-bar">
+    <span>🔍</span>
+    <input type="text" id="srch" placeholder="Buscar por código, cliente o nombre del proyecto...">
+  </div>
+
+  <div class="status-filters">
+    <button class="f-btn act" onclick="filterData('all')">Todos</button>
+    <button class="f-btn" onclick="filterData('Planificación')">Planificación</button>
+    <button class="f-btn" onclick="filterData('En Producción')">En Producción</button>
+    <button class="f-btn" onclick="filterData('Terminado')">Terminado / Entregado</button>
+  </div>
+
+  <div class="proj-list" id="p-list">
+    <!-- Rendered by JS -->
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="mod-overlay">
+  <div class="modal">
+    <div class="m-hdr">
+      <h2 id="mod-title">
+        <span id="m-title-text">Proyecto</span>
+        <button id="m-btn-edit" class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="enableEditMode()">✏️ Editar</button>
+      </h2>
+      <button class="m-close" onclick="closeModal()">✕</button>
+    </div>
+    
+    <div class="m-body">
+      <input type="hidden" id="m-id">
+      
+      <!-- Edit Mode Fields (Hidden by default in view mode) -->
+      <div id="edit-pane" style="display:none; background:var(--mantle); padding:16px; border-radius:12px; border:1px solid var(--crust);">
+        <div style="display:grid; grid-template-columns:100px 1fr 1fr; gap:12px;">
+          <div class="m-field"><label>Cód/Folio</label><input type="text" id="m-code"></div>
+          <div class="m-field"><label>Nombre Proyecto</label><input type="text" id="m-name"></div>
+          <div class="m-field"><label>Estado</label>
+            <select id="m-status">
+              <option value="Planificación">Planificación</option>
+              <option value="En Producción">En Producción</option>
+              <option value="Terminado">Terminado / Entregado</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="m-field"><label>Contacto / Cliente</label>
+            <div style="display:flex; gap:8px;">
+              <select id="m-contact" style="flex:1;"></select>
+              <button class="btn btn-dark" onclick="showNewContactForm()" style="padding:4px 12px; font-size:11px;">+ Nuevo</button>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="m-field"><label>F. Ini</label><input type="date" id="m-start"></div>
+            <div class="m-field"><label>F. Fin</label><input type="date" id="m-end"></div>
+          </div>
+        </div>
+        
+        <!-- New contact partial form -->
+        <div id="new-contact-pane" style="display:none; background:var(--base); padding:12px; border-radius:8px; border:1px dashed var(--surface1); margin-top:12px;">
+          <div style="font-size:11px; font-weight:800; color:var(--text); margin-bottom:8px;">CREAR NUEVO CONTACTO</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="m-field"><label>Nombre</label><input type="text" id="mc-name" placeholder="Ej: Juan Pérez"></div>
+            <div class="m-field"><label>Teléfono</label><input type="text" id="mc-phone" placeholder="951 000 0000"></div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="document.getElementById('new-contact-pane').style.display='none'">Cancelar</button>
+            <button class="btn btn-blue" style="padding:4px 8px; font-size:11px;" onclick="saveInlineContact()">Guardar Contacto</button>
+          </div>
+        </div>
+
+        <div class="m-field" style="margin-top:12px;"><label>Piezas / Entregables (Separados por coma)</label><input type="text" id="m-pieces"></div>
+      </div>
+
+      <!-- View Mode Stats (Visible in view mode) -->
+      <div id="view-pane">
+        
+        <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+          <div>
+            <div id="v-code" style="font-family:monospace; font-weight:800; color:var(--blue); font-size:16px;"></div>
+            <div id="v-title" style="font-size:24px; font-weight:800; color:var(--text); margin-top:2px;"></div>
+            <div style="display:flex; gap:12px; margin-top:8px; font-size:13px; color:var(--subtext); align-items:center;">
+              <span id="v-contact"></span> • <span id="v-dates"></span>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div id="v-status" class="pill"></div>
+            <div style="margin-top:12px; font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase;">Avance General</div>
+            <div style="font-size:20px; font-weight:800; color:var(--green);" id="v-prog-txt">0%</div>
+          </div>
+        </div>
+        
+        <div class="progress-large"><div class="fill" id="v-prog-bar" style="width:0%"></div></div>
+
+        <div style="margin-top:24px;" class="m-grid">
+          
+          <div class="m-section">
+            <div class="m-sec-title"><span>Finanzas</span><span id="v-balance"></span></div>
+            <div class="kv-row"><span class="kv-lbl">Valor Cotizado</span><span class="kv-val" id="v-val"></span></div>
+            <div class="kv-row"><span class="kv-lbl">Pagos Recibidos</span><span class="kv-val" id="v-pay" style="color:var(--green)"></span></div>
+            <div class="kv-row"><span class="kv-lbl">Resta por Pagar</span><span class="kv-val" id="v-owed"></span></div>
+          </div>
+          
+          <div class="m-section">
+            <div class="m-sec-title"><span>Mano de Obra (Horas)</span></div>
+            <div class="kv-row"><span class="kv-lbl">Estimado Cotizado</span><span class="kv-val" id="v-hrs-est"></span></div>
+            <div class="kv-row"><span class="kv-lbl">Horas Reales (Bitácora)</span><span class="kv-val" id="v-hrs-real"></span></div>
+            <div class="kv-row"><span class="kv-lbl">Diferencia</span><span class="kv-val" id="v-hrs-diff"></span></div>
+          </div>
+          
+          <div class="m-section">
+            <div class="m-sec-title"><span>Madera Cotizada / Usada</span></div>
+            <div class="kv-row"><span class="kv-lbl">Pies Tablares Estimados</span><span class="kv-val" id="v-wood-est"></span></div>
+            <div class="kv-row"><span class="kv-lbl">Piezas / Consumo (Aprox)</span><span class="kv-val" style="color:var(--subtext)">-- pt</span></div>
+          </div>
+
+        </div>
+
+        <div style="margin-top:24px;" class="m-section">
+          <div class="m-sec-title"><span>Muebles / Piezas a Fabrciar</span></div>
+          <div class="tag-list" id="v-pieces"></div>
+        </div>
+
+      </div>
+
+    </div>
+    <div class="m-foot">
+      <button class="btn" onclick="closeModal()">Cerrar</button>
+      <button id="m-btn-save" class="btn btn-blue" onclick="saveProject()" style="display:none;">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+  let currentFilter = 'all';
+
+  document.getElementById('srch').addEventListener('input', applyFilters);
+
+  function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
+  
+  function getRealHours(projCode) {
+    const db = window.DB.get();
+    let total = 0;
+    db.attendance.forEach(a => {
+      if(a.projects) {
+        a.projects.forEach(p => {
+          if(p.p === projCode) total += (parseFloat(p.t) || 0);
+        });
+      }
+    });
+    return total;
+  }
+
+  function renderList() {
+    const d = window.DB.get();
+    const lc = document.getElementById('p-list');
+    
+    // Sort array by progress and then start date
+    const sorted = [...d.projects].sort((a,b) => {
+      if(a.status==='Terminado' && b.status!=='Terminado') return 1;
+      if(b.status==='Terminado' && a.status!=='Terminado') return -1;
+      return new Date(b.startDate) - new Date(a.startDate);
+    });
+
+    lc.innerHTML = sorted.map(p => {
+      const contact = d.contacts.find(c => c.id === p.contactId) || {name: 'Sin contacto'};
+      
+      let pill = 'pill-gray';
+      if(p.status === 'En Producción') pill = 'pill-blue';
+      else if(p.status.includes('Terminado') || p.status.includes('Entregado')) pill = 'pill-green';
+      else if(p.status === 'Planificación') pill = 'pill-amber';
+
+      const realHrs = getRealHours(p.code);
+      const estHrs = p.estimatedHours || 0;
+      
+      return `
+        <div class="row-card" data-status="${p.status}" onclick="window.location.href='proyecto_detalle.html?id=${p.id}'">
+          <div class="r-code">${p.code}</div>
+          <div class="r-main">
+            <div class="r-title" data-code="${p.code}">${p.name}</div>
+            <div class="r-sub"><span>👤 ${contact.name}</span></div>
+          </div>
+          <div class="r-dates">
+            <div><span class="pill ${pill}">${p.status}</span></div>
+            <div style="margin-top:6px;">⏱ Inicio: ${p.startDate}</div>
+          </div>
+          <div class="r-prog-wrap">
+            <div class="r-prog-meta">
+              <span>Avance</span>
+              <span>${p.progress}%</span>
+            </div>
+            <div class="prog-track"><div class="prog-fill" style="width:${p.progress}%"></div></div>
+            <div style="font-size:10px; color:var(--subtext); text-align:right; margin-top:2px;">
+              Horas Reales: ${realHrs.toFixed(1)} / ${estHrs.toFixed(1)}h
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    applyFilters();
+  }
+
+  function filterData(status) {
+    currentFilter = status;
+    document.querySelectorAll('.f-btn').forEach(b => {
+      b.classList.remove('act');
+      if (status === 'all' && b.textContent === 'Todos') b.classList.add('act');
+      else if (b.textContent.includes(status)) b.classList.add('act');
+    });
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const term = document.getElementById('srch').value.toLowerCase();
+    document.querySelectorAll('.row-card').forEach(c => {
+      const isMatchStr = c.textContent.toLowerCase().includes(term);
+      const stat = c.getAttribute('data-status');
+      let isMatchCat = true;
+      if (currentFilter !== 'all') {
+        if(currentFilter === 'Terminado' && !stat.includes('Terminado')) isMatchCat = false;
+        else if(currentFilter !== 'Terminado' && stat !== currentFilter) isMatchCat = false;
+      }
+      c.style.display = (isMatchStr && isMatchCat) ? 'grid' : 'none';
+      if(window.innerWidth <= 768 && c.style.display === 'grid') c.style.display = 'flex';
+    });
+  }
+
+  // Edit / View Logic
+  function setEditMode(isEdit) {
+    document.getElementById('edit-pane').style.display = isEdit ? 'block' : 'none';
+    document.getElementById('view-pane').style.display = isEdit ? 'none' : 'block';
+    
+    document.getElementById('m-btn-edit').style.display = isEdit ? 'none' : 'block';
+    document.getElementById('m-btn-save').style.display = isEdit ? 'block' : 'none';
+  }
+
+  function enableEditMode() { setEditMode(true); }
+
+  function populateContactSelect(selId) {
+    const d = window.DB.get();
+    const sel = document.getElementById('m-contact');
+    sel.innerHTML = '<option value="">-- Sin contacto --</option>' + 
+      d.contacts.map(c => `<option value="${c.id}">${c.name} (${c.type})</option>`).join('');
+  }
+
+  function openModal(id) {
+    document.getElementById('mod-overlay').style.display = 'flex';
+    populateContactSelect();
+
+    if(id) {
+      const d = window.DB.get();
+      const p = d.projects.find(x => x.id === id);
+      const c = d.contacts.find(x => x.id === p.contactId);
+      const contactName = c ? c.name : 'Sin contacto asignado';
+
+      // Load Inputs
+      document.getElementById('m-id').value = p.id;
+      document.getElementById('m-code').value = p.code;
+      document.getElementById('m-name').value = p.name;
+      document.getElementById('m-status').value = p.status;
+      document.getElementById('m-contact').value = p.contactId || '';
+      document.getElementById('m-start').value = p.startDate || '';
+      document.getElementById('m-end').value = p.endDate || '';
+      document.getElementById('m-pieces').value = (p.pieces||[]).join(', ');
+
+      // Load View
+      document.getElementById('v-code').textContent = p.code;
+      document.getElementById('v-title').textContent = p.name;
+      document.getElementById('v-contact').textContent = '👤 ' + contactName;
+      document.getElementById('v-dates').textContent = `Inicio: ${p.startDate} — Fin: ${p.endDate}`;
+      
+      const vStatus = document.getElementById('v-status');
+      vStatus.textContent = p.status;
+      vStatus.className = 'pill'; // reset
+      if(p.status === 'En Producción') vStatus.classList.add('pill-blue');
+      else if(p.status.includes('Terminado')) vStatus.classList.add('pill-green');
+      else if(p.status === 'Planificación') vStatus.classList.add('pill-amber');
+
+      document.getElementById('v-prog-txt').textContent = p.progress + '%';
+      document.getElementById('v-prog-bar').style.width = p.progress + '%';
+
+      // Finanzas
+      const val = p.totalValue || 0;
+      const pay = p.payments || 0;
+      const owed = val - pay;
+      document.getElementById('v-val').textContent = fmt(val);
+      document.getElementById('v-pay').textContent = fmt(pay);
+      document.getElementById('v-owed').textContent = fmt(owed);
+      if(owed <= 0 && val > 0) document.getElementById('v-balance').textContent = '✅ Pagado';
+      else document.getElementById('v-balance').textContent = '';
+
+      // Horas
+      const rh = getRealHours(p.code);
+      const eh = p.estimatedHours || 0;
+      document.getElementById('v-hrs-est').textContent = eh.toFixed(1) + ' hrs';
+      document.getElementById('v-hrs-real').textContent = rh.toFixed(1) + ' hrs';
+      
+      const diff = eh - rh;
+      const hDiffEl = document.getElementById('v-hrs-diff');
+      if (diff < 0) {
+        hDiffEl.textContent = Math.abs(diff).toFixed(1) + ' hrs EXCEDIDAS';
+        hDiffEl.style.color = 'var(--red)';
+      } else {
+        hDiffEl.textContent = diff.toFixed(1) + ' hrs sobran';
+        hDiffEl.style.color = 'var(--green)';
+      }
+      
+      // Madera Estimada
+      document.getElementById('v-wood-est').textContent = (p.estimatedWoodPt || 0) + ' pt';
+
+      // Pieces
+      const pArr = p.pieces || [];
+      if(pArr.length > 0) {
+        document.getElementById('v-pieces').innerHTML = pArr.map(x => `<span class="tag">${x}</span>`).join('');
+      } else {
+        document.getElementById('v-pieces').innerHTML = '<span style="font-size:12px;color:var(--subtext)">No hay piezas registradas</span>';
+      }
+
+      setEditMode(false);
+    } else {
+      // New Project mode
+      document.getElementById('m-id').value = '';
+      document.getElementById('m-code').value = 'PRY-' + Math.floor(Math.random()*1000);
+      document.getElementById('m-name').value = '';
+      document.getElementById('m-status').value = 'Planificación';
+      document.getElementById('m-contact').value = '';
+      document.getElementById('m-start').value = new Date().toISOString().slice(0,10);
+      document.getElementById('m-end').value = '';
+      document.getElementById('m-pieces').value = '';
+      
+      setEditMode(true);
+      document.getElementById('m-btn-edit').style.display = 'none'; // prevent toggle to empty view
+    }
+  }
+
+  function closeModal() { document.getElementById('mod-overlay').style.display = 'none'; }
+
+  function showNewContactForm() {
+    document.getElementById('new-contact-pane').style.display = 'block';
+    document.getElementById('mc-name').value = '';
+    document.getElementById('mc-phone').value = '';
+  }
+
+  function saveInlineContact() {
+    const name = document.getElementById('mc-name').value.trim();
+    const phone = document.getElementById('mc-phone').value.trim();
+    if(!name) return alert('Nombre obligatorio');
+
+    const nc = {
+      name: name,
+      phone: phone,
+      type: 'Cliente',
+      tags: [],
+      person: '',
+      email: '',
+      address: ''
+    };
+    
+    // Add to DB
+    const id = 'c' + Date.now();
+    nc.id = id;
+    const d = window.DB.get();
+    d.contacts.push(nc);
+    window.DB.save(d);
+
+    populateContactSelect();
+    document.getElementById('m-contact').value = id;
+    document.getElementById('new-contact-pane').style.display = 'none';
+  }
+
+  function saveProject() {
+    const id = document.getElementById('m-id').value;
+    const piecesStr = document.getElementById('m-pieces').value;
+    const d = window.DB.get();
+    let existing = null;
+    if(id) existing = d.projects.find(x => x.id === id);
+    
+    const p = {
+      code: document.getElementById('m-code').value.trim(),
+      name: document.getElementById('m-name').value.trim(),
+      status: document.getElementById('m-status').value,
+      contactId: document.getElementById('m-contact').value,
+      startDate: document.getElementById('m-start').value,
+      endDate: document.getElementById('m-end').value,
+      pieces: piecesStr ? piecesStr.split(',').map(s=>s.trim()).filter(Boolean) : []
+    };
+
+    if(!p.name || !p.code) return alert('Código y Nombre son obligatorios.');
+
+    if(existing) {
+      p.id = id;
+      p.estimatedHours = existing.estimatedHours || 0; 
+      p.estimatedWoodPt = existing.estimatedWoodPt || 0;
+      p.totalValue = existing.totalValue || 0;
+      p.payments = existing.payments || 0;
+      p.progress = existing.progress || 0;
+      window.DB.updateProject(p);
+    } else {
+      p.estimatedHours = 0;
+      p.estimatedWoodPt = 0;
+      p.totalValue = 0;
+      p.payments = 0;
+      p.progress = 0;
+      window.DB.addProject(p);
+    }
+
+    closeModal();
+    renderList();
+  }
+
+  renderList();
+</script>
+</body>
+</html>

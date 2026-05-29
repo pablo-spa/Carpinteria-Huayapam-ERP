@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Huayapam ERP</title>
+<style>
+  :root {
+    --bg: #11111b; --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --text: #cdd6f4; --subtext: #a6adc8; --muted: #7f849c;
+    --blue: #89b4fa; --green: #a6e3a1; --red: #f38ba8; --amber: #f9e2af; --peach: #fab387; --mauve: #cba6f7;
+    --surface0: #313244; --surface1: #45475a; --surface2: #585b70;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  
+  .hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; position: sticky; top: 0; z-index: 10; display:flex; justify-content:space-between; align-items:center; }
+  .hdr-title { font-size: 18px; font-weight: 800; color: var(--text); }
+  
+  .main { padding: 24px; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+  
+  .grid-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .stat-card { background: var(--base); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  .sc-title { font-size: 13px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; }
+  .sc-val { font-size: 28px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .sc-sub { font-size: 12px; color: var(--muted); }
+  
+  .grid-mid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .grid-mid { grid-template-columns: 1fr; } }
+  
+  .panel { background: var(--base); border: 1px solid var(--crust); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  .p-hdr { padding: 16px 20px; border-bottom: 1px solid var(--crust); font-weight: 700; font-size: 15px; display:flex; justify-content:space-between; align-items:center;}
+  .p-body { padding: 20px; flex: 1; overflow-y: auto; }
+  
+  .filter-bar { display:flex; gap:8px; margin-bottom: 24px; }
+  .filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); outline: none; }
+  
+  .list-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--surface0); font-size:13px; }
+  .list-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .lr-title { color: var(--text); font-weight: 600; }
+  .lr-val { color: var(--subtext); font-variant-numeric: tabular-nums; }
+  .lr-val.pos { color: var(--green); }
+  .lr-val.neg { color: var(--red); }
+  
+  .bar-chart-wrap { display:flex; flex-direction:column; gap:12px; }
+  .bar-row { display:flex; flex-direction:column; gap:4px; }
+  .br-labels { display:flex; justify-content:space-between; font-size:12px; color:var(--subtext); }
+  .br-bar-bg { width:100%; height:8px; background:var(--surface0); border-radius:4px; overflow:hidden; }
+  .br-bar-fill { height:100%; background:var(--blue); border-radius:4px; }
+
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">Dashboard Administrativo</div>
+  <div style="font-size:12px; color:var(--subtext);" id="last-update"></div>
+</div>
+
+<div class="main">
+  <div class="filter-bar" style="align-items:center;">
+    <select id="filt-period" class="filter-select" onchange="handlePeriodChange()">
+      <option value="all">Todo Histórico</option>
+      <option value="ytd">Este Año</option>
+      <option value="month">Este Mes</option>
+      <option value="custom">Personalizado...</option>
+    </select>
+    <div id="custom-dates" style="display:none; gap:8px; align-items:center;">
+      <input type="date" id="filt-start" class="filter-select" onchange="renderDashboard()">
+      <span style="color:var(--subtext)">a</span>
+      <input type="date" id="filt-end" class="filter-select" onchange="renderDashboard()">
+    </div>
+  </div>
+
+  <div class="grid-top" id="top-stats">
+    <!-- Rendered by JS -->
+  </div>
+
+  <div class="grid-mid">
+    <div class="panel">
+      <div class="p-hdr">Cuentas Bancarias / Saldos</div>
+      <div class="p-body" id="acc-balances">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+    
+    <div class="panel">
+      <div class="p-hdr">Cuentas por Cobrar / Pagar</div>
+      <div class="p-body" id="pending-movs">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-top" style="grid-template-columns: 1fr 1fr 1fr;">
+    <div class="panel">
+      <div class="p-hdr">Proyectos Activos</div>
+      <div class="p-body" id="active-projs"></div>
+    </div>
+    <div class="panel">
+      <div class="p-hdr">Recursos Humanos</div>
+      <div class="p-body" id="hr-stats"></div>
+    </div>
+    <div class="panel">
+      <div class="p-hdr">Inventario Top</div>
+      <div class="p-body" id="inv-stats"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="db.js"></script>
+<script>
+  function fmt(num) {
+    return '$' + parseFloat(num).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function handlePeriodChange() {
+    const val = document.getElementById('filt-period').value;
+    document.getElementById('custom-dates').style.display = (val === 'custom') ? 'flex' : 'none';
+    renderDashboard();
+  }
+
+  function renderDashboard() {
+    const d = window.DB.get();
+    const period = document.getElementById('filt-period').value;
+    const sDate = document.getElementById('filt-start').value;
+    const eDate = document.getElementById('filt-end').value;
+    const now = new Date();
+    
+    // Filter Movs
+    const movs = (d.accounting_movements || []).filter(m => {
+      const mDate = new Date(m.date);
+      if(period === 'all') return true;
+      if(period === 'ytd') {
+        return mDate.getFullYear() === now.getFullYear();
+      }
+      if(period === 'month') {
+        return mDate.getFullYear() === now.getFullYear() && mDate.getMonth() === now.getMonth();
+      }
+      if(period === 'custom') {
+        if(sDate && m.date < sDate) return false;
+        if(eDate && m.date > eDate) return false;
+        return true;
+      }
+      return true;
+    });
+
+    let ing = 0, gas = 0;
+    let cxC = 0, cxP = 0;
+    
+    const accBals = {};
+
+    movs.forEach(m => {
+      if(m.status === 'confirmed') {
+        if(m.type === 'Ingreso') ing += (m.amount || 0);
+        if(m.type === 'Gasto') gas += (m.amount || 0);
+        
+        // Calculate Balances
+        if(m.type === 'Ingreso' || m.type === 'Apertura') {
+          if(!accBals[m.account]) accBals[m.account] = 0;
+          accBals[m.account] += (m.amount || 0);
+        } else if(m.type === 'Gasto') {
+          if(!accBals[m.account]) accBals[m.account] = 0;
+          accBals[m.account] -= (m.amount || 0);
+        } else if(m.type === 'Transferencia') {
+          if(!accBals[m.account]) accBals[m.account] = 0;
+          accBals[m.account] -= (m.amount || 0);
+          if(!accBals[m.destAccount]) accBals[m.destAccount] = 0;
+          accBals[m.destAccount] += (m.amount || 0);
+        }
+      } else if (m.status === 'draft') {
+        if(m.type === 'Ingreso') cxC += (m.amount || 0);
+        if(m.type === 'Gasto') cxP += (m.amount || 0);
+      }
+    });
+
+    // Top Stats
+    const util = ing - gas;
+    document.getElementById('top-stats').innerHTML = `
+      <div class="stat-card">
+        <div class="sc-title">Ingresos</div>
+        <div class="sc-val" style="color:var(--green)">${fmt(ing)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="sc-title">Egresos</div>
+        <div class="sc-val" style="color:var(--red)">${fmt(gas)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="sc-title">Flujo Neto</div>
+        <div class="sc-val" style="color:var(--blue)">${fmt(util)}</div>
+      </div>
+    `;
+
+    // Balances
+    let balHtml = '<div class="bar-chart-wrap">';
+    const totalBal = Object.values(accBals).reduce((s,x)=>s+x, 0);
+    for(let ac in accBals) {
+      const b = accBals[ac];
+      let pct = totalBal > 0 ? (b / totalBal)*100 : 0;
+      if(pct < 0) pct = 0;
+      if(pct > 100) pct = 100;
+      balHtml += `
+        <div class="bar-row">
+          <div class="br-labels"><span>${ac}</span><span class="${b>=0?'pos':'neg'}">${fmt(b)}</span></div>
+          <div class="br-bar-bg"><div class="br-bar-fill" style="width:${pct}%; background:var(--blue)"></div></div>
+        </div>
+      `;
+    }
+    balHtml += `<div style="text-align:right; font-weight:800; font-size:16px; margin-top:16px; padding-top:12px; border-top:1px solid var(--surface0)">Total Cash: ${fmt(totalBal)}</div></div>`;
+    document.getElementById('acc-balances').innerHTML = Object.keys(accBals).length > 0 ? balHtml : '<div class="lr-val">No hay saldos</div>';
+
+    // Pending
+    document.getElementById('pending-movs').innerHTML = `
+      <div class="list-row"><span class="lr-title">Por Cobrar (A Facturar / Anticipos)</span><span class="lr-val pos">${fmt(cxC)}</span></div>
+      <div class="list-row"><span class="lr-title">Obligaciones (Por Pagar)</span><span class="lr-val neg">${fmt(cxP)}</span></div>
+    `;
+
+    // Projs
+    const active = (d.projects || []).filter(p => p.status !== 'Terminado' && p.status !== 'Cancelado');
+    let pH = '';
+    active.forEach(p => {
+      pH += `<div class="list-row"><span class="lr-title">${p.name}</span><span class="lr-val">${p.progress}%</span></div>`;
+    });
+    document.getElementById('active-projs').innerHTML = active.length > 0 ? pH : '<div class="lr-val">Sin proyectos activos</div>';
+
+    // HR
+    const workers = d.workers || [];
+    const nw = workers.length;
+    const weeklyN = workers.reduce((s,w) => s+(parseFloat(w.baseSalary)||0), 0);
+    document.getElementById('hr-stats').innerHTML = `
+      <div class="list-row"><span class="lr-title">Plantilla Activa</span><span class="lr-val">${nw} empleados</span></div>
+      <div class="list-row"><span class="lr-title">Nómina Semanal (Aprox)</span><span class="lr-val">${fmt(weeklyN)}</span></div>
+    `;
+
+    // Inv
+    const inv = (d.inventory || []).sort((a,b) => (b.stock*b.cost) - (a.stock*a.cost)).slice(0, 3);
+    let iH = '';
+    inv.forEach(i => {
+      iH += `<div class="list-row" style="flex-direction:column; gap:4px;"><div style="display:flex; justify-content:space-between"><span class="lr-title truncate">${i.name}</span><span class="lr-val">${i.stock} ${i.unit}</span></div><div style="font-size:11px; color:var(--muted)">Valor: ${fmt(i.stock*i.cost)}</div></div>`;
+    });
+    document.getElementById('inv-stats').innerHTML = inv.length > 0 ? iH : '<div class="lr-val">Sin inventario</div>';
+    
+    document.getElementById('last-update').textContent = 'Actualizado: ' + new Date().toLocaleString();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Initial setup
+    renderDashboard();
+  });
+</script>
+
+</body>
+</html>
