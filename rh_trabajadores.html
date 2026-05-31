@@ -634,16 +634,32 @@
       if (!currentWorkerId) return;
       const name = document.getElementById('f-name').value || 'este trabajador';
       if (!confirm(`¿Confirmar baja de ${name}? Ya no aparecerá en nómina, reloj ni listas de operaciones.`)) return;
-      currentWorkerActivo = false;
-      await saveFicha();
+      await setActivoDirectly(false);
     }
 
     async function reactivar() {
       if (!currentWorkerId) return;
       const name = document.getElementById('f-name').value || 'este trabajador';
       if (!confirm(`¿Reactivar a ${name}?`)) return;
-      currentWorkerActivo = true;
-      await saveFicha();
+      await setActivoDirectly(true);
+    }
+
+    async function setActivoDirectly(activo) {
+      const id = currentWorkerId;
+      // Update parent DB_STATE directly
+      if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.contacts) {
+        const idx = window.parent.DB_STATE.contacts.findIndex(c => c.id === id || c._id === id);
+        if (idx !== -1) {
+          window.parent.DB_STATE.contacts[idx].activo = activo;
+          const updated = window.parent.DB_STATE.contacts[idx];
+          if (window.parent.setDocumentInFirebase) {
+            await window.parent.setDocumentInFirebase('contacts', updated.id || updated._id, updated);
+          }
+        }
+      }
+      currentWorkerActivo = activo;
+      closeFicha();
+      await renderList();
     }
     
     function saveFicha() {
@@ -692,7 +708,7 @@
            // fallback if it was a ghost worker
            const wIdx = d.workers.findIndex(x => x.id === id);
            if (wIdx >= 0) {
-               d.contacts.push({ ...d.workers[wIdx], ...wData, tipo: 'trabajador', activo: true });
+               d.contacts.push({ ...d.workers[wIdx], ...wData, tipo: 'trabajador' });
                if(window.parent && window.parent.setDocumentInFirebase) {
                    window.parent.setDocumentInFirebase("contacts", d.contacts[d.contacts.length-1].id, d.contacts[d.contacts.length-1]);
                }
