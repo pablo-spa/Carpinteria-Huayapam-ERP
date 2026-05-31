@@ -50,89 +50,75 @@ body { background: var(--base); color: var(--text); font-family: 'Inter', sans-s
 </div>
 
 <div id="orders-list">
-  <div class="card authorized" id="comp1">
-    <div class="card-title">
-      <span>Pedido Aprobado: PRY-168</span>
-      <span class="badge badge-ready">Autorizado (Admin)</span>
-    </div>
-    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Material requerido urgente para instalar el martes.</div>
-    
-    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
-      <div>Item / Cantidad</div>
-      <div>Proveedor</div>
-      <div>Precio Unitario</div>
-      <div>Cuenta</div>
-    </div>
-    
-    <div class="item-row">
-      <div>10x Bisagras Inset <span style="color:var(--subtext)">(pza)</span></div>
-      <div><select><option>Herrajes León</option><option>Otro</option></select></div>
-      <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
-      <div>
-        <select class="val-acc">
-          <option value="">-- Cuenta --</option>
-          <option value="SATP (Operativa)">SATP (Operativa)</option>
-          <option value="CAJA (Administración)">CAJA (Administración)</option>
-          <option value="CHU (Fiscal)">CHU (Fiscal)</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="item-row">
-      <div>2x Triplay 15mm Encino <span style="color:var(--subtext)">(pza)</span></div>
-      <div><select><option>Maderas del Sur</option><option>Otro</option></select></div>
-      <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
-      <div>
-        <select class="val-acc">
-          <option value="">-- Cuenta --</option>
-          <option value="SATP (Operativa)">SATP (Operativa)</option>
-          <option value="CAJA (Administración)">CAJA (Administración)</option>
-          <option value="CHU (Fiscal)">CHU (Fiscal)</option>
-        </select>
-      </div>
-    </div>
-    
-    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-      <button class="btn btn-blue" onclick="act('comp1', 'comprado')">1. Marcar como Comprado (Espera Física)</button>
-      <button class="btn btn-green" onclick="act('comp1', 'comprado_y_recibido')">2. Marcar Comprado y Recibido (Llegó a Taller)</button>
-    </div>
-  </div>
-
-  <div class="card unauthorized" id="comp2">
-    <div class="card-title">
-      <span>Pedido: STOCK GENERAL</span>
-      <span class="badge" style="background:var(--surface0); color:var(--subtext)">Falta Autorización</span>
-    </div>
-    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Reposición de stock mínimo alcanzado.</div>
-    
-    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
-      <div>Item / Cantidad</div>
-      <div>Proveedor</div>
-      <div>Precio Unitario</div>
-      <div>Cuenta</div>
-    </div>
-    
-    <div class="item-row">
-      <div>5x Galón Pegamento Blanco <span style="color:var(--subtext)">(gln)</span></div>
-      <div><select><option>Ferretería</option><option>Otro</option></select></div>
-      <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
-      <div>
-        <select class="val-acc">
-          <option value="">-- Cuenta --</option>
-          <option value="SATP (Operativa)">SATP (Operativa)</option>
-        </select>
-      </div>
-    </div>
-    
-    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-      <button class="btn btn-amber" onclick="alert('Precios guardados. Administración ya puede verlos para autorizar.')">💾 Guardar Precios para Autorizar</button>
-      <button class="btn btn-blue btn-disabled" onclick="alert('No autorizado')">1. Marcar como Comprado</button>
-      <button class="btn btn-green btn-disabled" onclick="alert('No autorizado')">2. Marcar Comprado y Recibido</button>
-    </div>
-  </div>
+  <!-- Dynamic orders go here -->
 </div>
 
+<script src="db.js"></script>
 <script>
+async function init() {
+  const d = await window.DB.query("purchase_orders");
+  const fallback = window.DB.get().orders || [];
+  let orders = d && d.length > 0 ? d : fallback;
+  
+  const container = document.getElementById('orders-list');
+  container.innerHTML = '';
+  
+  // Show orders that need purchase action (Confirmado)
+  const toBuy = orders.filter(o => o.status === 'Confirmado' || o.status === 'Pedido');
+  
+  if (toBuy.length === 0) {
+    container.innerHTML = '<div style="color:var(--subtext); text-align:center; padding: 40px;">No hay pedidos pendientes de comprar.</div>';
+  } else {
+    toBuy.forEach(o => {
+      const itemsHtml = (o.items || []).map(i => {
+        return `
+        <div class="item-row">
+          <div>${i.qty}x ${i.name} <span style="color:var(--subtext)">(${i.unit})</span></div>
+          <div><input type="text" value="${o.provider || ''}" placeholder="Proveedor..."></div>
+          <div><input type="number" class="val-price" placeholder="$ 0.00" value="${i.price || ''}"></div>
+          <div>
+            <select class="val-acc">
+              <option value="">-- Cuenta --</option>
+              <option value="SATP (Operativa)">SATP (Operativa)</option>
+              <option value="CAJA (Administración)">CAJA (Administración)</option>
+              <option value="CHU (Fiscal)">CHU (Fiscal)</option>
+            </select>
+          </div>
+        </div>`;
+      }).join('');
+      
+      const card = document.createElement('div');
+      card.className = 'card authorized';
+      card.id = o.id;
+      card.innerHTML = `
+        <div class="card-title">
+          <span>Pedido: ${o.folio || 'Sin Folio'} (${o.project || 'Stock General'})</span>
+          <span class="badge ${o.status==='Confirmado'?'badge-ready':''}" style="${o.status!=='Confirmado'?'background:var(--surface0); color:var(--subtext)':''}">${o.status}</span>
+        </div>
+        <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Solicitante: ${o.requester || '-'}</div>
+        
+        <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
+          <div>Item / Cantidad</div>
+          <div>Proveedor</div>
+          <div>Precio Unitario</div>
+          <div>Cuenta</div>
+        </div>
+        
+        ${itemsHtml}
+        
+        <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
+          <button class="btn btn-amber" onclick="alert('Precios guardados.')">💾 Guardar Precios</button>
+          <button class="btn btn-blue" onclick="act('${o.id}', 'Comprado')">1. Marcar como Comprado</button>
+          <button class="btn btn-green" onclick="act('${o.id}', 'Recibido')">2. Marcar Comprado y Recibido</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
 function validarOpciones(el) {
   let valido = true;
   const prices = el.querySelectorAll('.val-price');

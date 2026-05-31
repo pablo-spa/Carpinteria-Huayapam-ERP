@@ -408,7 +408,6 @@
         { id: 'nav-almacen-hub', html: `<span class="icon">📦</span> Portal Almacén`, file: 'almacen_hub.html', label: 'Portal Almacén' },
         { id: 'nav-compras-panel', html: `<span class="icon">🧾</span> Panel de Compras`, file: 'rq_compras.html', label: 'Panel de Compras' },
         { id: 'nav-historial', html: `<span class="icon">📚</span> Historial de Compras`, file: 'historial_compras.html', label: 'Historial de Compras' },
-        { id: 'nav-madera', html: `<span class="icon">🌲</span> Almacén de Madera`, file: 'control_madera.html', label: 'Almacén de Madera' },
         { id: 'nav-ingreso-madera', html: `<span class="icon">📟</span> Escanear Madera`, file: 'ingreso_madera.html', label: 'Ingreso de Tablas' }
       ]
     },
@@ -462,7 +461,15 @@
     const saved = localStorage.getItem('erp_menu_layout');
     if (saved) {
       try {
-        menuLayout = JSON.parse(saved);
+        let loadedData = JSON.parse(saved);
+        
+        // Remove nav-madera from loaded layout if present
+        loadedData = loadedData.map(cat => ({
+            ...cat,
+            items: cat.items.filter(item => item.id !== 'nav-madera')
+        }));
+        
+        menuLayout = loadedData;
         
         // Merge any new default items that are missing from the saved layout
         const existingIds = new Set();
@@ -839,6 +846,10 @@
         };
         window.setDocumentInFirebase = async (col, docId, data) => {
             await setDoc(doc(db, col, docId), data);
+        };
+        
+        window.deleteDocumentInFirebase = async (col, docId) => {
+            await deleteDoc(doc(db, col, docId));
         };
         
         // Seed workers one time

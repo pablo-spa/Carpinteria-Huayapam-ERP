@@ -46,10 +46,6 @@
   <div class="sidebar">
     <div class="sb-header">Colecciones Firestore</div>
     <div class="sb-list" id="table-list"></div>
-    <div style="padding: 16px; border-top: 1px solid var(--crust);">
-       <button class="danger" style="width:100%; font-size:12px;" onclick="limpiarTodoFalso()">Limpiar datos de ejemplo</button>
-       <div style="font-size:10px; color:var(--subtext); margin-top:8px; text-align:center;">Borra pedidos y compras. Mantiene trabajadores, contactos e inventario.</div>
-    </div>
   </div>
 
   <div class="main">
@@ -153,37 +149,6 @@
           renderTables();
           selectTable(currentTable);
       } catch(e) { alert("Error: " + e.message); }
-  }
-
-  window.limpiarTodoFalso = async function() {
-      if(!confirm("Esto borrará operaciones (pedidos, compras, produccion, nomina) manteniendo: Trabajadores, Contactos, Inventario, Configuracion. ¿Continuar?")) return;
-
-      const toClean = [
-        'projects', 'project_phases', 'quotations', 'pieces', 'orders', 'production_logs', 
-        'payroll_weeks', 'payroll_lines', 'worker_loans', 'worker_loan_payments', 'attendance', 
-        'purchase_orders', 'purchase_order_lines', 'lumber_batches', 'lumber_boards', 
-        'material_requests', 'project_worker_hours', 'viajes', 'anticipos_viaticos', 
-        'gastos_viaticos', 'accounting_movements', 'wood', 'notifications', 'systemEvents'
-      ];
-      
-      let totalDeleted = 0;
-      for (const col of toClean) {
-          const records = state[col] || [];
-          for (const raw of records) {
-              const id = raw.id || raw._id;
-              if (id) {
-                  try {
-                      await deleteDoc(doc(db, col, id));
-                      totalDeleted++;
-                  } catch(e) { console.error("Could not delete from", col, id, e); }
-              }
-          }
-          state[col] = [];
-      }
-      
-      alert(`Limpieza completa. Registros eliminados: ${totalDeleted}`);
-      renderTables();
-      if(currentTable) selectTable(currentTable);
   }
 
   renderTables();

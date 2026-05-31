@@ -276,6 +276,7 @@ body {
         ⚠ Mover a 'Recibido' sumará automáticamente al inventario.
       </div>
       <div style="margin-left:auto; display:flex; gap:12px;">
+        <button id="btn-delete-order" class="btn btn-dark" style="color:var(--red); border-color:var(--red); display:none;" onclick="deleteOrder()">Borrar Pedido</button>
         <button class="btn btn-dark" onclick="closeModal()">Cancelar</button>
         <button class="btn btn-blue" onclick="saveOrder()">Guardar Pedido</button>
       </div>
@@ -437,6 +438,8 @@ body {
       }
 
       c.items.forEach(i => addModalItem(i));
+      
+      document.getElementById('btn-delete-order').style.display = 'block';
     } else {
       document.getElementById('m-folio-lbl').textContent = 'Nuevo Pedido';
       document.getElementById('m-stock-badge').style.display = 'none';
@@ -446,9 +449,35 @@ body {
       document.getElementById('m-req').value = '';
       document.getElementById('m-proj').value = '';
       document.getElementById('m-provider').value = '';
+      document.getElementById('btn-delete-order').style.display = 'none';
       addModalItem(); // 1 empty row
     }
     updateWflowVisuals();
+  }
+
+  async function deleteOrder() {
+    const id = document.getElementById('m-id').value;
+    if (!id) return;
+    if (!confirm('¿Seguro que deseas eliminar este pedido por completo?')) return;
+    try {
+      if (window.parent && window.parent.db) {
+         window.parent.deleteDocumentInFirebase("purchase_orders", id);
+         window.parent.deleteDocumentInFirebase("orders", id);
+      }
+      // Remove from STATE_ORDERS
+      STATE_ORDERS = STATE_ORDERS.filter(o => o.id !== id);
+      // Remove from local DB sync state
+      if (window.DB.get().purchase_orders) {
+          window.DB.get().purchase_orders = window.DB.get().purchase_orders.filter(o => o.id !== id);
+      }
+      if (window.DB.get().orders) {
+          window.DB.get().orders = window.DB.get().orders.filter(o => o.id !== id);
+      }
+      closeModal();
+      renderKanban();
+    } catch(e) {
+      alert("Error eliminando pedido");
+    }
   }
 
   function addModalItem(itm={code:'',name:'',qty:1,unit:'pza',price:0}) {

@@ -385,7 +385,12 @@
             
             // push to d.contacts to save
             const idx = d.contacts.findIndex(x => x.id === w.id);
-            if (idx >= 0) d.contacts[idx].personalId = w.personalId;
+            if (idx >= 0) {
+                 d.contacts[idx].personalId = w.personalId;
+                 if(window.parent && window.parent.setDocumentInFirebase) {
+                     window.parent.setDocumentInFirebase("contacts", w.id, d.contacts[idx]);
+                 }
+            }
           }
         }
       });
@@ -638,13 +643,22 @@
         const idx = d.contacts.findIndex(x => x.id === id);
         if(idx >= 0) {
           d.contacts[idx] = { ...d.contacts[idx], ...wData };
+          if(window.parent && window.parent.setDocumentInFirebase) {
+              window.parent.setDocumentInFirebase("contacts", d.contacts[idx].id, d.contacts[idx]);
+          }
         } else {
            // fallback if it was a ghost worker
            const wIdx = d.workers.findIndex(x => x.id === id);
            if (wIdx >= 0) {
                d.contacts.push({ ...d.workers[wIdx], ...wData, tipo: 'trabajador', activo: true });
+               if(window.parent && window.parent.setDocumentInFirebase) {
+                   window.parent.setDocumentInFirebase("contacts", d.contacts[d.contacts.length-1].id, d.contacts[d.contacts.length-1]);
+               }
                // remove from workers so it doesn't duplicate
                d.workers.splice(wIdx, 1);
+               if(window.parent && window.parent.deleteDocumentInFirebase) {
+                   window.parent.deleteDocumentInFirebase("workers", id);
+               }
            }
         }
       } else {
@@ -652,6 +666,9 @@
         wData.loanBalance = 0;
         wData.savedHours = 0;
         d.contacts.push(wData);
+        if(window.parent && window.parent.setDocumentInFirebase) {
+            window.parent.setDocumentInFirebase("contacts", wData.id, wData);
+        }
       }
       
       window.DB.save(d);

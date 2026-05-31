@@ -237,7 +237,7 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
     </div>
   </div>
   <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
-    <span class="badge" id="hdr-badge">0 / 23</span>
+    <span class="badge" id="hdr-badge">Cargando...</span>
     <button class="btn btn-ghost" onclick="collapseAll()">Colapsar todo</button>
     <button class="btn btn-primary" onclick="cerrarDia()">✓ Cerrar día</button>
   </div>
@@ -253,7 +253,7 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
     ✓ Este día ya fue cerrado. No se permiten más modificaciones.
   </div>
 
-  <div class="section-label" id="lbl-pendientes">Sin registrar (23)</div>
+  <div class="section-label" id="lbl-pendientes">Cargando trabajadores...</div>
   <div id="list-pendientes"></div>
 
   <div id="registrados-section" style="display:none;">
@@ -268,7 +268,7 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
     <div class="stat"><span class="lbl">Faltas</span><span class="val val-red" id="f-f">0</span></div>
     <div class="stat"><span class="lbl">Retardos</span><span class="val val-amber" id="f-r">0</span></div>
     <div class="stat"><span class="lbl">Horas equiv.</span><span class="val" id="f-h">0.0</span></div>
-    <div class="stat"><span class="lbl">Sin registrar</span><span class="val" id="f-p" style="color:var(--muted)">23</span></div>
+    <div class="stat"><span class="lbl">Sin registrar</span><span class="val" id="f-p" style="color:var(--muted)">0</span></div>
   </div>
   <button class="btn btn-primary" onclick="cerrarDia()">✓ Cerrar día</button>
 </div>
@@ -834,11 +834,16 @@ function toast(msg, type=''){
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-    document.getElementById('list-pendientes').innerHTML = '<div style="padding:20px;text-align:center;">Cargando...</div>';
-    await loadDataFromDB();
-    document.getElementById('list-pendientes').innerHTML = '';
-    document.getElementById('fecha').value = todayStr();
-    onDateChange();
+    try {
+        document.getElementById('list-pendientes').innerHTML = '<div style="padding:20px;text-align:center;">Cargando...</div>';
+        await loadDataFromDB();
+        document.getElementById('list-pendientes').innerHTML = '';
+        document.getElementById('fecha').value = todayStr();
+        onDateChange();
+    } catch (e) {
+        document.getElementById('list-pendientes').innerHTML = `<div style="padding:20px;color:red;">Error: ${e.message}</div>`;
+        console.error(e);
+    }
 });
 </script>
 </body>

@@ -522,7 +522,7 @@
       projData.progress = parseInt(document.getElementById('f-progress').value) || 0;
       
       projData.totalValue = parseFloat(document.getElementById('f-val').value) || 0;
-      projData.payments = parseFloat(document.getElementById('f-pay').value) || 0;
+      // payments and other dynamic calculations are maintained separately
       projData.estimatedHours = parseFloat(document.getElementById('f-hrs-est').value) || 0;
       projData.estimatedWoodPt = parseFloat(document.getElementById('f-wood-est').value) || 0;
 
@@ -536,6 +536,7 @@
         window.DB.addProject(projData);
         alert('Proyecto creado exitosamente.');
         document.getElementById('h-title').textContent = `${projData.code} - ${projData.name}`;
+        window.history.replaceState(null, '', `?id=${projId}`);
       }
       
       renderTimeline(); // reload timeline to catch new code if changed

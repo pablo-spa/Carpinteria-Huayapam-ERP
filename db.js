@@ -72,14 +72,16 @@ window.DB = {
   get: getDB,
   save: saveDB,
   query: async (collectionName, filters = {}) => {
-      // WaitFor DB_STATE
+      // WaitFor DB_STATE only if we are in an iframe and parent is managing state
       let loops = 0;
-      while ((!window.parent || !window.parent.DB_STATE_LOADED) && (!window.DB_STATE_LOADED) && loops < 100) {
-          await new Promise(r => setTimeout(r, 100)); // sleep
-          loops++;
+      if (window.parent && window.parent !== window && !window.DB_STATE_LOADED) {
+          while (!window.parent.DB_STATE_LOADED && loops < 100) {
+              await new Promise(r => setTimeout(r, 100)); // sleep
+              loops++;
+          }
       }
       
-      let parentState = (window.parent && window.parent.DB_STATE) ? window.parent.DB_STATE : window.DB_STATE;
+      let parentState = (window.parent && window.parent !== window && window.parent.DB_STATE) ? window.parent.DB_STATE : window.DB_STATE;
       
       let data = [];
       if (parentState && parentState[collectionName]) {
