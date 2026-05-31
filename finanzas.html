@@ -476,7 +476,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     DBm.forEach(m => {
       // we sum if confirmed OR if it's a draft we still don't?
       // In many systems balance is only confirmed.
-      if(m.status === 'confirmado') {
+      if(m.status === 'confirmado' || m.status === 'confirmed') {
         if(m.type === 'Ingreso') {
           if (bal[m.account] !== undefined) { bal[m.account] += m.amount; bal.ALL += m.amount; }
         } else if (m.type === 'Gasto') {
@@ -496,7 +496,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     // Check Notices
     const drafts = DBm.filter(m => m.status === 'pendiente');
-    const uncategorized = DBm.filter(m => m.status === 'confirmado' && (!m.category || m.category==='pending' || m.category===''));
+    const uncategorized = DBm.filter(m => (m.status === 'confirmado' || m.status === 'confirmed') && (!m.category || m.category==='pending' || m.category===''));
     
     const notList = document.getElementById('notice-list');
     notList.innerHTML = '';

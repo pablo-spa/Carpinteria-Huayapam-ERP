@@ -10,66 +10,112 @@
   --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
   --surface0: #ccd0da; --surface1: #bcc0cc;
   --text: #4c4f69; --subtext: #8c8fa1;
-  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d;
+  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d; --red: #d20f39;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
     --surface0: #313244; --surface1: #45475a;
     --text: #cdd6f4; --subtext: #a6adc8;
-    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af;
+    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af; --red: #f38ba8;
   }
 }
-body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; }
-.hdr { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
-.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding-bottom: 40px; }
+.hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; }
+.main { max-width: 860px; margin: 24px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
-.badge-purchased { background: rgba(30,102,245,0.15); color: var(--blue); }
-.btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity .15s; color: white; font-size: 12px; }
+.badge-comprado { background: rgba(30,102,245,0.15); color: var(--blue); }
+.badge-recibido { background: rgba(64,160,43,0.15); color: var(--green); }
+.btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity .15s; font-size: 12px; font-family: inherit; }
 .btn:hover { opacity: .8; }
-.btn-green { background: var(--green); }
-.item-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); }
+.btn-green { background: var(--green); color: #fff; }
+.item-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; gap: 8px; }
+.chk { width: 18px; height: 18px; cursor: pointer; }
+.empty { text-align: center; padding: 60px 20px; color: var(--subtext); }
 </style>
 </head>
 <body>
 <div class="hdr">
-  <h2>Recepción de Material (Almacén)</h2>
+  <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+  <h2 style="font-size:18px;">Recepción de Material (Almacén)</h2>
 </div>
 
-<div class="card" id="rec1">
-  <div class="card-title">
-    <span>Pedido En Transito: PRY-168</span>
-    <span class="badge badge-purchased">Comprado por Compras</span>
-  </div>
-  <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Llegan en camioneta de Maderas del Sur.</div>
-  <div class="item-row">
-    <div>
-      <input type="checkbox" id="chk1" checked> 
-      <label for="chk1">10x Bisagras Bidimensionales Inset</label>
-    </div>
-    <span style="color:var(--subtext)">pza</span>
-  </div>
-  <div class="item-row">
-    <div>
-      <input type="checkbox" id="chk2" checked> 
-      <label for="chk2">2x Triplay 15mm Encino</label>
-    </div>
-    <span style="color:var(--subtext)">pza</span>
-  </div>
-  <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-    <button class="btn btn-green" onclick="act('rec1')">✓ Registrar Entradas (Añadir a Inventario)</button>
-  </div>
+<div class="main" id="main-list">
+  <div style="text-align:center;padding:40px;color:var(--subtext);">Cargando pedidos comprados...</div>
 </div>
 
+<script src="db.js"></script>
 <script>
-function act(id) {
-  const el = document.getElementById(id);
-  el.style.opacity = '0.5';
-  el.style.pointerEvents = 'none';
-  alert('Se han añadido los materiales confirmados al inventario general.');
-  setTimeout(() => el.style.display = 'none', 300);
+async function init() {
+  const orders = await window.DB.query('purchase_orders');
+  const pending = orders.filter(o => o.id && !o._init && o.status === 'Comprado');
+  const container = document.getElementById('main-list');
+
+  if (pending.length === 0) {
+    container.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:12px;">📦</div><div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;">Sin pedidos para recibir</div><div>Los pedidos marcados como "Comprado" en el panel de Compras aparecerán aquí.</div></div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  pending.forEach(o => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-' + o.id;
+
+    const items = (o.items || []).map((i, idx) => `
+      <div class="item-row">
+        <input type="checkbox" class="chk" id="chk-${o.id}-${idx}" checked>
+        <label for="chk-${o.id}-${idx}" style="flex:1;">${i.qty}x ${i.name || i.code || '—'} <span style="color:var(--subtext)">(${i.unit || 'pza'})</span></label>
+      </div>`).join('');
+
+    card.innerHTML = `
+      <div class="card-title">
+        <span>${o.folio || o.id} — ${o.project || o.requester || 'Stock General'}</span>
+        <span class="badge badge-comprado">${o.status}</span>
+      </div>
+      ${o.notes ? `<div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: ${o.notes}</div>` : ''}
+      ${items}
+      <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn btn-green" onclick="recibir('${o.id}')">✓ Confirmar Recepción</button>
+      </div>`;
+
+    container.appendChild(card);
+  });
 }
+
+async function recibir(id) {
+  const orders = await window.DB.query('purchase_orders');
+  const order = orders.find(o => o.id === id);
+  if (!order) return;
+
+  order.status = 'Recibido';
+  order.fechaRecepcion = new Date().toISOString().slice(0, 10);
+
+  if (window.parent && window.parent.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('purchase_orders', id, order);
+    if (window.parent.DB_STATE && window.parent.DB_STATE.purchase_orders) {
+      const idx = window.parent.DB_STATE.purchase_orders.findIndex(o => o.id === id);
+      if (idx !== -1) window.parent.DB_STATE.purchase_orders[idx] = order;
+    }
+    // Update inventory stock for items with codes
+    if (order.items) {
+      order.items.forEach(i => {
+        if (i.code) window.DB.logInventoryPurchase(i.code, parseFloat(i.qty) || 0, parseFloat(i.price) || 0, order.fechaRecepcion);
+      });
+    }
+  }
+
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    card.style.opacity = '0.5';
+    card.style.pointerEvents = 'none';
+    setTimeout(() => card.remove(), 400);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

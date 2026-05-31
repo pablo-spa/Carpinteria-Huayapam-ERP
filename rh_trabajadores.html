@@ -587,7 +587,6 @@
         document.getElementById('f-nss').value = w.nss || '';
         
         document.getElementById('f-display-name').textContent = w.name || 'Trabajador';
-        document.getElementById('f-display-role').textContent = w.role || '-';
         document.getElementById('f-avatar').textContent = w.name ? w.name.charAt(0).toUpperCase() : 'N';
       } else {
         currentWorkerId = null;
@@ -612,9 +611,8 @@
         document.getElementById('f-salary').value = '';
         document.getElementById('f-emergency').value = '';
         document.getElementById('f-nss').value = '';
-        
+
         document.getElementById('f-display-name').textContent = 'Nuevo Trabajador';
-        document.getElementById('f-display-role').textContent = '-';
         document.getElementById('f-avatar').textContent = 'N';
       }
       
@@ -721,8 +719,8 @@
                }
                // remove from workers so it doesn't duplicate
                d.workers.splice(wIdx, 1);
-               if(window.parent && window.parent.deleteDocumentInFirebase) {
-                   window.parent.deleteDocumentInFirebase("workers", id);
+               if(window.parent && window.parent.deleteDocumentFromFirebase) {
+                   window.parent.deleteDocumentFromFirebase("workers", id);
                }
            }
         }

@@ -215,8 +215,8 @@
     function renderSelects() {
       const d = window.DB.get();
       const sel = document.getElementById('f-contact');
-      sel.innerHTML = '<option value="">-- Sin contacto --</option>' + 
-        d.contacts.map(c => `<option value="${c.id}">${c.name} (${c.tipo || 'cliente'})</option>`).join('');
+      sel.innerHTML = '<option value="">-- Sin contacto --</option>' +
+        (d.contacts || []).filter(c => !c._init).map(c => `<option value="${c.id}">${c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`).join('');
     }
 
     function renderMilestones() {
@@ -377,23 +377,26 @@
         tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>';
         return;
       }
-      
+
       let logs = [];
-      // Combine all attendance that mentions this project
-      d.attendance.forEach(att => {
+      // Use attendance records that mention this project
+      const attendances = (d.attendance || []).filter(a => !a._init);
+      attendances.forEach(att => {
+        if(!att.workers || !Array.isArray(att.workers)) return;
         let workersInProj = [];
         let totalHrsDay = 0;
         att.workers.forEach(w => {
+          if(!w.projects || !Array.isArray(w.projects)) return;
           let pLogs = w.projects.filter(p => p.p === projData.code);
           if(pLogs.length > 0) {
             let h = pLogs.reduce((sum, pl) => sum + parseFloat(pl.t || 0), 0);
             let descs = pLogs.map(pl => pl.desc).filter(Boolean).join(', ');
             totalHrsDay += h;
-            const wName = (d.workers.find(wk => wk.id === w.wId) || {}).name || w.wId;
+            const wName = ((d.contacts || d.workers || []).find(wk => wk.id === w.wId) || {}).name || w.wId;
             workersInProj.push(`${wName} (${h}h)${descs ? ': '+descs : ''}`);
           }
         });
-        
+
         if(workersInProj.length > 0) {
           logs.push({
             date: att.date,
@@ -421,13 +424,14 @@
       `).join('');
     }
 
-    function init() {
+    async function init() {
       loadURLData();
+      await window.DB.query('projects'); // wait for DB_STATE_LOADED
       renderSelects();
-      
+
       const d = window.DB.get();
       if(projId) {
-        projData = d.projects.find(p => p.id === projId) || null;
+        projData = (d.projects || []).find(p => p.id === projId) || null;
       }
       
       if(!projData) {

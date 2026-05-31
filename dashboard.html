@@ -244,8 +244,8 @@
     document.getElementById('last-update').textContent = 'Actualizado: ' + new Date().toLocaleString();
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    // Initial setup
+  document.addEventListener('DOMContentLoaded', async () => {
+    await window.DB.query('accounting_movements'); // wait for DB_STATE_LOADED
     renderDashboard();
   });
 </script>

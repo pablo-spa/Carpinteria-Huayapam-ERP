@@ -289,14 +289,13 @@ async function loadDataFromDB() {
     return { id: w.id, nombre: nombre, ape: ape, cat: w.role || '', ini: ini };
   });
   
-  const projs = await window.DB.query("projects", { status: "En curso" }); // or activo? the mega prompt says estado='activo', but db uses status 'Activo' or 'En curso' usually
-  // Let's grab all and filter
   const allProjs = await window.DB.query("projects");
-  
+
   PROYECTOS = allProjs.filter(p => {
-      if (!p.status && !p.estado) return true; 
+      if (p._init) return false;
+      if (!p.status && !p.estado) return true;
       const st = (p.status || p.estado || '').toLowerCase();
-      return st === 'activo' || st === 'en curso';
+      return st === 'en producción' || st === 'en produccion' || st === 'planificación' || st === 'planificacion' || st === 'activo' || st === 'en curso';
   }).map(p => {
     return {id: p.code || p.id, n: (p.code || '') + ' — ' + (p.name || '')};
   });
@@ -778,13 +777,19 @@ function cerrarDia(){
           });
       }
       
-      // Add equivalence hours to worker
+      // Add equivalence hours to worker record in contacts
       if ((s.status==='trabajo' || s.status==='retardo') && window.DB) {
         const d = window.DB.get();
-        const storedW = d.workers.find(x => x.id === w.id);
+        const storedW = (d.contacts || []).find(x => x.id === w.id && x.tipo === 'trabajador');
         if (storedW) {
           storedW.savedHours = (storedW.savedHours || 0) + horasEq(w.id);
-          window.DB.updateWorker(storedW);
+          if (window.parent && window.parent.setDocumentInFirebase) {
+            window.parent.setDocumentInFirebase('contacts', storedW.id, storedW);
+          }
+          if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.contacts) {
+            const idx = window.parent.DB_STATE.contacts.findIndex(c => c.id === storedW.id);
+            if (idx !== -1) window.parent.DB_STATE.contacts[idx] = storedW;
+          }
         }
       }
     }

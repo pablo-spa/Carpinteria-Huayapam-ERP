@@ -272,10 +272,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   // ── Init ──────────────────────────────────────────────────────────────
   async function init() {
-    [STATE_CONTACTS, STATE_PROJECTS] = await Promise.all([
+    let [rawContacts, rawProjects] = await Promise.all([
       window.DB.query('contacts'),
       window.DB.query('projects'),
     ]);
+    STATE_CONTACTS = rawContacts.filter(c => !c._init && (c.name || c.givenName));
+    STATE_PROJECTS = rawProjects.filter(p => !p._init);
     STATE_CONTACTS.sort((a,b) => (a.name||a.givenName||'').localeCompare(b.name||b.givenName||''));
     renderGrid();
   }

@@ -293,7 +293,8 @@ body {
   function getRealHours(projCode) {
     const db = window.DB.get();
     let total = 0;
-    db.attendance.forEach(a => {
+    const att = db.attendance || [];
+    att.forEach(a => {
       if(a.projects) {
         a.projects.forEach(p => {
           if(p.p === projCode) total += (parseFloat(p.t) || 0);
@@ -308,7 +309,7 @@ body {
     const lc = document.getElementById('p-list');
 
     // Filter out placeholder/init docs and sort
-    const sorted = d.projects.filter(p => p.name && p.status).sort((a,b) => {
+    const sorted = (d.projects || []).filter(p => p.name && p.status && !p._init).sort((a,b) => {
       const aTerm = a.status === 'Terminado' || a.status === 'completado';
       const bTerm = b.status === 'Terminado' || b.status === 'completado';
       if(aTerm && !bTerm) return 1;
@@ -393,11 +394,11 @@ body {
 
   function enableEditMode() { setEditMode(true); }
 
-  function populateContactSelect(selId) {
+  function populateContactSelect() {
     const d = window.DB.get();
     const sel = document.getElementById('m-contact');
-    sel.innerHTML = '<option value="">-- Sin contacto --</option>' + 
-      d.contacts.map(c => `<option value="${c.id}">${c.name} (${c.tipo || 'cliente'})</option>`).join('');
+    sel.innerHTML = '<option value="">-- Sin contacto --</option>' +
+      (d.contacts || []).filter(c => !c._init).map(c => `<option value="${c.id}">${c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`).join('');
   }
 
   function openModal(id) {

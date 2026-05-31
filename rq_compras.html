@@ -131,21 +131,43 @@ function validarOpciones(el) {
   return valido;
 }
 
-function act(id, state) {
+async function act(id, state) {
   const el = document.getElementById(id);
-  
-  if(!validarOpciones(el)) {
+
+  if (!validarOpciones(el)) {
     alert('Por favor llene el Precio Unitario y seleccione una Cuenta Operativa en todos los renglones.');
     return;
   }
 
+  const d = await window.DB.query('purchase_orders');
+  const order = d.find(o => o.id === id) || (window.DB.get().orders || []).find(o => o.id === id);
+  if (!order) { alert('Pedido no encontrado'); return; }
+
+  // Save prices from form
+  const prices = el.querySelectorAll('.val-price');
+  const accs   = el.querySelectorAll('.val-acc');
+  if (order.items) {
+    order.items.forEach((item, i) => {
+      item.price   = parseFloat(prices[i]?.value) || item.price || 0;
+      item.account = accs[i]?.value || item.account || '';
+    });
+  }
+
+  order.status = state;
+  order.fechaCompra = new Date().toISOString().slice(0, 10);
+
+  if (window.parent && window.parent.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('purchase_orders', id, order);
+    ['purchase_orders', 'orders'].forEach(col => {
+      if (window.parent.DB_STATE && window.parent.DB_STATE[col]) {
+        const idx = window.parent.DB_STATE[col].findIndex(o => o.id === id);
+        if (idx !== -1) window.parent.DB_STATE[col][idx] = order;
+      }
+    });
+  }
+
   el.style.opacity = '0.5';
   el.style.pointerEvents = 'none';
-  if(state === 'comprado_y_recibido') {
-    alert('Marcado como Comprado y Recibido. Se actualizó el inventario del Almacén.');
-  } else {
-    alert('Marcado como Comprado. La hoja pasa a Recepción de Almacén.');
-  }
   setTimeout(() => el.style.display = 'none', 300);
 }
 
@@ -181,8 +203,8 @@ function crearOrden() {
     
     <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
       <button class="btn btn-amber" onclick="alert('Precios guardados. Administración ya puede verlos para autorizar.')">💾 Guardar Precios para Autorizar</button>
-      <button class="btn btn-blue btn-disabled" onclick="alert('No autorizado todavía')">1. Marcar como Comprado</button>
-      <button class="btn btn-green btn-disabled" onclick="alert('No autorizado todavía')">2. Marcar Comprado y Recibido</button>
+      <button class="btn btn-blue btn-disabled" title="Pendiente de autorización" disabled>1. Marcar como Comprado</button>
+      <button class="btn btn-green btn-disabled" title="Pendiente de autorización" disabled>2. Marcar Comprado y Recibido</button>
     </div>`;
   
   // Populate the manual account select after HTML is built

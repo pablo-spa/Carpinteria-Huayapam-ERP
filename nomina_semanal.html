@@ -499,9 +499,9 @@ function processRealCheckins(off) {
     
     WORKERS.forEach(w => {
       dates.forEach((dateStr, i) => {
-        const dCheckins = checkins.filter(c => c.workerId === w.id && c.date === dateStr);
+        const dCheckins = checkins.filter(c => c.workerId === w.id && (c.fecha === dateStr || c.date === dateStr));
         if (dCheckins.length > 0) {
-           const isFalta = dCheckins.some(c => c.type === 'ENTRADA' && c.status.includes('Falta'));
+           const isFalta = dCheckins.some(c => (c.status || '').toLowerCase().includes('falta'));
            if (isFalta) {
              S[w.id].dias[i] = {st: 'falta', hrs: 0};
            } else {

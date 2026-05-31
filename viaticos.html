@@ -332,7 +332,7 @@ function formatDateDMM(str) {
 }
 
 async function init() {
-  await window.DB.query('contacts'); // ensure DB loaded
+  await window.DB.query('viajes'); // ensure DB loaded
   const db = window.DB.get();
 
   // Load viatico categories from DB
@@ -394,8 +394,9 @@ function calcViajeStats(db, vid) {
 
 function getWorkerNames(db, ids) {
   if(!ids || !ids.length) return 'Ninguno';
-  const w = (db.workers||[]).filter(wk => ids.includes(wk.id));
-  return w.map(wk => wk.name.split(' ').slice(0,2).join(' ')).join(', ');
+  const all = [...(db.contacts||[]), ...(db.workers||[])];
+  const w = all.filter(wk => ids.includes(wk.id));
+  return w.map(wk => (wk.name || wk.givenName || wk.id).split(' ').slice(0,2).join(' ')).join(', ') || 'Desconocido';
 }
 
 function renderList() {
@@ -476,10 +477,14 @@ function saveViaje() {
     estado: 'activo'
   };
   
-  if(!db.viajes) db.viajes = [];
-  db.viajes.push(v);
-  window.DB.replace(db);
-  
+  if (window.parent && window.parent.setDocumentInFirebase) {
+    window.parent.setDocumentInFirebase('viajes', v.id, v);
+  }
+  if (window.parent && window.parent.DB_STATE) {
+    if (!window.parent.DB_STATE.viajes) window.parent.DB_STATE.viajes = [];
+    window.parent.DB_STATE.viajes.push(v);
+  }
+
   showView('list');
 }
 
@@ -584,9 +589,7 @@ function renderDetalles() {
 function addAnticipo() {
   const m = parseFloat(document.getElementById('fa-monto').value);
   if(!m || m<=0) return;
-  const db = window.DB.get();
-  if(!db.anticipos_viaticos) db.anticipos_viaticos=[];
-  db.anticipos_viaticos.push({
+  const ant = {
     id: crypto.randomUUID(),
     viaje_id: currentViajeId,
     fecha: document.getElementById('fa-fecha').value,
@@ -594,8 +597,14 @@ function addAnticipo() {
     forma: document.getElementById('fa-forma').value,
     entregado_por: document.getElementById('fa-por').value,
     nota: ''
-  });
-  window.DB.replace(db);
+  };
+  if (window.parent && window.parent.setDocumentInFirebase) {
+    window.parent.setDocumentInFirebase('anticipos_viaticos', ant.id, ant);
+  }
+  if (window.parent && window.parent.DB_STATE) {
+    if (!window.parent.DB_STATE.anticipos_viaticos) window.parent.DB_STATE.anticipos_viaticos = [];
+    window.parent.DB_STATE.anticipos_viaticos.push(ant);
+  }
   document.getElementById('fa-monto').value = '';
   renderDetalles();
 }
@@ -603,9 +612,7 @@ function addAnticipo() {
 function addGasto() {
   const m = parseFloat(document.getElementById('fg-monto').value);
   if(!m || m<=0) return;
-  const db = window.DB.get();
-  if(!db.gastos_viaticos) db.gastos_viaticos=[];
-  db.gastos_viaticos.push({
+  const gas = {
     id: crypto.randomUUID(),
     viaje_id: currentViajeId,
     fecha: document.getElementById('fg-fecha').value,
@@ -614,8 +621,14 @@ function addGasto() {
     monto: m,
     justificado: document.getElementById('fg-just').checked,
     nota: ''
-  });
-  window.DB.replace(db);
+  };
+  if (window.parent && window.parent.setDocumentInFirebase) {
+    window.parent.setDocumentInFirebase('gastos_viaticos', gas.id, gas);
+  }
+  if (window.parent && window.parent.DB_STATE) {
+    if (!window.parent.DB_STATE.gastos_viaticos) window.parent.DB_STATE.gastos_viaticos = [];
+    window.parent.DB_STATE.gastos_viaticos.push(gas);
+  }
   document.getElementById('fg-monto').value = '';
   document.getElementById('fg-desc').value = '';
   renderDetalles();
@@ -623,41 +636,49 @@ function addGasto() {
 
 function delAnticipo(id) {
   if(!confirm('¿Eliminar este anticipo?')) return;
-  const db = window.DB.get();
-  db.anticipos_viaticos = db.anticipos_viaticos.filter(a => a.id !== id);
-  window.DB.replace(db);
+  if (window.parent && window.parent.deleteDocumentFromFirebase) {
+    window.parent.deleteDocumentFromFirebase('anticipos_viaticos', id);
+  }
+  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.anticipos_viaticos) {
+    window.parent.DB_STATE.anticipos_viaticos = window.parent.DB_STATE.anticipos_viaticos.filter(a => a.id !== id);
+  }
   renderDetalles();
 }
 
 function delGasto(id) {
   if(!confirm('¿Eliminar este gasto?')) return;
-  const db = window.DB.get();
-  db.gastos_viaticos = db.gastos_viaticos.filter(g => g.id !== id);
-  window.DB.replace(db);
+  if (window.parent && window.parent.deleteDocumentFromFirebase) {
+    window.parent.deleteDocumentFromFirebase('gastos_viaticos', id);
+  }
+  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.gastos_viaticos) {
+    window.parent.DB_STATE.gastos_viaticos = window.parent.DB_STATE.gastos_viaticos.filter(g => g.id !== id);
+  }
   renderDetalles();
 }
 
 function comenzarLiquidacion() {
   if(!confirm('¿Deseas cerrar este viaje y marcarlo como liquidado? Ya no se podrán agregar más gastos o anticipos.')) return;
-  const db = window.DB.get();
-  const v = db.viajes.find(vx => vx.id === currentViajeId);
-  if(v) {
-    v.estado = 'cerrado';
-    v.fecha_regreso_real = new Date().toISOString().split('T')[0];
-    window.DB.replace(db);
-    openDetalle(currentViajeId); // refresh
+  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.viajes) {
+    const v = window.parent.DB_STATE.viajes.find(vx => vx.id === currentViajeId);
+    if(v) {
+      v.estado = 'cerrado';
+      v.fecha_regreso_real = new Date().toISOString().split('T')[0];
+      if (window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+    }
   }
+  openDetalle(currentViajeId);
 }
 
 function reabrirViaje() {
   if(!confirm('¿Reabrir este viaje para modificaciones?')) return;
-  const db = window.DB.get();
-  const v = db.viajes.find(vx => vx.id === currentViajeId);
-  if(v) {
-    v.estado = 'activo';
-    window.DB.replace(db);
-    openDetalle(currentViajeId);
+  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.viajes) {
+    const v = window.parent.DB_STATE.viajes.find(vx => vx.id === currentViajeId);
+    if(v) {
+      v.estado = 'activo';
+      if (window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+    }
   }
+  openDetalle(currentViajeId);
 }
 
 window.addEventListener('DOMContentLoaded', init);

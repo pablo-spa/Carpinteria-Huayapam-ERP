@@ -51,7 +51,7 @@ body { background: var(--base); color: var(--text); font-family: 'Inter', sans-s
     STATE_ORDERS = await window.DB.query("purchase_orders");
     if (!STATE_ORDERS || STATE_ORDERS.length === 0) STATE_ORDERS = window.DB.get().orders || [];
     // only received or delivered
-    STATE_ORDERS = STATE_ORDERS.filter(o => ['Comprado', 'Recibido', 'Entregado'].includes(o.status));
+    STATE_ORDERS = STATE_ORDERS.filter(o => !o._init && ['Comprado', 'Recibido', 'Entregado'].includes(o.status));
     STATE_ORDERS.sort((a,b) => new Date(b.date) - new Date(a.date));
     render();
   }
@@ -73,7 +73,7 @@ body { background: var(--base); color: var(--text); font-family: 'Inter', sans-s
          </div>
        `;
        
-       o.items.forEach(i => {
+       (o.items || []).forEach(i => {
           const sub = (i.qty * i.price) || 0;
           total += sub;
           itmsHtml += `

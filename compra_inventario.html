@@ -343,10 +343,47 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
 <script>
 let items = [];
 let nextId = 1;
+let INV_DB = [];
+let PROJ_DB = [];
 
 document.getElementById('fecha').value = new Date().toISOString().slice(0, 10);
 
-const STOCK = { mdf15:'47', trip15:'18', tzal:'120', pino:'210', encino:'34', bisag:'142', corr:'67', barniz:'8', otro:'?' };
+async function loadDBData() {
+  INV_DB = await window.DB.query('inventory');
+  PROJ_DB = (await window.DB.query('projects')).filter(p => !p._init && p.code && p.name);
+
+  // Populate proveedor from contacts
+  const proveedores = (await window.DB.query('contacts', { tipo: 'proveedor' })).filter(c => !c._init);
+  const pSel = document.getElementById('proveedor');
+  const firstOpt = pSel.options[0];
+  pSel.innerHTML = '';
+  pSel.appendChild(firstOpt);
+  proveedores.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.name || p.givenName;
+    o.textContent = p.name || p.givenName;
+    pSel.appendChild(o);
+  });
+  const otroOpt = document.createElement('option');
+  otroOpt.value = 'otro'; otroOpt.textContent = 'Otro proveedor…';
+  pSel.appendChild(otroOpt);
+
+  // Populate add-mat
+  const matSel = document.getElementById('add-mat');
+  matSel.innerHTML = '<option value="">— Buscar en catálogo —</option>' +
+    INV_DB.filter(i => !i._init && i.code && i.name).map(i =>
+      `<option value="${i.id}" data-u="${i.unit||'pza'}" data-p="${i.cost||0}" data-s="${i.stock||0}" data-code="${i.code}">${i.code} – ${i.name} (Stock: ${i.stock||0})</option>`
+    ).join('') + '<option value="otro">Otro (especificar manual)…</option>';
+
+  // Populate add-proj
+  const projSel = document.getElementById('add-proj');
+  projSel.innerHTML = '<option value="ALMACEN">Stock Almacén</option>' +
+    PROJ_DB.map(p => `<option value="${p.code}">${p.code} — ${p.name}</option>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', loadDBData);
+
+const STOCK = {}; // will be populated from DB
 
 function fmt(n) { return '$' + Number(n).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
@@ -412,8 +449,8 @@ function onMatSelect() {
   const sel = document.getElementById('add-mat');
   const opt = sel.options[sel.selectedIndex];
   if(opt) {
-      document.getElementById('add-unit').value = opt.dataset.u || '';
-      document.getElementById('add-price').value = opt.dataset.p || '';
+      if (opt.dataset.u) document.getElementById('add-unit').value = opt.dataset.u;
+      if (opt.dataset.p) document.getElementById('add-price').value = opt.dataset.p;
       document.getElementById('add-qty').focus();
   }
 }
@@ -427,11 +464,20 @@ function addItem() {
   const proj  = document.getElementById('add-proj').value;
 
   if (!sel.value) { toast('Selecciona el material del catálogo', false); return; }
-  if (!qty) { toast('La cantidad es obligación', false); return; }
+  if (!qty) { toast('La cantidad es obligatoria', false); return; }
 
-  const name = sel.value === 'otro' ? (prompt('Ingresa nombre descriptivo:') || 'Extra') : opt.text;
+  let name, invId, invCode;
+  if (sel.value === 'otro') {
+    name = prompt('Ingresa nombre descriptivo:') || 'Extra';
+    invId = null; invCode = null;
+  } else {
+    name = opt.textContent.split(' (Stock:')[0];
+    invId = sel.value;
+    invCode = opt.dataset.code || null;
+  }
 
-  items.push({ id: nextId++, matId: sel.value, name, qty, proj, unit: unit||'pza', price: isNaN(price)?0:price, stockBefore: STOCK[sel.value] ?? '?' });
+  const stockBefore = opt.dataset.s !== undefined ? opt.dataset.s : '?';
+  items.push({ id: nextId++, matId: sel.value, invId, invCode, name, qty, proj, unit: unit||'pza', price: isNaN(price)?0:price, stockBefore });
 
   sel.value = '';
   document.getElementById('add-qty').value = '';
@@ -519,9 +565,54 @@ function updateSummary() {
   } else { cw.style.display = 'none'; }
 }
 
-function confirmar() {
+async function confirmar() {
   if (items.length === 0) { toast('La lista está vacía', false); return; }
-  document.getElementById('folio-tag').textContent = `OC-0048`;
+
+  const estado = document.getElementById('estado-global').value;
+  const proveedor = document.getElementById('proveedor').value === 'otro'
+    ? document.getElementById('proveedor-otro').value.trim()
+    : document.getElementById('proveedor').value;
+  const fecha = document.getElementById('fecha').value;
+  const factura = document.getElementById('factura').value.trim();
+  const formaPago = document.getElementById('forma-pago').value;
+  const notas = document.getElementById('notas').value.trim();
+
+  const folio = 'MOV-' + Date.now().toString().slice(-6);
+  document.getElementById('folio-tag').textContent = folio;
+
+  const mov = {
+    id: crypto.randomUUID(),
+    folio,
+    tipo: estado,
+    fecha,
+    proveedor,
+    factura,
+    formaPago,
+    notas,
+    items: items.map(i => ({ code: i.invCode, name: i.name, qty: i.qty, unit: i.unit, price: i.price, proj: i.proj })),
+    total: items.reduce((s, i) => s + i.qty * i.price, 0),
+    registradoEn: new Date().toISOString(),
+  };
+
+  if (window.parent && window.parent.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('inventory_movimientos', mov.id, mov);
+    if (window.parent.DB_STATE) {
+      if (!window.parent.DB_STATE.inventory_movimientos) window.parent.DB_STATE.inventory_movimientos = [];
+      window.parent.DB_STATE.inventory_movimientos.push(mov);
+    }
+  }
+
+  // Update inventory stock for compra/entaller
+  if (estado === 'pedido' || estado === 'entaller') {
+    items.forEach(i => {
+      if (i.invCode) window.DB.logInventoryPurchase(i.invCode, i.qty, i.price, fecha);
+    });
+  } else if (estado === 'usado') {
+    items.forEach(i => {
+      if (i.invCode) window.DB.updateInventoryStock(i.invCode, -i.qty);
+    });
+  }
+
   toast('✓ Movimiento guardado correctamente.', true);
 }
 

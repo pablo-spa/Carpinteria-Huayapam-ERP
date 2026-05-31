@@ -10,32 +10,31 @@
   --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
   --surface0: #ccd0da; --surface1: #bcc0cc;
   --text: #4c4f69; --subtext: #8c8fa1;
-  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d;
-  --red: #d20f39;
+  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d; --red: #d20f39;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
     --surface0: #313244; --surface1: #45475a;
     --text: #cdd6f4; --subtext: #a6adc8;
-    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af;
-    --red: #f38ba8;
+    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af; --red: #f38ba8;
   }
 }
-body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding-bottom: 80px; }
-.hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; }
-.main { max-width: 800px; margin: 24px auto; padding: 24px; background: var(--mantle); border-radius: 12px; border: 1px solid var(--crust); }
-.field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding-bottom: 80px; }
+.hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+.main { max-width: 800px; margin: 24px auto; padding: 24px; background: var(--mantle); border-radius: 12px; border: 1px solid var(--crust); display: flex; flex-direction: column; gap: 20px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
 .field label { font-size: 13px; font-weight: 700; color: var(--subtext); }
-.field input, .field select, .field textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 14px; }
-.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); }
-.btn { padding: 10px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: opacity .15s; }
+.field input, .field select, .field textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 14px; font-family: inherit; }
+.field input:focus, .field select:focus { outline: none; border-color: var(--blue); }
+.btn { padding: 10px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: opacity .15s; font-family: inherit; font-size: 13px; }
 .btn:hover { opacity: .8; }
-.btn-amber { background: var(--amber); color: var(--mantle); border: 1px solid rgba(0,0,0,0.1); }
-.items-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.btn-amber { background: var(--amber); color: var(--mantle); }
+.btn-ghost { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.items-table { width: 100%; border-collapse: collapse; }
 .items-table th, .items-table td { padding: 10px; text-align: left; border-bottom: 1px solid var(--crust); font-size: 14px; }
 .items-table th { font-weight: 700; color: var(--subtext); font-size: 12px; text-transform: uppercase; }
-.items-table input, .items-table select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); }
+.items-table input, .items-table select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-family: inherit; font-size: 13px; }
 .items-table input:focus { outline: none; border-color: var(--blue); }
 </style>
 </head>
@@ -45,56 +44,140 @@ body { background: var(--base); color: var(--text); font-family: 'Inter', sans-s
     <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
     <h2 style="font-size: 18px;">Vale de Salida (Entrega a Trabajador)</h2>
   </div>
-  <button class="btn btn-amber" onclick="save()">Salida de Inventario</button>
+  <button class="btn btn-amber" onclick="save()">Registrar Salida</button>
 </div>
 <div class="main">
-  <div style="display:flex; gap:16px; margin-bottom:16px;">
+  <div style="display:flex; gap:16px;">
     <div class="field" style="flex:1;">
-      <label>Entregado a (Carpintero / Operario)</label>
-      <select id="worker">
-        <option>Encargado de Almacén</option>
-        <option>Operario 1 (Especialista)</option>
-        <option>Operario 2 (Carpintero)</option>
-      </select>
+      <label>Entregado a (Trabajador)</label>
+      <select id="worker"><option value="">— Seleccionar —</option></select>
     </div>
     <div class="field" style="flex:1;">
       <label>Proyecto Asignado</label>
-      <select id="proj">
-        <option value="PRY-01">Proyecto PRY-01</option>
-        <option value="TALLER">Uso de Taller (General)</option>
-      </select>
+      <select id="proj"><option value="">— Stock General / Taller —</option></select>
     </div>
   </div>
-  
-  <h3 style="margin-top:24px; margin-bottom:8px; font-size:15px; color:var(--text);">Materiales Entregados</h3>
-  <table class="items-table">
-    <thead><tr><th style="width:40%">Material (Catálogo)</th><th style="width:25%">Cantidad</th><th style="width:25%">Unidad</th></tr></thead>
-    <tbody id="itemsList">
-      <tr>
-        <td>
-          <select>
-            <option>MDF 15mm (Stock: 47)</option>
-            <option>Triplay 15mm (Stock: 18)</option>
-            <option>Bisagra clip 110 (Stock: 142)</option>
-          </select>
-        </td>
-        <td><input type="number" min="1" placeholder="Ej. 2"></td>
-        <td><input type="text" value="pza" disabled style="background:var(--mantle); color:var(--subtext);"></td>
-      </tr>
-    </tbody>
-  </table>
-  <button class="btn" style="background:var(--surface0); color:var(--text); margin-top:16px;" onclick="add()">+ Añadir renglón</button>
+
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="font-size:15px;">Materiales Entregados</h3>
+      <button class="btn btn-ghost" onclick="addRow()" style="padding:6px 12px; font-size:12px;">+ Renglón</button>
+    </div>
+    <table class="items-table">
+      <thead><tr><th style="width:50%">Material</th><th style="width:20%">Cantidad</th><th style="width:20%">Unidad</th><th style="width:10%"></th></tr></thead>
+      <tbody id="itemsList"></tbody>
+    </table>
+  </div>
 </div>
+
+<script src="db.js"></script>
 <script>
-function add() {
+let INV = [];
+
+async function init() {
+  const [workers, projects, inventory] = await Promise.all([
+    window.DB.query('contacts', { tipo: 'trabajador', activo: true }),
+    window.DB.query('projects'),
+    window.DB.query('inventory'),
+  ]);
+
+  INV = inventory.filter(i => i.code && i.name && !i._init);
+
+  const wSel = document.getElementById('worker');
+  workers.filter(w => !w._init && (w.name || w.givenName)).forEach(w => {
+    const o = document.createElement('option');
+    o.value = w.id;
+    o.textContent = w.name || w.givenName;
+    wSel.appendChild(o);
+  });
+
+  const pSel = document.getElementById('proj');
+  projects.filter(p => !p._init && p.code && p.name).forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.code;
+    o.textContent = `${p.code} — ${p.name}`;
+    pSel.appendChild(o);
+  });
+
+  addRow();
+}
+
+function buildInvOptions() {
+  return `<option value="">— Buscar material —</option>` +
+    INV.map(i => `<option value="${i.code}" data-unit="${i.unit||'pza'}" data-stock="${i.stock||0}">${i.code} – ${i.name} (Stock: ${i.stock||0})</option>`).join('');
+}
+
+function addRow() {
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td><select><option>MDF 15mm (Stock: 47)</option><option>Triplay 15mm (Stock: 18)</option><option>Bisagra clip 110 (Stock: 142)</option></select></td><td><input type="number" min="1" placeholder="Ej. 1"></td><td><input type="text" value="pza" disabled style="background:var(--mantle); color:var(--subtext);"></td>`;
+  tr.innerHTML = `
+    <td>
+      <select class="i-sel" onchange="onMatChange(this)">
+        ${buildInvOptions()}
+      </select>
+    </td>
+    <td><input type="number" class="i-qty" min="0.01" step="any" placeholder="1"></td>
+    <td><select class="i-unit"><option>pza</option><option>caja</option><option>mt</option><option>lt</option><option>kg</option><option>par</option></select></td>
+    <td><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">✕</button></td>`;
   document.getElementById('itemsList').appendChild(tr);
 }
-function save() {
-  alert('Se ha registrado la salida de material del inventario general hacia el trabajador especificado.');
-  if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}
+
+function onMatChange(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const tr = sel.closest('tr');
+  if (opt && opt.dataset.unit) {
+    tr.querySelector('.i-unit').value = opt.dataset.unit;
+  }
 }
+
+async function save() {
+  const workerId = document.getElementById('worker').value;
+  const projCode = document.getElementById('proj').value;
+
+  const rows = document.querySelectorAll('#itemsList tr');
+  const items = [];
+  rows.forEach(tr => {
+    const code = tr.querySelector('.i-sel').value;
+    const qty = parseFloat(tr.querySelector('.i-qty').value) || 0;
+    const unit = tr.querySelector('.i-unit').value;
+    if (code && qty > 0) {
+      const inv = INV.find(i => i.code === code);
+      items.push({ code, name: inv ? inv.name : code, qty, unit });
+    }
+  });
+
+  if (!items.length) { alert('Agrega al menos un material con cantidad.'); return; }
+
+  const now = new Date();
+  const salida = {
+    id: crypto.randomUUID(),
+    tipo: 'salida',
+    fecha: now.toISOString().slice(0, 10),
+    workerId: workerId || '',
+    proyecto: projCode || '',
+    items,
+    registradoEn: now.toISOString(),
+  };
+
+  // Discount from inventory
+  items.forEach(i => {
+    window.DB.updateInventoryStock(i.code, -i.qty);
+  });
+
+  // Save salida record
+  if (window.parent && window.parent.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('inventory_salidas', salida.id, salida);
+    if (window.parent.DB_STATE) {
+      if (!window.parent.DB_STATE.inventory_salidas) window.parent.DB_STATE.inventory_salidas = [];
+      window.parent.DB_STATE.inventory_salidas.push(salida);
+    }
+  }
+
+  alert('Salida registrada y stock actualizado.');
+  if (window.parent && window.parent.openModule) window.parent.openModule('almacen_hub.html', 'Portal Almacén');
+  else window.history.back();
+}
+
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

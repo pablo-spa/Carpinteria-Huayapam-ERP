@@ -165,11 +165,15 @@
     let currentPerms = {};
 
     function init() {
-      // Clone the permissions from parent
-      if (window.parent.PERMISOS) {
-         currentPerms = JSON.parse(JSON.stringify(window.parent.PERMISOS));
+      // Clone the permissions from parent (or start with empty if not loaded yet)
+      if (window.parent && window.parent.PERMISOS) {
+        currentPerms = JSON.parse(JSON.stringify(window.parent.PERMISOS));
       } else {
-         alert("Permisos no cargados en el nivel superior.");
+        // Initialize with empty structure so the table renders
+        SECTIONS.filter(s => !s.type).forEach(s => {
+          currentPerms[s.id] = {};
+          ROLES.forEach(r => { currentPerms[s.id][r] = r === 'programador' ? 'full' : 'none'; });
+        });
       }
       renderTable();
     }

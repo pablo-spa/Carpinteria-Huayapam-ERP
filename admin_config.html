@@ -202,7 +202,11 @@
     setTimeout(() => toast.style.display='none', 3000);
   }
 
-  loadSettings();
+  async function init() {
+    await window.DB.query('settings');
+    loadSettings();
+  }
+  document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

@@ -155,9 +155,8 @@
     
     // Check if entry exists today
     const logs = await window.DB.query("attendance_logs", { workerId: worker.id, fecha: todayStr });
-    
-    let db = window.DB.get();
-    
+    const db = window.DB.get();
+
     // Regla: si ya existe doc de hoy para ese worker -> actualizar hora_salida. Si no existe -> crear con hora_entrada.
     if (logs.length > 0) {
         // existe: actualizar salida
@@ -167,13 +166,14 @@
             return;
         }
         
-        // Use full DB context to modify
-        if (!db.attendance_logs) db.attendance_logs = [];
-        const idx = db.attendance_logs.findIndex(l => l.id === log.id);
-        if (idx !== -1) {
-            db.attendance_logs[idx].hora_salida = timeStr;
-            db.attendance_logs[idx].tipo = 'salida';
-            window.DB.save(db);
+        // Update the record
+        const updatedLog = { ...log, hora_salida: timeStr, tipo: 'salida' };
+        if (window.parent && window.parent.setDocumentInFirebase) {
+            window.parent.setDocumentInFirebase('attendance_logs', log.id, updatedLog);
+        }
+        if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.attendance_logs) {
+            const idx = window.parent.DB_STATE.attendance_logs.findIndex(l => l.id === log.id);
+            if (idx !== -1) window.parent.DB_STATE.attendance_logs[idx] = updatedLog;
         }
         showStatus('success', 'SALIDA REGISTRADA', worker.name, worker.role, 'Registro de salida completo');
     } else {
@@ -214,9 +214,13 @@
            retardoMin: retardoMin
         };
         
-        if (!db.attendance_logs) db.attendance_logs = [];
-        db.attendance_logs.push(newCheckin);
-        window.DB.save(db);
+        if (window.parent && window.parent.setDocumentInFirebase) {
+            window.parent.setDocumentInFirebase('attendance_logs', newCheckin.id, newCheckin);
+        }
+        if (window.parent && window.parent.DB_STATE) {
+            if (!window.parent.DB_STATE.attendance_logs) window.parent.DB_STATE.attendance_logs = [];
+            window.parent.DB_STATE.attendance_logs.push(newCheckin);
+        }
         
         showStatus(statusClass, 'ENTRADA REGISTRADA', worker.name, worker.role, statusTxt === 'trabajo' ? 'A tiempo' : (statusTxt === 'retardo' ? 'Retardo' : 'Llegada muy tarde'));
     }
