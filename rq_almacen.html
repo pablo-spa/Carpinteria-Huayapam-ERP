@@ -62,13 +62,13 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     <div class="grid2">
       <div class="field">
         <label>Proyecto / Destino</label>
-        <select id="proj">
+        <select id="proj" data-searchable>
           <option value="">— Stock General (sin proyecto) —</option>
         </select>
       </div>
       <div class="field">
         <label>Solicitante</label>
-        <select id="requester">
+        <select id="requester" data-searchable>
           <option value="">— Seleccionar —</option>
         </select>
       </div>
@@ -100,6 +100,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
   let INV = [];
@@ -152,6 +153,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       o.value = w.name || w.givenName; o.textContent = w.name || w.givenName;
       reqSel.appendChild(o);
     });
+
+    SearchableSelect.init(projSel);
+    SearchableSelect.init(reqSel);
 
     // Inventory & units for rows
     INV = inventory.filter(i => i.code && i.name);

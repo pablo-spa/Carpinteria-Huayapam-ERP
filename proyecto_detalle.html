@@ -108,7 +108,7 @@
           <div class="f-field"><label>Nombre del Proyecto</label><input type="text" id="f-name"></div>
         </div>
         <div class="f-row">
-          <div class="f-field"><label>Cliente / Contacto</label><select id="f-contact"></select></div>
+          <div class="f-field"><label>Cliente / Contacto</label><select id="f-contact" data-searchable></select></div>
           <div class="f-field"><label>Estado</label>
             <select id="f-status">
               <option value="Planificación">Planificación</option>
@@ -194,6 +194,7 @@
 
   </div>
 
+  <script src="searchable-select.js"></script>
   <script src="db.js"></script>
   <script>
     let projId = null;
@@ -217,6 +218,7 @@
       const sel = document.getElementById('f-contact');
       sel.innerHTML = '<option value="">-- Sin contacto --</option>' +
         (d.contacts || []).filter(c => !c._init).map(c => `<option value="${c.id}">${c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`).join('');
+      if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
     }
 
     function renderMilestones() {

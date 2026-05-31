@@ -181,8 +181,8 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
     <button class="btn btn-green" onclick="saveQuoteToProject()" style="padding:6px 14px; font-size:12px;">Aprobar ↗</button>
   </div>
   <div class="hdr-row2">
-    <select class="hdr-select" id="clientInput" onchange="S.client=this.options[this.selectedIndex].text; renderFooter()" style="flex:1;"></select>
-    <select class="hdr-select" id="projectInput" style="flex:1;"></select>
+    <select class="hdr-select" id="clientInput" data-searchable onchange="S.client=this.options[this.selectedIndex].text; renderFooter()" style="flex:1;"></select>
+    <select class="hdr-select" id="projectInput" data-searchable style="flex:1;"></select>
   </div>
 </div>
 
@@ -284,6 +284,7 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
   </div>
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
 let RATES = { maestroA:105, maestroB:98, oficialA:84, aprendiz:60, barniz:90, pulido:58, empaque:65, chofer:70 };
@@ -670,7 +671,10 @@ async function loadOptions() {
     projHtml += `<optgroup label="Otros Proyectos">${otherProjs.map(p => `<option value="${p.id}">${p.code} – ${p.name}</option>`).join('')}</optgroup>`;
   }
   pSel.innerHTML = projHtml;
-  
+
+  SearchableSelect.init(cSel);
+  SearchableSelect.init(pSel);
+
   PIECE_TYPES.forEach(([code,name]) => {
     const o = document.createElement('option');
     o.value = code; o.textContent = code+' — '+name;

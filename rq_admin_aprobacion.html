@@ -72,13 +72,13 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div class="field-g">
           <label class="lbl-g">Proyecto</label>
-          <select id="no-proj" style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--crust); background:var(--mantle); color:var(--text); font-family:inherit; font-size:13px;">
+          <select id="no-proj" data-searchable style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--crust); background:var(--mantle); color:var(--text); font-family:inherit; font-size:13px;">
             <option value="">— Stock General —</option>
           </select>
         </div>
         <div class="field-g">
           <label class="lbl-g">Proveedor</label>
-          <select id="no-prov" style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--crust); background:var(--mantle); color:var(--text); font-family:inherit; font-size:13px;">
+          <select id="no-prov" data-searchable style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--crust); background:var(--mantle); color:var(--text); font-family:inherit; font-size:13px;">
             <option value="">— Sin especificar —</option>
           </select>
         </div>
@@ -124,6 +124,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   <div id="orders-list"></div>
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
   let ALL_ORDERS = [];
@@ -277,6 +278,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const provs = contacts.filter(c => c.tipo === 'proveedor' && (c.name || c.givenName));
     provSel.innerHTML = '<option value="">— Sin especificar —</option>' +
       provs.map(p => `<option value="${p.name||p.givenName}">${p.name||p.givenName}</option>`).join('');
+
+    if (projSel._ssInit) projSel._ssRefresh(); else SearchableSelect.init(projSel);
+    if (provSel._ssInit) provSel._ssRefresh(); else SearchableSelect.init(provSel);
 
     document.getElementById('no-items').innerHTML = '';
     document.getElementById('no-notes').value = '';

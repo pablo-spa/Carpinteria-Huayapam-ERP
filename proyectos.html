@@ -197,7 +197,7 @@ body {
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
           <div class="m-field"><label>Contacto / Cliente</label>
             <div style="display:flex; gap:8px;">
-              <select id="m-contact" style="flex:1;"></select>
+              <select id="m-contact" data-searchable style="flex:1;"></select>
               <button class="btn btn-dark" onclick="showNewContactForm()" style="padding:4px 12px; font-size:11px;">+ Nuevo</button>
             </div>
           </div>
@@ -282,6 +282,7 @@ body {
   </div>
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
   let currentFilter = 'all';
@@ -399,6 +400,7 @@ body {
     const sel = document.getElementById('m-contact');
     sel.innerHTML = '<option value="">-- Sin contacto --</option>' +
       (d.contacts || []).filter(c => !c._init).map(c => `<option value="${c.id}">${c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`).join('');
+    if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
   }
 
   function openModal(id) {
