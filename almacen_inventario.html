@@ -227,17 +227,20 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
   function initSelects() {
     const d = window.DB.get();
-    
-    // Category format
-    let catHtml = '<option value="all">Todas las categorías</option>';
-    d.concept_categories.forEach(c => {
-      catHtml += `<option value="${c}">${c}</option>`;
-    });
-    document.getElementById('f-cat').innerHTML = catHtml;
-    
-    // Modal Selects
-    document.getElementById('m-cat').innerHTML = d.concept_categories.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('m-unit').innerHTML = d.concept_units.map(u => `<option value="${u}">${u}</option>`).join('');
+
+    const rawCats  = d.concept_categories || [];
+    const rawUnits = d.concept_units || [];
+    const cats  = rawCats[0]?.list  || rawCats.filter(c => typeof c === 'string');
+    const units = rawUnits[0]?.list || rawUnits.filter(u => typeof u === 'string');
+
+    // Category filter dropdown
+    document.getElementById('f-cat').innerHTML =
+      '<option value="all">Todas las categorías</option>' +
+      cats.map(c => `<option value="${c}">${c}</option>`).join('');
+
+    // Modal selects
+    document.getElementById('m-cat').innerHTML  = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('m-unit').innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
     
     // Workers Select
     document.getElementById('m-assigned').innerHTML = '<option value="">-- Sin asignar --</option>' + STATE_WORKERS.map(w => `<option value="${w.id}">${w.name || w.givenName}</option>`).join('');
