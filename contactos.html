@@ -544,24 +544,51 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   // ── Worker baja / reactivar ───────────────────────────────────────────
   async function toggleBaja(activate) {
     const id = currentContactId;
-    if (!id) return;
-    const c = STATE_CONTACTS.find(x => x.id === id);
-    if (!c) return;
-    const verb = activate ? 'reactivar' : 'dar de baja';
-    if (!confirm(`¿${activate ? 'Reactivar' : 'Dar de baja'} a "${c.name || c.givenName}"?`)) return;
+    if (!id) { alert('Error: no hay contacto seleccionado'); return; }
 
-    c.activo = activate;
+    const label = activate ? 'Reactivar' : 'Dar de Baja';
+    const cLocal = STATE_CONTACTS.find(x => x.id === id || x._id === id);
+    const name = cLocal?.name || cLocal?.givenName || id;
+    if (!confirm(`¿${label} a "${name}"?`)) return;
 
-    if (window.parent?.DB_STATE?.contacts) {
-      const idx = window.parent.DB_STATE.contacts.findIndex(x => x.id === id);
-      if (idx !== -1) window.parent.DB_STATE.contacts[idx].activo = activate;
+    try {
+      // 1. Update DB_STATE in parent window directly
+      let updated = null;
+      if (window.parent?.DB_STATE?.contacts) {
+        const liveContacts = window.parent.DB_STATE.contacts;
+        const idx = liveContacts.findIndex(x => (x.id || x._id) === id);
+        if (idx !== -1) {
+          liveContacts[idx].activo = activate;
+          updated = liveContacts[idx];
+        }
+      }
+
+      if (!updated && cLocal) {
+        cLocal.activo = activate;
+        updated = cLocal;
+      }
+
+      if (!updated) { alert('No se encontró el contacto en el sistema.'); return; }
+
+      // 2. Persist to Firestore
+      const docId = updated.id || updated._id || id;
+      if (window.parent?.setDocumentInFirebase) {
+        await window.parent.setDocumentInFirebase('contacts', docId, updated);
+      } else {
+        console.warn('setDocumentInFirebase no disponible — solo actualización en memoria');
+      }
+
+      // 3. Update STATE_CONTACTS local copy
+      if (cLocal) cLocal.activo = activate;
+
+      // 4. Refresh UI
+      fillForm(updated);
+      renderGrid();
+
+    } catch(e) {
+      console.error('Error en toggleBaja:', e);
+      alert('Error al guardar: ' + e.message);
     }
-    if (window.parent?.setDocumentInFirebase) {
-      await window.parent.setDocumentInFirebase('contacts', id, c);
-    }
-
-    fillForm(c);
-    renderGrid();
   }
 
   // ── Custom fields ─────────────────────────────────────────────────────
