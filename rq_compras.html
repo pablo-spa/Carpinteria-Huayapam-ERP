@@ -56,6 +56,11 @@ body { background: var(--base); color: var(--text); font-family: 'Inter', sans-s
 <script src="db.js"></script>
 <script>
 async function init() {
+  // Load bank accounts from DB
+  const rawAcc = window.DB.get().bank_accounts || [];
+  const ACCOUNTS = rawAcc[0]?.list || rawAcc.filter(x => typeof x === 'string');
+  window._ACCOUNTS = ACCOUNTS.length ? ACCOUNTS : ['CAJA (Efectivo)', 'CHU (Banco)', 'SMTP (Banco)', 'SATP (Operativa)'];
+
   const d = await window.DB.query("purchase_orders");
   const fallback = window.DB.get().orders || [];
   let orders = d && d.length > 0 ? d : fallback;
@@ -79,9 +84,7 @@ async function init() {
           <div>
             <select class="val-acc">
               <option value="">-- Cuenta --</option>
-              <option value="SATP (Operativa)">SATP (Operativa)</option>
-              <option value="CAJA (Administración)">CAJA (Administración)</option>
-              <option value="CHU (Fiscal)">CHU (Fiscal)</option>
+              ${(window._ACCOUNTS||[]).map(a=>`<option value="${a}">${a}</option>`).join('')}
             </select>
           </div>
         </div>`;
@@ -170,11 +173,8 @@ function crearOrden() {
       <div><input type="text" placeholder="Ej. Ferretería El Centro..."></div>
       <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
       <div>
-        <select class="val-acc">
+        <select class="val-acc" id="manual-acc">
           <option value="">-- Cuenta --</option>
-          <option value="SATP (Operativa)">SATP (Operativa)</option>
-          <option value="CAJA (Administración)">CAJA (Administración)</option>
-          <option value="CHU (Fiscal)">CHU (Fiscal)</option>
         </select>
       </div>
     </div>
@@ -185,6 +185,15 @@ function crearOrden() {
       <button class="btn btn-green btn-disabled" onclick="alert('No autorizado todavía')">2. Marcar Comprado y Recibido</button>
     </div>`;
   
+  // Populate the manual account select after HTML is built
+  setTimeout(() => {
+    const s = document.getElementById('manual-acc');
+    if (s && window._ACCOUNTS) {
+      s.innerHTML = '<option value="">-- Cuenta --</option>' +
+        window._ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
+    }
+  }, 0);
+
   const div = document.createElement('div');
   div.className = "card unauthorized";
   div.id = id;

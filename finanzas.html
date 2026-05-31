@@ -247,28 +247,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         <div class="f-row">
           <label class="f-lbl" id="lbl-acc">Cuenta Origen</label>
           <select id="f-acc" class="f-input">
-            <option value="CHU">CHU (Banco)</option>
-            <option value="SMTP">SMTP (Banco)</option>
-            <option value="CAJA">CAJA Efectivo</option>
-            <option value="OTROS">OTROS</option>
+            <option value="">— Cuenta —</option>
           </select>
         </div>
         <div class="f-row" id="dest-wrap" style="display:none;">
           <label class="f-lbl">Cuenta Destino</label>
           <select id="f-dest" class="f-input">
-            <option value="CAJA">CAJA Efectivo</option>
-            <option value="CHU">CHU (Banco)</option>
-            <option value="SMTP">SMTP (Banco)</option>
-            <option value="OTROS">OTROS</option>
+            <option value="">— Cuenta destino —</option>
           </select>
         </div>
         <div class="f-row" id="method-wrap">
           <label class="f-lbl">Forma de Pago</label>
           <select id="f-method" class="f-input">
-            <option>Transferencia Bancaria</option>
-            <option>Efectivo</option>
-            <option>Tarjeta Crédito/Débito</option>
-            <option>Cheque</option>
+            <option value="">— Forma de pago —</option>
           </select>
         </div>
       </div>
@@ -389,6 +380,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     
     document.getElementById('f-cat').innerHTML = '<option value="">Todas las categorías</option><option value="pending">⚠️ Solo pendientes categorizar</option>' + ingHtml + gasHtml + transHtml;
     document.getElementById('f-cat-input').innerHTML = '<option value="">-- Sin categorizar (Pendiente) --</option>' + ingHtml + gasHtml + transHtml;
+
+    // Load bank accounts and payment methods from DB
+    const rawAccounts = window.DB.get().bank_accounts || [];
+    const accounts = rawAccounts[0]?.list || rawAccounts.filter(x => typeof x === 'string');
+    if (accounts.length) {
+      const accOpts = accounts.map(a => `<option value="${a}">${a}</option>`).join('');
+      document.getElementById('f-acc').innerHTML  = accOpts;
+      document.getElementById('f-dest').innerHTML = accOpts;
+    }
+
+    const rawMethods = window.DB.get().payment_methods || [];
+    const methods = rawMethods[0]?.list || rawMethods.filter(x => typeof x === 'string');
+    if (methods.length) {
+      document.getElementById('f-method').innerHTML = methods.map(m => `<option value="${m}">${m}</option>`).join('');
+    }
 
     populateContacts();
     populateOrders();

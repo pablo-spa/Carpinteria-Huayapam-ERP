@@ -255,12 +255,7 @@ td { color: var(--text); }
         <div class="form-group">
           <label>Categoría</label>
           <select id="fg-cat" class="form-control">
-            <option value="comida">Comida</option>
-            <option value="transporte">Transporte (Pasajes, Gasolina, Casetas)</option>
-            <option value="alojamiento">Alojamiento (Hotel)</option>
-            <option value="herramienta">Herramienta / Insumos</option>
-            <option value="comunicacion">Comunicación (Saldo)</option>
-            <option value="extra">Extra / Otros</option>
+            <option value="">— Categoría —</option>
           </select>
         </div>
         <div class="form-group">
@@ -336,15 +331,29 @@ function formatDateDMM(str) {
   return d.toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'});
 }
 
-function init() {
+async function init() {
+  await window.DB.query('contacts'); // ensure DB loaded
   const db = window.DB.get();
+
+  // Load viatico categories from DB
+  const rawCats = db.viatico_categories || [];
+  const cats = rawCats[0]?.list || rawCats.filter(x => typeof x === 'string');
+  if (cats.length) {
+    document.getElementById('fg-cat').innerHTML =
+      cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    // Also rebuild CAT_LABELS from DB
+    cats.forEach(c => { CAT_LABELS[c] = c; });
+  }
+
   // Init workers select
+  const contacts = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
   const sel = document.getElementById('f-workers');
   sel.innerHTML = '';
-  (db.workers||[]).forEach(w => {
+  sel.innerHTML = '';
+  contacts.forEach(w => {
     const opt = document.createElement('option');
     opt.value = w.id;
-    opt.textContent = w.name;
+    opt.textContent = w.name || w.givenName || '-';
     sel.appendChild(opt);
   });
   
