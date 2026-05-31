@@ -78,6 +78,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .mat-row { display: grid; grid-template-columns: minmax(140px, 3fr) 60px 50px 80px 32px; gap: 8px; align-items: center; margin-top: 8px; min-width: 480px; }
 select.mat-name, input.mat-qty { padding: 8px 6px; border: 1px solid var(--surface0); border-radius: 6px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; box-sizing:border-box; min-height:40px; }
 select.mat-name:focus, input.mat-qty:focus { outline: none; border-color: var(--blue); }
+.mat-col-hdr { font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; }
 .mat-unit { font-size: 11px; color: var(--subtext); overflow: hidden; text-overflow: ellipsis; }
 .mat-subtotal { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; }
 .mat-del { background: var(--base); border: 1px solid var(--surface0); border-radius: 6px; color: var(--subtext); font-size: 16px; cursor: pointer; line-height: 1; height: 34px; width: 32px; display: flex; align-items: center; justify-content: center; }
@@ -387,7 +388,7 @@ function togglePiece(id) {
 function addMat(id) {
   const p = S.pieces.find(p => p.id === id);
   if (!p) return;
-  const m = MATS[0];
+  const m = MATS[0] || { n: 'Material nuevo', u: 'pza', p: 0 };
   p.mats.push({ n:m.n, u:m.u, p:m.p, qty:1 });
   render();
 }
@@ -580,12 +581,15 @@ function showPrintPreview(isClient) {
   S.pieces.forEach((p, i) => {
     const c = calc(p);
     grandTotal += c.final;
+    const matsDetail = !isClient && p.mats.length
+      ? p.mats.map(m => `  • ${m.qty} ${m.u} ${m.n} — ${fmt(m.qty*m.p)}`).join('\n')
+      : '';
     html += `<div class="print-piece">
       <div class="print-piece-hdr">
-        <span>${i + 1}. ${p.type} ${p.n?'- '+p.n:''}</span>
-        <span>${isClient ? fmt(c.final) : ''}</span>
+        <span>${i + 1}. [${p.code}] ${p.name || ''}</span>
+        <span>${isClient ? fmt(c.final) : fmt(c.final)+' (costo base: '+fmt(c.sub3)+')'}</span>
       </div>
-      <div class="print-piece-desc">${p.desc || ''}</div>
+      ${matsDetail ? `<div class="print-piece-desc">${matsDetail}</div>` : ''}
     </div>`;
   });
 
@@ -634,7 +638,7 @@ let Q_state = { baseQuoteId: null, isViewMode: false };
 
 async function loadOptions() {
   const clients = await window.DB.query("contacts");
-  const filteredClients = clients.filter(c => !c.tipo || c.tipo.toLowerCase() === 'cliente' || c.type === 'Cliente');
+  const filteredClients = clients.filter(c => !c.tipo || c.tipo === 'cliente');
   const activeProjs = await window.DB.query("projects");
   const inventoryDb = await window.DB.query("inventory");
   const dbPieceTypes = await window.DB.query("piece_types");
@@ -651,7 +655,17 @@ async function loadOptions() {
   cSel.innerHTML = '<option value="">— Seleccionar Cliente —</option>' + filteredClients.map(c => `<option value="${c.id}">${c.name || c.givenName}</option>`).join('');
   
   const pSel = document.getElementById('projectInput');
-  pSel.innerHTML = '<option value="">— Crear Proyecto Nuevo —</option>' + activeProjs.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+  const activeStatuses = ['Planificación', 'En Producción'];
+  const activeProjsFiltered = activeProjs.filter(p => p.code && p.name && activeStatuses.includes(p.status));
+  const otherProjs = activeProjs.filter(p => p.code && p.name && !activeStatuses.includes(p.status));
+  let projHtml = '<option value="">— Seleccionar Proyecto —</option>';
+  if (activeProjsFiltered.length) {
+    projHtml += `<optgroup label="Proyectos Activos">${activeProjsFiltered.map(p => `<option value="${p.id}">${p.code} – ${p.name}</option>`).join('')}</optgroup>`;
+  }
+  if (otherProjs.length) {
+    projHtml += `<optgroup label="Otros Proyectos">${otherProjs.map(p => `<option value="${p.id}">${p.code} – ${p.name}</option>`).join('')}</optgroup>`;
+  }
+  pSel.innerHTML = projHtml;
   
   PIECE_TYPES.forEach(([code,name]) => {
     const o = document.createElement('option');

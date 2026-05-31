@@ -74,9 +74,9 @@ window.DB = {
   query: async (collectionName, filters = {}) => {
       // WaitFor DB_STATE only if we are in an iframe and parent is managing state
       let loops = 0;
-      if (window.parent && window.parent !== window && !window.DB_STATE_LOADED) {
-          while (!window.parent.DB_STATE_LOADED && loops < 100) {
-              await new Promise(r => setTimeout(r, 100)); // sleep
+      if (window.parent && window.parent !== window) {
+          while (!window.parent.DB_STATE_LOADED && loops < 300) {
+              await new Promise(r => setTimeout(r, 100));
               loops++;
           }
       }
@@ -97,7 +97,7 @@ window.DB = {
           let merged = [...data];
           let workerData = (parentState && parentState.workers) ? parentState.workers : (getDB().workers || []);
           if (workerData) {
-             const workersMapped = workerData.map(w => ({...w, tipo: 'trabajador', type: 'Trabajador', activo: true}));
+             const workersMapped = workerData.map(w => ({...w, tipo: 'trabajador', activo: true}));
              // Deduplicate by ID
              for (const w of workersMapped) {
                  if (!merged.find(x => x.id === w.id)) {

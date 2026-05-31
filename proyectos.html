@@ -306,21 +306,24 @@ body {
   function renderList() {
     const d = window.DB.get();
     const lc = document.getElementById('p-list');
-    
-    // Sort array by progress and then start date
-    const sorted = [...d.projects].sort((a,b) => {
-      if(a.status==='Terminado' && b.status!=='Terminado') return 1;
-      if(b.status==='Terminado' && a.status!=='Terminado') return -1;
+
+    // Filter out placeholder/init docs and sort
+    const sorted = d.projects.filter(p => p.name && p.status).sort((a,b) => {
+      const aTerm = a.status === 'Terminado' || a.status === 'completado';
+      const bTerm = b.status === 'Terminado' || b.status === 'completado';
+      if(aTerm && !bTerm) return 1;
+      if(bTerm && !aTerm) return -1;
       return new Date(b.startDate) - new Date(a.startDate);
     });
 
     lc.innerHTML = sorted.map(p => {
       const contact = d.contacts.find(c => c.id === p.contactId) || {name: 'Sin contacto'};
-      
+      const statusNorm = p.status || '';
+
       let pill = 'pill-gray';
-      if(p.status === 'En Producción') pill = 'pill-blue';
-      else if(p.status.includes('Terminado') || p.status.includes('Entregado')) pill = 'pill-green';
-      else if(p.status === 'Planificación') pill = 'pill-amber';
+      if(statusNorm === 'En Producción') pill = 'pill-blue';
+      else if(statusNorm === 'Terminado' || statusNorm === 'completado' || statusNorm.includes('Entregado')) pill = 'pill-green';
+      else if(statusNorm === 'Planificación') pill = 'pill-amber';
 
       const realHrs = getRealHours(p.code);
       const estHrs = p.estimatedHours || 0;
@@ -370,7 +373,8 @@ body {
       const stat = c.getAttribute('data-status');
       let isMatchCat = true;
       if (currentFilter !== 'all') {
-        if(currentFilter === 'Terminado' && !stat.includes('Terminado')) isMatchCat = false;
+        const isTerminado = stat === 'Terminado' || stat === 'completado';
+        if(currentFilter === 'Terminado' && !isTerminado) isMatchCat = false;
         else if(currentFilter !== 'Terminado' && stat !== currentFilter) isMatchCat = false;
       }
       c.style.display = (isMatchStr && isMatchCat) ? 'grid' : 'none';
@@ -393,7 +397,7 @@ body {
     const d = window.DB.get();
     const sel = document.getElementById('m-contact');
     sel.innerHTML = '<option value="">-- Sin contacto --</option>' + 
-      d.contacts.map(c => `<option value="${c.id}">${c.name} (${c.type})</option>`).join('');
+      d.contacts.map(c => `<option value="${c.id}">${c.name} (${c.tipo || 'cliente'})</option>`).join('');
   }
 
   function openModal(id) {
@@ -502,8 +506,7 @@ body {
     const nc = {
       name: name,
       phone: phone,
-      type: 'Cliente',
-      tags: [],
+      tipo: 'cliente',
       person: '',
       email: '',
       address: ''
@@ -561,7 +564,11 @@ body {
     renderList();
   }
 
-  renderList();
+  async function init() {
+    await window.DB.query('projects'); // wait for DB_STATE_LOADED
+    renderList();
+  }
+  init();
 </script>
 </body>
 </html>

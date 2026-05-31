@@ -10,105 +10,269 @@
   --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
   --surface0: #ccd0da; --surface1: #bcc0cc;
   --text: #4c4f69; --subtext: #8c8fa1;
-  --blue: #1e66f5; --green: #40a02b; --red: #d20f39;
+  --blue: #1e66f5; --green: #40a02b; --red: #d20f39; --amber: #df8e1d;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
     --surface0: #313244; --surface1: #45475a;
     --text: #cdd6f4; --subtext: #a6adc8;
-    --blue: #8caaee; --green: #a6da95; --red: #f38ba8;
+    --blue: #8caaee; --green: #a6da95; --red: #f38ba8; --amber: #f9e2af;
   }
 }
-body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding-bottom: 80px; }
-.hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; }
-.main { max-width: 800px; margin: 24px auto; padding: 24px; background: var(--mantle); border-radius: 12px; border: 1px solid var(--crust); }
-.field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-.field label { font-size: 13px; font-weight: 700; color: var(--subtext); }
-.field input, .field select, .field textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 14px; }
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; padding-bottom: 80px; }
+.hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+.hdr-title { font-size: 18px; font-weight: 800; }
+.main { max-width: 820px; margin: 24px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 24px; }
+.card h3 { font-size: 14px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+.field input, .field select, .field textarea { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 14px; font-family: inherit; width: 100%; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); }
-.btn { padding: 10px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: opacity .15s; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.btn { padding: 9px 16px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; transition: opacity .15s; }
 .btn:hover { opacity: .8; }
-.btn-blue { background: var(--blue); }
-.items-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-.items-table th, .items-table td { padding: 10px; text-align: left; border-bottom: 1px solid var(--crust); font-size: 14px; }
-.items-table th { font-weight: 700; color: var(--subtext); font-size: 12px; text-transform: uppercase; }
-.items-table input, .items-table select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); }
-.items-table input:focus { outline: none; border-color: var(--blue); }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-sm { background: var(--surface0); color: var(--text); padding: 6px 12px; font-size: 12px; }
+
+/* Items table */
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid var(--crust); text-align: left; }
+.items-table td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: middle; }
+.items-table input, .items-table select { padding: 7px 8px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
+.items-table input:focus, .items-table select:focus { outline: none; border-color: var(--blue); }
+.rm-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 4px 8px; }
 </style>
 </head>
 <body>
+
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
-    <h2 style="font-size: 18px;">Hoja de Pedido (Petición)</h2>
+    <button onclick="goBack()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <span class="hdr-title">Hoja de Pedido</span>
   </div>
-  <button class="btn btn-blue" onclick="save()">↗ Enviar a Confirmación</button>
+  <button class="btn btn-blue" onclick="submitRequest()">↗ Enviar Solicitud</button>
 </div>
-<div class="main">
-  <div class="field">
-    <label>Proyecto / Destino</label>
-    <select id="proj">
-      <option value="STOCK">General (Stock Almacén)</option>
-      <option value="PRY-01">Proyecto PRY-01</option>
-    </select>
-  </div>
-  <div class="field">
-    <label>Notas o justificación</label>
-    <textarea id="notes" rows="3" placeholder="Ej. Material requerido para armar cocina según planos..."></textarea>
-  </div>
-  <h3 style="margin-top:24px; margin-bottom:8px; font-size:15px; color:var(--text);">Materiales Solicitados</h3>
-  
-  <datalist id="matsList"></datalist>
 
-  <table class="items-table">
-    <thead><tr><th style="width:50%">Material</th><th style="width:25%">Cantidad</th><th style="width:25%">Unidad</th></tr></thead>
-    <tbody id="itemsList">
-      <tr>
-        <td><input type="text" list="matsList" placeholder="Empezar a escribir... Ej. Tornillo"></td>
-        <td><input type="number" min="1" placeholder="0"></td>
-        <td>
-          <select>
-            <option value="pza">Pieza</option><option value="caja">Caja</option><option value="mt">Metros</option><option value="gln">Galón</option>
-          </select>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <button class="btn" style="background:var(--surface0); color:var(--text); margin-top:16px;" onclick="add()">+ Añadir renglón</button>
+<div class="main">
+
+  <div class="card">
+    <h3>Información del Pedido</h3>
+    <div class="grid2">
+      <div class="field">
+        <label>Proyecto / Destino</label>
+        <select id="proj">
+          <option value="">— Stock General (sin proyecto) —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Solicitante</label>
+        <select id="requester">
+          <option value="">— Seleccionar —</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label>Notas / Justificación</label>
+      <textarea id="notes" rows="3" placeholder="Ej. Material requerido para instalar cocina según planos..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0;">Materiales Solicitados</h3>
+      <button class="btn btn-sm" onclick="addRow()">+ Añadir renglón</button>
+    </div>
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:45%">Material / Concepto</th>
+          <th style="width:20%">Cantidad</th>
+          <th style="width:20%">Unidad</th>
+          <th style="width:12%"></th>
+        </tr>
+      </thead>
+      <tbody id="itemsList"></tbody>
+    </table>
+  </div>
+
 </div>
 
 <script src="db.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const d = window.DB.get();
-  // si materials_catalog esta vacio, ponemos unos dummies para demo
-  if(!d.materials_catalog || d.materials_catalog.length === 0) {
-    d.materials_catalog = [
-      { name: "Tornillo Spax 2\" cabeza plana" },
-      { name: "Tornillo 1\" negro para tablaroca" },
-      { name: "Tornillo 1 5/8\" Kreg" },
-      { name: "Pegamento blanco 850 (Galón)" },
-      { name: "Bisagra Bidimensional Inset" },
-      { name: "Triplay de Encino 15mm" },
-      { name: "MDF 15mm 1.22 x 2.44m" },
-      { name: "Corredera extensión total 45cm" }
-    ];
-  }
-  
-  const dl = document.getElementById('matsList');
-  dl.innerHTML = d.materials_catalog.map(m => `<option value="${m.name}"></option>`).join('');
-});
+  let INV = [];
+  let UNITS = [];
 
-function add() {
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td><input type="text" list="matsList" placeholder="Empezar a escribir..."></td><td><input type="number" min="1" placeholder="0"></td><td><select><option value="pza">Pieza</option><option value="caja">Caja</option><option value="mt">Metros</option><option value="gln">Galón</option></select></td>`;
-  document.getElementById('itemsList').appendChild(tr);
-}
-function save() {
-  alert('Pedido enviado a Operaciones. (Estado: Revisión)');
-  if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}
-}
+  function goBack() {
+    if (window.parent && window.parent.openModule) window.parent.openModule('almacen_hub.html', 'Portal Almacén');
+    else window.history.back();
+  }
+
+  async function init() {
+    const [projects, contacts, inventory, conceptUnits] = await Promise.all([
+      window.DB.query('projects'),
+      window.DB.query('contacts'),
+      window.DB.query('inventory'),
+      window.DB.query('concept_units'),
+    ]);
+
+    // Projects dropdown — active only
+    const activeStatuses = ['Planificación', 'En Producción'];
+    const activeProjs = projects.filter(p => p.code && p.name && activeStatuses.includes(p.status));
+    const histProjs   = projects.filter(p => p.code && p.name && !activeStatuses.includes(p.status));
+    const projSel = document.getElementById('proj');
+    if (activeProjs.length) {
+      const grpActive = document.createElement('optgroup');
+      grpActive.label = 'Proyectos Activos';
+      activeProjs.forEach(p => {
+        const o = document.createElement('option');
+        o.value = p.code; o.textContent = `${p.code} – ${p.name}`;
+        grpActive.appendChild(o);
+      });
+      projSel.appendChild(grpActive);
+    }
+    if (histProjs.length) {
+      const grpHist = document.createElement('optgroup');
+      grpHist.label = 'Proyectos Anteriores';
+      histProjs.forEach(p => {
+        const o = document.createElement('option');
+        o.value = p.code; o.textContent = `${p.code} – ${p.name}`;
+        grpHist.appendChild(o);
+      });
+      projSel.appendChild(grpHist);
+    }
+
+    // Requester dropdown — workers
+    const reqSel = document.getElementById('requester');
+    const workers = contacts.filter(c => c.tipo === 'trabajador' && c.activo !== false && (c.name || c.givenName));
+    workers.forEach(w => {
+      const o = document.createElement('option');
+      o.value = w.name || w.givenName; o.textContent = w.name || w.givenName;
+      reqSel.appendChild(o);
+    });
+
+    // Inventory & units for rows
+    INV = inventory.filter(i => i.code && i.name);
+    const rawUnits = conceptUnits[0]?.list || [];
+    UNITS = rawUnits.length ? rawUnits : ['pza','caja','mt','mt2','lt','kg','gln','rollo','par','juego','bolsa'];
+
+    addRow(); // start with one empty row
+  }
+
+  function buildInvOptions(selectedCode) {
+    return `<option value="">— Buscar concepto —</option>` +
+      INV.map(i => `<option value="${i.code}" data-unit="${i.unit||'pza'}" ${i.code===selectedCode?'selected':''}>${i.code} – ${i.name}</option>`).join('') +
+      `<option value="_new" style="font-weight:700; color:var(--blue);">+ Concepto nuevo…</option>`;
+  }
+
+  function buildUnitOptions(selected) {
+    return UNITS.map(u => `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
+  }
+
+  function addRow(code='', name='', qty=1, unit='pza') {
+    const tbody = document.getElementById('itemsList');
+    const tr = document.createElement('tr');
+    tr.dataset.custom = (!code || !INV.find(i => i.code === code)) ? '1' : '0';
+
+    tr.innerHTML = `
+      <td>
+        <select class="i-sel" onchange="handleConceptChange(this)">
+          ${buildInvOptions(code)}
+        </select>
+        <input type="text" class="i-custom" placeholder="Descripción del material"
+          value="${name}" style="display:${tr.dataset.custom==='1' && name ? 'block':'none'}; margin-top:4px;">
+      </td>
+      <td><input type="number" class="i-qty" value="${qty}" min="0.01" step="any" style="width:80px;"></td>
+      <td>
+        <select class="i-unit">${buildUnitOptions(unit)}</select>
+      </td>
+      <td><button class="rm-btn" onclick="this.closest('tr').remove()">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  function handleConceptChange(sel) {
+    const tr = sel.closest('tr');
+    const customInput = tr.querySelector('.i-custom');
+    const unitSel = tr.querySelector('.i-unit');
+
+    if (sel.value === '_new') {
+      sel.value = '';
+      customInput.style.display = 'block';
+      customInput.focus();
+      tr.dataset.custom = '1';
+    } else if (sel.value) {
+      const opt = sel.options[sel.selectedIndex];
+      unitSel.value = opt.dataset.unit || 'pza';
+      customInput.style.display = 'none';
+      tr.dataset.custom = '0';
+    } else {
+      customInput.style.display = 'none';
+      tr.dataset.custom = '0';
+    }
+  }
+
+  async function submitRequest() {
+    const projCode = document.getElementById('proj').value;
+    const requester = document.getElementById('requester').value;
+    const notes = document.getElementById('notes').value.trim();
+
+    const rows = document.querySelectorAll('#itemsList tr');
+    const items = [];
+    rows.forEach(tr => {
+      const sel   = tr.querySelector('.i-sel');
+      const custom = tr.querySelector('.i-custom');
+      const qty   = parseFloat(tr.querySelector('.i-qty').value) || 0;
+      const unit  = tr.querySelector('.i-unit').value;
+
+      let code = sel.value;
+      let name = '';
+      if (code && code !== '_new') {
+        const inv = INV.find(i => i.code === code);
+        name = inv ? inv.name : sel.options[sel.selectedIndex]?.text || code;
+      } else {
+        name = custom?.value.trim() || '';
+        code = '';
+      }
+      if ((name || code) && qty > 0) items.push({ code, name, qty, unit, price: 0 });
+    });
+
+    if (!items.length) return alert('Agrega al menos un material.');
+
+    const now = new Date();
+    const folio = 'RQ-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') +
+                  String(now.getDate()).padStart(2,'0') + '-' + String(now.getTime()).slice(-4);
+
+    const request = {
+      id: crypto.randomUUID(),
+      folio,
+      date: now.toISOString().slice(0,10),
+      status: 'Pedido',
+      project: projCode,
+      requester,
+      notes,
+      items,
+      createdAt: now.toISOString(),
+    };
+
+    if (window.parent && window.parent.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('purchase_orders', request.id, request);
+      // Update parent DB_STATE
+      if (window.parent.DB_STATE) {
+        if (!window.parent.DB_STATE.purchase_orders) window.parent.DB_STATE.purchase_orders = [];
+        window.parent.DB_STATE.purchase_orders.push(request);
+      }
+      alert(`✅ Pedido ${folio} enviado correctamente.`);
+    } else {
+      alert(`✅ Pedido ${folio} listo (sin conexión a Firebase en este contexto).`);
+    }
+
+    goBack();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

@@ -216,7 +216,7 @@
       const d = window.DB.get();
       const sel = document.getElementById('f-contact');
       sel.innerHTML = '<option value="">-- Sin contacto --</option>' + 
-        d.contacts.map(c => `<option value="${c.id}">${c.name} (${c.type})</option>`).join('');
+        d.contacts.map(c => `<option value="${c.id}">${c.name} (${c.tipo || 'cliente'})</option>`).join('');
     }
 
     function renderMilestones() {

@@ -90,10 +90,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
 <div class="filters">
   <div class="f-btn act" onclick="filterData('all')">Todos</div>
-  <div class="f-btn" onclick="filterData('Cliente')">Solo Clientes</div>
-  <div class="f-btn" onclick="filterData('Proveedor')">Solo Proveedores</div>
-  <div class="f-btn" onclick="filterData('Trabajador')">Solo Trabajadores</div>
-  <div class="f-btn" onclick="filterData('VIP')">Etiqueta VIP</div>
+  <div class="f-btn" onclick="filterData('cliente')">Solo Clientes</div>
+  <div class="f-btn" onclick="filterData('proveedor')">Solo Proveedores</div>
+  <div class="f-btn" onclick="filterData('trabajador')">Solo Trabajadores</div>
 </div>
 
 <div class="main">
@@ -118,12 +117,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         <div class="m-field">
           <label>Tipo</label>
           <select id="m-type">
-            <option value="Cliente">Cliente</option>
-            <option value="Proveedor">Proveedor</option>
-            <option value="Empleado">Empleado</option>
+            <option value="cliente">Cliente</option>
+            <option value="proveedor">Proveedor</option>
+            <option value="trabajador" disabled>Trabajador (solo RRHH)</option>
           </select>
         </div>
-        <div class="m-field"><label>Etiquetas (separadas por coma)</label><input type="text" id="m-tags" placeholder="VIP, Frecuente"></div>
       </div>
       <div class="m-field"><label>Nombre de Empresa / Contacto</label><input type="text" id="m-name"></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -164,45 +162,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     const grid = document.getElementById('c-grid');
     grid.innerHTML = STATE_CONTACTS.map(c => {
       const name = c.name || c.givenName || 'Sin Nombre';
-      const type = c.type || c.tipo || 'Cliente';
-      
+      const tipo = c.tipo || 'cliente';
+      const tipoLabel = tipo === 'proveedor' ? 'Proveedor' : tipo === 'trabajador' ? 'Trabajador' : 'Cliente';
+
       const avt = name ? name.substring(0,2).toUpperCase() : '??';
-      const isProv = type.toLowerCase() === 'proveedor';
-      const isEmp = type.toLowerCase() === 'trabajador';
-      
-      let typeClr = isProv ? 'color:var(--green)' : '';
-      if (isEmp) typeClr = 'color:var(--mauve)';
-      
-      // Auto-inject trabajador tag for presentation
-      let tags = c.tags || [];
-      if (isEmp && !tags.some(t => t.toLowerCase() === 'trabajador' || t.toLowerCase() === 'trabajadores')) {
-         tags = [...tags, 'Trabajadores'];
-      }
-      
-      const tagsHtm = tags.map(t => {
-        if(t && t.toLowerCase()==='vip') return `<span class="tag tag-vip">VIP</span>`;
-        if(t) return `<span class="tag">${t}</span>`;
-        return '';
-      }).join('');
-      
+      const typeClr = tipo === 'proveedor' ? 'color:var(--green)' : tipo === 'trabajador' ? 'color:var(--mauve)' : '';
+
       const phoneHtm = c.phone ? `<div class="c-row"><span class="ico">📞</span> ${c.phone}</div>` : '';
       const emailHtm = c.email ? `<div class="c-row"><span class="ico">📧</span> ${c.email}</div>` : '';
       const addrHtm  = c.address ? `<div class="c-row"><span class="ico">📍</span> ${c.address}</div>` : '';
       const psnHtm   = c.person ? `<div class="c-row"><span class="ico">👤</span> ${c.person}</div>` : '';
       const cfHtm    = (c.customFields||[]).map(cf => `<div class="c-row"><span class="ico">🔹</span> <span><b>${cf.lbl}:</b> ${cf.val}</span></div>`).join('');
 
-      // Encode ID securely for HTML attribute
       const jsId = c.id.replace(/'/g, "\\'");
       return `
-        <div class="card" data-type="${type}" data-tags="${tags.join(' ')}" onclick="openModal('${jsId}')">
+        <div class="card" data-type="${tipo}" onclick="openModal('${jsId}')">
           <div class="c-head">
             <div class="c-avt">${avt}</div>
-            <div class="c-title"><div class="c-name">${name}</div><div class="c-type" style="${typeClr}">${type}</div></div>
+            <div class="c-title"><div class="c-name">${name}</div><div class="c-type" style="${typeClr}">${tipoLabel}</div></div>
           </div>
           <div class="c-body">
             ${psnHtm}${phoneHtm}${emailHtm}${addrHtm}${cfHtm}
           </div>
-          <div class="c-tags">${tagsHtm}</div>
         </div>
       `;
     }).join('');
@@ -223,11 +204,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     document.querySelectorAll('.card').forEach(c => {
       const isMatchStr = c.textContent.toLowerCase().includes(term);
       const typ = c.getAttribute('data-type');
-      const tags = c.getAttribute('data-tags');
       let isMatchCat = true;
       if (currentFilter !== 'all') {
-        if (currentFilter === 'VIP' && !tags.includes('VIP')) isMatchCat = false;
-        else if (currentFilter !== 'VIP' && typ.toLowerCase() !== currentFilter.toLowerCase()) isMatchCat = false;
+        if (typ !== currentFilter) isMatchCat = false;
       }
       c.style.display = (isMatchStr && isMatchCat) ? 'flex' : 'none';
     });
@@ -260,25 +239,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       const c = STATE_CONTACTS.find(x => x.id === id);
       document.getElementById('m-id').value = c.id;
       document.getElementById('m-name').value = c.name || c.givenName || '';
-      document.getElementById('m-type').value = c.type || c.tipo || 'Cliente';
-      document.getElementById('m-tags').value = (c.tags||[]).join(', ');
+      document.getElementById('m-type').value = c.tipo || 'cliente';
       document.getElementById('m-phone').value = c.phone || '';
       document.getElementById('m-email').value = c.email || '';
       document.getElementById('m-person').value = c.person || '';
       document.getElementById('m-addr').value = c.address || '';
       if(c.customFields) c.customFields.forEach(cf => addCustomField(cf.lbl, cf.val));
       setEditMode(false);
-      
-      // If it's a worker, don't allow editing from here because they are native to HR
-      if (c._isWorker || (c.type||c.tipo||'').toLowerCase() === 'trabajador') {
+
+      if (c._isWorker || c.tipo === 'trabajador') {
         document.getElementById('m-btn-edit').style.display = 'none';
         document.getElementById('m-btn-save').style.display = 'none';
       }
     } else {
       document.getElementById('m-id').value = '';
       document.getElementById('m-name').value = '';
-      document.getElementById('m-type').value = 'Cliente';
-      document.getElementById('m-tags').value = '';
+      document.getElementById('m-type').value = 'cliente';
       document.getElementById('m-phone').value = '';
       document.getElementById('m-email').value = '';
       document.getElementById('m-person').value = '';
@@ -303,8 +279,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     const c = {
       name: document.getElementById('m-name').value.trim(),
-      type: document.getElementById('m-type').value,
-      tags: document.getElementById('m-tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+      tipo: document.getElementById('m-type').value,
       phone: document.getElementById('m-phone').value.trim(),
       email: document.getElementById('m-email').value.trim(),
       person: document.getElementById('m-person').value.trim(),

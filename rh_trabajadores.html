@@ -181,7 +181,13 @@
 
   <div class="header">
     <h1><span>👷‍♂️</span> Directorio de Trabajadores</h1>
-    <button class="btn" onclick="openFicha()">+ Nuevo Trabajador</button>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="show-inactive" onchange="renderList()" style="accent-color:var(--primary);">
+        Mostrar bajas
+      </label>
+      <button class="btn" onclick="openFicha()">+ Nuevo Trabajador</button>
+    </div>
   </div>
 
         <div class="table-container">
@@ -353,6 +359,9 @@
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn" id="btn-baja" style="background:rgba(210,15,57,.1); border:1px solid #d20f39; color:#d20f39; display:none;" onclick="darDeBaja()">Dar de Baja</button>
+        <button class="btn" id="btn-reactivar" style="background:rgba(64,160,43,.1); border:1px solid #40a02b; color:#40a02b; display:none;" onclick="reactivar()">Reactivar</button>
+        <div style="flex:1;"></div>
         <button class="btn" style="background:var(--bg); border:1px solid var(--border); color:var(--text);" onclick="closeFicha()">Cancelar</button>
         <button class="btn" onclick="saveFicha()">Guardar Cambios</button>
       </div>
@@ -362,7 +371,9 @@
   <script src="db.js"></script>
   <script>
     async function renderList() {
-      const workers = await window.DB.query("contacts", { tipo: "trabajador" });
+      const showInactive = document.getElementById('show-inactive')?.checked;
+      const allWorkers = await window.DB.query("contacts", { tipo: "trabajador" });
+      const workers = showInactive ? allWorkers : allWorkers.filter(w => w.activo !== false);
       const d = window.DB.get(); // to optionally save
       let dbUpdated = false;
       
@@ -414,11 +425,12 @@
         
         const tr = document.createElement('tr');
         tr.onclick = () => openFicha(w);
-        
+        if (w.activo === false) tr.style.opacity = '0.45';
+
         tr.innerHTML = `
           <td><div class="avatar">${namePart}</div></td>
           <td><b>${w.personalId || '-'}</b></td>
-          <td style="font-weight:600;">${w.name || '-'}</td>
+          <td style="font-weight:600;">${w.name || '-'}${w.activo === false ? ' <span style="font-size:10px;font-weight:700;color:#d20f39;background:rgba(210,15,57,.12);padding:2px 6px;border-radius:4px;">BAJA</span>' : ''}</td>
           <td>${w.role || '-'}</td>
           <td>${w.rfc || '-'}</td>
           <td>${w.phone || '-'}</td>
@@ -485,6 +497,7 @@
 
     let currentWorkerId = null;
     let currentNotes = [];
+    let currentWorkerActivo = true;
     
     function renderNotes() {
       const cnt = document.getElementById('f-notes-list');
@@ -545,6 +558,7 @@
       if(w) {
         currentWorkerId = w.id;
         currentNotes = w.notes ? [...w.notes] : [];
+        currentWorkerActivo = w.activo !== false;
         document.getElementById('ficha-title').textContent = 'Editar Trabajador';
         document.getElementById('f-id').value = w.id;
         document.getElementById('f-given-name').value = w.givenName || '';
@@ -571,6 +585,7 @@
       } else {
         currentWorkerId = null;
         currentNotes = [];
+        currentWorkerActivo = true;
         document.getElementById('ficha-title').textContent = 'Nuevo Trabajador';
         document.getElementById('f-id').value = '';
         document.getElementById('f-given-name').value = '';
@@ -596,12 +611,39 @@
         document.getElementById('f-avatar').textContent = 'N';
       }
       
+      // Show/hide baja/reactivar buttons
+      const btnBaja = document.getElementById('btn-baja');
+      const btnReact = document.getElementById('btn-reactivar');
+      if (w) {
+        btnBaja.style.display   = currentWorkerActivo ? 'inline-flex' : 'none';
+        btnReact.style.display  = currentWorkerActivo ? 'none' : 'inline-flex';
+      } else {
+        btnBaja.style.display   = 'none';
+        btnReact.style.display  = 'none';
+      }
+
       renderNotes();
       recalcValues();
     }
     
     function closeFicha() {
       document.getElementById('ficha-modal').style.display = 'none';
+    }
+
+    async function darDeBaja() {
+      if (!currentWorkerId) return;
+      const name = document.getElementById('f-name').value || 'este trabajador';
+      if (!confirm(`¿Confirmar baja de ${name}? Ya no aparecerá en nómina, reloj ni listas de operaciones.`)) return;
+      currentWorkerActivo = false;
+      await saveFicha();
+    }
+
+    async function reactivar() {
+      if (!currentWorkerId) return;
+      const name = document.getElementById('f-name').value || 'este trabajador';
+      if (!confirm(`¿Reactivar a ${name}?`)) return;
+      currentWorkerActivo = true;
+      await saveFicha();
     }
     
     function saveFicha() {
@@ -615,7 +657,7 @@
       
       const wData = {
         tipo: 'trabajador',
-        activo: true,
+        activo: currentWorkerActivo,
         givenName: g,
         paterno: p,
         materno: document.getElementById('f-materno').value.trim(),

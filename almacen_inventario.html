@@ -215,7 +215,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   
   async function init() {
      STATE_INVENTORY = await window.DB.query("inventory");
-     STATE_WORKERS = await window.DB.query("contacts", { tipo: "trabajador" });
+     STATE_WORKERS = await window.DB.query("contacts", { tipo: "trabajador", activo: true });
      // fallback workers if empty
      if(!STATE_WORKERS || STATE_WORKERS.length === 0) STATE_WORKERS = window.DB.get().workers || [];
      

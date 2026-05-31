@@ -3,80 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Confirmación de Pedidos</title>
+<title>Confirmar Pedidos</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
   --surface0: #ccd0da; --surface1: #bcc0cc;
   --text: #4c4f69; --subtext: #8c8fa1;
-  --blue: #1e66f5; --green: #40a02b; --red: #d20f39;
+  --blue: #1e66f5; --green: #40a02b; --red: #d20f39; --amber: #df8e1d;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
     --surface0: #313244; --surface1: #45475a;
     --text: #cdd6f4; --subtext: #a6adc8;
-    --blue: #8caaee; --green: #a6da95; --red: #f38ba8;
+    --blue: #8caaee; --green: #a6da95; --red: #f38ba8; --amber: #f9e2af;
   }
 }
-body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; }
-.hdr { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; padding-bottom: 40px; }
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+.hdr h2 { font-size: 18px; font-weight: 800; }
+.hdr-sub { font-size: 13px; color: var(--subtext); }
+.main { max-width: 860px; margin: 24px auto; padding: 0 20px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.tab { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--crust); background: var(--mantle); color: var(--subtext); font-size: 12px; font-weight: 600; cursor: pointer; }
+.tab.act { background: var(--text); color: var(--base); border-color: var(--text); }
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
-.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
-.badge-pending { background: rgba(30,102,245,0.15); color: var(--blue); }
-.btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity .15s; color: white; font-size: 12px; }
+.card-title { font-size: 15px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 12px; }
+.card-meta { font-size: 12px; color: var(--subtext); margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap; }
+.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.badge-pedido    { background: rgba(30,102,245,0.15); color: var(--blue); }
+.badge-confirmed { background: rgba(64,160,43,0.15);  color: var(--green); }
+.badge-cancelled { background: rgba(210,15,57,0.12);  color: var(--red); }
+.item-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 8px 0; border-top: 1px solid var(--crust); gap: 8px; }
+.item-unit { color: var(--subtext); font-size: 11px; }
+.actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--crust); }
+.btn { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; transition: opacity .15s; }
 .btn:hover { opacity: .8; }
-.btn-green { background: var(--green); }
-.btn-red { background: var(--red); }
-.item-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-red   { background: var(--red);   color: #fff; }
+.empty { text-align: center; padding: 60px 20px; color: var(--subtext); }
+.empty-icon  { font-size: 48px; margin-bottom: 12px; }
+.empty-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 </style>
 </head>
 <body>
+
 <div class="hdr">
-  <h2>Confirmación de Pedidos (Operaciones)</h2>
-</div>
-
-<div class="card" id="req1">
-  <div class="card-title">
-    <span>Solicitud Almacén: PRY-168</span>
-    <span class="badge badge-pending">Revisión Pendiente</span>
-  </div>
-  <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Material requerido urgente para instalar el martes.</div>
-  <div class="item-row"><span>10x Bisagras Bidimensionales Inset</span> <span style="color:var(--subtext)">pza</span></div>
-  <div class="item-row"><span>2x Triplay 15mm Encino</span> <span style="color:var(--subtext)">pza</span></div>
-  <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-    <button class="btn btn-red" onclick="act('req1', 'rechazado')">✕ Rechazar</button>
-    <button class="btn btn-green" onclick="act('req1', 'aprobado')">✓ Aprobar para Compra</button>
+  <div>
+    <h2>Confirmar Pedidos</h2>
+    <div class="hdr-sub" id="hdr-count">Cargando…</div>
   </div>
 </div>
 
-<div class="card" id="req2">
-  <div class="card-title">
-    <span>Solicitud Almacén: STOCK GENERAL</span>
-    <span class="badge badge-pending">Revisión Pendiente</span>
+<div class="main">
+  <div class="tabs">
+    <div class="tab act" onclick="setTab('pending')">Pendientes</div>
+    <div class="tab" onclick="setTab('all')">Todos</div>
   </div>
-  <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: Reposición de stock mínimo alcanzado.</div>
-  <div class="item-row"><span>5x Galón Pegamento Blanco</span> <span style="color:var(--subtext)">gln</span></div>
-  <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-    <button class="btn btn-red" onclick="act('req2', 'rechazado')">✕ Rechazar</button>
-    <button class="btn btn-green" onclick="act('req2', 'aprobado')">✓ Aprobar para Compra</button>
-  </div>
+  <div id="orders-list"></div>
 </div>
 
+<script src="db.js"></script>
 <script>
-function act(id, state) {
-  const el = document.getElementById(id);
-  el.style.opacity = '0.5';
-  el.style.pointerEvents = 'none';
-  if(state === 'aprobado') {
-    alert('Aprobado. Se mandará al panel de Compras.');
-  } else {
-    alert('Rechazado. Se notificará al almacén.');
+  let ALL_ORDERS = [];
+  let currentTab = 'pending';
+
+  async function init() {
+    const orders = await window.DB.query('purchase_orders');
+    ALL_ORDERS = orders.filter(o => o.id && !o._init);
+    render();
   }
-  el.style.display = 'none';
-}
+
+  function setTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('act',
+        (tab === 'pending' && t.textContent === 'Pendientes') ||
+        (tab === 'all'     && t.textContent === 'Todos'));
+    });
+    render();
+  }
+
+  function render() {
+    const list = document.getElementById('orders-list');
+    const d = window.DB.get();
+
+    const pending = ALL_ORDERS.filter(o => o.status === 'Pedido' || o.status === 'Solicitado');
+    document.getElementById('hdr-count').textContent =
+      pending.length ? `${pending.length} pedido(s) esperando confirmación` : 'Sin pedidos pendientes';
+
+    const filtered = currentTab === 'pending' ? pending : ALL_ORDERS;
+
+    if (!filtered.length) {
+      list.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">${currentTab === 'pending' ? '✅' : '📭'}</div>
+          <div class="empty-title">${currentTab === 'pending' ? 'Sin pedidos pendientes' : 'Sin pedidos registrados'}</div>
+          <div style="font-size:14px;">${currentTab === 'pending'
+            ? 'Los pedidos creados en Portal Almacén aparecerán aquí.'
+            : 'Aún no hay pedidos en el sistema.'}</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(o => {
+      const proj = d.projects.find(p => p.code === o.project || p.id === o.projectId);
+      const projLabel = proj ? `${proj.code} – ${proj.name}` : (o.project || 'Stock General');
+      const isPending = o.status === 'Pedido' || o.status === 'Solicitado';
+
+      const badgeMap = {
+        'Pedido':     ['badge-pedido',    'Pendiente'],
+        'Solicitado': ['badge-pedido',    'Pendiente'],
+        'Confirmado': ['badge-confirmed', 'Confirmado'],
+        'Cancelado':  ['badge-cancelled', 'Cancelado'],
+      };
+      const [badgeClass, badgeLabel] = badgeMap[o.status] || ['', o.status || '—'];
+
+      const items = o.items || [];
+      return `
+        <div class="card" id="card-${o.id}">
+          <div class="card-title">
+            <span>${o.folio || o.id}</span>
+            <span class="badge ${badgeClass}">${badgeLabel}</span>
+          </div>
+          <div class="card-meta">
+            <span>📁 ${projLabel}</span>
+            ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
+            ${o.date      ? `<span>📅 ${o.date}</span>`      : ''}
+            ${o.notes     ? `<span>📝 ${o.notes}</span>`     : ''}
+          </div>
+          ${items.map(i => `
+            <div class="item-row">
+              <span>${i.qty} × ${i.name || i.code || '—'}</span>
+              <span class="item-unit">${i.unit || 'pza'}</span>
+            </div>`).join('')}
+          ${isPending ? `
+          <div class="actions">
+            <button class="btn btn-red"   onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
+            <button class="btn btn-green" onclick="act('${o.id}','Confirmado')">✓ Confirmar para Compras</button>
+          </div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  async function act(id, newStatus) {
+    const order = ALL_ORDERS.find(o => o.id === id);
+    if (!order) return;
+    const verb = newStatus === 'Confirmado' ? 'confirmar' : 'rechazar';
+    if (!confirm(`¿Seguro que deseas ${verb} este pedido?`)) return;
+
+    order.status = newStatus;
+
+    if (window.parent && window.parent.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('purchase_orders', id, order);
+      if (window.parent.DB_STATE?.purchase_orders) {
+        const idx = window.parent.DB_STATE.purchase_orders.findIndex(o => o.id === id);
+        if (idx !== -1) window.parent.DB_STATE.purchase_orders[idx] = order;
+      }
+    }
+    render();
+  }
+
+  init();
 </script>
 </body>
 </html>
