@@ -553,7 +553,14 @@
       document.getElementById('ficha-modal').style.display = 'flex';
       
       const d = window.DB.get();
-      document.getElementById('f-role').innerHTML = '<option value="">-- Seleccionar Puesto --</option>' + (d.worker_roles || []).map(r => `<option value="${r}">${r}</option>`).join('');
+      const DEFAULT_ROLES = ['Jefe de Planta','Maestro A','Maestro B','Oficial A','Oficial B','Chalán','Barniz','Pulido','Empaque','Chofer','Almacén','Compras','Administración','Contador','Mantenimiento','Limpieza','Aprendiz'];
+      const rolesRaw = d.worker_roles || [];
+      let rolesList = DEFAULT_ROLES;
+      if (rolesRaw.length > 0) {
+        rolesList = rolesRaw[0]?.list || rolesRaw.filter(r => typeof r === 'string');
+        if (!rolesList.length) rolesList = DEFAULT_ROLES;
+      }
+      document.getElementById('f-role').innerHTML = '<option value="">-- Seleccionar Puesto --</option>' + rolesList.map(r => `<option value="${r}">${r}</option>`).join('');
       
       if(w) {
         currentWorkerId = w.id;

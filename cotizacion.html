@@ -31,9 +31,11 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); min-height: 100vh; padding-bottom: 240px; }
 
 /* Header */
-.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; position: sticky; top: 0; z-index: 20; }
-.hdr-brand { font-size: 13px; font-weight: 600; color: var(--subtext); white-space: nowrap; padding-right: 16px; border-right: 1px solid var(--crust); }
-.hdr-fields { display: flex; gap: 8px; flex: 1; min-width: 280px; }
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 10px 24px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; z-index: 20; }
+.hdr-row1 { display: flex; align-items: center; gap: 12px; }
+.hdr-row2 { display: flex; gap: 8px; }
+.hdr-brand { font-size: 13px; font-weight: 600; color: var(--subtext); white-space: nowrap; padding-right: 12px; border-right: 1px solid var(--crust); }
+.hdr-fields { display: flex; gap: 8px; flex: 1; }
 .hdr-input, .hdr-select { flex: 1; padding: 8px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; box-sizing:border-box; min-height:40px; }
 .hdr-input:focus, .hdr-select:focus { outline: none; border-color: var(--blue); }
 .hdr-num { font-size: 12px; color: var(--subtext); font-weight: 600; white-space: nowrap; }
@@ -171,15 +173,16 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
 <body>
 
 <div class="hdr">
-  <div class="hdr-brand">Huayapam ERP</div>
-  <div class="hdr-fields" style="display:flex; gap:8px; flex:1;">
-    <select class="hdr-select" id="clientInput" onchange="S.client=this.options[this.selectedIndex].text; renderFooter()"></select>
-    <select class="hdr-select" id="projectInput"></select>
+  <div class="hdr-row1">
+    <div class="hdr-brand">Nueva Cotización</div>
+    <div style="flex:1;"></div>
+    <button class="btn btn-dark" onclick="showPrintPreview(true)" style="padding:6px 12px; font-size:12px;">🖨 PDF Cliente</button>
+    <button class="btn btn-dark" onclick="showPrintPreview(false)" style="padding:6px 12px; font-size:12px;">🖨 PDF Taller</button>
+    <button class="btn btn-green" onclick="saveQuoteToProject()" style="padding:6px 14px; font-size:12px;">Aprobar ↗</button>
   </div>
-  <div style="display:flex; gap:8px;">
-    <button class="btn btn-dark" onclick="showPrintPreview(true)">🖨 Cliente</button>
-    <button class="btn btn-dark" onclick="showPrintPreview(false)">🖨 Taller</button>
-    <button class="btn btn-green" onclick="saveQuoteToProject()">Aprobar Cotización ↗</button>
+  <div class="hdr-row2">
+    <select class="hdr-select" id="clientInput" onchange="S.client=this.options[this.selectedIndex].text; renderFooter()" style="flex:1;"></select>
+    <select class="hdr-select" id="projectInput" style="flex:1;"></select>
   </div>
 </div>
 
@@ -643,8 +646,9 @@ async function loadOptions() {
   const inventoryDb = await window.DB.query("inventory");
   const dbPieceTypes = await window.DB.query("piece_types");
   
-  if (dbPieceTypes && dbPieceTypes.length > 0) {
-      PIECE_TYPES = dbPieceTypes.map(pt => [pt.code || 'TIP', pt.name || 'Sin nombre']);
+  const validPieceTypes = dbPieceTypes.filter(pt => pt.code && pt.name && !pt._init);
+  if (validPieceTypes.length > 0) {
+      PIECE_TYPES = validPieceTypes.map(pt => [pt.code, pt.name]);
   }
   
   if (inventoryDb && inventoryDb.length > 0) {

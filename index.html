@@ -386,8 +386,7 @@
       items: [
         { id: 'nav-dashboard', html: `<span class="icon">📈</span> Dashboard`, file: 'dashboard.html', label: 'Dashboard' },
         { id: 'nav-contactos', html: `<span class="icon">👥</span> Directorio CRM`, file: 'contactos.html', label: 'Directorio CRM' },
-        { id: 'nav-rentabilidad', html: `<span class="icon">📊</span> Rentabilidad`, file: 'proyectos_rentabilidad.html', label: 'Rentabilidad de Proyectos' },
-        { id: 'nav-aprobacion', html: `<span class="icon">🛡️</span> Autorizar Pedidos`, file: 'rq_admin_aprobacion.html', label: 'Autorizar Pedidos' }
+{ id: 'nav-aprobacion', html: `<span class="icon">🛡️</span> Autorizar Pedidos`, file: 'rq_admin_aprobacion.html', label: 'Autorizar Pedidos' }
       ]
     },
     {
@@ -440,7 +439,6 @@
   const SECTION_MAP = {
     'dashboard.html': 'dashboard',
     'proyectos.html': 'proyectos',
-    'proyectos_rentabilidad.html': 'proyectos',
     'cotizacion.html': 'cotizaciones',
     'finanzas.html': 'finanzas',
     'nomina_semanal.html': 'nomina',
@@ -792,7 +790,7 @@
     const auth = getAuth(app);
     window.db = db;
     
-    const collectionsToLoad = ['workers', 'contacts', 'inventory', 'projects', 'project_phases', 'quotations', 'pieces', 'orders', 'production_logs', 'payroll_weeks', 'payroll_lines', 'worker_loans', 'worker_loan_payments', 'attendance', 'attendance_logs', 'piece_types', 'expense_categories', 'purchase_orders', 'purchase_order_lines', 'lumber_batches', 'lumber_boards', 'material_requests', 'suppliers', 'project_worker_hours', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'notifications', 'accounting_movements', 'settings', 'systemEvents', 'wood', 'users'];
+    const collectionsToLoad = ['workers', 'contacts', 'inventory', 'projects', 'project_phases', 'quotations', 'pieces', 'orders', 'production_logs', 'payroll_weeks', 'payroll_lines', 'worker_loans', 'worker_loan_payments', 'attendance', 'attendance_logs', 'piece_types', 'expense_categories', 'purchase_orders', 'purchase_order_lines', 'lumber_batches', 'lumber_boards', 'material_requests', 'suppliers', 'project_worker_hours', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'notifications', 'accounting_movements', 'settings', 'systemEvents', 'wood', 'users', 'worker_roles', 'concept_categories', 'concept_units'];
 
     window.DB_STATE = null; // Wait for it
     

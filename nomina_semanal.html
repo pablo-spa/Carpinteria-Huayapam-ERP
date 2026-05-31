@@ -495,7 +495,7 @@ function processRealCheckins(off) {
   
   if (window.DB) {
     const db = window.DB.get();
-    const checkins = db.checkins || [];
+    const checkins = db.attendance_logs || db.attendance || [];
     
     WORKERS.forEach(w => {
       dates.forEach((dateStr, i) => {

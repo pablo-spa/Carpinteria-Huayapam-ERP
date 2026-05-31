@@ -58,7 +58,63 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     <h2>Autorizar Pedidos</h2>
     <div class="hdr-sub" id="hdr-count">Cargando…</div>
   </div>
+  <button class="btn btn-green" onclick="openNewOrder()" style="padding:8px 14px; font-size:13px;">+ Nuevo Pedido Autorizado</button>
 </div>
+
+<!-- New Order Modal -->
+<div id="new-order-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(2px);">
+  <div style="background:var(--base); border-radius:14px; width:100%; max-width:580px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,.3); overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--crust); background:var(--mantle); display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:16px; font-weight:800;">Nuevo Pedido Autorizado</span>
+      <button onclick="closeNewOrder()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--subtext);">✕</button>
+    </div>
+    <div style="padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:14px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="field-g">
+          <label class="lbl-g">Proyecto</label>
+          <select id="no-proj" style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--crust); background:var(--mantle); color:var(--text); font-family:inherit; font-size:13px;">
+            <option value="">— Stock General —</option>
+          </select>
+        </div>
+        <div class="field-g">
+          <label class="lbl-g">Proveedor</label>
+          <select id="no-prov" style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--crust); background:var(--mantle); color:var(--text); font-family:inherit; font-size:13px;">
+            <option value="">— Sin especificar —</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-g">
+        <label class="lbl-g">Notas</label>
+        <textarea id="no-notes" rows="2" style="width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--crust); background:var(--mantle); color:var(--text); font-family:inherit; font-size:13px;" placeholder="Justificación o indicaciones para Compras…"></textarea>
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label class="lbl-g">Materiales</label>
+          <button onclick="addNoRow()" class="btn" style="padding:4px 10px; font-size:12px;">+ Renglón</button>
+        </div>
+        <table style="width:100%; border-collapse:collapse;">
+          <thead><tr>
+            <th style="text-align:left; font-size:11px; font-weight:700; color:var(--subtext); padding:4px 6px; border-bottom:2px solid var(--crust);">Concepto</th>
+            <th style="text-align:right; font-size:11px; font-weight:700; color:var(--subtext); padding:4px 6px; border-bottom:2px solid var(--crust); width:70px;">Cant.</th>
+            <th style="text-align:left; font-size:11px; font-weight:700; color:var(--subtext); padding:4px 6px; border-bottom:2px solid var(--crust); width:80px;">Unidad</th>
+            <th style="text-align:right; font-size:11px; font-weight:700; color:var(--subtext); padding:4px 6px; border-bottom:2px solid var(--crust); width:90px;">Precio unit.</th>
+            <th style="width:30px; border-bottom:2px solid var(--crust);"></th>
+          </tr></thead>
+          <tbody id="no-items"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="padding:14px 20px; border-top:1px solid var(--crust); background:var(--mantle); display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn" onclick="closeNewOrder()">Cancelar</button>
+      <button class="btn btn-green" onclick="saveNewOrder()">Crear y Autorizar</button>
+    </div>
+  </div>
+</div>
+<style>
+.lbl-g { font-size:10px; font-weight:700; color:var(--subtext); text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:5px; }
+.no-inp { width:100%; padding:7px 8px; border-radius:6px; border:1px solid var(--crust); background:var(--base); color:var(--text); font-family:inherit; font-size:13px; }
+.no-inp:focus { outline:none; border-color:var(--blue); }
+</style>
 
 <div class="main">
   <div class="tabs">
@@ -202,6 +258,96 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       }
     }
     render();
+  }
+
+  // ── New order modal ──────────────────────────────────────────────────
+  async function openNewOrder() {
+    const d = window.DB.get();
+    const contacts = await window.DB.query('contacts');
+    const projects = await window.DB.query('projects');
+
+    // Populate project dropdown
+    const projSel = document.getElementById('no-proj');
+    const validProjs = projects.filter(p => p.code && p.name);
+    projSel.innerHTML = '<option value="">— Stock General —</option>' +
+      validProjs.map(p => `<option value="${p.code}">${p.code} – ${p.name}</option>`).join('');
+
+    // Populate supplier dropdown
+    const provSel = document.getElementById('no-prov');
+    const provs = contacts.filter(c => c.tipo === 'proveedor' && (c.name || c.givenName));
+    provSel.innerHTML = '<option value="">— Sin especificar —</option>' +
+      provs.map(p => `<option value="${p.name||p.givenName}">${p.name||p.givenName}</option>`).join('');
+
+    document.getElementById('no-items').innerHTML = '';
+    document.getElementById('no-notes').value = '';
+    addNoRow();
+
+    const modal = document.getElementById('new-order-modal');
+    modal.style.display = 'flex';
+  }
+
+  function closeNewOrder() {
+    document.getElementById('new-order-modal').style.display = 'none';
+  }
+
+  function addNoRow() {
+    const tbody = document.getElementById('no-items');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding:4px 4px;"><input class="no-inp" type="text" placeholder="Descripción del material"></td>
+      <td style="padding:4px 4px;"><input class="no-inp" type="number" value="1" min="0.01" step="any" style="text-align:right;"></td>
+      <td style="padding:4px 4px;"><input class="no-inp" type="text" value="pza" style="width:70px;"></td>
+      <td style="padding:4px 4px;"><input class="no-inp" type="number" value="0" min="0" step="any" placeholder="0.00" style="text-align:right;"></td>
+      <td style="padding:4px 2px; text-align:right;"><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  async function saveNewOrder() {
+    const proj  = document.getElementById('no-proj').value;
+    const prov  = document.getElementById('no-prov').value;
+    const notes = document.getElementById('no-notes').value.trim();
+
+    const items = [];
+    document.querySelectorAll('#no-items tr').forEach(tr => {
+      const inputs = tr.querySelectorAll('input');
+      const name  = inputs[0].value.trim();
+      const qty   = parseFloat(inputs[1].value) || 0;
+      const unit  = inputs[2].value.trim() || 'pza';
+      const price = parseFloat(inputs[3].value) || 0;
+      if (name && qty > 0) items.push({ name, qty, unit, price, code: '' });
+    });
+
+    if (!items.length) return alert('Agrega al menos un material.');
+
+    const now = new Date();
+    const folio = 'ADM-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') +
+                  String(now.getDate()).padStart(2,'0') + '-' + String(now.getTime()).slice(-4);
+
+    const order = {
+      id: crypto.randomUUID(),
+      folio,
+      date: now.toISOString().slice(0,10),
+      status: 'Autorizado',
+      project: proj,
+      provider: prov,
+      notes,
+      items,
+      createdAt: now.toISOString(),
+      authorizedAt: now.toISOString(),
+    };
+
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('purchase_orders', order.id, order);
+      if (window.parent.DB_STATE?.purchase_orders) {
+        window.parent.DB_STATE.purchase_orders.push(order);
+      }
+    }
+
+    ALL_ORDERS.push(order);
+    closeNewOrder();
+    setTab('all');
+    alert(`✅ Pedido ${folio} creado y autorizado. Compras puede agregarle precio y marcarlo como comprado.`);
   }
 
   init();
