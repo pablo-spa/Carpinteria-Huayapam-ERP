@@ -12,6 +12,8 @@
   --text: #4c4f69; --subtext: #8c8fa1;
   --green: #40a02b; --green-bg: rgba(64,160,43,0.15);
   --blue: #1e66f5; --blue-bg: rgba(30,102,245,0.15);
+  --red: #d20f39; --red-bg: rgba(210,15,57,0.12);
+  --mauve: #8839ef;
   --radius: 10px; --radius-lg: 14px;
 }
 @media (prefers-color-scheme: dark) {
@@ -21,307 +23,596 @@
     --text: #cdd6f4; --subtext: #a6adc8;
     --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
     --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
+    --red: #f38ba8; --red-bg: rgba(243,139,168,0.12);
+    --mauve: #cba6f7;
   }
 }
 
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); padding-bottom: 40px; }
 
-.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
-.hdr h1 { font-size: 18px; font-weight: 700; color: var(--text); padding-right: 16px; border-right: 1px solid var(--crust); margin: 0; }
-
-.search-box { flex: 1; display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 8px 12px; min-width: 200px; }
+/* Header */
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
+.hdr h1 { font-size: 17px; font-weight: 800; padding-right: 16px; border-right: 1px solid var(--crust); white-space: nowrap; }
+.search-box { flex: 1; display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 8px 12px; min-width: 180px; }
 .search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-family: inherit; font-size: 14px; margin-left: 8px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.btn:hover { background: var(--surface0); }
+.btn-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-blue:hover { opacity: .9; }
+.btn-red  { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+.btn-red:hover { background: var(--red); color: #fff; }
 
-.filters { display: flex; gap: 8px; overflow-x: auto; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); }
+/* Filters */
+.filters { display: flex; gap: 8px; overflow-x: auto; padding: 10px 24px; border-bottom: 1px solid var(--crust); }
 .filters::-webkit-scrollbar { display: none; }
-.f-btn { padding: 6px 14px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; }
+.f-btn { padding: 5px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; }
 .f-btn:hover { background: var(--surface0); color: var(--text); }
 .f-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
 
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
-.btn:hover { background: var(--surface0); border-color: var(--surface1); }
-.btn-blue { background: var(--blue); color: var(--base); border-color: var(--blue); }
-.btn-blue:hover { opacity: 0.9; background: var(--blue); }
+/* Grid */
+.main { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 14px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all .18s; }
+.card:hover { transform: translateY(-2px); border-color: var(--surface1); box-shadow: 0 4px 14px rgba(0,0,0,.07); }
+.c-head { display: flex; align-items: center; gap: 10px; }
+.c-avt { width: 40px; height: 40px; border-radius: 50%; background: var(--surface0); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; border: 1px solid var(--surface1); }
+.c-name { font-size: 14px; font-weight: 700; line-height: 1.3; }
+.c-tipo { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); margin-top: 2px; }
+.c-body { font-size: 12px; color: var(--subtext); display: flex; flex-direction: column; gap: 4px; }
+.c-row { display: flex; gap: 6px; align-items: flex-start; }
+.c-proj-badge { font-size: 10px; font-weight: 700; background: var(--blue-bg); color: var(--blue); padding: 2px 7px; border-radius: 5px; align-self: flex-start; }
 
-.main { max-width: 1000px; margin: 24px auto; padding: 0 20px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+/* Side panel */
+.panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 100; display: none; backdrop-filter: blur(2px); }
+.panel-overlay.open { display: block; }
+.panel { position: fixed; top: 0; right: 0; bottom: 0; width: 500px; max-width: 100vw; background: var(--base); box-shadow: -6px 0 32px rgba(0,0,0,.15); display: flex; flex-direction: column; transform: translateX(100%); transition: transform .25s ease; z-index: 101; }
+.panel.open { transform: translateX(0); }
 
-.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: all 0.2s; cursor: pointer; }
-.card:hover { transform: translateY(-2px); border-color: var(--surface0); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+/* Panel header */
+.p-hdr { padding: 16px 20px; border-bottom: 1px solid var(--crust); background: var(--mantle); display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.p-avt { width: 44px; height: 44px; border-radius: 50%; background: var(--surface0); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; border: 2px solid var(--surface1); }
+.p-hdr-info { flex: 1; min-width: 0; }
+.p-hdr-name { font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-hdr-tipo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+.p-hdr-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.p-close { background: none; border: none; color: var(--subtext); font-size: 22px; cursor: pointer; padding: 4px; line-height: 1; }
+.p-close:hover { color: var(--text); }
 
-.c-head { display: flex; align-items: center; gap: 12px; }
-.c-avt { width: 42px; height: 42px; border-radius: 50%; background: var(--surface0); color: var(--text); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid var(--surface1); flex-shrink: 0; }
-.c-title { flex: 1; }
-.c-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
-.c-type { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--subtext); letter-spacing: 0.05em; }
+/* Tabs */
+.p-tabs { display: flex; border-bottom: 1px solid var(--crust); background: var(--mantle); flex-shrink: 0; }
+.p-tab { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: 700; color: var(--subtext); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+.p-tab:hover { color: var(--text); }
+.p-tab.act { color: var(--blue); border-bottom-color: var(--blue); }
 
-.c-body { font-size: 13px; color: var(--subtext); display: flex; flex-direction: column; gap: 6px; }
-.c-row { display: flex; align-items: flex-start; gap: 8px; }
-.c-row .ico { opacity: 0.6; font-size: 12px; margin-top: 2px; }
+/* Panel body */
+.p-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.p-section { display: none; flex-direction: column; gap: 14px; }
+.p-section.act { display: flex; }
 
-.c-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; pointer-events: none; }
-.tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: var(--surface0); color: var(--text); }
-.tag-vip { background: var(--blue-bg); color: var(--blue); }
+/* Fields */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; }
+.field input, .field select, .field textarea {
+  padding: 9px 11px; border-radius: 8px; border: 1px solid var(--crust);
+  background: var(--mantle); color: var(--text); font-family: inherit; font-size: 13px; width: 100%;
+  transition: border-color .15s;
+}
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); }
+.field input:disabled, .field select:disabled, .field textarea:disabled {
+  background: transparent; border-color: transparent; color: var(--text); cursor: default; padding-left: 0;
+}
+.field input:disabled::placeholder, .field textarea:disabled::placeholder { color: var(--subtext); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-/* Modal */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(2px); }
-.modal { background: var(--base); width: 100%; max-width: 500px; border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; animation: flyIn 0.2s ease-out; }
-@keyframes flyIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.m-hdr { padding: 16px 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: space-between; align-items: center; }
-.m-hdr h2 { font-size: 16px; font-weight: 800; }
-.m-close { cursor: pointer; background: transparent; border: none; font-size: 20px; color: var(--subtext); }
-.m-close:hover { color: var(--text); }
-.m-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.m-field { display: flex; flex-direction: column; gap: 6px; }
-.m-field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
-.m-field input, .m-field textarea, .m-field select { background: var(--mantle); border: 1px solid var(--crust); padding: 10px 12px; border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; box-sizing: border-box; min-height: 40px; }
-.m-field input:focus, .m-field textarea:focus, .m-field select:focus { outline: none; border-color: var(--blue); }
-.m-foot { padding: 16px 24px; border-top: 1px solid var(--crust); background: var(--mantle); display: flex; justify-content: flex-end; gap: 12px; }
+/* Custom fields */
+.cf-row { display: flex; gap: 6px; align-items: center; }
+.cf-row input { flex: 1; }
+.cf-lbl-inp { max-width: 110px !important; }
+.cf-rm { background: none; border: none; color: var(--subtext); cursor: pointer; font-size: 16px; padding: 4px; }
+.cf-rm:hover { color: var(--red); }
 
+/* Projects section */
+.proj-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px; cursor: pointer; transition: all .15s; }
+.proj-item:hover { border-color: var(--blue); }
+.proj-code { font-size: 11px; font-weight: 800; font-family: monospace; background: var(--surface0); padding: 3px 7px; border-radius: 5px; white-space: nowrap; }
+.proj-name { font-size: 13px; font-weight: 600; flex: 1; }
+.proj-status { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; white-space: nowrap; }
+.ps-active { background: var(--blue-bg); color: var(--blue); }
+.ps-done   { background: var(--green-bg); color: var(--green); }
+.ps-other  { background: var(--surface0); color: var(--subtext); }
+.proj-link-row { display: flex; gap: 8px; margin-top: 4px; }
+.proj-link-row select { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--crust); background: var(--mantle); color: var(--text); font-family: inherit; font-size: 13px; }
+.proj-link-row select:focus { outline: none; border-color: var(--blue); }
+.empty-state { text-align: center; padding: 32px 16px; color: var(--subtext); font-size: 13px; }
+
+/* Panel footer */
+.p-foot { padding: 14px 20px; border-top: 1px solid var(--crust); background: var(--mantle); display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.p-foot-spacer { flex: 1; }
 </style>
 </head>
 <body>
 
 <div class="hdr">
   <h1>Directorio CRM</h1>
-  <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar clientes o proveedores..."></div>
-  <button class="btn btn-blue" onclick="openModal()">+ Nuevo Contacto</button>
+  <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar nombre, empresa, teléfono..."></div>
+  <button class="btn btn-blue" onclick="openPanel(null)">+ Nuevo Contacto</button>
 </div>
 
 <div class="filters">
   <div class="f-btn act" onclick="filterData('all')">Todos</div>
-  <div class="f-btn" onclick="filterData('cliente')">Solo Clientes</div>
-  <div class="f-btn" onclick="filterData('proveedor')">Solo Proveedores</div>
-  <div class="f-btn" onclick="filterData('trabajador')">Solo Trabajadores</div>
+  <div class="f-btn" onclick="filterData('cliente')">Clientes</div>
+  <div class="f-btn" onclick="filterData('proveedor')">Proveedores</div>
+  <div class="f-btn" onclick="filterData('trabajador')">Trabajadores</div>
 </div>
 
 <div class="main">
-  <div class="grid" id="c-grid">
-    <!-- Rendered by JS -->
-  </div>
+  <div class="grid" id="c-grid"></div>
 </div>
 
-<!-- Edit Modal -->
-<div class="modal-overlay" id="mod-overlay">
-  <div class="modal">
-    <div class="m-hdr">
-      <h2 id="mod-title" style="display:flex; align-items:center; gap:12px; flex:1;">
-        <span>Contacto</span>
-        <button id="m-btn-edit" class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="enableEditMode()">✏️ Editar</button>
-      </h2>
-      <button class="m-close" onclick="closeModal()">✕</button>
+<!-- Overlay -->
+<div class="panel-overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- Side Panel -->
+<div class="panel" id="panel">
+  <div class="p-hdr">
+    <div class="p-avt" id="p-avt">??</div>
+    <div class="p-hdr-info">
+      <div class="p-hdr-name" id="p-hdr-name">Contacto</div>
+      <div class="p-hdr-tipo" id="p-hdr-tipo"></div>
     </div>
-    <div class="m-body">
-      <input type="hidden" id="m-id">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-        <div class="m-field">
+    <div class="p-hdr-btns">
+      <button class="btn" id="btn-edit" onclick="startEdit()" style="padding:6px 12px; font-size:12px;">✏️ Editar</button>
+      <button class="btn btn-blue" id="btn-save" onclick="saveContact()" style="display:none; padding:6px 12px; font-size:12px;">💾 Guardar</button>
+      <button class="btn" id="btn-cancel" onclick="cancelEdit()" style="display:none; padding:6px 12px; font-size:12px;">Cancelar</button>
+    </div>
+    <button class="p-close" onclick="closePanel()">✕</button>
+  </div>
+
+  <div class="p-tabs">
+    <div class="p-tab act" onclick="switchTab('info')">Información</div>
+    <div class="p-tab" onclick="switchTab('projects')">Proyectos</div>
+  </div>
+
+  <div class="p-body">
+    <input type="hidden" id="p-id">
+
+    <!-- INFO TAB -->
+    <div class="p-section act" id="tab-info">
+      <div class="grid2">
+        <div class="field">
           <label>Tipo</label>
-          <select id="m-type">
+          <select id="p-tipo">
             <option value="cliente">Cliente</option>
             <option value="proveedor">Proveedor</option>
-            <option value="trabajador" disabled>Trabajador (solo RRHH)</option>
+            <option value="trabajador" disabled>Trabajador (RRHH)</option>
           </select>
         </div>
+        <div class="field">
+          <label>RFC / ID Fiscal</label>
+          <input type="text" id="p-rfc" placeholder="—">
+        </div>
       </div>
-      <div class="m-field"><label>Nombre de Empresa / Contacto</label><input type="text" id="m-name"></div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-        <div class="m-field"><label>Teléfono</label><input type="text" id="m-phone"></div>
-        <div class="m-field"><label>Email</label><input type="email" id="m-email"></div>
+
+      <div class="field">
+        <label>Nombre / Empresa</label>
+        <input type="text" id="p-name" placeholder="Nombre completo o razón social">
       </div>
-      <div class="m-field"><label>Persona de Enlace</label><input type="text" id="m-person"></div>
-      <div class="m-field"><label>Notas / Dirección</label><textarea rows="3" id="m-addr"></textarea></div>
-      <div class="m-field" style="margin-top:8px;">
-        <label>Campos Adicionales (Web, Tel 2, Banco, etc.)</label>
-        <div id="custom-fields-container" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
-        <button id="m-btn-add-cf" class="btn btn-dark" style="align-self:flex-start; padding:6px 10px; font-size:11px;" onclick="addCustomField()">+ Añadir campo</button>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Teléfono</label>
+          <input type="tel" id="p-phone" placeholder="—">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="p-email" placeholder="—">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Persona de Enlace / Contacto</label>
+        <input type="text" id="p-person" placeholder="—">
+      </div>
+
+      <div class="field">
+        <label>Dirección</label>
+        <input type="text" id="p-address" placeholder="—">
+      </div>
+
+      <div class="field">
+        <label>Sitio Web</label>
+        <input type="url" id="p-web" placeholder="—">
+      </div>
+
+      <div class="field">
+        <label>Notas</label>
+        <textarea id="p-notes" rows="3" placeholder="—"></textarea>
+      </div>
+
+      <!-- Custom fields -->
+      <div class="field">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label style="margin:0;">Campos Adicionales</label>
+          <button id="btn-add-cf" class="btn" onclick="addCF()" style="padding:4px 10px; font-size:11px; display:none;">+ Campo</button>
+        </div>
+        <div id="cf-container" style="display:flex; flex-direction:column; gap:6px;"></div>
       </div>
     </div>
-    <div class="m-foot">
-      <button class="btn" onclick="closeModal()">Cerrar</button>
-      <button id="m-btn-save" class="btn btn-blue" onclick="saveContact()">Guardar Cambios</button>
+
+    <!-- PROJECTS TAB -->
+    <div class="p-section" id="tab-projects">
+      <div id="proj-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+      <div id="proj-link-area" style="display:none; margin-top:4px;">
+        <div style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase; margin-bottom:8px;">Vincular Proyecto</div>
+        <div class="proj-link-row">
+          <select id="proj-link-sel">
+            <option value="">— Seleccionar proyecto —</option>
+          </select>
+          <button class="btn btn-blue" onclick="linkProject()" style="padding:7px 12px; font-size:12px;">Vincular</button>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div class="p-foot">
+    <button id="btn-delete" class="btn btn-red" onclick="deleteContact()" style="display:none; padding:6px 12px; font-size:12px;">🗑 Eliminar</button>
+    <div class="p-foot-spacer"></div>
+    <span id="p-foot-info" style="font-size:11px; color:var(--subtext);"></span>
   </div>
 </div>
 
 <script src="db.js"></script>
 <script>
-  let currentFilter = 'all';
   let STATE_CONTACTS = [];
+  let STATE_PROJECTS = [];
+  let currentFilter = 'all';
+  let currentContactId = null;
+  let isEditing = false;
 
+  // ── Init ──────────────────────────────────────────────────────────────
   async function init() {
-     STATE_CONTACTS = await window.DB.query("contacts");
-     // Sort alphabetical by name approx
-     STATE_CONTACTS.sort((a,b) => (a.name||a.givenName||'').localeCompare(b.name||b.givenName||''));
-     renderContacts();
+    [STATE_CONTACTS, STATE_PROJECTS] = await Promise.all([
+      window.DB.query('contacts'),
+      window.DB.query('projects'),
+    ]);
+    STATE_CONTACTS.sort((a,b) => (a.name||a.givenName||'').localeCompare(b.name||b.givenName||''));
+    renderGrid();
   }
-  
+
   document.addEventListener('DOMContentLoaded', init);
   document.getElementById('srch').addEventListener('input', applyFilters);
 
-  function renderContacts() {
+  // ── Grid ──────────────────────────────────────────────────────────────
+  function renderGrid() {
     const grid = document.getElementById('c-grid');
     grid.innerHTML = STATE_CONTACTS.map(c => {
-      const name = c.name || c.givenName || 'Sin Nombre';
+      const name = c.name || c.givenName || 'Sin nombre';
       const tipo = c.tipo || 'cliente';
       const tipoLabel = tipo === 'proveedor' ? 'Proveedor' : tipo === 'trabajador' ? 'Trabajador' : 'Cliente';
-
-      const avt = name ? name.substring(0,2).toUpperCase() : '??';
-      const typeClr = tipo === 'proveedor' ? 'color:var(--green)' : tipo === 'trabajador' ? 'color:var(--mauve)' : '';
-
-      const phoneHtm = c.phone ? `<div class="c-row"><span class="ico">📞</span> ${c.phone}</div>` : '';
-      const emailHtm = c.email ? `<div class="c-row"><span class="ico">📧</span> ${c.email}</div>` : '';
-      const addrHtm  = c.address ? `<div class="c-row"><span class="ico">📍</span> ${c.address}</div>` : '';
-      const psnHtm   = c.person ? `<div class="c-row"><span class="ico">👤</span> ${c.person}</div>` : '';
-      const cfHtm    = (c.customFields||[]).map(cf => `<div class="c-row"><span class="ico">🔹</span> <span><b>${cf.lbl}:</b> ${cf.val}</span></div>`).join('');
-
+      const tipoClr = tipo === 'proveedor' ? 'color:var(--green)' : tipo === 'trabajador' ? 'color:var(--mauve)' : 'color:var(--blue)';
+      const avt = name.substring(0,2).toUpperCase();
+      const projs = STATE_PROJECTS.filter(p => p.contactId === c.id);
       const jsId = c.id.replace(/'/g, "\\'");
+
       return `
-        <div class="card" data-type="${tipo}" onclick="openModal('${jsId}')">
+        <div class="card" data-type="${tipo}" onclick="openPanel('${jsId}')">
           <div class="c-head">
             <div class="c-avt">${avt}</div>
-            <div class="c-title"><div class="c-name">${name}</div><div class="c-type" style="${typeClr}">${tipoLabel}</div></div>
+            <div>
+              <div class="c-name">${name}</div>
+              <div class="c-tipo" style="${tipoClr}">${tipoLabel}</div>
+            </div>
           </div>
           <div class="c-body">
-            ${psnHtm}${phoneHtm}${emailHtm}${addrHtm}${cfHtm}
+            ${c.phone    ? `<div class="c-row"><span>📞</span>${c.phone}</div>` : ''}
+            ${c.email    ? `<div class="c-row"><span>📧</span>${c.email}</div>` : ''}
+            ${c.person   ? `<div class="c-row"><span>👤</span>${c.person}</div>` : ''}
+            ${c.address  ? `<div class="c-row"><span>📍</span>${c.address}</div>` : ''}
           </div>
-        </div>
-      `;
+          ${projs.length ? `<div style="display:flex; gap:4px; flex-wrap:wrap;">${projs.slice(0,3).map(p=>`<span class="c-proj-badge">${p.code}</span>`).join('')}${projs.length>3?`<span class="c-proj-badge">+${projs.length-3}</span>`:''}</div>` : ''}
+        </div>`;
     }).join('');
     applyFilters();
   }
 
-  function filterData(type) {
-    currentFilter = type;
+  function filterData(f) {
+    currentFilter = f;
     document.querySelectorAll('.f-btn').forEach(b => {
-      b.classList.remove('act');
-      if (b.textContent.includes(type) || (type==='all' && b.textContent==='Todos')) b.classList.add('act');
+      b.classList.toggle('act',
+        (f==='all' && b.textContent==='Todos') ||
+        (f==='cliente' && b.textContent==='Clientes') ||
+        (f==='proveedor' && b.textContent==='Proveedores') ||
+        (f==='trabajador' && b.textContent==='Trabajadores'));
     });
     applyFilters();
   }
 
   function applyFilters() {
     const term = document.getElementById('srch').value.toLowerCase();
-    document.querySelectorAll('.card').forEach(c => {
-      const isMatchStr = c.textContent.toLowerCase().includes(term);
-      const typ = c.getAttribute('data-type');
-      let isMatchCat = true;
-      if (currentFilter !== 'all') {
-        if (typ !== currentFilter) isMatchCat = false;
-      }
-      c.style.display = (isMatchStr && isMatchCat) ? 'flex' : 'none';
+    document.querySelectorAll('.card').forEach(card => {
+      const matchStr = card.textContent.toLowerCase().includes(term);
+      const matchCat = currentFilter === 'all' || card.getAttribute('data-type') === currentFilter;
+      card.style.display = matchStr && matchCat ? 'flex' : 'none';
     });
   }
 
-  function setEditMode(isEdit) {
-    const inputs = document.querySelectorAll('#mod-overlay input, #mod-overlay select, #mod-overlay textarea');
-    inputs.forEach(i => {
-      // Don't disable hidden inputs or we might lose their value easily
-      if(i.type !== 'hidden') i.disabled = !isEdit;
-    });
-    
-    document.getElementById('m-btn-edit').style.display = isEdit ? 'none' : 'block';
-    document.getElementById('m-btn-save').style.display = isEdit ? 'block' : 'none';
-    document.getElementById('m-btn-add-cf').style.display = isEdit ? 'block' : 'none';
-    
-    const rmBtns = document.querySelectorAll('.cf-rm-btn');
-    rmBtns.forEach(b => b.style.display = isEdit ? 'block' : 'none');
-  }
+  // ── Panel ─────────────────────────────────────────────────────────────
+  function openPanel(id) {
+    currentContactId = id;
+    isEditing = !id; // new contact starts in edit mode
 
-  function enableEditMode() {
-    setEditMode(true);
-  }
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('panel').classList.add('open');
+    switchTab('info');
 
-  function openModal(id) {
-    document.getElementById('mod-overlay').style.display = 'flex';
-    document.getElementById('custom-fields-container').innerHTML = '';
-
-    if(id) {
+    if (id) {
       const c = STATE_CONTACTS.find(x => x.id === id);
-      document.getElementById('m-id').value = c.id;
-      document.getElementById('m-name').value = c.name || c.givenName || '';
-      document.getElementById('m-type').value = c.tipo || 'cliente';
-      document.getElementById('m-phone').value = c.phone || '';
-      document.getElementById('m-email').value = c.email || '';
-      document.getElementById('m-person').value = c.person || '';
-      document.getElementById('m-addr').value = c.address || '';
-      if(c.customFields) c.customFields.forEach(cf => addCustomField(cf.lbl, cf.val));
+      if (!c) return;
+      fillForm(c);
       setEditMode(false);
-
-      if (c._isWorker || c.tipo === 'trabajador') {
-        document.getElementById('m-btn-edit').style.display = 'none';
-        document.getElementById('m-btn-save').style.display = 'none';
-      }
+      renderProjects(c);
     } else {
-      document.getElementById('m-id').value = '';
-      document.getElementById('m-name').value = '';
-      document.getElementById('m-type').value = 'cliente';
-      document.getElementById('m-phone').value = '';
-      document.getElementById('m-email').value = '';
-      document.getElementById('m-person').value = '';
-      document.getElementById('m-addr').value = '';
+      clearForm();
       setEditMode(true);
     }
   }
 
-  function closeModal() {
-    document.getElementById('mod-overlay').style.display = 'none';
+  function closePanel() {
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('panel').classList.remove('open');
+    currentContactId = null;
+    isEditing = false;
   }
 
-  function saveContact() {
-    const id = document.getElementById('m-id').value;
-    
+  function switchTab(tab) {
+    document.querySelectorAll('.p-tab').forEach((t, i) => t.classList.toggle('act', (i===0&&tab==='info')||(i===1&&tab==='projects')));
+    document.getElementById('tab-info').classList.toggle('act', tab==='info');
+    document.getElementById('tab-projects').classList.toggle('act', tab==='projects');
+    if (tab === 'projects' && currentContactId) {
+      const c = STATE_CONTACTS.find(x => x.id === currentContactId);
+      renderProjects(c);
+    }
+  }
+
+  // ── Form helpers ──────────────────────────────────────────────────────
+  function fillForm(c) {
+    document.getElementById('p-id').value      = c.id;
+    document.getElementById('p-tipo').value    = c.tipo || 'cliente';
+    document.getElementById('p-name').value    = c.name || c.givenName || '';
+    document.getElementById('p-phone').value   = c.phone || '';
+    document.getElementById('p-email').value   = c.email || '';
+    document.getElementById('p-person').value  = c.person || '';
+    document.getElementById('p-address').value = c.address || '';
+    document.getElementById('p-web').value     = c.web || '';
+    document.getElementById('p-rfc').value     = c.rfc || '';
+    document.getElementById('p-notes').value   = c.notes || '';
+
+    const cfc = document.getElementById('cf-container');
+    cfc.innerHTML = '';
+    (c.customFields || []).forEach(cf => addCF(cf.lbl, cf.val));
+
+    const tipo = c.tipo || 'cliente';
+    const tipoLabel = tipo==='proveedor'?'Proveedor':tipo==='trabajador'?'Trabajador':'Cliente';
+    const tipoClr = tipo==='proveedor'?'color:var(--green)':tipo==='trabajador'?'color:var(--mauve)':'color:var(--blue)';
+    document.getElementById('p-avt').textContent = (c.name||c.givenName||'?').substring(0,2).toUpperCase();
+    document.getElementById('p-hdr-name').textContent = c.name || c.givenName || 'Sin nombre';
+    document.getElementById('p-hdr-tipo').textContent = tipoLabel;
+    document.getElementById('p-hdr-tipo').style = tipoClr;
+    document.getElementById('p-foot-info').textContent = `ID: ${c.id}`;
+
+    const canDelete = tipo !== 'trabajador';
+    document.getElementById('btn-delete').style.display = canDelete ? '' : 'none';
+    document.getElementById('btn-edit').style.display = tipo === 'trabajador' ? 'none' : '';
+  }
+
+  function clearForm() {
+    ['p-id','p-name','p-phone','p-email','p-person','p-address','p-web','p-rfc','p-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('p-tipo').value = 'cliente';
+    document.getElementById('cf-container').innerHTML = '';
+    document.getElementById('p-avt').textContent = '+';
+    document.getElementById('p-hdr-name').textContent = 'Nuevo Contacto';
+    document.getElementById('p-hdr-tipo').textContent = '';
+    document.getElementById('p-foot-info').textContent = '';
+    document.getElementById('btn-delete').style.display = 'none';
+  }
+
+  function setEditMode(edit) {
+    isEditing = edit;
+    const fields = document.querySelectorAll('#tab-info input, #tab-info select, #tab-info textarea');
+    fields.forEach(f => { if (f.id !== 'p-id') f.disabled = !edit; });
+
+    document.getElementById('btn-edit').style.display   = (!edit && currentContactId) ? '' : 'none';
+    document.getElementById('btn-save').style.display   = edit ? '' : 'none';
+    document.getElementById('btn-cancel').style.display = (edit && currentContactId) ? '' : 'none';
+    document.getElementById('btn-add-cf').style.display = edit ? '' : 'none';
+
+    // show/hide custom field remove buttons
+    document.querySelectorAll('.cf-rm').forEach(b => b.style.display = edit ? '' : 'none');
+
+    // project link area
+    document.getElementById('proj-link-area').style.display = edit ? '' : 'none';
+  }
+
+  function startEdit() { setEditMode(true); }
+
+  function cancelEdit() {
+    if (currentContactId) {
+      const c = STATE_CONTACTS.find(x => x.id === currentContactId);
+      fillForm(c);
+      setEditMode(false);
+    }
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────
+  async function saveContact() {
+    const id = document.getElementById('p-id').value;
+    const name = document.getElementById('p-name').value.trim();
+    if (!name) { alert('El nombre es obligatorio'); return; }
+
     const customFields = [];
-    document.querySelectorAll('#custom-fields-container > div').forEach(row => {
-      const lbl = row.querySelector('.cf-lbl').value.trim();
-      const val = row.querySelector('.cf-val').value.trim();
-      if(lbl && val) customFields.push({lbl, val});
+    document.querySelectorAll('#cf-container .cf-row').forEach(row => {
+      const lbl = row.querySelector('.cf-lbl-inp').value.trim();
+      const val = row.querySelector('.cf-val-inp').value.trim();
+      if (lbl) customFields.push({ lbl, val });
     });
 
-    const c = {
-      name: document.getElementById('m-name').value.trim(),
-      tipo: document.getElementById('m-type').value,
-      phone: document.getElementById('m-phone').value.trim(),
-      email: document.getElementById('m-email').value.trim(),
-      person: document.getElementById('m-person').value.trim(),
-      address: document.getElementById('m-addr').value.trim(),
-      customFields: customFields
+    const data = {
+      name,
+      tipo:   document.getElementById('p-tipo').value,
+      phone:  document.getElementById('p-phone').value.trim(),
+      email:  document.getElementById('p-email').value.trim(),
+      person: document.getElementById('p-person').value.trim(),
+      address:document.getElementById('p-address').value.trim(),
+      web:    document.getElementById('p-web').value.trim(),
+      rfc:    document.getElementById('p-rfc').value.trim(),
+      notes:  document.getElementById('p-notes').value.trim(),
+      customFields,
+      activo: true,
     };
-    if(!c.name) return alert('El nombre es obligatorio');
-    
-    if(id) {
-      c.id = id;
-      window.DB.updateContact(c);
-      const idx = STATE_CONTACTS.findIndex(x => x.id === id);
-      if (idx !== -1) STATE_CONTACTS[idx] = c;
+
+    if (id) {
+      data.id = id;
+      const existing = STATE_CONTACTS.find(x => x.id === id);
+      const merged = { ...existing, ...data };
+
+      // Update DB_STATE directly
+      if (window.parent?.DB_STATE?.contacts) {
+        const idx = window.parent.DB_STATE.contacts.findIndex(c => c.id === id);
+        if (idx !== -1) window.parent.DB_STATE.contacts[idx] = merged;
+      }
+      if (window.parent?.setDocumentInFirebase) {
+        await window.parent.setDocumentInFirebase('contacts', id, merged);
+      }
+      const si = STATE_CONTACTS.findIndex(x => x.id === id);
+      if (si !== -1) STATE_CONTACTS[si] = merged;
     } else {
-      c.id = crypto.randomUUID(); // Mock id initially before it's saved maybe, though addContact assigns it. Actually addContact mutates the passed object.
-      window.DB.addContact(c);
-      STATE_CONTACTS.push(c);
+      data.id = crypto.randomUUID();
+      data.givenName = name;
+      data.paterno = '';
+      if (window.parent?.DB_STATE?.contacts) {
+        window.parent.DB_STATE.contacts.push(data);
+      }
+      if (window.parent?.setDocumentInFirebase) {
+        await window.parent.setDocumentInFirebase('contacts', data.id, data);
+      }
+      STATE_CONTACTS.push(data);
+      STATE_CONTACTS.sort((a,b) => (a.name||'').localeCompare(b.name||''));
     }
-    closeModal();
-    renderContacts();
+
+    renderGrid();
+    fillForm(data.id ? STATE_CONTACTS.find(x=>x.id===data.id) : data);
+    setEditMode(false);
+    currentContactId = data.id;
+    document.getElementById('p-id').value = data.id;
   }
 
-  function addCustomField(lbl = '', val = '') {
-    const cf = document.getElementById('custom-fields-container');
+  // ── Delete ────────────────────────────────────────────────────────────
+  async function deleteContact() {
+    const id = document.getElementById('p-id').value;
+    if (!id) return;
+    const c = STATE_CONTACTS.find(x => x.id === id);
+    if (!confirm(`¿Eliminar "${c?.name || id}" del CRM? Esta acción no se puede deshacer.`)) return;
+
+    if (window.parent?.deleteDocumentFromFirebase) {
+      await window.parent.deleteDocumentFromFirebase('contacts', id);
+    }
+    if (window.parent?.DB_STATE?.contacts) {
+      window.parent.DB_STATE.contacts = window.parent.DB_STATE.contacts.filter(c => c.id !== id);
+    }
+    STATE_CONTACTS = STATE_CONTACTS.filter(c => c.id !== id);
+    renderGrid();
+    closePanel();
+  }
+
+  // ── Custom fields ─────────────────────────────────────────────────────
+  function addCF(lbl = '', val = '') {
     const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.gap = '8px';
+    row.className = 'cf-row';
     row.innerHTML = `
-      <input type="text" class="cf-lbl" placeholder="Etiq (ej. Web)" value="${lbl}" style="width:110px; background:var(--mantle); border:1px solid var(--crust); padding:8px; border-radius:6px; color:var(--text); font-size:13px; font-family:inherit;">
-      <input type="text" class="cf-val" placeholder="Valor" value="${val}" style="flex:1; background:var(--mantle); border:1px solid var(--crust); padding:8px; border-radius:6px; color:var(--text); font-size:13px; font-family:inherit;">
-      <button class="cf-rm-btn" onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:16px;">✕</button>
+      <input type="text" class="cf-lbl-inp" placeholder="Etiqueta" value="${lbl}" style="max-width:120px;" ${isEditing?'':'disabled'}>
+      <input type="text" class="cf-val-inp" placeholder="Valor" value="${val}" ${isEditing?'':'disabled'}>
+      <button class="cf-rm" onclick="this.parentElement.remove()" style="display:${isEditing?'':'none'}">✕</button>
     `;
-    cf.appendChild(row);
-    // Inherit the disabled state if we are currently in view mode
-    const isEdit = document.getElementById('m-btn-edit').style.display === 'none';
-    if(!isEdit) {
-      row.querySelectorAll('input').forEach(i => i.disabled = true);
-      row.querySelector('.cf-rm-btn').style.display = 'none';
-    }
+    document.getElementById('cf-container').appendChild(row);
   }
 
-  renderContacts();
+  // ── Projects tab ──────────────────────────────────────────────────────
+  function renderProjects(c) {
+    if (!c) return;
+    const linked = STATE_PROJECTS.filter(p => p.contactId === c.id && p.name);
+    const list = document.getElementById('proj-list');
+
+    if (!linked.length) {
+      list.innerHTML = `<div class="empty-state">Sin proyectos vinculados.<br>Usa "Vincular Proyecto" para asociar uno.</div>`;
+    } else {
+      list.innerHTML = linked.map(p => {
+        const sc = p.status === 'En Producción' ? 'ps-active' : p.status === 'Terminado' || p.status === 'completado' ? 'ps-done' : 'ps-other';
+        return `
+          <div class="proj-item" onclick="goToProject('${p.id}')">
+            <span class="proj-code">${p.code}</span>
+            <span class="proj-name">${p.name}</span>
+            <span class="proj-status ${sc}">${p.status || '—'}</span>
+            <button class="btn" onclick="event.stopPropagation(); unlinkProject('${p.id}')" style="padding:4px 8px; font-size:11px; color:var(--red); border-color:var(--red);">✕</button>
+          </div>`;
+      }).join('');
+    }
+
+    // Populate link selector with unlinked projects
+    const unlinked = STATE_PROJECTS.filter(p => p.name && p.code && !p.contactId);
+    const sel = document.getElementById('proj-link-sel');
+    sel.innerHTML = '<option value="">— Seleccionar proyecto —</option>' +
+      unlinked.map(p => `<option value="${p.id}">${p.code} – ${p.name}</option>`).join('');
+
+    document.getElementById('proj-link-area').style.display = isEditing ? '' : 'none';
+  }
+
+  async function linkProject() {
+    const projId = document.getElementById('proj-link-sel').value;
+    const contactId = document.getElementById('p-id').value;
+    if (!projId || !contactId) return;
+
+    const proj = STATE_PROJECTS.find(p => p.id === projId);
+    if (!proj) return;
+    proj.contactId = contactId;
+
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('projects', projId, proj);
+    }
+    if (window.parent?.DB_STATE?.projects) {
+      const idx = window.parent.DB_STATE.projects.findIndex(p => p.id === projId);
+      if (idx !== -1) window.parent.DB_STATE.projects[idx] = proj;
+    }
+
+    const c = STATE_CONTACTS.find(x => x.id === contactId);
+    renderProjects(c);
+    renderGrid();
+  }
+
+  async function unlinkProject(projId) {
+    if (!confirm('¿Desvincular este proyecto del contacto?')) return;
+    const proj = STATE_PROJECTS.find(p => p.id === projId);
+    if (!proj) return;
+    proj.contactId = '';
+
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('projects', projId, proj);
+    }
+    if (window.parent?.DB_STATE?.projects) {
+      const idx = window.parent.DB_STATE.projects.findIndex(p => p.id === projId);
+      if (idx !== -1) window.parent.DB_STATE.projects[idx] = proj;
+    }
+
+    const c = STATE_CONTACTS.find(x => x.id === currentContactId);
+    renderProjects(c);
+    renderGrid();
+  }
+
+  function goToProject(id) {
+    if (window.parent?.openModule) window.parent.openModule('proyectos.html', 'Proyectos');
+  }
+
+  init();
 </script>
 </body>
 </html>
