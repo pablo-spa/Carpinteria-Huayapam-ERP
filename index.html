@@ -269,7 +269,20 @@
 </style>
 </head>
 <body>
-
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:var(--base); z-index:9999; display:flex; align-items:center; justify-content:center;">
+    <form id="login-form" style="background:var(--mantle); padding:32px; border-radius:12px; border:1px solid var(--crust); width:100%; max-width:320px; display:flex; flex-direction:column; gap:16px;">
+      <div style="text-align:center; margin-bottom:16px;">
+        <div class="logo-icon" style="margin:0 auto 12px; width:48px; height:48px; font-size:24px;">🪵</div>
+        <h2 style="font-size:18px; margin:0;">Huayapam ERP</h2>
+        <div style="font-size:13px; color:var(--subtext);">Acceso de usuarios</div>
+      </div>
+      <button type="button" id="btn-google" style="width:100%; padding:12px; background:var(--surface0); color:var(--text); border:1px solid var(--crust); border-radius:6px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
+        <svg style="width:18px;height:18px;" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27c3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10c5.35 0 9.25-3.67 9.25-9.09c0-1.15-.15-1.81-.15-1.81z"/></svg>
+        Iniciar sesión con Google
+      </button>
+    </form>
+  </div>
   <!-- SIDEBAR -->
   <aside>
     <div class="sidebar-header">
@@ -285,10 +298,10 @@
     </div>
 
     <div class="user-profile">
-      <div class="avatar">AD</div>
+      <div class="avatar" id="current-user-avatar">AD</div>
       <div class="user-info">
-        <div class="name">Administración</div>
-        <div class="role">Administrador</div>
+        <div class="name" id="current-user-name">Administración</div>
+        <div class="role" id="current-user-role">Administrador</div>
       </div>
     </div>
   </aside>
@@ -377,7 +390,9 @@
       items: [
         { id: 'nav-finanzas', html: `<span class="icon">💰</span> Movimientos`, file: 'finanzas.html', label: 'Movimientos' },
         { id: 'nav-nomina', html: `<span class="icon">💵</span> Nómina Semanal`, file: 'nomina_semanal.html', label: 'Nómina Semanal' },
-        { id: 'nav-trabajadores', html: `<span class="icon">👷‍♂️</span> Trabajadores`, file: 'rh_trabajadores.html', label: 'Trabajadores' }
+        { id: 'nav-trabajadores', html: `<span class="icon">👷‍♂️</span> Trabajadores`, file: 'rh_trabajadores.html', label: 'Trabajadores' },
+        { id: 'nav-checador', html: `<span class="icon">⏰</span> Reloj Checador`, file: 'reloj_checador.html', label: 'Reloj Checador' },
+        { id: 'nav-viaticos', html: `<span class="icon">🗺️</span> Viáticos`, file: 'viaticos.html', label: 'Gestión de Viáticos' }
       ]
     },
     {
@@ -405,22 +420,70 @@
       ]
     },
     {
-      id: 'cat-bd', title: 'Bases de Datos',
+      id: 'cat-bd', title: 'Administración del Sistema',
       items: [
+        { id: 'nav-usuarios', html: `<span class="icon">👥</span> Gestión Usuarios`, file: 'admin_usuarios.html', label: 'Gestión de Usuarios' },
         { id: 'nav-db', html: `<span class="icon">⚙️</span> Esquema de DB`, file: 'admin_db.html', label: 'Gestión de Esquemas' },
+        { id: 'nav-config', html: `<span class="icon">🛠️</span> Reglas y Ajustes`, file: 'admin_config.html', label: 'Configuración General' },
         { id: 'nav-listas', html: `<span class="icon">📋</span> Editar Listas`, file: 'admin_listas.html', label: 'Editar Listas de Sistema' },
-        { id: 'nav-admin', html: `<span class="icon">🗄️</span> Bases (Old)`, file: 'admin_bases.html', label: 'Visor Antiguo' }
+        { id: 'nav-permisos', html: `<span class="icon">🔐</span> Admin Permisos`, file: 'admin_permisos.html', label: 'Permisos de Acceso' }
       ]
     }
   ];
 
   let menuLayout = [];
+  
+  const SECTION_MAP = {
+    'dashboard.html': 'dashboard',
+    'proyectos.html': 'proyectos',
+    'proyectos_rentabilidad.html': 'proyectos',
+    'cotizacion.html': 'cotizaciones',
+    'finanzas.html': 'finanzas',
+    'nomina_semanal.html': 'nomina',
+    'rh_trabajadores.html': 'rh',
+    'contactos.html': 'dashboard',
+    'rq_operaciones.html': 'pedidos',
+    'rq_admin_aprobacion.html': 'pedidos',
+    'rq_compras.html': 'compras_oc',
+    'historial_compras.html': 'compras_oc',
+    'almacen_hub.html': 'almacen',
+    'control_madera.html': 'madera',
+    'ingreso_madera.html': 'madera',
+    'produccion_diaria.html': 'produccion',
+    'reloj_checador.html': 'reloj',
+    'admin_listas.html': 'admin_listas',
+    'admin_config.html': 'admin_listas',
+    'admin_db.html': 'admin_db',
+    'admin_permisos.html': 'admin_permisos',
+    'admin_usuarios.html': 'admin_usuarios'
+  };
 
   function loadMenu() {
     const saved = localStorage.getItem('erp_menu_layout');
     if (saved) {
       try {
         menuLayout = JSON.parse(saved);
+        
+        // Merge any new default items that are missing from the saved layout
+        const existingIds = new Set();
+        menuLayout.forEach(cat => cat.items.forEach(item => existingIds.add(item.id)));
+        
+        let missingFound = false;
+        defaultMenuLayout.forEach(dCat => {
+          dCat.items.forEach(dItem => {
+            if (!existingIds.has(dItem.id)) {
+              let targetCat = menuLayout.find(c => c.id === dCat.id);
+              if (!targetCat && menuLayout.length > 0) targetCat = menuLayout[0];
+              if (targetCat) {
+                targetCat.items.push(dItem);
+                missingFound = true;
+              }
+            }
+          });
+        });
+        
+        if (missingFound) saveMenu();
+        
       } catch(e) {
         menuLayout = JSON.parse(JSON.stringify(defaultMenuLayout));
       }
@@ -587,12 +650,13 @@
     'control_madera.html':    'nav-madera',
     'ingreso_madera.html':    'nav-ingreso-madera',
     'contactos.html':         'nav-contactos',
-    'admin_bases.html':       'nav-admin',
     'admin_db.html':          'nav-db',
+    'admin_config.html':      'nav-config',
     'admin_listas.html':      'nav-listas',
     'historial_compras.html': 'nav-historial',
     'finanzas.html':          'nav-finanzas',
-    'proyectos.html':         'nav-proyectos'
+    'proyectos.html':         'nav-proyectos',
+    'reloj_checador.html':    'nav-checador'
   };
 
   function renderBreadcrumbs() {
@@ -659,15 +723,237 @@
       const el = document.getElementById(navIdId);
       if(el) el.classList.add('active');
     }
+    
+    // Check permissions
+    const sec = SECTION_MAP[file];
+    const role = window.CURRENT_USER_ROLE || 'programador';
+    
+    // Programador always full, others check PERMISOS
+    let access = 'full';
+    if (role !== 'programador' && window.PERMISOS && sec && window.PERMISOS[sec]) {
+       access = window.PERMISOS[sec][role] || 'none';
+    }
+    
+    if (access === 'none') {
+       frame.src = 'about:blank';
+       frame.contentDocument.write('<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;font-size:24px;color:#888;">Acceso restringido</div>');
+       frame.removeAttribute('data-loaded');
+    } else {
+       frame.src = file;
+       frame.setAttribute('data-loaded', file);
+    }
+    
+    // Pass read-only flag down to frame window if needed
+    frame.onload = () => {
+       if(frame.contentWindow) {
+          frame.contentWindow.SEC_ACCESS = access;
+          if(access === 'readonly') {
+             // Basic readonly enforcement from parent: disabled buttons
+             frame.contentDocument.querySelectorAll('button:not(.btn-back)').forEach(b => b.disabled = true);
+             frame.contentDocument.querySelectorAll('input, select, textarea').forEach(b => b.disabled = true);
+          }
+       }
+    };
   }
 
   function goHome() {
     document.getElementById('welcome').style.display = 'flex';
     document.getElementById('frame-wrapper').style.display = 'none';
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    document.getElementById('main-frame').removeAttribute('data-loaded');
-    document.getElementById('main-frame').src = '';
   }
-</script>
+  </script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDH02UiOZO-oiz97u-AAQAZ5wg-UKLFGqg",
+      projectId: "gen-lang-client-0827035586",
+      authDomain: "gen-lang-client-0827035586.firebaseapp.com",
+      storageBucket: "gen-lang-client-0827035586.firebasestorage.app",
+      messagingSenderId: "79050016370",
+      appId: "1:79050016370:web:b1341aebfd13caa502e4eb"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app, "ai-studio-a12c0386-3408-4b58-a08e-36e79f61305b");
+    const auth = getAuth(app);
+    window.db = db;
+    
+    const collectionsToLoad = ['workers', 'contacts', 'inventory', 'projects', 'project_phases', 'quotations', 'pieces', 'orders', 'production_logs', 'payroll_weeks', 'payroll_lines', 'worker_loans', 'worker_loan_payments', 'attendance', 'attendance_logs', 'piece_types', 'expense_categories', 'purchase_orders', 'purchase_order_lines', 'lumber_batches', 'lumber_boards', 'material_requests', 'suppliers', 'project_worker_hours', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'notifications', 'accounting_movements', 'settings', 'systemEvents', 'wood', 'users'];
+
+    window.DB_STATE = null; // Wait for it
+    
+    document.getElementById("btn-google").addEventListener("click", async(e)=>{
+      try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+      } catch(ex){ alert("Error al ingresar: "+ex.message); }
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        window.CURRENT_USER = user;
+        document.getElementById("login-screen").style.display = "none";
+        
+        let role = 'none';
+        
+        if (user.email === 'spadatellopablo@gmail.com') {
+            role = 'programador';
+        } else {
+            // lookup in firestore or wait until db is loaded to fetch role
+        }
+        
+        // Load data
+        window.DB_STATE_IS_LOADING = true;
+        const state = {};
+        let isFirebaseEmpty = true;
+        for (let col of collectionsToLoad) {
+          const snap = await getDocs(collection(db, col));
+          state[col] = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+          if (state[col].length > 0) isFirebaseEmpty = false;
+        }
+
+        // Setup the role if not the main programmer
+        if (role === 'none') {
+            const userRec = state.users.find(u => u.email === user.email);
+            if (userRec && userRec.role) {
+                role = userRec.role;
+            } else {
+                role = 'ninguno'; // default
+                // Optionally we could save the user record here if it doesn't exist
+            }
+        }
+        
+        window.CURRENT_USER_ROLE = role;
+        
+        // Expose Firebase mutators for iframes (solves cross-realm instance issues)
+        window.saveUserToFirebase = async (userEmail, userRole) => {
+            await setDoc(doc(db, "users", userEmail), { email: userEmail, role: userRole });
+        };
+        window.deleteUserFromFirebase = async (userEmail) => {
+            await deleteDoc(doc(db, "users", userEmail));
+        };
+        window.deleteDocumentFromFirebase = async (col, docId) => {
+            await deleteDoc(doc(db, col, docId));
+        };
+        window.setDocumentInFirebase = async (col, docId, data) => {
+            await setDoc(doc(db, col, docId), data);
+        };
+        
+        // Seed workers one time
+        if (!localStorage.getItem('workers_seeded_v1')) {
+            const defaultWorkers = [
+               {id:'EDD92',givenName:'Eddie', paterno:'Santiago', name:'Santiago Sanchez Eddie',       role:'Jefe de Planta', baseSalary:4150, personalId: 'EDD92', scanCode: 'EDD92'},
+               {id:'DIE85',givenName:'Diego', paterno:'Romero', name:'Romero Frias Diego',       role:'Administración', baseSalary:4000, personalId: 'DIE85', scanCode: 'DIE85'},
+               {id:'NAR69',givenName:'Narciso', paterno:'Martinez', name:'Martinez Chavez Narciso R.', role:'Maestro A', baseSalary:3800, personalId: 'NAR69', scanCode: 'NAR69'},
+               {id:'HER71',givenName:'Herón', paterno:'Pacheco', name:'Pacheco Garcia Heron C.',   role:'Maestro A', baseSalary:3700, personalId: 'HER71', scanCode: 'HER71'},
+               {id:'GAB82',givenName:'Gabriel', paterno:'Santiago', name:'Santiago Moreno Gabriel',     role:'Contador', baseSalary:3700, personalId: 'GAB82', scanCode: 'GAB82'},
+               {id:'VIC75',givenName:'Vicente', paterno:'Cruz', name:'Cruz Morales Vicente A.', role:'Maestro A', baseSalary:3600, personalId: 'VIC75', scanCode: 'VIC75'},
+               {id:'ANG70',givenName:'Angel', paterno:'Chincoya', name:'Chincoya Rodriguez Angel L.', role:'Maestro A', baseSalary:3550, personalId: 'ANG70', scanCode: 'ANG70'},
+               {id:'NEP80',givenName:'Neptali', paterno:'Hernandez', name:'Hernandez Gaytan Neptali', role:'Maestro B', baseSalary:3500, personalId: 'NEP80', scanCode: 'NEP80'},
+               {id:'GAB72',givenName:'Gabriel', paterno:'Torija', name:'Torija Hernandez Gabriel',  role:'Mantenimiento', baseSalary:3500, personalId: 'GAB72', scanCode: 'GAB72'},
+               {id:'MIL97',givenName:'Milena', paterno:'Spada', name:'Spada Tello Milena',      role:'Administración', baseSalary:3500, personalId: 'MIL97', scanCode: 'MIL97'},
+               {id:'GRE75',givenName:'Gregorio', paterno:'Cruz', name:'Cruz Cruz Gregorio',    role:'Barniz', baseSalary:3250, personalId: 'GRE75', scanCode: 'GRE75'},
+               {id:'CAR74',givenName:'Carlos', paterno:'Padilla', name:'Padilla Cruz Carlos A.',   role:'Oficial A', baseSalary:3100, personalId: 'CAR74', scanCode: 'CAR74'},
+               {id:'MAR73',givenName:'Martha', paterno:'Mendoza', name:'Mendoza Arellano Martha',      role:'Compras', baseSalary:3000, personalId: 'MAR73', scanCode: 'MAR73'},
+               {id:'MIG81',givenName:'Miguel', paterno:'Mendez', name:'Mendez Santiago Miguel A.',   role:'Oficial A', baseSalary:2900, personalId: 'MIG81', scanCode: 'MIG81'},
+               {id:'PAO95',givenName:'Paola', paterno:'Padilla', name:'Padilla Contreras Paola',       role:'Oficial B', baseSalary:2900, personalId: 'PAO95', scanCode: 'PAO95'},
+               {id:'GUI90',givenName:'Guillermo', paterno:'Flores', name:'Flores Garcia Guillermo',   role:'Oficial B', baseSalary:2650, personalId: 'GUI90', scanCode: 'GUI90'},
+               {id:'SAN04',givenName:'Sandra', paterno:'Garcia', name:'Garcia Hernandez Sandra',   role:'Oficial B', baseSalary:2600, personalId: 'SAN04', scanCode: 'SAN04'},
+               {id:'ALF80',givenName:'Alfredo', paterno:'Garcia', name:'Garcia Garcia Alfredo',   role:'Oficial B', baseSalary:2600, personalId: 'ALF80', scanCode: 'ALF80'},
+               {id:'NAP81',givenName:'Napoleon', paterno:'Hernandez', name:'Hernandez Ignacio Napoleon',   role:'Chofer', baseSalary:2450, personalId: 'NAP81', scanCode: 'NAP81'},
+               {id:'CHR91',givenName:'Christopher', paterno:'Hernandez', name:'Hernandez Ramirez Christopher',   role:'Aprendiz', baseSalary:2400, personalId: 'CHR91', scanCode: 'CHR91'},
+               {id:'ANG65',givenName:'Angeles', paterno:'Rojas', name:'Rojas Aragon Angeles',   role:'Empleye', baseSalary:2400, personalId: 'ANG65', scanCode: 'ANG65'},
+               {id:'LEX01',givenName:'Lexee', paterno:'Jimenez', name:'Jimenez Carranza Lexee',   role:'Chalán', baseSalary:2350, personalId: 'LEX01', scanCode: 'LEX01'},
+               {id:'JEN79',givenName:'Jenny', paterno:'Velasco', name:'Velasco Vazquez Jenny',   role:'Pulido', baseSalary:2300, personalId: 'JEN79', scanCode: 'JEN79'},
+               {id:'DIE04',givenName:'Diego', paterno:'Hernandez', name:'Hernandez Ramirez Diego',   role:'Chalán', baseSalary:2300, personalId: 'DIE04', scanCode: 'DIE04'},
+               {id:'COS70',givenName:'Cosme', paterno:'Perez', name:'Perez Ramirez Cosme',   role:'Almacén', baseSalary:2300, personalId: 'COS70', scanCode: 'COS70'},
+               {id:'YES80',givenName:'Yesenia', paterno:'Velasco', name:'Velasco Vazquez Yesenia',   role:'Pulido', baseSalary:2250, personalId: 'YES80', scanCode: 'YES80'},
+               {id:'ELO03',givenName:'Eloy', paterno:'Hernandez', name:'Hernandez Ramirez Eloy',   role:'Chalán', baseSalary:2205, personalId: 'ELO03', scanCode: 'ELO03'},
+               {id:'GLA77',givenName:'Gladis', paterno:'Bautista', name:'Bautista Santiago Gladis',   role:'Limpieza', baseSalary:2205, personalId: 'GLA77', scanCode: 'GLA77'},
+               {id:'CAR02',givenName:'Carolina', paterno:'Santiago', name:'Santiago Reyes Carolina',   role:'Pulido', baseSalary:2205, personalId: 'CAR02', scanCode: 'CAR02'}
+            ];
+            
+            console.log("Seeding workers...");
+            localStorage.setItem('workers_seeded_v1', 'true');
+            setTimeout(async () => {
+                for(const w of defaultWorkers) {
+                   try { 
+                       await setDoc(doc(db, "workers", w.id), w);
+                       if (!state.workers) state.workers = [];
+                       if (!state.workers.find(x => x.id === w.id)) state.workers.push(w);
+                   } catch(e) { console.error("Worker seed error:", e); }
+                }
+            }, 500);
+        }
+        
+        // Show role/user
+        document.getElementById('current-user-name').innerText = user.displayName || user.email.split('@')[0];
+        document.getElementById('current-user-role').innerText = role.toUpperCase();
+        
+        // ONE-TIME MIGRATION FROM LOCALSTORAGE
+        if (isFirebaseEmpty) {
+          console.log("Firebase is empty! Migrating from localStorage...");
+          const localStr = localStorage.getItem("huayapam_db") || localStorage.getItem("erp_data");
+          if (localStr) {
+             const localData = JSON.parse(localStr);
+             try {
+                await fetch("/api/db-sync", {
+                   method: "POST",
+                   headers: { "Content-Type": "application/json" },
+                   body: JSON.stringify(localData)
+                });
+                console.log("Local data migrated to Firebase. Reloading to fetch collections.");
+                window.location.reload();
+                return;
+             } catch(e) { console.error("Migration failed:", e); }
+          }
+        }
+
+        // Aliases to stick with UI expects
+        if(state.attendance) state.attendance_logs = state.attendance; 
+        else state.attendance = []; // from "attendance" vs "attendance_logs" problem
+        
+        window.DB_STATE = state;
+        window.DB_STATE_LOADED = true;
+        
+        // Fetch permissions
+        try {
+           const permDoc = await getDocs(collection(db, "config_params"));
+           let perms = null;
+           for(let d of permDoc.docs) { if(d.id === "permisos") perms = d.data(); }
+           if (!perms) {
+               perms = {
+                 dashboard:      { programador: 'full', admin: 'full', gerencia: 'full', contador: 'full', compras: 'full', almacen: 'full', produccion: 'full' },
+                 proyectos:      { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'readonly', almacen: 'none', produccion: 'none' },
+                 cotizaciones:   { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'readonly', almacen: 'none', produccion: 'none' },
+                 finanzas:       { programador: 'full', admin: 'full', gerencia: 'full', contador: 'full', compras: 'none', almacen: 'none', produccion: 'none' },
+                 nomina:         { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'full', compras: 'none', almacen: 'none', produccion: 'none' },
+                 rh:             { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'none', almacen: 'none', produccion: 'none' },
+                 pedidos:        { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'readonly', compras: 'full', almacen: 'readonly', produccion: 'full' },
+                 compras_oc:     { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'readonly', compras: 'full', almacen: 'none', produccion: 'none' },
+                 almacen:        { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'full', almacen: 'full', produccion: 'none' },
+                 madera:         { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'full', almacen: 'full', produccion: 'none' },
+                 produccion:     { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'none', almacen: 'none', produccion: 'full' },
+                 reloj:          { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'full', produccion: 'full' },
+                 admin_usuarios: { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
+                 admin_listas:   { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
+                 admin_db:       { programador: 'full', admin: 'none', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
+                 admin_permisos: { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' }
+               };
+           }
+           window.PERMISOS = perms;
+        } catch(e) { console.error("Error loading permissions", e); }
+        
+        // Render menu after state completes
+        loadMenu();
+      } else {
+        window.CURRENT_USER = null;
+        document.getElementById("login-screen").style.display = "flex";
+      }
+    });
+
+  </script>
 </body>
 </html>

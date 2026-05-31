@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reloj Checador - Carpintería Huayapam</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="db.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #1e293b;
+    color: #f8fafc;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .clock {
+    font-size: 6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.05em;
+    margin-bottom: 0.5rem;
+  }
+  .date {
+    font-size: 1.5rem;
+    color: #94a3b8;
+    margin-bottom: 3rem;
+  }
+  .scanner-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 1rem 1.5rem;
+    font-size: 1.5rem;
+    text-align: center;
+    border: 2px solid #334155;
+    border-radius: 9999px;
+    background: #0f172a;
+    color: #f8fafc;
+    outline: none;
+    transition: all 0.2s;
+    margin-bottom: 2rem;
+  }
+  .scanner-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+  }
+  .scanner-input::placeholder {
+    color: #475569;
+    font-size: 1.25rem;
+  }
+  .status-box {
+    background-color: #334155;
+    border-radius: 1rem;
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s ease;
+  }
+  .status-box.success { background-color: #064e3b; box-shadow: 0 0 40px rgba(16, 185, 129, 0.3); }
+  .status-box.warning { background-color: #78350f; box-shadow: 0 0 40px rgba(245, 158, 11, 0.3); }
+  .status-box.error { background-color: #7f1d1d; box-shadow: 0 0 40px rgba(239, 68, 68, 0.3); }
+  
+  .worker-name { font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .worker-role { color: #cbd5e1; margin-bottom: 1rem; }
+  .scan-type { font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+  
+  .idle-content { color: #64748b; font-size: 1.25rem; }
+  .idle-content svg { width: 4rem; height: 4rem; margin: 0 auto 1rem; opacity: 0.5; }
+  
+</style>
+</head>
+<body>
+
+  <div class="clock" id="clock">00:00:00</div>
+  <div class="date" id="date">Cargando...</div>
+
+  <input type="text" id="scannerInput" class="scanner-input" placeholder="Ingrese ID de Empleado" autofocus autocomplete="off">
+
+  <div class="status-box" id="statusBox">
+    <div class="idle-content" id="idleContent">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-8v4h8v-4zm-4-9h4m-4 4h4" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16v10H4z" />
+      </svg>
+      Aproxime su gafete al escáner
+    </div>
+    
+    <div id="activeContent" style="display: none;">
+      <div class="worker-name" id="workerName">Juan Pérez</div>
+      <div class="worker-role" id="workerRole">Maestro B</div>
+      <div class="scan-type" id="scanType">ENTRADA REGISTRADA</div>
+      <div class="mt-2 text-lg opacity-80" id="scanStatus">A tiempo</div>
+    </div>
+  </div>
+
+<script>
+  // Update Clock
+  function updateTime() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('es-MX', { hour12: false });
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('date').textContent = now.toLocaleDateString('es-MX', options).replace(/^\w/, c => c.toUpperCase());
+  }
+  setInterval(updateTime, 1000);
+  updateTime();
+
+  let WORKERS_CACHE = [];
+  
+  async function init() {
+     const workers = await window.DB.query("contacts", { tipo: "trabajador", activo: true });
+     WORKERS_CACHE = workers;
+  }
+  
+  document.addEventListener('DOMContentLoaded', init);
+
+  // Keep focus on hidden input
+  const input = document.getElementById('scannerInput');
+  document.addEventListener('click', () => { input.focus(); });
+  setInterval(() => { if (document.activeElement !== input) input.focus(); }, 1000);
+
+  // DB logic
+  let resetTimeout;
+  
+  input.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter') {
+      const code = input.value.trim();
+      input.value = '';
+      if (code) await processScan(code);
+    }
+  });
+
+  async function processScan(code) {
+    const worker = WORKERS_CACHE.find(w => w.scanCode === code || w.id === code || w.personalId === code);
+    
+    if (!worker) {
+      showStatus('error', 'CÓDIGO NO RECONOCIDO', 'Empleado no encontrado', '');
+      return;
+    }
+
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const timeStr = now.toLocaleTimeString('es-MX', { hour12: false });
+    
+    // Check if entry exists today
+    const logs = await window.DB.query("attendance_logs", { workerId: worker.id, fecha: todayStr });
+    
+    let db = window.DB.get();
+    
+    // Regla: si ya existe doc de hoy para ese worker -> actualizar hora_salida. Si no existe -> crear con hora_entrada.
+    if (logs.length > 0) {
+        // existe: actualizar salida
+        const log = logs[0];
+        if (log.hora_salida) {
+            showStatus('warning', 'SALIDA YA REGISTRADA', worker.name, worker.role, 'Ya has registrado tu salida para este turno');
+            return;
+        }
+        
+        // Use full DB context to modify
+        if (!db.attendance_logs) db.attendance_logs = [];
+        const idx = db.attendance_logs.findIndex(l => l.id === log.id);
+        if (idx !== -1) {
+            db.attendance_logs[idx].hora_salida = timeStr;
+            db.attendance_logs[idx].tipo = 'salida';
+            window.DB.save(db);
+        }
+        showStatus('success', 'SALIDA REGISTRADA', worker.name, worker.role, 'Registro de salida completo');
+    } else {
+        // no existe: crear entrada
+        const settings = db.settings || { horaEntrada: '09:00', minutosRetardo: 15, minutosFalta: 60 };
+        const [hE, mE] = settings.horaEntrada.split(':').map(Number);
+        
+        const officialStartTime = new Date();
+        officialStartTime.setHours(hE, mE, 0, 0);
+        
+        const diffMs = now - officialStartTime;
+        const diffMins = Math.floor(diffMs / 60000);
+        
+        let statusTxt = 'trabajo';  // We use the status that produccion_diaria naturally likes
+        let statusClass = 'success';
+        let retardoMin = 0;
+        
+        if (diffMins <= settings.minutosRetardo) {
+          statusTxt = 'trabajo';
+          statusClass = 'success';
+        } else if (diffMins > settings.minutosRetardo && diffMins <= settings.minutosFalta) {
+          statusTxt = 'retardo'; // it works with lower case "retardo" logic in produccion_diaria
+          statusClass = 'warning';
+          retardoMin = diffMins;
+        } else {
+          statusTxt = 'falta'; // This indicates they shouldn't even work maybe? Keep working anyway but record that it's extremely late
+          statusClass = 'error';
+        }
+        
+        const newCheckin = {
+           id: crypto.randomUUID(),
+           workerId: worker.id,
+           fecha: todayStr,
+           hora_entrada: timeStr,
+           tipo: 'entrada',
+           registrado_por: 'reloj',
+           status: statusTxt,
+           retardoMin: retardoMin
+        };
+        
+        if (!db.attendance_logs) db.attendance_logs = [];
+        db.attendance_logs.push(newCheckin);
+        window.DB.save(db);
+        
+        showStatus(statusClass, 'ENTRADA REGISTRADA', worker.name, worker.role, statusTxt === 'trabajo' ? 'A tiempo' : (statusTxt === 'retardo' ? 'Retardo' : 'Llegada muy tarde'));
+    }
+  }
+
+  function showStatus(typeClass, title, name, role, status="") {
+    const box = document.getElementById('statusBox');
+    const idle = document.getElementById('idleContent');
+    const active = document.getElementById('activeContent');
+    
+    box.className = `status-box ${typeClass}`;
+    idle.style.display = 'none';
+    active.style.display = 'block';
+    
+    if (typeClass === 'error' && !name) {
+      document.getElementById('workerName').textContent = 'ERROR';
+      document.getElementById('workerRole').textContent = title;
+      document.getElementById('scanType').textContent = '';
+      document.getElementById('scanStatus').textContent = '';
+    } else {
+      document.getElementById('workerName').textContent = name;
+      document.getElementById('workerRole').textContent = role;
+      document.getElementById('scanType').textContent = title;
+      document.getElementById('scanStatus').textContent = status;
+    }
+
+    clearTimeout(resetTimeout);
+    resetTimeout = setTimeout(() => {
+      box.className = 'status-box';
+      idle.style.display = 'block';
+      active.style.display = 'none';
+    }, 4000);
+  }
+
+</script>
+</body>
+</html>

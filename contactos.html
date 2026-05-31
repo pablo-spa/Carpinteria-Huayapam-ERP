@@ -92,7 +92,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   <div class="f-btn act" onclick="filterData('all')">Todos</div>
   <div class="f-btn" onclick="filterData('Cliente')">Solo Clientes</div>
   <div class="f-btn" onclick="filterData('Proveedor')">Solo Proveedores</div>
-  <div class="f-btn" onclick="filterData('Empleado')">Solo Empleados</div>
+  <div class="f-btn" onclick="filterData('Trabajador')">Solo Trabajadores</div>
   <div class="f-btn" onclick="filterData('VIP')">Etiqueta VIP</div>
 </div>
 
@@ -148,41 +148,38 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 <script src="db.js"></script>
 <script>
   let currentFilter = 'all';
+  let STATE_CONTACTS = [];
 
+  async function init() {
+     STATE_CONTACTS = await window.DB.query("contacts");
+     // Sort alphabetical by name approx
+     STATE_CONTACTS.sort((a,b) => (a.name||a.givenName||'').localeCompare(b.name||b.givenName||''));
+     renderContacts();
+  }
+  
+  document.addEventListener('DOMContentLoaded', init);
   document.getElementById('srch').addEventListener('input', applyFilters);
 
-  function getMergedContacts() {
-    const d = window.DB.get();
-    let merged = [...(d.contacts || [])];
-    if (d.workers) {
-      d.workers.forEach(w => {
-        merged.push({
-          _isWorker: true,
-          id: w.id,
-          name: w.name,
-          type: 'Empleado',
-          tags: [w.role],
-          person: w.nss && w.nss !== '-' ? 'NSS: '+w.nss : '',
-          phone: w.phone,
-          email: '',
-          address: w.emergencyContact ? 'Eme: '+w.emergencyContact : ''
-        });
-      });
-    }
-    return merged;
-  }
-
   function renderContacts() {
-    const allContacts = getMergedContacts();
     const grid = document.getElementById('c-grid');
-    grid.innerHTML = allContacts.map(c => {
-      const avt = c.name ? c.name.substring(0,2).toUpperCase() : '??';
-      const isProv = c.type === 'Proveedor';
-      const isEmp = c.type === 'Empleado';
+    grid.innerHTML = STATE_CONTACTS.map(c => {
+      const name = c.name || c.givenName || 'Sin Nombre';
+      const type = c.type || c.tipo || 'Cliente';
+      
+      const avt = name ? name.substring(0,2).toUpperCase() : '??';
+      const isProv = type.toLowerCase() === 'proveedor';
+      const isEmp = type.toLowerCase() === 'trabajador';
+      
       let typeClr = isProv ? 'color:var(--green)' : '';
       if (isEmp) typeClr = 'color:var(--mauve)';
       
-      const tagsHtm = (c.tags||[]).map(t => {
+      // Auto-inject trabajador tag for presentation
+      let tags = c.tags || [];
+      if (isEmp && !tags.some(t => t.toLowerCase() === 'trabajador' || t.toLowerCase() === 'trabajadores')) {
+         tags = [...tags, 'Trabajadores'];
+      }
+      
+      const tagsHtm = tags.map(t => {
         if(t && t.toLowerCase()==='vip') return `<span class="tag tag-vip">VIP</span>`;
         if(t) return `<span class="tag">${t}</span>`;
         return '';
@@ -194,11 +191,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       const psnHtm   = c.person ? `<div class="c-row"><span class="ico">👤</span> ${c.person}</div>` : '';
       const cfHtm    = (c.customFields||[]).map(cf => `<div class="c-row"><span class="ico">🔹</span> <span><b>${cf.lbl}:</b> ${cf.val}</span></div>`).join('');
 
+      // Encode ID securely for HTML attribute
+      const jsId = c.id.replace(/'/g, "\\'");
       return `
-        <div class="card" data-type="${c.type}" data-tags="${(c.tags||[]).join(' ')}" onclick="openModal('${c.id}')">
+        <div class="card" data-type="${type}" data-tags="${tags.join(' ')}" onclick="openModal('${jsId}')">
           <div class="c-head">
             <div class="c-avt">${avt}</div>
-            <div class="c-title"><div class="c-name">${c.name}</div><div class="c-type" style="${typeClr}">${c.type}</div></div>
+            <div class="c-title"><div class="c-name">${name}</div><div class="c-type" style="${typeClr}">${type}</div></div>
           </div>
           <div class="c-body">
             ${psnHtm}${phoneHtm}${emailHtm}${addrHtm}${cfHtm}
@@ -228,7 +227,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       let isMatchCat = true;
       if (currentFilter !== 'all') {
         if (currentFilter === 'VIP' && !tags.includes('VIP')) isMatchCat = false;
-        else if (currentFilter !== 'VIP' && typ !== currentFilter) isMatchCat = false;
+        else if (currentFilter !== 'VIP' && typ.toLowerCase() !== currentFilter.toLowerCase()) isMatchCat = false;
       }
       c.style.display = (isMatchStr && isMatchCat) ? 'flex' : 'none';
     });
@@ -258,11 +257,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     document.getElementById('custom-fields-container').innerHTML = '';
 
     if(id) {
-      const allContacts = getMergedContacts();
-      const c = allContacts.find(x => x.id === id);
+      const c = STATE_CONTACTS.find(x => x.id === id);
       document.getElementById('m-id').value = c.id;
-      document.getElementById('m-name').value = c.name || '';
-      document.getElementById('m-type').value = c.type || 'Cliente';
+      document.getElementById('m-name').value = c.name || c.givenName || '';
+      document.getElementById('m-type').value = c.type || c.tipo || 'Cliente';
       document.getElementById('m-tags').value = (c.tags||[]).join(', ');
       document.getElementById('m-phone').value = c.phone || '';
       document.getElementById('m-email').value = c.email || '';
@@ -271,8 +269,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       if(c.customFields) c.customFields.forEach(cf => addCustomField(cf.lbl, cf.val));
       setEditMode(false);
       
-      // If it's a worker, don't allow editing from here
-      if (c._isWorker || c.type === 'Empleado') {
+      // If it's a worker, don't allow editing from here because they are native to HR
+      if (c._isWorker || (c.type||c.tipo||'').toLowerCase() === 'trabajador') {
         document.getElementById('m-btn-edit').style.display = 'none';
         document.getElementById('m-btn-save').style.display = 'none';
       }
@@ -318,8 +316,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     if(id) {
       c.id = id;
       window.DB.updateContact(c);
+      const idx = STATE_CONTACTS.findIndex(x => x.id === id);
+      if (idx !== -1) STATE_CONTACTS[idx] = c;
     } else {
+      c.id = crypto.randomUUID(); // Mock id initially before it's saved maybe, though addContact assigns it. Actually addContact mutates the passed object.
       window.DB.addContact(c);
+      STATE_CONTACTS.push(c);
     }
     closeModal();
     renderContacts();

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Permisos</title>
+  <style>
+    :root {
+      --base: #1e1e2e;
+      --mantle: #181825;
+      --crust: #11111b;
+      --text: #cdd6f4;
+      --subtext: #a6adc8;
+      --brand: #89b4fa;
+      --green: #a6e3a1;
+      --red: #f38ba8;
+      --amber: #f9e2af;
+      --surface0: #313244;
+      --surface1: #45475a;
+    }
+    body {
+      margin: 0; padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--base); color: var(--text);
+    }
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+    }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+    .btn {
+      background: var(--brand); color: #111;
+      border: none; padding: 8px 16px; border-radius: 6px;
+      font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { opacity: 0.9; }
+    
+    table {
+      width: 100%; border-collapse: collapse;
+      background: var(--mantle); border-radius: 8px; overflow: hidden;
+      border: 1px solid var(--crust);
+    }
+    th, td {
+      padding: 12px; text-align: left;
+      border-bottom: 1px solid var(--crust);
+      border-right: 1px solid var(--crust);
+    }
+    th {
+      background: var(--surface0);
+      font-size: 13px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    tr:last-child td { border-bottom: none; }
+    
+    .section-group {
+      background: var(--crust);
+      font-weight: bold;
+      color: var(--brand);
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    .section-name {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .perm-toggle {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      text-align: center;
+      min-width: 80px;
+      border: 1px solid transparent;
+    }
+    .perm-toggle.disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .perm-full {
+      background: rgba(166, 227, 161, 0.2);
+      color: var(--green);
+      border-color: rgba(166, 227, 161, 0.4);
+    }
+    .perm-readonly {
+      background: rgba(137, 180, 250, 0.2);
+      color: var(--brand);
+      border-color: rgba(137, 180, 250, 0.4);
+    }
+    .perm-none {
+      background: var(--surface0);
+      color: var(--subtext);
+      border-color: var(--surface1);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Matriz de Permisos</h1>
+    <button class="btn" onclick="savePermissions()">Guardar cambios</button>
+  </div>
+
+  <div style="font-size:13px; color:var(--subtext); margin-bottom:16px;">
+    Haz clic en las celdas para alternar entre: 
+    <span style="color:var(--green); font-weight:bold; margin-left:8px;">Verde (Acceso Completo)</span>
+    <span style="color:var(--brand); font-weight:bold; margin-left:8px;">Azul (Solo Lectura)</span>
+    <span style="color:var(--subtext); font-weight:bold; margin-left:8px;">Gris (Sin Acceso)</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:200px;">Sección</th>
+        <th>Programador</th>
+        <th>Admin</th>
+        <th>Gerencia</th>
+        <th>Contador</th>
+        <th>Compras</th>
+        <th>Almacén</th>
+        <th>Producción</th>
+      </tr>
+    </thead>
+    <tbody id="perm-body">
+      <!-- Generated via JS -->
+    </tbody>
+  </table>
+
+  <script>
+    const ROLES = ['programador', 'admin', 'gerencia', 'contador', 'compras', 'almacen', 'produccion'];
+    
+    const SECTIONS = [
+      { type: 'group', title: 'General' },
+      { id: 'dashboard', label: 'Dashboard' },
+      
+      { type: 'group', title: 'Proyectos' },
+      { id: 'proyectos', label: 'Proyectos' },
+      { id: 'cotizaciones', label: 'Cotizaciones' },
+      
+      { type: 'group', title: 'Finanzas' },
+      { id: 'finanzas', label: 'Finanzas y Contabilidad' },
+      { id: 'nomina', label: 'Nómina' },
+      { id: 'rh', label: 'RH / Trabajadores' },
+      
+      { type: 'group', title: 'Operaciones' },
+      { id: 'pedidos', label: 'Pedidos a Proveedores / Autorizaciones' },
+      { id: 'compras_oc', label: 'Órdenes de Compra (Panel Compras)' },
+      { id: 'almacen', label: 'Portal Almacén' },
+      { id: 'madera', label: 'Almacén de Madera / Escaneo' },
+      { id: 'produccion', label: 'Producción Diaria' },
+      { id: 'reloj', label: 'Reloj Checador' },
+      
+      { type: 'group', title: 'Administración' },
+      { id: 'admin_usuarios', label: 'Gestión de Usuarios' },
+      { id: 'admin_listas', label: 'Listas y Catálogos' },
+      { id: 'admin_db', label: 'Admin DB' },
+      { id: 'admin_permisos', label: 'Permisos' }
+    ];
+
+    let currentPerms = {};
+
+    function init() {
+      // Clone the permissions from parent
+      if (window.parent.PERMISOS) {
+         currentPerms = JSON.parse(JSON.stringify(window.parent.PERMISOS));
+      } else {
+         alert("Permisos no cargados en el nivel superior.");
+      }
+      renderTable();
+    }
+
+    function togglePerm(secId, role) {
+      if (role === 'programador') return; // Fixed
+      
+      const states = ['full', 'readonly', 'none'];
+      const cur = currentPerms[secId][role] || 'none';
+      let nextIdx = (states.indexOf(cur) + 1) % states.length;
+      
+      currentPerms[secId][role] = states[nextIdx];
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('perm-body');
+      let html = '';
+
+      SECTIONS.forEach(s => {
+        if (s.type === 'group') {
+          html += `<tr><td colspan="8" class="section-group">${s.title}</td></tr>`;
+        } else {
+          html += `<tr>`;
+          html += `<td class="section-name">${s.label}</td>`;
+          
+          ROLES.forEach(r => {
+            const state = currentPerms[s.id]?.[r] || 'none';
+            let label = 'No';
+            let cssClass = 'perm-none';
+            if (state === 'full') { label = 'Completo'; cssClass = 'perm-full'; }
+            if (state === 'readonly') { label = 'Solo Lectura'; cssClass = 'perm-readonly'; }
+            
+            const disabled = (r === 'programador') ? 'disabled' : '';
+            
+            html += `<td style="text-align:center;">
+              <span class="perm-toggle ${cssClass} ${disabled}" onclick="togglePerm('${s.id}', '${r}')">${label}</span>
+            </td>`;
+          });
+          
+          html += `</tr>`;
+        }
+      });
+      
+      tbody.innerHTML = html;
+    }
+
+    window.togglePerm = togglePerm;
+
+    window.savePermissions = async () => {
+      try {
+        await window.parent.setDocumentInFirebase("config_params", "permisos", currentPerms);
+        window.parent.PERMISOS = JSON.parse(JSON.stringify(currentPerms)); // Update parent live
+        alert("Permisos guardados correctamente.");
+      } catch (err) {
+        console.error(err);
+        alert("Error al guardar: " + err.message);
+      }
+    };
+
+    document.addEventListener("DOMContentLoaded", init);
+
+  </script>
+</body>
+</html>

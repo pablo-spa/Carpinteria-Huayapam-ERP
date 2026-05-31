@@ -282,35 +282,17 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
 
 <script src="db.js"></script>
 <script>
-const RATES = { maestroA:105, maestroB:98, oficialA:84, aprendiz:60, barniz:90, pulido:58, empaque:65, chofer:70 };
+let RATES = { maestroA:105, maestroB:98, oficialA:84, aprendiz:60, barniz:90, pulido:58, empaque:65, chofer:70 };
 const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Oficial A', aprendiz:'Aprendiz', barniz:'Barniz', pulido:'Pulido', empaque:'Empaque', chofer:'Chofer' };
-const OVERHEAD = 37.3, TOOL = 0.08;
+let OVERHEAD = 37.3, TOOL = 0.08;
 
 let EXTRAS = 0.07, MARGIN = 0.20, ERROR = 0.07, TAX = 0.16, COMMISSION = 0;
 
-const PIECE_TYPES = [
-  ['AL','Alacena'],['AR','Archivero'],['CJ','Cajonera'],['CR','Credenza'],
-  ['LI','Librero'],['RO','Ropero'],['VI','Vitrina'],
-  ['PC','Puerta corrediza'],['PTA','Puerta abatible'],['PPL','Puerta plegable'],
-  ['MC','Mesa comedor'],['ET','Escritorio'],['MA','Mesa auxiliar'],
-  ['MB','Mesa de bar'],['MR','Mesa centro'],['ND','No definido'],
-];
+let PIECE_TYPES = [];
 
-const MATS = [
-  {n:'Tablero MDF 15mm',u:'lámina',p:185},{n:'Tablero MDF 18mm',u:'lámina',p:210},
-  {n:'Tripay 9mm',u:'lámina',p:145},{n:'Tripay 18mm',u:'lámina',p:215},
-  {n:'Madera pino 1a 1×8',u:'pieza',p:238},{n:'Madera tzalam maciza',u:'pt',p:850},
-  {n:'Madera encino maciza',u:'pt',p:720},{n:'Madera roble maciza',u:'pt',p:680},
-  {n:'Jalador acero inox',u:'pieza',p:45},{n:'Bisagra clip 110°',u:'pieza',p:38},
-  {n:'Riel Blum full ext',u:'par',p:185},{n:'Riel Blum soft-close',u:'par',p:220},
-  {n:'Lija 120',u:'pliego',p:8},{n:'Lija 220',u:'pliego',p:12},
-  {n:'Resanador COMEX',u:'bote',p:76},{n:'Laca blanca satín',u:'gal',p:380},
-  {n:'Barniz brillante',u:'lt',p:220},{n:'Thinner',u:'lt',p:52},
-  {n:'Tornillo 3/4"',u:'caja',p:18},{n:'Clavillo M-10',u:'caja',p:54},
-  {n:'Pegamento blanco',u:'bote',p:85},{n:'Sellador nitro',u:'lt',p:185},
-];
+let MATS = [];
 
-const S = { client:'', project:'', pieces:[], typeCounts:{}, nextId:1 };
+const S = { client:'', project:'', clientContactId: null, projectId: null, pieces:[], typeCounts:{}, nextId:1 };
 
 function updateCfg() {
   const isChecked = document.getElementById('cfg-tax').checked;
@@ -501,7 +483,7 @@ function renderPiece(piece) {
   const hrInputs = Object.keys(RATES).map(k=>`
     <div class="hr-item">
       <label>${RATE_LABELS[k]}<br><span class="hr-rate">$${RATES[k]}/hr</span></label>
-      <input class="hr-val" type="number" value="${piece.hrs[k]||''}" min="0" step="0.5" placeholder="0" onchange="setHr(${piece.id},'${k}',this.value)">
+      <input class="hr-val" type="number" value="${piece.hrs[k]||''}" min="0" step="0.5" placeholder="0" oninput="setHr(${piece.id},'${k}',this.value)">
     </div>`).join('');
 
   return `
@@ -650,14 +632,32 @@ function simulatePrintAI() {
 // Global DB Load
 let Q_state = { baseQuoteId: null, isViewMode: false };
 
-function loadOptions() {
-  const d = window.DB.get();
+async function loadOptions() {
+  const clients = await window.DB.query("contacts");
+  const filteredClients = clients.filter(c => !c.tipo || c.tipo.toLowerCase() === 'cliente' || c.type === 'Cliente');
+  const activeProjs = await window.DB.query("projects");
+  const inventoryDb = await window.DB.query("inventory");
+  const dbPieceTypes = await window.DB.query("piece_types");
   
+  if (dbPieceTypes && dbPieceTypes.length > 0) {
+      PIECE_TYPES = dbPieceTypes.map(pt => [pt.code || 'TIP', pt.name || 'Sin nombre']);
+  }
+  
+  if (inventoryDb && inventoryDb.length > 0) {
+      MATS = inventoryDb.map(m => ({ n: m.name || m.description || m.code, u: m.unit || 'uds', p: m.cost || 0 }));
+  }
+
   const cSel = document.getElementById('clientInput');
-  cSel.innerHTML = '<option value="">— Seleccionar Cliente —</option>' + d.contacts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  cSel.innerHTML = '<option value="">— Seleccionar Cliente —</option>' + filteredClients.map(c => `<option value="${c.id}">${c.name || c.givenName}</option>`).join('');
   
   const pSel = document.getElementById('projectInput');
-  pSel.innerHTML = '<option value="">— Crear Proyecto Nuevo —</option>' + d.projects.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+  pSel.innerHTML = '<option value="">— Crear Proyecto Nuevo —</option>' + activeProjs.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+  
+  PIECE_TYPES.forEach(([code,name]) => {
+    const o = document.createElement('option');
+    o.value = code; o.textContent = code+' — '+name;
+    document.getElementById('typeSelect').appendChild(o);
+  });
 }
 
 function saveQuoteToProject() {
@@ -676,7 +676,7 @@ function saveQuoteToProject() {
   const statusStr = Q_state.baseQuoteId ? 'Esperando Autorización' : 'Esperando Autorización'; // Changed to Esperando Autorización generally to match the new behavior.
 
   const quote = {
-    id: 'q' + Date.now() + Math.floor(Math.random()*1000),
+    id: crypto.randomUUID(),
     projectId: pId,
     clientId: cId,
     date: new Date().toISOString().slice(0,10),
@@ -756,16 +756,14 @@ function processURLParams() {
 }
 
 // Init
-PIECE_TYPES.forEach(([code,name]) => {
-  const o = document.createElement('option');
-  o.value = code; o.textContent = code+' — '+name;
-  document.getElementById('typeSelect').appendChild(o);
-});
+async function init() {
+    await loadOptions();
+    processURLParams();
+    updateCfg();
+    render();
+}
 
-loadOptions();
-processURLParams();
-updateCfg();
-render();
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

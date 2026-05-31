@@ -210,6 +210,21 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   document.getElementById('f-cat').addEventListener('change', (e) => { currentFilter = e.target.value; applyFilters(); });
   document.getElementById('f-stock').addEventListener('change', (e) => { currentStockFilter = e.target.value; applyFilters(); });
 
+  let STATE_INVENTORY = [];
+  let STATE_WORKERS = [];
+  
+  async function init() {
+     STATE_INVENTORY = await window.DB.query("inventory");
+     STATE_WORKERS = await window.DB.query("contacts", { tipo: "trabajador" });
+     // fallback workers if empty
+     if(!STATE_WORKERS || STATE_WORKERS.length === 0) STATE_WORKERS = window.DB.get().workers || [];
+     
+     initSelects();
+     renderTable();
+  }
+  
+  document.addEventListener('DOMContentLoaded', init);
+
   function initSelects() {
     const d = window.DB.get();
     
@@ -225,20 +240,20 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     document.getElementById('m-unit').innerHTML = d.concept_units.map(u => `<option value="${u}">${u}</option>`).join('');
     
     // Workers Select
-    document.getElementById('m-assigned').innerHTML = '<option value="">-- Sin asignar --</option>' + d.workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+    document.getElementById('m-assigned').innerHTML = '<option value="">-- Sin asignar --</option>' + STATE_WORKERS.map(w => `<option value="${w.id}">${w.name || w.givenName}</option>`).join('');
   }
 
   function renderTable() {
-    const d = window.DB.get();
     const tbody = document.getElementById('inv-body');
-    tbody.innerHTML = d.inventory.map((i, idx) => {
+    const filteredInv = STATE_INVENTORY.filter(i => i.category !== 'madera');
+    tbody.innerHTML = filteredInv.map((i, idx) => {
       let pillClass = 'pill-ok';
       if (i.stock === 0) pillClass = 'pill-out';
       else if (i.stock <= i.min) pillClass = 'pill-low';
       
       const isLow = i.stock <= i.min;
-      const worker = i.assignedTo ? d.workers.find(w => w.id === i.assignedTo) : null;
-      let assignedBadge = worker ? `<span class="pill" style="background:var(--surface1); color:var(--text);">${worker.name}</span>` : '-';
+      const worker = i.assignedTo ? STATE_WORKERS.find(w => w.id === i.assignedTo) : null;
+      let assignedBadge = worker ? `<span class="pill" style="background:var(--surface1); color:var(--text);">${worker.name || worker.givenName}</span>` : '-';
 
       return `
         <tr style="cursor:pointer;" onclick="openModal('${i.id}')" data-cat="${i.category}" data-low="${isLow}">
@@ -282,7 +297,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   }
 
   function openModal(id) {
-    const item = window.DB.get().inventory.find(x => x.id === id);
+    const item = STATE_INVENTORY.find(x => x.id === id) || window.DB.get().inventory.find(x => x.id === id);
     if (!item) return;
 
     document.getElementById('m-id').value = item.id;
@@ -322,10 +337,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     document.getElementById('mod-overlay').style.display = 'none';
   }
 
-  function saveItem() {
-    const d = window.DB.get();
+  async function saveItem() {
     const id = document.getElementById('m-id').value;
-    const item = d.inventory.find(x => x.id === id);
+    const item = STATE_INVENTORY.find(x => x.id === id) || window.DB.get().inventory.find(x => x.id === id);
     if (!item) return;
 
     item.name = document.getElementById('m-name').value;
@@ -352,13 +366,16 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     }
 
     // Save
-    window.DB.updateInventoryItem(item);
+    if(window.DB.addOrUpdateInventory) {
+       window.DB.addOrUpdateInventory(item);
+    } else if (window.DB.updateInventoryItem) {
+       window.DB.updateInventoryItem(item);
+    }
     closeModal();
+    // Re-fetch to reflect
+    STATE_INVENTORY = await window.DB.query("inventory");
     renderTable();
   }
-  
-  initSelects();
-  renderTable();
 </script>
 </body>
 </html>

@@ -343,40 +343,39 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 <script src="db.js"></script>
 <script>
   let DBm = []; // local var holding movements
+  let STATE_PROJECTS = [];
+  let STATE_CATEGORIES = [];
+  let STATE_CONTACTS = [];
+  let STATE_ORDERS = [];
+  
   let currentAccFilter = 'ALL';
   let llmTimer = null;
 
   function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
   // Init Data Layer
-  function initData() {
-    const d = window.DB.get();
+  async function initData() {
+    DBm = await window.DB.query("accounting_movements");
+    if (!DBm || DBm.length === 0) DBm = window.DB.get().accounting_movements || [];
+
+    STATE_PROJECTS = await window.DB.query("projects");
+    STATE_CATEGORIES = window.DB.get().expense_categories || []; // Keeping standard config
+    STATE_CONTACTS = await window.DB.query("contacts", { activo: true });
+    if (!STATE_CONTACTS || STATE_CONTACTS.length === 0) STATE_CONTACTS = window.DB.get().contacts || [];
     
-    // Simulate first boot data
-    if(!d.accounting_movements) {
-      d.accounting_movements = [
-        { id:'m1', type:'Ingreso', date:'2026-05-15', account:'CHU', amount:80000, concept:'Anticipo Cocina Ramírez Factura 045', category:'Ingreso operativo', entity:'Juan Ramírez', status:'confirmed', projectId:'p1', notes:'' },
-        { id:'m2', type:'Gasto', date:'2026-05-16', account:'CHU', amount:9216, concept:'Pago mensualidad CFE taller', category:'Servicios públicos', entity:'CFE', status:'confirmed', notes:'Llegó caro este mes' },
-        { id:'m3', type:'Transferencia', date:'2026-05-20', account:'SMTP', destAccount:'CAJA', amount:15000, concept:'Retiro cajero para fondo nómina y caja chica', category:'Transferencia para CAJA', entity:'', status:'confirmed', notes:'' },
-        { id:'m4', type:'Gasto', date:'2026-05-22', account:'CAJA', amount:12500, concept:'Nómina Semanal Sem 21', category:'Nómina semanal', entity:'Trabajadores', status:'draft', notes:'' },
-        { id:'m5', type:'Gasto', date:'2026-05-25', account:'SMTP', amount:380, concept:'Pintura laca blanca', category:'', entity:'Bricomart', status:'draft', orderId:'o2', notes:'' } 
-      ];
-      // In first boot, try to bring old payments and map them? The prompt implies 
-      // replace "finanzas.html" functionality entirely.
-      window.DB.save(d);
-    }
-    DBm = d.accounting_movements;
+    STATE_ORDERS = await window.DB.query("purchase_orders");
+    if (!STATE_ORDERS || STATE_ORDERS.length === 0) STATE_ORDERS = window.DB.get().orders || [];
 
     // Load selects
     const pSel = document.getElementById('f-proj');
     pSel.innerHTML = '<option value="">-- Seleccionar --</option>' + 
-      d.projects.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+      STATE_PROJECTS.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
       
     // Populate expense categories
     let ingHtml = '<optgroup label="Ingresos">';
     let gasHtml = '<optgroup label="Gastos">';
     let transHtml = '<optgroup label="Transferencias">';
-    (d.expense_categories || []).forEach(c => {
+    STATE_CATEGORIES.forEach(c => {
       const type = c.type;
       const nm = c.name;
       const opt = `<option value="${nm}">${nm}</option>`;
@@ -401,24 +400,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   }
 
   function populateContacts() {
-    const d = window.DB.get();
     const cSel = document.getElementById('f-entity');
     const prev = cSel.value;
     cSel.innerHTML = '<option value="">-- Seleccionar / Varios --</option>' + 
-      d.contacts.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+      STATE_CONTACTS.map(c => `<option value="${c.name || c.givenName}">${c.name || c.givenName}</option>`).join('');
     if(prev) cSel.value = prev;
   }
 
   function populateOrders() {
-    const d = window.DB.get();
     const oSel = document.getElementById('f-oc');
     const entity = document.getElementById('f-entity')?.value || '';
     
-    // Filter orders by entity if one is selected, but not strictly needed, 
-    // maybe we just sort them or show all if empty. We will show all but highlight matching supplier.
-    let availableOrders = d.orders;
+    let availableOrders = STATE_ORDERS;
     if (entity) {
-      const filtered = d.orders.filter(o => o.supplier === entity);
+      const filtered = STATE_ORDERS.filter(o => o.supplier === entity || o.provider === entity);
       if (filtered.length > 0) availableOrders = filtered;
     }
 
@@ -428,7 +423,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         if(o.items) {
           o.items.forEach(itm => totalVal += (itm.qty * (itm.price||0)));
         }
-        return `<option value="${o.id}">${o.folio} - ${o.supplier} (${fmt(totalVal)})</option>`;
+        return `<option value="${o.id}">${o.folio} - ${o.supplier || o.provider || '-'} (${fmt(totalVal)})</option>`;
       }).join('');
   }
 
@@ -448,19 +443,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     if(!name) return alert('Nombre obligatorio');
 
     const nc = {
-      id: 'c' + Date.now(),
+      id: crypto.randomUUID(),
       name: name,
       phone: phone,
       type: 'Proveedor',
+      tipo: 'proveedor',
+      activo: true,
       tags: [],
       person: '',
       email: '',
       address: ''
     };
     
-    const d = window.DB.get();
-    d.contacts.push(nc);
-    window.DB.save(d);
+    if(window.parent && window.parent.setDocumentInFirebase) {
+        window.parent.setDocumentInFirebase("contacts", nc.id, nc);
+    }
+    STATE_CONTACTS.push(nc);
 
     populateContacts();
     document.getElementById('f-entity').value = name;
@@ -474,7 +472,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     DBm.forEach(m => {
       // we sum if confirmed OR if it's a draft we still don't?
       // In many systems balance is only confirmed.
-      if(m.status === 'confirmed') {
+      if(m.status === 'confirmado') {
         if(m.type === 'Ingreso') {
           if (bal[m.account] !== undefined) { bal[m.account] += m.amount; bal.ALL += m.amount; }
         } else if (m.type === 'Gasto') {
@@ -493,8 +491,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     });
 
     // Check Notices
-    const drafts = DBm.filter(m => m.status === 'draft');
-    const uncategorized = DBm.filter(m => m.status === 'confirmed' && (!m.category || m.category==='pending' || m.category===''));
+    const drafts = DBm.filter(m => m.status === 'pendiente');
+    const uncategorized = DBm.filter(m => m.status === 'confirmado' && (!m.category || m.category==='pending' || m.category===''));
     
     const notList = document.getElementById('notice-list');
     notList.innerHTML = '';
@@ -502,7 +500,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     
     drafts.forEach(d => {
       hasNotice = true;
-      notList.innerHTML += `<li class="notice-item"><span><b>Borrador:</b> ${d.concept} ${fmt(d.amount)}</span> <button class="btn btn-outline" style="padding:4px 8px;font-size:11px;background:var(--mantle)" onclick="openPanel('${d.id}')">Revisar y Confirmar</button></li>`;
+      notList.innerHTML += `<li class="notice-item"><span><b>Pendiente de Aprobar:</b> ${d.concept} ${fmt(d.amount)}</span> <button class="btn btn-outline" style="padding:4px 8px;font-size:11px;background:var(--mantle)" onclick="openPanel('${d.id}')">Revisar y Confirmar</button></li>`;
     });
     
     if(uncategorized.length > 0) {
@@ -552,7 +550,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       if(m.type==='Transferencia') accLabel = `${m.account} &rarr; ${m.destAccount}`;
 
       let statPill = '';
-      if(m.status === 'draft') statPill = '<span class="pill pill-amber hide-mob" style="margin-left:6px">Borrador</span>';
+      if(m.status === 'pendiente') statPill = '<span class="pill pill-amber hide-mob" style="margin-left:6px">Pendiente</span>';
       else if(m.orderId || m.projectId) statPill = '<span class="pill pill-blue hide-mob" style="margin-left:6px">Vinculado</span>';
       
       let catPill = m.category ? `<span class="pill pill-gray">${m.category}</span>` : `<span class="pill pill-gray" style="opacity:0.6;">Sin categorizar</span>`;
@@ -563,14 +561,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
           <div class="m-date">${m.date}</div>
           <div class="m-acc">${accLabel}</div>
           <div class="m-concept">
-            <span style="opacity: ${m.status==='draft'?'0.7':'1'}; font-style: ${m.status==='draft'?'italic':'normal'};">${m.concept || '—'}</span>
+            <span style="opacity: ${m.status==='pendiente'?'0.7':'1'}; font-style: ${m.status==='pendiente'?'italic':'normal'};">${m.concept || '—'}</span>
             <div class="m-subtitle" style="display:flex;align-items:center;margin-top:4px;">${catPill} ${statPill}</div>
           </div>
           <div class="hide-mob">
              <div style="font-size:12px;color:var(--text);font-weight:600">${m.entity || '--'}</div>
              ${m.method ? `<div style="font-size:10px;color:var(--subtext)">${m.method}</div>` : ''}
           </div>
-          <div class="hide-mob" style="text-align:right;">${m.status==='confirmed'?'<span class="pill pill-green">Confirmado</span>':''}</div>
+          <div class="hide-mob" style="text-align:right;">${m.status==='confirmado'?'<span class="pill pill-green">Confirmado</span>':''}</div>
           <div class="m-amt ${amtColor}">${sign}${fmt(m.amount)}</div>
         </div>
         <div class="mov-detail" id="det-${m.id}">
@@ -685,7 +683,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
       const badge = document.getElementById('status-badge');
       badge.style.display = 'block';
-      if(m.status === 'confirmed') {
+      if(m.status === 'confirmado') {
         badge.className='pill pill-green'; badge.textContent='Confirmado (Abre solo lectura parcial)';
         // Disable somewhat to enforce explicit changes
         document.getElementById('sp-title').innerHTML = `Editar Registro Cerrado <span style="font-size:12px;color:var(--amber)">⚠️</span>`;
@@ -754,6 +752,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     const id = document.getElementById('f-id').value;
     const type = document.getElementById('f-type-val').value;
     
+    const userEmail = window.parent && window.parent.CURRENT_USER ? window.parent.CURRENT_USER.email : "Usuario";
+
     const m = {
       type: type,
       date: document.getElementById('f-date').value,
@@ -762,10 +762,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       concept: document.getElementById('f-concept').value.trim(),
       category: document.getElementById('f-cat-input').value,
       notes: document.getElementById('f-notes').value.trim(),
-      status: isConfirm ? 'confirmed' : 'draft',
+      status: isConfirm ? 'confirmado' : 'pendiente',
       projectId: document.getElementById('f-proj').value,
       orderId: document.getElementById('f-oc').value
     };
+
+    if(id) {
+       // Edicion
+       const existing = DBm.find(x => x.id === id) || {};
+       m.registrado_por = existing.registrado_por || userEmail;
+       if (isConfirm && existing.status !== 'confirmado') {
+          m.confirmado_por = userEmail;
+          m.confirmado_en = new Date().toISOString();
+       } else {
+          m.confirmado_por = existing.confirmado_por;
+          m.confirmado_en = existing.confirmado_en;
+       }
+    } else {
+       // Nuevo
+       m.registrado_por = userEmail;
+       if (isConfirm) {
+          m.confirmado_por = userEmail;
+          m.confirmado_en = new Date().toISOString();
+       }
+    }
 
     if(type === 'Transferencia') {
       m.destAccount = document.getElementById('f-dest').value;
@@ -779,26 +799,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     if(!m.date) return alert('Debes elegir una fecha.');
     if(isConfirm && m.type !== 'Transferencia' && !m.concept) return alert('Concepto es requerido para confirmar.');
 
-    const d = window.DB.get();
-    
     if(isConfirm && m.type === 'Ingreso' && m.projectId) {
-      // Check if it's new confirmation vs existing? 
-      // Si antes era draft, o nuevo. Vamos a simplificar.
-      const p = d.projects.find(x => x.id === m.projectId);
-      if(p) { p.payments = (p.payments||0) + m.amount; window.DB.save(d); }
+      const p = STATE_PROJECTS.find(x => x.id === m.projectId);
+      if(p) { p.payments = (p.payments||0) + m.amount; window.DB.updateProject(p); }
     }
     
     if(id) {
        m.id = id;
        const idx = DBm.findIndex(x => x.id === id);
        DBm[idx] = m;
+       window.DB.updateMovement(m);
     } else {
-       m.id = 'm'+Date.now();
+       m.id = crypto.randomUUID();
        DBm.push(m);
+       window.DB.addMovement(m);
     }
-    
-    d.accounting_movements = DBm;
-    window.DB.save(d);
     
     closePanel();
     calcBalances();

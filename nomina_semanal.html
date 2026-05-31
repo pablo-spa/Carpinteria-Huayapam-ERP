@@ -391,48 +391,6 @@ function togCfg() {
   g.classList.toggle('on', p.classList.contains('open'));
 }
 
-const WORKERS = [
-  {id:'EDD92',n:'Operaciones',       ape:'(Encargado)',  cat:'Jefe de Planta', ini:'OP', base:4150},
-  {id:'DIE85',n:'Diego',       ape:'Romero F.',    cat:'Administración', ini:'DR', base:4000},
-  {id:'NAR69',n:'Narciso R.',  ape:'Martínez Ch.', cat:'Maestro A',      ini:'NR', base:3800},
-  {id:'HER71',n:'Herón C.',    ape:'Pacheco G.',   cat:'Maestro A',      ini:'HC', base:3700},
-  {id:'GAB82',n:'Contabilidad',     ape:'(Encargado)',  cat:'Contador',       ini:'CO', base:3700},
-  {id:'VIC75',n:'Vicente A.',  ape:'Cruz Morales', cat:'Maestro A',      ini:'VA', base:3600},
-  {id:'ANG70',n:'Ángel Luis',  ape:'Chincoya R.',  cat:'Maestro A',      ini:'AL', base:3550},
-  {id:'NEP80',n:'Neptali',     ape:'Hernández G.', cat:'Maestro B',      ini:'NP', base:3500},
-  {id:'GAB72',n:'Producción',     ape:'(Mantenimiento)',  cat:'Mantenimiento',  ini:'PR', base:3500},
-  {id:'MIL97',n:'Milena',      ape:'Spada Tello',  cat:'Administración', ini:'MS', base:3500},
-  {id:'GRE75',n:'Gregorio',    ape:'Cruz Cruz',    cat:'Barniz',         ini:'GR', base:3250},
-  {id:'CAR74',n:'Carlos A.',   ape:'Padilla C.',   cat:'Oficial A',      ini:'CA', base:3100},
-  {id:'MAR73',n:'Compras',      ape:'(Encargada)',   cat:'Compras',        ini:'CM', base:3000},
-  {id:'MIG81',n:'Miguel Á.',   ape:'Méndez S.',    cat:'Oficial A',      ini:'MA', base:2900},
-  {id:'PAO95',n:'Paola',       ape:'Padilla C.',   cat:'Oficial B',      ini:'PA', base:2900},
-  {id:'GUI90',n:'Guillermo',   ape:'Flores G.',    cat:'Oficial B',      ini:'GU', base:2650},
-  {id:'SAN04',n:'Sandra',      ape:'García Hdz.',  cat:'Oficial B',      ini:'SA', base:2600},
-  {id:'ALF80',n:'Alfredo',     ape:'García G.',    cat:'Oficial B',      ini:'AF', base:2600},
-  {id:'NAP81',n:'Napoleón',    ape:'Hernández I.', cat:'Chofer',         ini:'NA', base:2450},
-  {id:'CHR91',n:'Christopher', ape:'Hernández R.', cat:'Aprendiz',       ini:'CH', base:2400},
-  {id:'ANG65',n:'Ángeles',     ape:'Rojas A.',     cat:'Empleye',        ini:'AR', base:2400},
-  {id:'LEX01',n:'Lexee',       ape:'Jiménez C.',   cat:'Chalán',         ini:'LX', base:2350},
-  {id:'JEN79',n:'Jenny',       ape:'Velasco V.',   cat:'Pulido',         ini:'JE', base:2300},
-  {id:'DIE04',n:'Diego G.',    ape:'Hernández R.', cat:'Chalán',         ini:'DG', base:2300},
-  {id:'COS70',n:'Almacén',    ape:'(Encargado)',     cat:'Almacén',        ini:'AL', base:2300},
-  {id:'YES80',n:'Yesenia',     ape:'Velasco V.',   cat:'Pulido',         ini:'YE', base:2250},
-  {id:'ELO03',n:'Eloy A.',     ape:'Hernández R.', cat:'Chalán',         ini:'EA', base:2205},
-  {id:'GLA77',n:'Gladis',      ape:'Bautista S.',  cat:'Limpieza',       ini:'GL', base:2205},
-  {id:'CAR02',n:'Carolina B.', ape:'Santiago R.',  cat:'Pulido',         ini:'CB', base:2205},
-];
-
-// ── FIX 2 & 3: Préstamos con semanas_plan y monto editable ──
-const PRESTAMOS = {
-  'EDD92': [{desc:'Préstamo ventana nov-2025',    saldo:4500, semanasPlan:10}],
-  'HER71': [{desc:'Préstamo material abr-2026',   saldo:3200, semanasPlan:8},
-            {desc:'Adelanto nov-2025',             saldo:500,  semanasPlan:2}],
-  'CHR91': [{desc:'Adelanto dic-2025',             saldo:1500, semanasPlan:5}],
-  'NEP80': [{desc:'Préstamo herramienta mar-2026', saldo:2800, semanasPlan:8}],
-  'DIE04': [{desc:'Adelanto ene-2026',             saldo:600,  semanasPlan:3}],
-};
-
 const DENS = [
   {id:'b1000',val:1000,label:'$1,000',cls:'den-b1000'},
   {id:'b500', val:500, label:'$500',  cls:'den-b500'},
@@ -448,36 +406,76 @@ const DENS = [
 
 const DIAS_N = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const DIAS_S = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const DIA_ORDER = [5, 6, 0, 1, 2, 3, 4];
 
-// ── FIX 1: Orden de días (Sáb, Dom, Lun...) ──
-const DIAS_IDX = [5, 6, 0, 1, 2, 3, 4];
+let WORKERS = [];
+let PRESTAMOS = {};
+let S = {};
 
-const S = {};
-WORKERS.forEach(w => {
-  const prestAplic = {};
-  const prestMonto = {};
-  (PRESTAMOS[w.id]||[]).forEach((p,i)=>{
-    prestAplic[i] = true;
-    prestMonto[i] = Math.ceil(p.saldo / p.semanasPlan);
+async function init() {
+  const dbs = await window.DB.query("contacts", { tipo: "trabajador", activo: true });
+  const loans = await window.DB.query("worker_loans", { estado: "activo" });
+
+  WORKERS = dbs.map(w => ({
+      id: w.id,
+      n: w.givenName || (w.name ? w.name.split(' ')[0] : '-'),
+      ape: w.paterno || '',
+      cat: w.role || '',
+      ini: w.name ? w.name.charAt(0).toUpperCase() : 'N',
+      base: parseFloat(w.baseSalary) || 0
+  }));
+
+  WORKERS.forEach(w => {
+     PRESTAMOS[w.id] = loans.filter(l => l.workerId === w.id).map(l => ({
+         desc: l.descripcion || 'Préstamo',
+         saldo: l.saldo || 0,
+         semanasPlan: l.semanasPlan || 1,
+         loanId: l.id
+     }));
   });
 
-  S[w.id] = {
-    // Indices for dias remain logically 0=Mon..6=Sun
-    dias: [
-      {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9},
-      {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9},
-      {st:'libre',hrs:0},  // Sat (5)
-      {st:'libre',hrs:0},  // Sun (6)
-    ],
-    diasVacExtra: 0,
-    manualExt2:   0,
-    bono: 0,
-    nota: '',
-    prestAplic,
-    prestMonto,
-    verificado: false,
-  };
+  WORKERS.forEach(w => {
+    const prestAplic = {};
+    const prestMonto = {};
+    (PRESTAMOS[w.id]||[]).forEach((p,i)=>{
+      prestAplic[i] = true;
+      prestMonto[i] = Math.ceil(p.saldo / p.semanasPlan);
+    });
+
+    S[w.id] = {
+      // Indices for dias remain logically 0=Mon..6=Sun
+      dias: [
+        {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9},
+        {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9},
+        {st:'libre',hrs:0},  // Sat (5)
+        {st:'libre',hrs:0},  // Sun (6)
+      ],
+      diasVacExtra: 0,
+      manualExt2:   0,
+      bono: 0,
+      nota: '',
+      prestAplic,
+      prestMonto,
+      verificado: false,
+    };
+  });
+
+  buildDenGrid();
+  processRealCheckins(weekOffset);
+  updWeekLbl();
+  const listPend = document.getElementById('list-pend');
+  listPend.innerHTML = ''; // clear loading state
+  WORKERS.forEach(w => listPend.appendChild(buildCard(w)));
+  updLabels();
+  updateFooter();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const listPend = document.getElementById('list-pend');
+    if(listPend) listPend.innerHTML = '<div style="padding:20px;text-align:center;">Cargando trabajadores...</div>';
+    init();
 });
+
 let weekOffset = 0;
 
 function weekDates(off) {
@@ -490,6 +488,32 @@ function weekDates(off) {
   const sun = new Date(mon); sun.setDate(mon.getDate()+6);
   return {mon, fri, sat, sun};
 }
+
+function processRealCheckins(off) {
+  const {mon} = weekDates(off);
+  const dates = Array.from({length:7},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d.toISOString().split('T')[0]; });
+  
+  if (window.DB) {
+    const db = window.DB.get();
+    const checkins = db.checkins || [];
+    
+    WORKERS.forEach(w => {
+      dates.forEach((dateStr, i) => {
+        const dCheckins = checkins.filter(c => c.workerId === w.id && c.date === dateStr);
+        if (dCheckins.length > 0) {
+           const isFalta = dCheckins.some(c => c.type === 'ENTRADA' && c.status.includes('Falta'));
+           if (isFalta) {
+             S[w.id].dias[i] = {st: 'falta', hrs: 0};
+           } else {
+             // Assuming full day 9 hours if there's an entry
+             S[w.id].dias[i] = {st: 'trabajo', hrs: 9};
+           }
+        }
+      });
+    });
+  }
+}
+
 function dayDates(off) {
   const {mon} = weekDates(off);
   return Array.from({length:7},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
@@ -501,7 +525,14 @@ function updWeekLbl(){
   document.getElementById('week-lbl').textContent=`Semana ${weekNum(mon)} — ${mon.getFullYear()}`;
   document.getElementById('week-sub').textContent=`${fmtS(mon)} – ${fmtS(fri)}`;
 }
-function chgWeek(d){ weekOffset+=d; updWeekLbl(); rebuildDates(); }
+function chgWeek(d){ 
+  weekOffset+=d; 
+  processRealCheckins(weekOffset);
+  updWeekLbl(); 
+  rebuildDates(); 
+  // Update state across all cards
+  WORKERS.forEach(w => refreshCard(w.id));
+}
 function rebuildDates(){
   const dates=dayDates(weekOffset);
   WORKERS.forEach(w=>{
@@ -647,7 +678,7 @@ function renderDias(id){
 
   let html='';
   for(let _i=0; _i<7; _i++){
-    const i = DIAS_IDX[_i];
+    const i = DIA_ORDER[_i];
     const d=s.dias[i];
     const dt=dates[i];
     const isWend=(i>=5);
@@ -882,14 +913,36 @@ function updEfDiff(){
   if(disp===0){el.textContent='—';el.style.color='var(--muted)';}
   else if(diff>=0){el.textContent='+$'+diff.toLocaleString('es-MX');el.style.color='var(--green)';}
   else{el.textContent='−$'+Math.abs(diff).toLocaleString('es-MX');el.style.color='var(--red)';}
+  const alertEl = document.getElementById('ef-alert');
+  if(alertEl) alertEl.style.display = 'none';
 }
 function calcDist(){
   const pool={};
   DENS.forEach(d=>{pool[d.val]=parseInt(document.getElementById(d.id)?.value)||0;});
   const disp=DENS.reduce((s,d)=>s+pool[d.val]*d.val,0);
   const total=totalNomina();
-  if(disp<total){alert(`⚠ Efectivo insuficiente.\n\nNecesitas: $${total.toLocaleString('es-MX')}\nTienes:    $${disp.toLocaleString('es-MX')}\nFaltan:    $${(total-disp).toLocaleString('es-MX')}`);return;}
-  const workers=WORKERS.sort((a,b)=>calcW(b).total-calcW(a).total);
+  const alertEl = document.getElementById('ef-alert');
+  if(disp<total){
+    if(!alertEl){
+      const el = document.createElement('div');
+      el.id = 'ef-alert';
+      el.style.backgroundColor = 'var(--red-bg)';
+      el.style.color = 'var(--red-text)';
+      el.style.padding = '10px';
+      el.style.borderRadius = 'var(--radius)';
+      el.style.marginBottom = '15px';
+      el.style.fontWeight = '500';
+      el.style.fontSize = '14px';
+      const ref = document.getElementById('den-grid');
+      ref.parentNode.insertBefore(el, ref);
+    }
+    document.getElementById('ef-alert').textContent = `⚠ Efectivo insuficiente. Necesitas: $${total.toLocaleString('es-MX')} | Tienes: $${disp.toLocaleString('es-MX')} | Faltan: $${(total-disp).toLocaleString('es-MX')}`;
+    document.getElementById('ef-alert').style.display = 'block';
+    return;
+  } else if(alertEl) {
+    alertEl.style.display = 'none';
+  }
+  const workers=[...WORKERS].sort((a,b)=>calcW(b).total-calcW(a).total);
   const pc={...pool}; const results=[];
   for(const w of workers){
     let m=calcW(w).total; const asig={};
@@ -933,7 +986,7 @@ function buildPreview(){
       const hrsEx = r.hExt_all>0 ? `+${r.hExt_all.toFixed(1)}h` : '—';
       const corrStr = r.bonoPay !== 0 ? `$${r.bonoPay.toLocaleString('es-MX')}` : '—';
       const vacStr=(r.nVac>0||s.diasVacExtra>0)?`${(r.nVac+s.diasVacExtra)}d`:'—';
-      const prestDetail=(PRESTAMOS[w.id]||[]).filter((_,i)=>s.prestAplic[i]).map((_,i)=>`−$${s.prestMonto[i]}`).join(', ')||'—';
+      const prestDetail=(PRESTAMOS[w.id]||[]).reduce((arr,p,i)=>{if(s.prestAplic[i])arr.push(`−$${s.prestMonto[i]}`);return arr;},[]).join(', ')||'—';
       
       const prestSaldoAbierto = (PRESTAMOS[w.id]||[]).reduce((acc, p) => acc + p.saldo, 0);
       const prestSaldoStr = prestSaldoAbierto > 0 ? `$${prestSaldoAbierto.toLocaleString('es-MX')}` : '—';
@@ -979,7 +1032,7 @@ function buildPreview(){
     // Recibos individuales
     const cards=WORKERS.filter(w=>calcW(w).total>0).map(w=>{
       const s=S[w.id]; const r=calcW(w); const t=tarifa(w);
-      const diasRows=DIAS_IDX.map((di)=>{
+      const diasRows=DIA_ORDER.map((di)=>{
         const d=s.dias[di];
         const dt=dates[di];
         let stLbl, hLbl='—';
@@ -1049,12 +1102,6 @@ function impRecibos(){
   setTimeout(()=>window.print(), 100);
 }
 
-buildDenGrid();
-updWeekLbl();
-const listPend=document.getElementById('list-pend');
-WORKERS.forEach(w=>listPend.appendChild(buildCard(w)));
-updLabels();
-updateFooter();
 </script>
 </body>
 </html>

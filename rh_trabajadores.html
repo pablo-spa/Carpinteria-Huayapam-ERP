@@ -325,6 +325,31 @@
             <label>Sueldo x Hora ($)</label>
             <input type="text" class="f-input" id="f-salary-hr" disabled>
           </div>
+
+          <div class="f-field full"><hr style="border:0; border-top:1px dashed var(--border); margin:4px 0;"></div>
+          
+          <div class="f-field full">
+            <label>Notas, LLamadas de Atención o Archivos</label>
+            <div id="f-notes-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px; max-height:150px; overflow-y:auto; padding:8px; background:rgba(0,0,0,0.02); border:1px solid var(--border); border-radius:6px;">
+              <!-- Notes injected here -->
+            </div>
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+              <div style="flex:1;">
+                 <label>Nueva Nota / Llamada de Atención</label>
+                 <textarea class="f-input" id="f-new-note" rows="2" placeholder="Describa el suceso o nota..."></textarea>
+                 
+                 <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+                    <label for="f-file-attach" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--primary); font-weight:600;"><span style="font-size:16px;">📎</span> Adjuntar Archivo</label>
+                    <input type="file" id="f-file-attach" style="display:none;" onchange="updateFileName()">
+                    <span id="f-file-name" style="font-size:12px; color:var(--muted); font-style:italic;"></span>
+                 </div>
+              </div>
+              <div style="flex:0; min-width: 120px;">
+                 <label style="opacity:0">A</label>
+                 <button class="btn" style="width:100%" onclick="addNote()">Añadir</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -336,10 +361,14 @@
 
   <script src="db.js"></script>
   <script>
-    function renderList() {
-      const d = window.DB.get();
+    async function renderList() {
+      const workers = await window.DB.query("contacts", { tipo: "trabajador" });
+      const d = window.DB.get(); // to optionally save
       let dbUpdated = false;
-      d.workers.forEach(w => {
+      
+      if (!d.contacts) d.contacts = [];
+      
+      workers.forEach(w => {
         if(!w.personalId) {
           // Attempt to generate if missing
           const g = w.givenName || (w.name ? w.name.split(' ')[0] : '');
@@ -353,6 +382,10 @@
             let part3 = bDate.substring(2,4);
             w.personalId = `${part1}${part2}${part3}`;
             dbUpdated = true;
+            
+            // push to d.contacts to save
+            const idx = d.contacts.findIndex(x => x.id === w.id);
+            if (idx >= 0) d.contacts[idx].personalId = w.personalId;
           }
         }
       });
@@ -361,7 +394,7 @@
       const tbody = document.getElementById('worker-list');
       tbody.innerHTML = '';
       
-      d.workers.forEach(w => {
+      workers.forEach(w => {
         const namePart = w.name ? w.name.charAt(0).toUpperCase() : 'N';
         
         let yr = 0;
@@ -445,6 +478,59 @@
       document.getElementById('f-salary-hr').value = (hrs > 0) ? (sal / hrs).toFixed(2) : '0.00';
     }
 
+    let currentWorkerId = null;
+    let currentNotes = [];
+    
+    function renderNotes() {
+      const cnt = document.getElementById('f-notes-list');
+      if (currentNotes.length === 0) {
+        cnt.innerHTML = '<span style="color:var(--muted); font-size:12px; text-align:center;">No hay notas registradas.</span>';
+        return;
+      }
+      
+      cnt.innerHTML = currentNotes.map((n, i) => `
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:8px; font-size:13px; position:relative;">
+          <div style="font-weight:600; margin-bottom:4px; font-size:11px; color:var(--muted);">${new Date(n.date).toLocaleDateString()} a las ${n.time}</div>
+          ${n.text ? `<div style="white-space:pre-wrap; margin-bottom:4px;">${n.text}</div>` : ''}
+          ${n.fileName ? `<div style="display:inline-block; margin-top:4px; padding:4px 8px; background:rgba(30,102,245,0.1); color:var(--primary); font-size:11px; border-radius:4px; font-weight:600;"><span style="font-size:14px; vertical-align:middle;">📎</span> ${n.fileName}</div>` : ''}
+          <button style="position:absolute; top:8px; right:8px; background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;" onclick="removeNote(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+    
+    function updateFileName() {
+      const fileInput = document.getElementById('f-file-attach');
+      const text = document.getElementById('f-file-name');
+      text.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+    }
+
+    function addNote() {
+      const input = document.getElementById('f-new-note');
+      const fileInput = document.getElementById('f-file-attach');
+      const text = input.value.trim();
+      const fileName = fileInput.files.length > 0 ? fileInput.files[0].name : null;
+      
+      if (!text && !fileName) return;
+      const d = new Date();
+      currentNotes.push({
+        date: d.toISOString().split('T')[0],
+        time: d.toLocaleTimeString('es-MX', {hour: '2-digit', minute:'2-digit'}),
+        text: text,
+        fileName: fileName
+      });
+      input.value = '';
+      fileInput.value = '';
+      document.getElementById('f-file-name').textContent = '';
+      renderNotes();
+    }
+    
+    function removeNote(idx) {
+      if(confirm('¿Eliminar esta nota?')) {
+        currentNotes.splice(idx, 1);
+        renderNotes();
+      }
+    }
+
     function openFicha(w = null) {
       document.getElementById('ficha-modal').style.display = 'flex';
       
@@ -452,6 +538,8 @@
       document.getElementById('f-role').innerHTML = '<option value="">-- Seleccionar Puesto --</option>' + (d.worker_roles || []).map(r => `<option value="${r}">${r}</option>`).join('');
       
       if(w) {
+        currentWorkerId = w.id;
+        currentNotes = w.notes ? [...w.notes] : [];
         document.getElementById('ficha-title').textContent = 'Editar Trabajador';
         document.getElementById('f-id').value = w.id;
         document.getElementById('f-given-name').value = w.givenName || '';
@@ -476,6 +564,8 @@
         document.getElementById('f-display-role').textContent = w.role || '-';
         document.getElementById('f-avatar').textContent = w.name ? w.name.charAt(0).toUpperCase() : 'N';
       } else {
+        currentWorkerId = null;
+        currentNotes = [];
         document.getElementById('ficha-title').textContent = 'Nuevo Trabajador';
         document.getElementById('f-id').value = '';
         document.getElementById('f-given-name').value = '';
@@ -501,6 +591,7 @@
         document.getElementById('f-avatar').textContent = 'N';
       }
       
+      renderNotes();
       recalcValues();
     }
     
@@ -518,6 +609,8 @@
       const id = document.getElementById('f-id').value;
       
       const wData = {
+        tipo: 'trabajador',
+        activo: true,
         givenName: g,
         paterno: p,
         materno: document.getElementById('f-materno').value.trim(),
@@ -536,28 +629,42 @@
         hoursWeek: parseFloat(document.getElementById('f-hours-week').value) || 0,
         baseSalary: parseFloat(document.getElementById('f-salary').value) || 0,
         emergencyContact: document.getElementById('f-emergency').value.trim(),
-        nss: document.getElementById('f-nss').value.trim()
+        nss: document.getElementById('f-nss').value.trim(),
+        notes: currentNotes
       };
       
+      if (!d.contacts) d.contacts = [];
       if(id) {
-        const idx = d.workers.findIndex(x => x.id === id);
+        const idx = d.contacts.findIndex(x => x.id === id);
         if(idx >= 0) {
-          d.workers[idx] = { ...d.workers[idx], ...wData };
+          d.contacts[idx] = { ...d.contacts[idx], ...wData };
+        } else {
+           // fallback if it was a ghost worker
+           const wIdx = d.workers.findIndex(x => x.id === id);
+           if (wIdx >= 0) {
+               d.contacts.push({ ...d.workers[wIdx], ...wData, tipo: 'trabajador', activo: true });
+               // remove from workers so it doesn't duplicate
+               d.workers.splice(wIdx, 1);
+           }
         }
       } else {
-        wData.id = 'w' + Date.now();
+        wData.id = crypto.randomUUID();
         wData.loanBalance = 0;
         wData.savedHours = 0;
-        d.workers.push(wData);
+        d.contacts.push(wData);
       }
       
       window.DB.save(d);
       closeFicha();
-      renderList();
+      init();
     }
     
     // Init
-    renderList();
+    async function init() {
+       document.getElementById('worker-list').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;">Cargando...</td></tr>';
+       await renderList();
+    }
+    document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>

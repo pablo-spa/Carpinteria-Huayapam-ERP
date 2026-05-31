@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Usuarios</title>
+  <style>
+    :root {
+      --base: #1e1e2e;
+      --mantle: #181825;
+      --crust: #11111b;
+      --text: #cdd6f4;
+      --subtext: #a6adc8;
+      --brand: #89b4fa;
+      --green: #a6e3a1;
+      --surface0: #313244;
+      --surface1: #45475a;
+    }
+    body {
+      margin: 0; padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--base); color: var(--text);
+    }
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+    }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+    .btn {
+      background: var(--brand); color: #111;
+      border: none; padding: 8px 16px; border-radius: 6px;
+      font-weight: 600; cursor: pointer;
+    }
+    .btn.outline {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--crust);
+    }
+    .btn:hover { opacity: 0.9; }
+    
+    table {
+      width: 100%; border-collapse: collapse;
+      background: var(--mantle); border-radius: 8px; overflow: hidden;
+      border: 1px solid var(--crust);
+    }
+    th, td {
+      padding: 12px; text-align: left;
+      border-bottom: 1px solid var(--crust);
+    }
+    th {
+      background: var(--surface0);
+      font-size: 13px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    tr:last-child td { border-bottom: none; }
+    select, input {
+      background: var(--crust); color: var(--text);
+      border: 1px solid var(--surface1); border-radius: 4px; padding: 6px;
+    }
+
+    #add-form {
+      background: var(--mantle); padding: 16px; border-radius: 8px; border: 1px solid var(--crust);
+      margin-bottom: 24px; display: none; gap: 12px; align-items:flex-end;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Gestión de Usuarios</h1>
+    <button class="btn" onclick="document.getElementById('add-form').style.display='flex'">+ Agregar Usuario</button>
+  </div>
+
+  <div id="add-form">
+    <div style="flex:1;">
+      <label style="display:block; font-size:11px; margin-bottom:4px; color:var(--subtext);">Email</label>
+      <input type="email" id="new-email" style="width:100%; box-sizing:border-box;">
+    </div>
+    <div style="flex:1;">
+      <label style="display:block; font-size:11px; margin-bottom:4px; color:var(--subtext);">Rol</label>
+      <select id="new-role" style="width:100%; box-sizing:border-box;">
+        <option value="admin">Admin</option>
+        <option value="gerencia">Gerencia</option>
+        <option value="contador">Contador</option>
+        <option value="compras">Compras</option>
+        <option value="almacen">Almacén</option>
+        <option value="produccion">Producción</option>
+        <option value="ninguno">Ninguno</option>
+      </select>
+    </div>
+    <button class="btn" onclick="addUser()">Guardar</button>
+    <button class="btn outline" onclick="document.getElementById('add-form').style.display='none'">Cancelar</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="users-body">
+      <!-- Loaded from JS -->
+    </tbody>
+  </table>
+
+  <script>
+    const ROLES = ['admin', 'gerencia', 'contador', 'compras', 'almacen', 'produccion', 'ninguno'];
+
+    let users = [];
+
+    async function loadUsers() {
+      try {
+        // We get the latest from DB_STATE, which is populated by index.html automatically
+        users = window.parent.DB_STATE?.users || [];
+        
+        // Ensure the master accounts are present
+        if (!users.find(u => u.email === 'spadatellopablo@gmail.com')) {
+            users.push({ email: 'spadatellopablo@gmail.com', role: 'programador' });
+        }
+
+        renderTable();
+      } catch (err) {
+        console.error("Error loading users:", err);
+        renderTable();
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('users-body');
+      let html = '';
+      
+      users.forEach(u => {
+        const isMaster = u.email === 'spadatellopablo@gmail.com';
+        
+        let selectHtml = `<select onchange="updateRole('${u.email}', this.value)" ${isMaster ? 'disabled' : ''}>`;
+        if (isMaster) {
+            selectHtml += `<option value="programador">Programador</option>`;
+        } else {
+            ROLES.forEach(r => {
+                selectHtml += `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r.charAt(0).toUpperCase() + r.slice(1)}</option>`;
+            });
+        }
+        selectHtml += `</select>`;
+
+        html += `
+          <tr>
+            <td>${u.email}</td>
+            <td>${selectHtml}</td>
+            <td>
+              ${!isMaster ? `<button class="btn outline" style="padding:4px 8px; font-size:12px; color:var(--red); border-color:var(--red);" onclick="deleteUser('${u.email}')">Eliminar</button>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    window.updateRole = async (email, newRole) => {
+      try {
+        await window.parent.saveUserToFirebase(email, newRole);
+        const user = users.find(u => u.email === email);
+        if (user) user.role = newRole;
+        
+        // Update parent state too
+        if(window.parent.DB_STATE && window.parent.DB_STATE.users) {
+           let su = window.parent.DB_STATE.users.find(u => u.email === email);
+           if(su) su.role = newRole;
+        }
+      } catch (err) {
+        alert("Error al actualizar: " + err.message);
+      }
+    };
+
+    window.addUser = async () => {
+      const em = document.getElementById('new-email').value.trim();
+      const ro = document.getElementById('new-role').value;
+      if (!em) return alert("Ingresa un email válido");
+      
+      try {
+        await window.parent.saveUserToFirebase(em, ro);
+        users.push({ email: em, role: ro });
+        
+        if (window.parent.DB_STATE) {
+            if (!window.parent.DB_STATE.users) window.parent.DB_STATE.users = [];
+            window.parent.DB_STATE.users.push({ _id: em, email: em, role: ro });
+        }
+        
+        document.getElementById('add-form').style.display = 'none';
+        document.getElementById('new-email').value = '';
+        renderTable();
+      } catch (err) {
+        alert("Error al guardar: " + err.message);
+      }
+    };
+
+    window.deleteUser = async (email) => {
+      if (!confirm(`¿Eliminar acceso para ${email}?`)) return;
+      try {
+        await window.parent.deleteUserFromFirebase(email);
+        users = users.filter(u => u.email !== email);
+        
+        if (window.parent.DB_STATE) {
+            window.parent.DB_STATE.users = window.parent.DB_STATE.users.filter(u => u.email !== email);
+        }
+        
+        renderTable();
+      } catch (err) {
+        alert("Error al eliminar: " + err.message);
+      }
+    };
+
+    document.addEventListener("DOMContentLoaded", loadUsers);
+  </script>
+</body>
+</html>

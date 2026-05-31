@@ -510,7 +510,7 @@ body {
     };
     
     // Add to DB
-    const id = 'c' + Date.now();
+    const id = crypto.randomUUID();
     nc.id = id;
     const d = window.DB.get();
     d.contacts.push(nc);

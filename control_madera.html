@@ -170,9 +170,20 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     inited = true;
   }
 
+  let STATE_WOOD = [];
+  
+  async function init() {
+     const inv = await window.DB.query("inventory", { category: "madera" });
+     // To handle legacy wood arrays seamlessly during transition:
+     const legacyWood = await window.DB.query("wood");
+     STATE_WOOD = inv && inv.length > 0 ? inv : legacyWood;
+     renderWood();
+  }
+  
+  document.addEventListener('DOMContentLoaded', init);
+
   function renderWood() {
-    const d = window.DB.get();
-    let wood = d.wood || [];
+    let wood = STATE_WOOD || [];
     
     initFilters(wood);
     
@@ -211,8 +222,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       `;
     }).join('');
   }
-
-  renderWood();
 </script>
 </body>
 </html>

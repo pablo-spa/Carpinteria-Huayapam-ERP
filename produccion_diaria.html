@@ -277,24 +277,28 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
 <script>
 // ── Datos ─────────────────────────────────────────────────────────────────────
 let WORKERS = [];
-
-function loadWorkersFromDB() {
-  const d = window.DB.get();
-  WORKERS = d.workers.map(w => {
-    const parts = w.name.split(' ');
-    const nombre = parts[0];
-    const ape = parts.slice(1).join(' ');
-    const ini = w.name.substring(0, 2).toUpperCase();
-    return { id: w.id, nombre: nombre, ape: ape, cat: w.role, ini: ini };
-  });
-}
-
 let PROYECTOS = [];
 
-function loadProjectsFromDB() {
-  const d = window.DB.get();
-  PROYECTOS = d.projects.map(p => {
-    return {id: p.code, n: p.code + ' — ' + p.name};
+async function loadDataFromDB() {
+  const dbs = await window.DB.query("contacts", { tipo: "trabajador", activo: true });
+  WORKERS = dbs.map(w => {
+    const parts = (w.name || "").split(' ');
+    const nombre = w.givenName || parts[0] || 'Desconocido';
+    const ape = w.paterno || parts.slice(1).join(' ');
+    const ini = w.name ? w.name.substring(0, 2).toUpperCase() : 'N';
+    return { id: w.id, nombre: nombre, ape: ape, cat: w.role || '', ini: ini };
+  });
+  
+  const projs = await window.DB.query("projects", { status: "En curso" }); // or activo? the mega prompt says estado='activo', but db uses status 'Activo' or 'En curso' usually
+  // Let's grab all and filter
+  const allProjs = await window.DB.query("projects");
+  
+  PROYECTOS = allProjs.filter(p => {
+      if (!p.status && !p.estado) return true; 
+      const st = (p.status || p.estado || '').toLowerCase();
+      return st === 'activo' || st === 'en curso';
+  }).map(p => {
+    return {id: p.code || p.id, n: (p.code || '') + ' — ' + (p.name || '')};
   });
   PROYECTOS.push({id:'gen',n:'Trabajo general / sin proyecto'});
 }
@@ -306,8 +310,43 @@ let diaCerrado = false;
 
 function initDailyState() {
   const S = {};
+  const db = window.DB.get();
+  // Get both attendance_logs (checkins) and attendance (legacy manual entries that might be used as the collection behind addAttendance) 
+  const checkins = db.attendance_logs || [];
+  const attendances = db.attendance || [];
+  const todayStr = currentDate; // currentDate may be set when this is called
+
   WORKERS.forEach(w => {
     S[w.id] = { status:'', x1:'', x15:'', x2:'', retMin:'', proyectos:[{p:'',pieza:''}], notas:'', done:false };
+    
+    // First priority: user has already manually closed or supervised this day in attendance list?
+    const savedAtt = attendances.find(a => a.date === todayStr && a.workerId === w.id);
+    if (savedAtt) {
+        S[w.id].status = savedAtt.status;
+        S[w.id].done = true;
+        S[w.id].proyectos = savedAtt.projects || [{p:'',pieza:''}];
+        // Note: we'd need to inverse math to get x1, x15 safely but standard is set.
+        return;
+    }
+    
+    // Second priority: Auto-fill from Reloj Checador (attendance_logs)
+    const logs = checkins.filter(c => c.workerId === w.id && c.fecha === todayStr);
+    if (logs.length > 0) {
+      const log = logs[0];
+      if (log.status && log.status.toLowerCase().includes('retardo')) {
+        S[w.id].status = 'retardo';
+        S[w.id].retMin = log.retardoMin || '';
+      } else if (log.status && log.status.toLowerCase().includes('falta')) {
+        S[w.id].status = 'falta';
+        S[w.id].done = true;
+      } else {
+        S[w.id].status = 'trabajo';
+      }
+      
+      if (S[w.id].status === 'trabajo' || S[w.id].status === 'retardo') {
+        S[w.id].x1 = '9'; // Default equivalent hours assuming they stay
+      }
+    }
   });
   return S;
 }
@@ -725,6 +764,20 @@ function cerrarDia(){
         hours: horasEq(w.id),
         projects: s.proyectos
       });
+      
+      if(window.parent && window.parent.setDocumentInFirebase) {
+          const prodLogId = crypto.randomUUID();
+          window.parent.setDocumentInFirebase("production_logs", prodLogId, {
+             id: prodLogId,
+             date: currentDate,
+             workerId: w.id,
+             hours: horasEq(w.id),
+             projects: s.proyectos,
+             status: s.status,
+             notes: s.notas || ''
+          });
+      }
+      
       // Add equivalence hours to worker
       if ((s.status==='trabajo' || s.status==='retardo') && window.DB) {
         const d = window.DB.get();
@@ -780,10 +833,13 @@ function toast(msg, type=''){
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-loadWorkersFromDB();
-loadProjectsFromDB();
-document.getElementById('fecha').value = todayStr();
-onDateChange();
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('list-pendientes').innerHTML = '<div style="padding:20px;text-align:center;">Cargando...</div>';
+    await loadDataFromDB();
+    document.getElementById('list-pendientes').innerHTML = '';
+    document.getElementById('fecha').value = todayStr();
+    onDateChange();
+});
 </script>
 </body>
 </html>

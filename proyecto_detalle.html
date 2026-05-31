@@ -169,7 +169,14 @@
       <div class="card">
         <div class="card-title">Asignación y Costos</div>
         <div class="f-field" style="margin-bottom:12px;"><label>Valor Cotizado Total ($)</label><input type="number" id="f-val" step="any"></div>
-        <div class="f-field" style="margin-bottom:12px;"><label>Pagos / Anticipos Recibidos ($)</label><input type="number" id="f-pay" step="any"></div>
+        <div class="f-field" style="margin-bottom:12px;">
+           <label>Pagos / Anticipos Recibidos ($)</label>
+           <div id="p-total-cobrado" style="font-size:18px; font-weight:700; color:var(--text);">$0.00 <span style="font-size:11px; font-weight:400; color:var(--subtext);">(Auto-calculado)</span></div>
+        </div>
+        <div id="p-pagos-list" style="margin-bottom:16px; border:1px solid var(--crust); border-radius:6px; background:var(--mantle); padding:8px; display:flex; flex-direction:column; gap:4px; max-height:150px; overflow-y:auto;">
+           <!-- rendered by js -->
+        </div>
+
         <div class="f-field" style="margin-bottom:12px;"><label>Horas Estimadas de Trabajo</label><input type="number" id="f-hrs-est" step="any"></div>
         <div class="f-field"><label>Pies Tablares Estimados (Madera)</label><input type="number" id="f-wood-est" step="any"></div>
       </div>
@@ -450,7 +457,6 @@
       document.getElementById('p-val').textContent = (projData.progress||0) + '%';
       
       document.getElementById('f-val').value = projData.totalValue || '';
-      document.getElementById('f-pay').value = projData.payments || '';
       document.getElementById('f-hrs-est').value = projData.estimatedHours || '';
       document.getElementById('f-wood-est').value = projData.estimatedWoodPt || '';
       
@@ -458,6 +464,45 @@
       renderMilestones();
       renderTimeline();
       renderQuotes();
+      renderPayments(d);
+    }
+
+    function renderPayments(d) {
+      if(!projId) return;
+      
+      const movs = d.accounting_movements || [];
+      const projectMovs = movs.filter(m => m.projectId === projId && m.type === 'Ingreso');
+      projectMovs.sort((a,b) => new Date(b.date) - new Date(a.date));
+      
+      let totalConfirmed = 0;
+      let html = '';
+      
+      if(projectMovs.length === 0) {
+        html = '<div style="font-size:12px; color:var(--subtext); text-align:center;">No hay pagos registrados asociados a este proyecto.</div>';
+      } else {
+        projectMovs.forEach(m => {
+          if (m.status === 'confirmado') totalConfirmed += m.amount;
+          const color = m.status === 'confirmado' ? 'var(--green)' : 'var(--amber)';
+          html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--crust); padding-bottom:4px;">
+              <div>
+                <span style="font-size:10px; font-weight:bold; color:${color}; margin-right:4px;">${m.status.toUpperCase()}</span>
+                <span style="font-size:12px;">${m.date} - ${m.concept}</span>
+              </div>
+              <div style="font-size:12px; font-weight:700;">$${m.amount.toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
+            </div>
+          `;
+        });
+      }
+      
+      document.getElementById('p-pagos-list').innerHTML = html;
+      document.getElementById('p-total-cobrado').innerHTML = `$${totalConfirmed.toLocaleString('es-MX', {minimumFractionDigits:2})} <span style="font-size:11px; font-weight:400; color:var(--subtext);">(Auto-calculado)</span>`;
+      
+      // Update actual project payments in DB silently so other views can sync
+      if(projData.payments !== totalConfirmed) {
+         projData.payments = totalConfirmed;
+         window.DB.save(d);
+      }
     }
 
     function saveData() {
@@ -486,7 +531,7 @@
         alert('Proyecto actualizado correctamente.');
         document.getElementById('h-title').textContent = `${projData.code} - ${projData.name}`;
       } else {
-        projData.id = 'p' + Date.now() + Math.random();
+        projData.id = crypto.randomUUID();
         projId = projData.id;
         window.DB.addProject(projData);
         alert('Proyecto creado exitosamente.');

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configuración General</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="db.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --border: #334155;
+    --text: #f8fafc;
+    --subtext: #94a3b8;
+    --brand: #3b82f6;
+    --brand-hover: #2563eb;
+    --danger: #ef4444;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 2rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    max-width: 600px;
+  }
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--subtext);
+  }
+  input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    color: var(--text);
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--brand);
+  }
+  .btn {
+    background: var(--brand);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn:hover { background: var(--brand-hover); }
+</style>
+</head>
+<body>
+
+  <div class="header-actions" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h1 class="text-2xl font-bold mb-1">Configuración General</h1>
+      <p style="color:var(--subtext)">Ajustes y políticas de la empresa (Asistencia, Vacaciones, Penalizaciones, etc.)</p>
+    </div>
+    <button class="btn" style="padding: 0.75rem 2rem; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" onclick="saveSettings()">Guardar Todos los Cambios</button>
+  </div>
+
+  <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; padding-bottom: 4rem;">
+    
+    <!-- TARJETA: Asistencia -->
+    <div class="card">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.5rem;">⏰</span>
+        <h2 class="text-xl font-semibold">Reglas de Asistencia</h2>
+      </div>
+      
+      <div class="form-group">
+        <label for="horaEntrada">Hora oficial de Entrada</label>
+        <input type="time" id="horaEntrada">
+        <p class="text-sm mt-1" style="color:var(--subtext)">La hora esperada a la que deben llegar los trabajadores.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="minutosRetardo">Tolerancia para Retardo (minutos)</label>
+        <div style="position:relative;">
+          <input type="number" id="minutosRetardo" min="0">
+        </div>
+        <p class="text-sm mt-1" style="color:var(--subtext)">Tiempo máximo de gracia antes de marcar como Retardo.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="minutosFalta">Límite para Falta (minutos)</label>
+        <input type="number" id="minutosFalta" min="0">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Tiempo después del cual se considera como Falta Automática.</p>
+      </div>
+    </div>
+
+    <!-- TARJETA: Vacaciones -->
+    <div class="card">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.5rem;">🏖️</span>
+        <h2 class="text-xl font-semibold">Política de Vacaciones</h2>
+      </div>
+      
+      <div class="form-group">
+        <label for="diasVacacionesBase">Días de Vacaciones Base (1er año)</label>
+        <input type="number" id="diasVacacionesBase" min="0" placeholder="Ej. 6">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Días otorgados al cumplir el primer año en la empresa.</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="incrementoAnual">Incremento Anual (Días)</label>
+        <input type="number" id="incrementoAnual" min="0" placeholder="Ej. 2">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Días adicionales por cada año posterior.</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="topeVacaciones">Tope Máximo de Días</label>
+        <input type="number" id="topeVacaciones" min="0" placeholder="Ej. 20">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Número máximo de días de vacaciones acumulables.</p>
+      </div>
+    </div>
+
+    <!-- TARJETA: Faltas y Permisos -->
+    <div class="card">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.5rem;">⚖️</span>
+        <h2 class="text-xl font-semibold">Faltas y Justificaciones</h2>
+      </div>
+      
+      <div class="form-group">
+        <label for="penalizacionFalta">Descuento por Falta Injustificada (%)</label>
+        <input type="number" id="penalizacionFalta" min="0" max="200" placeholder="Ej. 100">
+        <p class="text-sm mt-1" style="color:var(--subtext)">100% descuenta el día entero. Puedes asignar un castigo mayor si es política de empresa.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="penalizacionRetardo">Castigo por Retardos Acumulados</label>
+        <input type="text" id="penalizacionRetardo" placeholder="Ej. 3 retardos = 1 falta">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Regla interna para aplicar penalizaciones por impuntualidad frecuente.</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="diasAvisoFalta">Aviso previo para Justificar (Horas)</label>
+        <input type="number" id="diasAvisoFalta" min="0" placeholder="Ej. 24">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Tiempo mínimo requerido para considerar una falta justificada o permiso.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="toast" style="position:fixed; bottom:20px; right:20px; background:#10b981; padding:10px 20px; border-radius:5px; display:none; color:white; font-weight: 500; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">✓ Cambios Guardados Correctamente</div>
+
+<script>
+  function loadSettings() {
+    const d = window.DB.get();
+    const s = d.settings || { 
+      horaEntrada: '09:00', minutosRetardo: 15, minutosFalta: 60,
+      diasVacacionesBase: 6, incrementoAnual: 2, topeVacaciones: 20,
+      penalizacionFalta: 100, penalizacionRetardo: '3 retardos = 1 falta', diasAvisoFalta: 24
+    };
+    document.getElementById('horaEntrada').value = s.horaEntrada || '09:00';
+    document.getElementById('minutosRetardo').value = s.minutosRetardo || 15;
+    document.getElementById('minutosFalta').value = s.minutosFalta || 60;
+    
+    document.getElementById('diasVacacionesBase').value = s.diasVacacionesBase || 6;
+    document.getElementById('incrementoAnual').value = s.incrementoAnual || 2;
+    document.getElementById('topeVacaciones').value = s.topeVacaciones || 20;
+
+    document.getElementById('penalizacionFalta').value = s.penalizacionFalta || 100;
+    document.getElementById('penalizacionRetardo').value = s.penalizacionRetardo || '3 retardos = 1 falta';
+    document.getElementById('diasAvisoFalta').value = s.diasAvisoFalta || 24;
+  }
+
+  function saveSettings() {
+    const s = {
+      horaEntrada: document.getElementById('horaEntrada').value || '09:00',
+      minutosRetardo: parseInt(document.getElementById('minutosRetardo').value) || 15,
+      minutosFalta: parseInt(document.getElementById('minutosFalta').value) || 60,
+      
+      diasVacacionesBase: parseInt(document.getElementById('diasVacacionesBase').value) || 6,
+      incrementoAnual: parseInt(document.getElementById('incrementoAnual').value) || 2,
+      topeVacaciones: parseInt(document.getElementById('topeVacaciones').value) || 20,
+
+      penalizacionFalta: parseInt(document.getElementById('penalizacionFalta').value) || 100,
+      penalizacionRetardo: document.getElementById('penalizacionRetardo').value || '',
+      diasAvisoFalta: parseInt(document.getElementById('diasAvisoFalta').value) || 24
+    };
+    window.DB.saveSettings(s);
+    const toast = document.getElementById('toast');
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display='none', 3000);
+  }
+
+  loadSettings();
+</script>
+</body>
+</html>

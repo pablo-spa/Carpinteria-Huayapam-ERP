@@ -35,78 +35,89 @@ body { background: var(--base); color: var(--text); font-family: 'Inter', sans-s
 <div class="hdr">
   <h2>Historial de Compras (Completadas)</h2>
   <div style="display:flex; gap:8px;">
-    <input type="text" placeholder="Buscar por Folio, Proveedor..." style="padding:8px 12px; border-radius:6px; border:1px solid var(--surface0); background:var(--base); color:var(--text); font-size:13px;">
+    <input type="text" id="srch" placeholder="Buscar por Folio, Proveedor..." style="padding:8px 12px; border-radius:6px; border:1px solid var(--surface0); background:var(--base); color:var(--text); font-size:13px;" oninput="applyFilter()">
   </div>
 </div>
 
-<div id="orders-list">
-  <div class="card">
-    <div class="card-title">
-      <span>Folio OC-1004 / PRY-165</span>
-      <span class="badge badge-done">Comprado y Recibido ✓</span>
-    </div>
-    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Comprado por Compras. Fecha: 28/May/2026</div>
-    
-    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
-      <div>Item / Cantidad</div>
-      <div>Proveedor</div>
-      <div>P. Unitario</div>
-      <div>Subtotal / Cuenta</div>
-    </div>
-    
-    <div class="item-row">
-      <div>20x Bisagras Inset <span class="item-subtext">(pza)</span></div>
-      <div>Herrajes León</div>
-      <div>$ 35.00</div>
-      <div>
-        <div>$ 700.00</div>
-        <div class="item-subtext">SATP (Operativa)</div>
-      </div>
-    </div>
+<div id="app"></div>
 
-    <div class="item-row">
-      <div>5x Correderas 45cm <span class="item-subtext">(par)</span></div>
-      <div>Herrajes León</div>
-      <div>$ 85.00</div>
-      <div>
-        <div>$ 425.00</div>
-        <div class="item-subtext">SATP (Operativa)</div>
-      </div>
-    </div>
-    
-    <div class="total-row">
-      Total de la Orden: $ 1,125.00
-    </div>
-  </div>
+<script src="db.js"></script>
+<script>
+  let STATE_ORDERS = [];
 
-  <div class="card">
-    <div class="card-title">
-      <span>Folio OC-1003 / MANTENIMIENTO TALLER</span>
-      <span class="badge badge-done">Comprado y Recibido ✓</span>
-    </div>
-    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Comprado por Compras. Fecha: 25/May/2026</div>
-    
-    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
-      <div>Item / Cantidad</div>
-      <div>Proveedor</div>
-      <div>P. Unitario</div>
-      <div>Subtotal / Cuenta</div>
-    </div>
-    
-    <div class="item-row">
-      <div>1x Disco Sierra Diablo 12" <span class="item-subtext">(pza)</span></div>
-      <div>Home Depot</div>
-      <div>$ 1,450.00</div>
-      <div>
-        <div>$ 1,450.00</div>
-        <div class="item-subtext">CAJA (Administración)</div>
-      </div>
-    </div>
+  function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
-    <div class="total-row">
-      Total de la Orden: $ 1,450.00
-    </div>
-  </div>
-</div>
+  async function loadData() {
+    STATE_ORDERS = await window.DB.query("purchase_orders");
+    if (!STATE_ORDERS || STATE_ORDERS.length === 0) STATE_ORDERS = window.DB.get().orders || [];
+    // only received or delivered
+    STATE_ORDERS = STATE_ORDERS.filter(o => ['Comprado', 'Recibido', 'Entregado'].includes(o.status));
+    STATE_ORDERS.sort((a,b) => new Date(b.date) - new Date(a.date));
+    render();
+  }
+
+  function render() {
+    const list = document.getElementById('app');
+    let html = '';
+    
+    STATE_ORDERS.forEach(o => {
+       const badge = (o.status === 'Recibido' || o.status === 'Entregado') ? 'badge-done' : 'badge-amber';
+       
+       let total = 0;
+       
+       let itmsHtml = `
+         <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
+           <div>Item / Cantidad</div>
+           <div>P. Unitario</div>
+           <div>Subtotal</div>
+         </div>
+       `;
+       
+       o.items.forEach(i => {
+          const sub = (i.qty * i.price) || 0;
+          total += sub;
+          itmsHtml += `
+            <div class="item-row">
+              <div>${i.qty}x ${i.name} <span class="item-subtext">(${i.unit})</span></div>
+              <div>${fmt(i.price||0)}</div>
+              <div>
+                <div>${fmt(sub)}</div>
+              </div>
+            </div>
+          `;
+       });
+       
+       html += `
+       <div class="card">
+        <div class="card-title">
+          <span>Folio ${o.folio} / ${o.project || 'Stock General'} - Proveedor: ${o.supplier || o.provider || '-'}</span>
+          <span class="badge ${badge}">${o.status}</span>
+        </div>
+        <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Comprado por ${o.requester || '-'}. Fecha: ${o.date}</div>
+        
+        ${itmsHtml}
+        
+        <div class="total-row">
+          Total de la Orden: ${fmt(total)}
+        </div>
+      </div>
+       `;
+    });
+    
+    if(!html) html = '<div class="card" style="text-align:center;color:var(--subtext);">No hay compras registradas.</div>';
+    list.innerHTML = html;
+  }
+
+  function applyFilter() {
+    const term = document.getElementById('srch').value.toLowerCase();
+    const cards = document.querySelectorAll('#app .card');
+    cards.forEach(c => {
+       const text = c.innerText.toLowerCase();
+       c.style.display = text.includes(term) ? 'block' : 'none';
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadData);
+</script>
 </body>
 </html>

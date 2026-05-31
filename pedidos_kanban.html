@@ -213,6 +213,14 @@ body {
             <!-- Populated via JS -->
           </select>
         </div>
+        <div class="m-field"><label>Proveedor</label>
+          <select id="m-provider">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+      </div>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px;">
         <div class="m-field"><label>Proyecto Destino</label>
           <select id="m-proj">
             <!-- Populated via JS -->
@@ -278,22 +286,46 @@ body {
 <script src="db.js"></script>
 <script>
   const COLS = ['Pedido', 'Confirmado', 'Comprado', 'Recibido', 'Entregado'];
-
-  function renderKanban() {
-    const db = window.DB.get();
-    let counts = { Pedido:0, Confirmado:0, Comprado:0, Recibido:0, Entregado:0 };
+  let STATE_ORDERS = [];
+  
+  async function init() {
+    await renderKanban();
     
-    // Populate Selects if empty
+    // Setup providers, projects, Requesters selectors
+    const dbProjects = await window.DB.query("projects");
+    const dbContacts = await window.DB.query("contacts", { activo: true });
+    
     const reqSel = document.getElementById('m-req');
-    if(reqSel.options.length === 0) {
-      reqSel.innerHTML = '<option value="">-- Seleccionar --</option>' + db.workers.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
-      const projSel = document.getElementById('m-proj');
-      projSel.innerHTML = '<option value="">-- Stock General / Sin Proyecto --</option>' + db.projects.map(p => `<option value="${p.code} - ${p.name}">${p.code} - ${p.name}</option>`).join('');
+    const workers = dbContacts.filter(c => c.tipo === 'trabajador');
+    reqSel.innerHTML = '<option value="">-- Seleccionar --</option>' + workers.map(w => `<option value="${w.name || w.givenName}">${w.name || w.givenName}</option>`).join('');
+    
+    const provSel = document.getElementById('m-provider');
+    const providers = dbContacts.filter(c => c.tipo === 'proveedor');
+    provSel.innerHTML = '<option value="">-- Seleccionar --</option>' + providers.map(p => `<option value="${p.id}">${p.name || p.givenName}</option>`).join('');
+    
+    const projSel = document.getElementById('m-proj');
+    projSel.innerHTML = '<option value="">-- Stock General / Sin Proyecto --</option>' + dbProjects.map(p => `<option value="${p.code} - ${p.name}">${p.code} - ${p.name}</option>`).join('');
+    
+    initDragAndDrop();
+  }
+  
+  document.addEventListener('DOMContentLoaded', init);
+
+  async function renderKanban() {
+    STATE_ORDERS = await window.DB.query("purchase_orders");
+    if (!STATE_ORDERS || STATE_ORDERS.length === 0) {
+        // Fallback to internal orders if purchase_orders isn't full yet
+        STATE_ORDERS = window.DB.get().orders || [];
     }
+    
+    // Filter out canceled ones just in case
+    STATE_ORDERS = STATE_ORDERS.filter(o => o.status !== 'cancelado');
+
+    let counts = { Pedido:0, Confirmado:0, Comprado:0, Recibido:0, Entregado:0 };
     
     COLS.forEach(c => { document.getElementById('list-'+c).innerHTML = ''; });
 
-    db.orders.forEach(o => {
+    STATE_ORDERS.forEach(o => {
       let st = o.status;
       if(!counts[st] && counts[st] !== 0) st = 'Pedido'; // fallback
       counts[st]++;
@@ -363,8 +395,7 @@ body {
 
     // Check stock warning and price visibility
     const id = document.getElementById('m-id').value;
-    const d = window.DB.get();
-    const curr = d.orders.find(x => x.id === id);
+    const curr = STATE_ORDERS.find(x => x.id === id) || window.DB.get().orders.find(x => x.id === id);
     
     document.getElementById('stock-warn').style.display = 'none';
     if(mstatus === 'Recibido' && (!curr || !curr.stockAdded)) {
@@ -388,13 +419,14 @@ body {
     document.getElementById('m-items').querySelector('tbody').innerHTML = '';
 
     if(id) {
-      const c = window.DB.get().orders.find(x => x.id === id);
+      const c = STATE_ORDERS.find(x => x.id === id) || window.DB.get().orders.find(x => x.id === id);
       document.getElementById('m-folio-lbl').textContent = c.folio;
       document.getElementById('m-id').value = c.id;
       document.getElementById('m-date').value = c.date;
       document.getElementById('m-status').value = c.status;
       document.getElementById('m-req').value = c.requester || '';
       document.getElementById('m-proj').value = c.project || '';
+      document.getElementById('m-provider').value = c.provider || '';
       
       const badge = document.getElementById('m-stock-badge');
       if(c.stockAdded) {
@@ -413,6 +445,7 @@ body {
       document.getElementById('m-status').value = 'Pedido';
       document.getElementById('m-req').value = '';
       document.getElementById('m-proj').value = '';
+      document.getElementById('m-provider').value = '';
       addModalItem(); // 1 empty row
     }
     updateWflowVisuals();
@@ -427,7 +460,7 @@ body {
 
     const tbody = document.getElementById('m-items').querySelector('tbody');
     const tr = document.createElement('tr');
-    tr.dataset.idx = Date.now() + Math.random();
+    tr.dataset.idx = crypto.randomUUID();
     
     const displayStyle = ['Comprado', 'Recibido', 'Entregado'].includes(document.getElementById('m-status').value) ? 'table-cell' : 'none';
     
@@ -505,7 +538,7 @@ body {
     const code = `${prefix}-${String(count).padStart(3, '0')}`;
     
     const newItem = {
-      id: 'inv' + Date.now(),
+      id: crypto.randomUUID(),
       code: code,
       name: name,
       category: cat,
@@ -591,11 +624,13 @@ body {
       status: mstatus,
       requester: document.getElementById('m-req').value,
       project: document.getElementById('m-proj').value,
+      provider: document.getElementById('m-provider').value,
       items: items
     };
 
     if (id) {
-      const existing = window.DB.get().orders.find(x => x.id === id);
+      // Find in STATE_ORDERS
+      const existing = STATE_ORDERS.find(x => x.id === id) || window.DB.get().orders.find(x => x.id === id);
       o.id = id;
       o.folio = existing.folio;
       o.stockAdded = existing.stockAdded || false;
@@ -612,7 +647,7 @@ body {
              } else {
                // Create new
                window.DB.addOrUpdateInventory({
-                 id: 'inv' + Date.now() + Math.random(),
+                 id: crypto.randomUUID(),
                  code: itm.code,
                  name: itm.name,
                  category: 'Compras Rápidas',
@@ -656,7 +691,7 @@ body {
         const newStatus = col.id.replace('list-', '');
         
         const d = window.DB.get();
-        const order = d.orders.find(o => o.id === orderId);
+        const order = STATE_ORDERS.find(o => o.id === orderId) || d.orders.find(o => o.id === orderId);
         if(!order || order.status === newStatus) return;
         
         const requirePrice = ['Comprado', 'Recibido', 'Entregado'].includes(newStatus);
@@ -705,8 +740,6 @@ body {
     });
   }
 
-  initDragAndDrop();
-  renderKanban();
 </script>
 </body>
 </html>
