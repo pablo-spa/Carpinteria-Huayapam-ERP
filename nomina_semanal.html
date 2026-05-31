@@ -301,7 +301,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
       </div>
     </div>
     <div class="hdr-right">
-      <span class="badge" id="hdr-badge">0 / 29</span>
+      <span class="badge" id="hdr-badge">0 / —</span>
       <button class="gear-btn" id="gear-btn" onclick="togCfg()" title="Configuración de horas extra">⚙</button>
       <div class="hdr-total"><div class="lbl">Total nómina</div><div class="val" id="hdr-total">$0</div></div>
     </div>
@@ -317,7 +317,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
   <!-- ── NÓMINA ── -->
   <div id="tab-nomina" class="tab-pane active">
-    <div class="sec-lbl" id="lbl-pend">Por verificar (29)</div>
+    <div class="sec-lbl" id="lbl-pend">Por verificar (—)</div>
     <div id="list-pend"></div>
     <div id="sec-verif" style="display:none">
       <div class="sec-lbl" id="lbl-verif">Verificados (0)</div>
@@ -413,7 +413,10 @@ let PRESTAMOS = {};
 let S = {};
 
 async function init() {
-  const dbs = await window.DB.query("contacts", { tipo: "trabajador", activo: true });
+  try {
+  // Query all workers, then exclude those explicitly marked as baja (activo: false)
+  const all  = await window.DB.query("contacts", { tipo: "trabajador" });
+  const dbs  = all.filter(w => w.activo !== false && (w.name || w.givenName));
   const loans = await window.DB.query("worker_loans", { estado: "activo" });
 
   WORKERS = dbs.map(w => ({
@@ -464,10 +467,15 @@ async function init() {
   processRealCheckins(weekOffset);
   updWeekLbl();
   const listPend = document.getElementById('list-pend');
-  listPend.innerHTML = ''; // clear loading state
+  listPend.innerHTML = '';
   WORKERS.forEach(w => listPend.appendChild(buildCard(w)));
   updLabels();
   updateFooter();
+  } catch(e) {
+    console.error('[Nómina] Error en init():', e);
+    const listPend = document.getElementById('list-pend');
+    if (listPend) listPend.innerHTML = `<div style="padding:20px;color:var(--red-text);text-align:center;">Error al cargar: ${e.message}</div>`;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

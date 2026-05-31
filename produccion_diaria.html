@@ -280,7 +280,8 @@ let WORKERS = [];
 let PROYECTOS = [];
 
 async function loadDataFromDB() {
-  const dbs = await window.DB.query("contacts", { tipo: "trabajador", activo: true });
+  const allWorkers = await window.DB.query("contacts", { tipo: "trabajador" });
+  const dbs = allWorkers.filter(w => w.activo !== false && (w.name || w.givenName));
   WORKERS = dbs.map(w => {
     const parts = (w.name || "").split(' ');
     const nombre = w.givenName || parts[0] || 'Desconocido';
@@ -294,8 +295,10 @@ async function loadDataFromDB() {
   PROYECTOS = allProjs.filter(p => {
       if (p._init) return false;
       if (!p.status && !p.estado) return true;
-      const st = (p.status || p.estado || '').toLowerCase();
-      return st === 'en producción' || st === 'en produccion' || st === 'planificación' || st === 'planificacion' || st === 'activo' || st === 'en curso';
+      const st = (p.status || p.estado || '').toLowerCase().trim();
+      // Match active statuses (case-insensitive, with/without accents)
+      return ['en producción','en produccion','planificación','planificacion','activo','en curso','en proceso'].some(s => st === s)
+          || st.includes('producci') || st.includes('planific');
   }).map(p => {
     return {id: p.code || p.id, n: (p.code || '') + ' — ' + (p.name || '')};
   });

@@ -114,6 +114,17 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .lbl-g { font-size:10px; font-weight:700; color:var(--subtext); text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:5px; }
 .no-inp { width:100%; padding:7px 8px; border-radius:6px; border:1px solid var(--crust); background:var(--base); color:var(--text); font-family:inherit; font-size:13px; }
 .no-inp:focus { outline:none; border-color:var(--blue); }
+
+/* Concept autocomplete */
+.ac-wrap { position:relative; }
+.ac-drop { position:absolute; top:calc(100% + 3px); left:0; right:0; background:var(--base); border:1px solid var(--surface0); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.12); z-index:500; max-height:200px; overflow-y:auto; display:none; }
+.ac-drop.open { display:block; }
+.ac-item { padding:8px 12px; font-size:13px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--crust); }
+.ac-item:last-child { border-bottom:none; }
+.ac-item:hover, .ac-item.focused { background:var(--surface0); }
+.ac-item-name { font-weight:600; color:var(--text); }
+.ac-item-meta { font-size:11px; color:var(--subtext); margin-left:8px; white-space:nowrap; }
+.ac-new { color:var(--blue); font-style:italic; }
 </style>
 
 <div class="main">
@@ -263,9 +274,14 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
   // ── New order modal ──────────────────────────────────────────────────
   async function openNewOrder() {
-    const d = window.DB.get();
-    const contacts = await window.DB.query('contacts');
-    const projects = await window.DB.query('projects');
+    const [contacts, projects, inventory] = await Promise.all([
+      window.DB.query('contacts'),
+      window.DB.query('projects'),
+      window.DB.query('inventory'),
+    ]);
+
+    // Cache inventory for autocomplete
+    window._NO_INV = inventory.filter(i => i.name && !i._init);
 
     // Populate project dropdown
     const projSel = document.getElementById('no-proj');
@@ -286,26 +302,140 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     document.getElementById('no-notes').value = '';
     addNoRow();
 
-    const modal = document.getElementById('new-order-modal');
-    modal.style.display = 'flex';
+    document.getElementById('new-order-modal').style.display = 'flex';
   }
 
   function closeNewOrder() {
     document.getElementById('new-order-modal').style.display = 'none';
+    document.querySelectorAll('.ac-drop').forEach(d => d.remove());
   }
 
-  function addNoRow() {
+  function addNoRow(name='', unit='pza', price=0, qty=1) {
     const tbody = document.getElementById('no-items');
     const tr = document.createElement('tr');
+    const rowId = 'row-' + Math.random().toString(36).slice(2,8);
+    tr.dataset.rowId = rowId;
+
     tr.innerHTML = `
-      <td style="padding:4px 4px;"><input class="no-inp" type="text" placeholder="Descripción del material"></td>
-      <td style="padding:4px 4px;"><input class="no-inp" type="number" value="1" min="0.01" step="any" style="text-align:right;"></td>
-      <td style="padding:4px 4px;"><input class="no-inp" type="text" value="pza" style="width:70px;"></td>
-      <td style="padding:4px 4px;"><input class="no-inp" type="number" value="0" min="0" step="any" placeholder="0.00" style="text-align:right;"></td>
-      <td style="padding:4px 2px; text-align:right;"><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">✕</button></td>
-    `;
+      <td style="padding:4px 4px;">
+        <div class="ac-wrap">
+          <input class="no-inp ac-input" type="text" placeholder="Buscar concepto…" value="${name}" autocomplete="off"
+            oninput="acFilter(this)" onfocus="acFilter(this)" onkeydown="acKey(event,this)">
+          <div class="ac-drop" id="drop-${rowId}"></div>
+        </div>
+      </td>
+      <td style="padding:4px 4px;"><input class="no-inp i-qty" type="number" value="${qty}" min="0.01" step="any" style="text-align:right; width:70px;"></td>
+      <td style="padding:4px 4px;"><input class="no-inp i-unit" type="text" value="${unit}" style="width:70px;"></td>
+      <td style="padding:4px 4px;"><input class="no-inp i-price" type="number" value="${price||''}" min="0" step="any" placeholder="0.00" style="text-align:right; width:90px;"></td>
+      <td style="padding:4px 2px; text-align:center;">
+        <button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px; line-height:1;">✕</button>
+      </td>`;
     tbody.appendChild(tr);
   }
+
+  // ── Autocomplete logic ───────────────────────────────────────────────
+  function acScore(text, q) {
+    const t = text.toLowerCase(), ql = q.toLowerCase();
+    if (!ql) return 0;
+    if (t === ql) return 0;
+    if (t.startsWith(ql)) return 1;
+    if (t.includes(ql)) return 2;
+    // fuzzy
+    let ti = 0;
+    for (let i = 0; i < ql.length; i++) {
+      ti = t.indexOf(ql[i], ti);
+      if (ti === -1) return Infinity;
+      ti++;
+    }
+    return 3;
+  }
+
+  function acFilter(input) {
+    const tr = input.closest('tr');
+    const rowId = tr.dataset.rowId;
+    const drop = document.getElementById('drop-' + rowId);
+    const q = input.value.trim();
+    const inv = window._NO_INV || [];
+
+    let results = inv
+      .map(i => ({ ...i, s: acScore(i.name, q) }))
+      .filter(i => i.s < Infinity)
+      .sort((a, b) => a.s - b.s)
+      .slice(0, 12);
+
+    drop.innerHTML = '';
+
+    if (results.length === 0 && !q) { drop.classList.remove('open'); return; }
+
+    results.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'ac-item';
+      div.dataset.idx = idx;
+      div.innerHTML = `<span class="ac-item-name">${item.name}</span><span class="ac-item-meta">${item.unit||'pza'} · ${item.category||''}</span>`;
+      div.addEventListener('mousedown', e => {
+        e.preventDefault();
+        acSelect(input, item.name, item.unit || 'pza');
+      });
+      drop.appendChild(div);
+    });
+
+    // "Agregar nuevo" option when typed text doesn't exactly match
+    if (q && !inv.find(i => i.name.toLowerCase() === q.toLowerCase())) {
+      const div = document.createElement('div');
+      div.className = 'ac-item ac-new';
+      div.innerHTML = `<span class="ac-item-name">+ Agregar "<strong>${q}</strong>" como nuevo concepto</span>`;
+      div.addEventListener('mousedown', e => {
+        e.preventDefault();
+        acSelect(input, q, tr.querySelector('.i-unit').value || 'pza');
+      });
+      drop.appendChild(div);
+    }
+
+    drop.classList.add('open');
+  }
+
+  function acSelect(input, name, unit) {
+    input.value = name;
+    const tr = input.closest('tr');
+    tr.querySelector('.i-unit').value = unit;
+    const rowId = tr.dataset.rowId;
+    document.getElementById('drop-' + rowId)?.classList.remove('open');
+    tr.querySelector('.i-qty').focus();
+  }
+
+  function acKey(e, input) {
+    const tr = input.closest('tr');
+    const drop = document.getElementById('drop-' + tr.dataset.rowId);
+    if (!drop) return;
+    const items = drop.querySelectorAll('.ac-item');
+    let focused = drop.querySelector('.ac-item.focused');
+    const idx = focused ? parseInt(focused.dataset.idx ?? -1) : -1;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      items.forEach(i => i.classList.remove('focused'));
+      const next = items[Math.min(idx + 1, items.length - 1)];
+      if (next) next.classList.add('focused');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      items.forEach(i => i.classList.remove('focused'));
+      const prev = items[Math.max(idx - 1, 0)];
+      if (prev) prev.classList.add('focused');
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (focused) focused.dispatchEvent(new MouseEvent('mousedown'));
+      else drop.classList.remove('open');
+    } else if (e.key === 'Escape') {
+      drop.classList.remove('open');
+    }
+  }
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('mousedown', e => {
+    if (!e.target.closest('.ac-wrap')) {
+      document.querySelectorAll('.ac-drop').forEach(d => d.classList.remove('open'));
+    }
+  });
 
   async function saveNewOrder() {
     const proj  = document.getElementById('no-proj').value;
@@ -314,12 +444,14 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     const items = [];
     document.querySelectorAll('#no-items tr').forEach(tr => {
-      const inputs = tr.querySelectorAll('input');
-      const name  = inputs[0].value.trim();
-      const qty   = parseFloat(inputs[1].value) || 0;
-      const unit  = inputs[2].value.trim() || 'pza';
-      const price = parseFloat(inputs[3].value) || 0;
-      if (name && qty > 0) items.push({ name, qty, unit, price, code: '' });
+      const name  = (tr.querySelector('.ac-input')?.value || '').trim();
+      const qty   = parseFloat(tr.querySelector('.i-qty')?.value) || 0;
+      const unit  = (tr.querySelector('.i-unit')?.value || 'pza').trim();
+      const price = parseFloat(tr.querySelector('.i-price')?.value) || 0;
+      if (name && qty > 0) {
+        const invItem = (window._NO_INV || []).find(i => i.name.toLowerCase() === name.toLowerCase());
+        items.push({ name, qty, unit, price, code: invItem?.code || '' });
+      }
     });
 
     if (!items.length) return alert('Agrega al menos un material.');
