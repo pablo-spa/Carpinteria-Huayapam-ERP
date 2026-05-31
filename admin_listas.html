@@ -3,205 +3,361 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Administrar Listas (Catálogos)</title>
+<title>Editar Listas — Huayapam ERP</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --blue: #1e66f5; --blue-bg: rgba(30,102,245,.12);
+  --green: #40a02b; --red: #d20f39; --amber: #df8e1d;
+}
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg: #11111b; --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --text: #cdd6f4; --subtext: #a6adc8; --muted: #7f849c;
-    --blue: #89b4fa; --green: #a6e3a1; --red: #f38ba8; --amber: #f9e2af;
-    --surface0: #313244; --surface1: #45475a; --surface2: #585b70;
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --blue: #8caaee; --blue-bg: rgba(140,170,238,.15);
+    --green: #a6da95; --red: #f38ba8; --amber: #f9e2af;
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; display: flex; height: 100vh;}
-  
-  .sidebar { width: 280px; background: var(--mantle); border-right: 1px solid var(--crust); display: flex; flex-direction: column; }
-  .sb-header { padding: 16px; border-bottom: 1px solid var(--crust); font-weight: 700; font-size: 14px; color: var(--subtext); text-transform: uppercase; }
-  .sb-list { flex: 1; overflow-y: auto; padding: 12px; }
-  .list-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; color: var(--subtext); font-size: 13px; font-weight: 600; margin-bottom: 4px; transition: 0.1s; display: flex; justify-content: space-between; align-items: center; }
-  .list-item:hover { background: var(--surface0); color: var(--text); }
-  .list-item.act { background: var(--blue); color: #fff; }
-  .badge { background: var(--crust); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+}
 
-  .main { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
-  .head { display: flex; justify-content: space-between; align-items: flex-end; }
-  .title { font-size: 24px; font-weight: 800; }
-  .subtitle { font-size: 13px; color: var(--subtext); margin-top: 4px; }
-  
-  .card { background: var(--base); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; }
-  .items-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
-  
-  .val-row { display: flex; align-items: center; gap: 8px; background: var(--mantle); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--crust); }
-  .val-input { flex: 1; background: transparent; border: none; color: var(--text); font-size: 14px; font-family: inherit; }
-  .val-input:focus { outline: none; border-bottom: 1px solid var(--blue); }
-  
-  .btn-icon { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; transition: 0.2s; }
-  .btn-icon:hover { color: var(--red); }
-  
-  .add-row { display: flex; gap: 12px; margin-top: 16px; }
-  .add-input { flex: 1; background: var(--mantle); border: 1px solid var(--crust); padding: 10px 12px; border-radius: 8px; color: var(--text); font-size: 14px; font-family: inherit; }
-  .add-input:focus { outline: none; border-color: var(--blue); }
-  .btn { background: var(--blue); color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 700; font-family: inherit; font-size: 13px; cursor: pointer; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
+/* Sidebar */
+.sidebar { width: 260px; background: var(--mantle); border-right: 1px solid var(--crust); display: flex; flex-direction: column; flex-shrink: 0; }
+.sb-hdr { padding: 14px 16px; border-bottom: 1px solid var(--crust); font-size: 12px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: .05em; }
+.sb-body { flex: 1; overflow-y: auto; padding: 8px; }
+.sb-section { font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .06em; padding: 10px 8px 4px; }
+.sb-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--subtext); margin-bottom: 2px; transition: all .12s; }
+.sb-item:hover { background: var(--surface0); color: var(--text); }
+.sb-item.act { background: var(--blue); color: #fff; }
+.sb-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: rgba(0,0,0,.1); }
+.sb-item.act .sb-badge { background: rgba(255,255,255,.25); }
+
+/* Main */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.m-hdr { padding: 16px 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); flex-shrink: 0; }
+.m-hdr h2 { font-size: 18px; font-weight: 800; }
+.m-hdr p { font-size: 13px; color: var(--subtext); margin-top: 3px; }
+.m-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Add row */
+.add-bar { display: flex; gap: 8px; }
+.add-bar input, .add-bar select { flex: 1; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--crust); background: var(--mantle); color: var(--text); font-family: inherit; font-size: 13px; }
+.add-bar input:focus, .add-bar select:focus { outline: none; border-color: var(--blue); }
+.btn { padding: 9px 16px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; transition: opacity .15s; }
+.btn:hover { opacity: .85; }
+.btn-blue  { background: var(--blue); color: #fff; }
+.btn-ghost { background: var(--surface0); color: var(--text); }
+
+/* Items */
+.item-row { display: flex; align-items: center; gap: 8px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 8px 10px; transition: border-color .15s; }
+.item-row:hover { border-color: var(--surface1); }
+.item-inp { flex: 1; border: none; background: transparent; color: var(--text); font-family: inherit; font-size: 13px; }
+.item-inp:focus { outline: none; }
+.item-sel { border: 1px solid var(--crust); background: var(--base); color: var(--text); font-family: inherit; font-size: 12px; border-radius: 6px; padding: 4px 6px; }
+.item-code { font-size: 11px; font-family: monospace; font-weight: 700; background: var(--surface0); padding: 3px 7px; border-radius: 5px; color: var(--subtext); min-width: 48px; text-align: center; }
+.rm-btn { background: none; border: none; color: var(--subtext); cursor: pointer; font-size: 16px; padding: 2px 6px; line-height: 1; }
+.rm-btn:hover { color: var(--red); }
+.empty { text-align: center; padding: 40px; color: var(--subtext); font-size: 14px; }
+.no-sel { display: flex; align-items: center; justify-content: center; flex: 1; color: var(--subtext); font-size: 15px; font-weight: 600; }
+.saving-badge { font-size: 11px; color: var(--green); font-weight: 700; padding: 3px 8px; border-radius: 5px; background: var(--blue-bg); display: none; }
 </style>
 </head>
 <body>
 
 <div class="sidebar">
-  <div class="sb-header">Catálogos de Listas</div>
-  <div class="sb-list" id="sidebar-lists"></div>
+  <div class="sb-hdr">Catálogos del Sistema</div>
+  <div class="sb-body" id="sb-body">
+    <!-- rendered by JS -->
+  </div>
 </div>
 
-<div class="main">
-  <div id="no-sel" style="text-align:center; padding:100px; color:var(--muted); font-weight:600;">Selecciona una lista del menú lateral</div>
-  
-  <div id="sel-view" style="display:none; flex-direction:column; gap:24px;">
-    <div class="head">
-      <div>
-        <div class="title" id="t-name">Lista</div>
-        <div class="subtitle" id="t-desc">Descripción de la lista</div>
+<div class="main" id="main-area">
+  <div class="no-sel" id="no-sel">← Selecciona una lista para editarla</div>
+  <div id="list-view" style="display:none; flex-direction:column; overflow:hidden; flex:1;">
+    <div class="m-hdr">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h2 id="l-name">Lista</h2>
+          <p id="l-desc"></p>
+        </div>
+        <span class="saving-badge" id="saving-badge">✓ Guardado</span>
       </div>
     </div>
-
-    <div class="card">
-      <div class="add-row">
-        <input type="text" id="new-item-input" class="add-input" placeholder="Nuevo valor...">
-        <button class="btn" onclick="addItem()">+ Agregar</button>
-      </div>
-      <div class="items-list" id="items-container"></div>
+    <div class="m-body">
+      <div class="add-bar" id="add-bar"><!-- populated per list type --></div>
+      <div id="items-container"></div>
     </div>
   </div>
 </div>
 
 <script src="db.js"></script>
 <script>
-  const listsDefs = [
-    { key: 'worker_roles', name: 'Categorías de Empleados', desc: 'Puestos y roles de trabajadores' },
-    { key: 'wood_formats', name: 'Tipos de Pieza (Madera)', desc: 'Tabla, Tablón, Hoja, Viga' },
-    { key: 'wood_types', name: 'Material/Especie de Madera', desc: 'Especies (Tzalam, Encino, MDF, etc)' },
-    { key: 'wood_quality', name: 'Calidad de Madera', desc: 'Primera, Segunda, etc' },
-    { key: 'wood_locations', name: 'Ubicaciones de Madera', desc: 'Diferentes ubicaciones en el taller' },
-    { key: 'concept_categories', name: 'Categorías de Inventario', desc: 'Tableros, Herrajes, Químicos, etc' },
-    { key: 'concept_units', name: 'Unidades de Medida', desc: 'pza, gln, kg, etc' },
-    { key: 'expense_categories', name: 'Categorías de Gastos/Movimientos', desc: 'Clasificación financiera' },
-    { key: 'project_types', name: 'Tipos de Proyectos', desc: 'Cocinas, Closets, etc' },
-    { key: 'payment_methods', name: 'Métodos de Pago', desc: 'Cuentas y formas de pago' }
+  // ── List definitions ────────────────────────────────────────────────
+  // type: 'list'       → stored as single doc {list:[string, ...]}  in collection
+  // type: 'obj-list'   → stored as single doc {list:[{id,name,type,...}, ...]}
+  // type: 'collection' → each item is its own Firestore document
+
+  const LISTS = [
+    {
+      section: 'Recursos Humanos',
+      items: [
+        { key: 'worker_roles', col: 'worker_roles', type: 'list',
+          name: 'Puestos de Trabajadores', desc: 'Roles y categorías del personal' },
+      ]
+    },
+    {
+      section: 'Finanzas',
+      items: [
+        { key: 'expense_categories', col: 'expense_categories', type: 'expense',
+          name: 'Categorías de Gastos / Ingresos', desc: 'Clasificación para movimientos financieros' },
+      ]
+    },
+    {
+      section: 'Inventario y Compras',
+      items: [
+        { key: 'concept_categories', col: 'concept_categories', type: 'list',
+          name: 'Categorías de Inventario', desc: 'Tableros, Herrajes, Químicos, Herramienta…' },
+        { key: 'concept_units', col: 'concept_units', type: 'list',
+          name: 'Unidades de Medida', desc: 'pza, gln, kg, lt, mt, caja…' },
+      ]
+    },
+    {
+      section: 'Producción y Cotización',
+      items: [
+        { key: 'piece_types', col: 'piece_types', type: 'piece',
+          name: 'Tipos de Mueble / Pieza', desc: 'Puerta, Closet, Cocina, Mesa… (usados en cotizaciones)' },
+      ]
+    },
   ];
 
-  let currentKey = null;
+  let currentDef = null;
+  let STATE = {}; // { key: items[] }
 
+  // ── Load all list data ───────────────────────────────────────────────
+  async function loadAll() {
+    await window.DB.query('contacts'); // ensure DB_STATE_LOADED
+    const d = window.DB.get();
+
+    for (const section of LISTS) {
+      for (const def of section.items) {
+        const raw = d[def.key] || [];
+        if (def.type === 'list') {
+          STATE[def.key] = raw[0]?.list || raw.filter(x => typeof x === 'string');
+        } else if (def.type === 'expense') {
+          STATE[def.key] = raw.filter(x => x.id && !x._init);
+        } else if (def.type === 'piece') {
+          STATE[def.key] = raw.filter(x => x.id && !x._init && x.name);
+        } else {
+          STATE[def.key] = raw;
+        }
+      }
+    }
+    renderSidebar();
+  }
+
+  // ── Sidebar ──────────────────────────────────────────────────────────
   function renderSidebar() {
-    const d = window.DB.get();
-    const sb = document.getElementById('sidebar-lists');
-    sb.innerHTML = listsDefs.map(def => {
-      const arr = d[def.key] || [];
-      return `
-        <div class="list-item${currentKey===def.key?' act':''}" onclick="selectList('${def.key}')">
+    const sb = document.getElementById('sb-body');
+    sb.innerHTML = LISTS.map(section => `
+      <div class="sb-section">${section.section}</div>
+      ${section.items.map(def => {
+        const count = STATE[def.key]?.length || 0;
+        return `<div class="sb-item${currentDef?.key === def.key ? ' act' : ''}" onclick="selectList('${def.key}')">
           <span>${def.name}</span>
-          <span class="badge">${arr.length}</span>
-        </div>
-      `;
-    }).join('');
+          <span class="sb-badge">${count}</span>
+        </div>`;
+      }).join('')}
+    `).join('');
   }
 
+  // ── Select list ──────────────────────────────────────────────────────
   function selectList(key) {
-    currentKey = key;
-    renderSidebar();
-    
+    for (const s of LISTS) {
+      const found = s.items.find(i => i.key === key);
+      if (found) { currentDef = found; break; }
+    }
     document.getElementById('no-sel').style.display = 'none';
-    document.getElementById('sel-view').style.display = 'flex';
-    
-    const def = listsDefs.find(d => d.key === key);
-    document.getElementById('t-name').textContent = def.name;
-    document.getElementById('t-desc').textContent = def.desc;
-    
-    renderItems();
-  }
-
-  function renderItems() {
-    if(!currentKey) return;
-    const d = window.DB.get();
-    const arr = d[currentKey] || [];
-    
-    document.getElementById('items-container').innerHTML = arr.map((val, idx) => {
-      if (typeof val === 'object' && val !== null) {
-        return `
-          <div class="val-row" style="gap:4px;">
-            <input type="text" class="val-input" value="${val.name || ''}" onchange="updateItemObj(${idx}, 'name', this.value)" style="flex:2;">
-            <select class="val-input" onchange="updateItemObj(${idx}, 'type', this.value)" style="flex:1;">
-              <option value="ingreso" ${val.type==='ingreso'?'selected':''}>Ingreso</option>
-              <option value="gasto" ${val.type==='gasto'?'selected':''}>Gasto</option>
-              <option value="transferencia" ${val.type==='transferencia'?'selected':''}>Transferencia</option>
-            </select>
-            <button class="btn-icon" onclick="deleteItem(${idx})">✕</button>
-          </div>
-        `;
-      }
-      return `
-      <div class="val-row">
-        <input type="text" class="val-input" value="${val}" onchange="updateItem(${idx}, this.value)">
-        <button class="btn-icon" onclick="deleteItem(${idx})">✕</button>
-      </div>
-      `;
-    }).join('');
-  }
-
-  function addItem() {
-    const input = document.getElementById('new-item-input');
-    const val = input.value.trim();
-    if(!val || !currentKey) return;
-    
-    const d = window.DB.get();
-    if(!d[currentKey]) d[currentKey] = [];
-    
-    if (currentKey === 'expense_categories') {
-      d[currentKey].push({ name: val, type: 'gasto' });
-      window.DB.save(d);
-      input.value = '';
-      renderItems();
-      renderSidebar();
-    } else {
-      if(!d[currentKey].includes(val)) {
-        d[currentKey].push(val);
-        window.DB.save(d);
-        input.value = '';
-        renderItems();
-        renderSidebar();
-      } else {
-        console.warn('Ese valor ya existe en la lista.');
-      }
-    }
-  }
-
-  function updateItemObj(idx, field, newVal) {
-    newVal = newVal.trim();
-    const d = window.DB.get();
-    if (d[currentKey][idx]) {
-      d[currentKey][idx][field] = newVal;
-      window.DB.save(d);
-    }
-  }
-
-  function updateItem(idx, newVal) {
-    newVal = newVal.trim();
-    if(!newVal || !currentKey) return;
-    const d = window.DB.get();
-    d[currentKey][idx] = newVal;
-    window.DB.save(d);
-    // Don't re-render immediately to avoid losing focus if they just clicked away, 
-    // but the array is updated in DB.
-  }
-
-  function deleteItem(idx) {
-    if(!currentKey) return;
-    // Removed confirm() for iframe compatibility
-    const d = window.DB.get();
-    d[currentKey].splice(idx, 1);
-    window.DB.save(d);
+    document.getElementById('list-view').style.display = 'flex';
+    document.getElementById('l-name').textContent = currentDef.name;
+    document.getElementById('l-desc').textContent = currentDef.desc;
+    renderAddBar();
     renderItems();
     renderSidebar();
   }
 
-  renderSidebar();
+  // ── Add bar ──────────────────────────────────────────────────────────
+  function renderAddBar() {
+    const bar = document.getElementById('add-bar');
+    if (currentDef.type === 'list') {
+      bar.innerHTML = `
+        <input type="text" id="new-val" placeholder="Nuevo valor…" onkeydown="if(event.key==='Enter') addItem()">
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    } else if (currentDef.type === 'expense') {
+      bar.innerHTML = `
+        <input type="text" id="new-val" placeholder="Nombre de categoría…" style="flex:2;" onkeydown="if(event.key==='Enter') addItem()">
+        <select id="new-type">
+          <option value="gasto">Gasto</option>
+          <option value="ingreso">Ingreso</option>
+          <option value="transferencia">Transferencia</option>
+        </select>
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    } else if (currentDef.type === 'piece') {
+      bar.innerHTML = `
+        <input type="text" id="new-code" placeholder="Código (ej. PTA)" style="max-width:90px;" onkeydown="if(event.key==='Enter') addItem()">
+        <input type="text" id="new-val" placeholder="Nombre (ej. Puerta)" onkeydown="if(event.key==='Enter') addItem()">
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    }
+  }
+
+  // ── Render items ─────────────────────────────────────────────────────
+  function renderItems() {
+    const container = document.getElementById('items-container');
+    const items = STATE[currentDef.key] || [];
+
+    if (!items.length) {
+      container.innerHTML = `<div class="empty">No hay entradas. Agrega la primera arriba.</div>`;
+      return;
+    }
+
+    if (currentDef.type === 'list') {
+      container.innerHTML = items.map((val, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(val)}" onchange="updateItem(${i}, this.value)" onblur="updateItem(${i}, this.value)">
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
+    } else if (currentDef.type === 'expense') {
+      const typeLabel = { gasto: 'Gasto', ingreso: 'Ingreso', transferencia: 'Transferencia' };
+      const typeClr   = { gasto: 'color:var(--red)', ingreso: 'color:var(--green)', transferencia: 'color:var(--amber)' };
+      container.innerHTML = items.map((item, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.name)}" onchange="updateItem(${i}, this.value, 'name')" onblur="updateItem(${i}, this.value, 'name')">
+          <select class="item-sel" onchange="updateItem(${i}, this.value, 'type')">
+            ${['gasto','ingreso','transferencia'].map(t =>
+              `<option value="${t}" ${item.type===t?'selected':''}>${typeLabel[t]}</option>`
+            ).join('')}
+          </select>
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
+    } else if (currentDef.type === 'piece') {
+      container.innerHTML = items.map((item, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.code||'')}" placeholder="Código" onchange="updateItem(${i}, this.value, 'code')" style="max-width:80px; font-family:monospace; font-weight:700;">
+          <input class="item-inp" value="${escHtml(item.name||'')}" placeholder="Nombre" onchange="updateItem(${i}, this.value, 'name')">
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
+    }
+  }
+
+  // ── CRUD ─────────────────────────────────────────────────────────────
+  async function addItem() {
+    const val = document.getElementById('new-val')?.value.trim();
+    if (!val) return;
+
+    if (currentDef.type === 'list') {
+      if (STATE[currentDef.key].includes(val)) return alert('Ya existe ese valor.');
+      STATE[currentDef.key].push(val);
+      await saveList();
+    } else if (currentDef.type === 'expense') {
+      const type = document.getElementById('new-type')?.value || 'gasto';
+      const id = 'cat-' + Date.now().toString(36);
+      STATE[currentDef.key].push({ id, name: val, type });
+      await saveItem({ id, name: val, type });
+    } else if (currentDef.type === 'piece') {
+      const code = (document.getElementById('new-code')?.value || val.substring(0,3)).trim().toUpperCase();
+      const id = 'pt-' + Date.now().toString(36);
+      STATE[currentDef.key].push({ id, code, name: val });
+      await saveItem({ id, code, name: val });
+    }
+
+    document.getElementById('new-val').value = '';
+    if (document.getElementById('new-code')) document.getElementById('new-code').value = '';
+    renderItems();
+    renderSidebar();
+  }
+
+  async function updateItem(idx, newVal, field) {
+    newVal = newVal.trim();
+    if (!newVal) return;
+
+    if (currentDef.type === 'list') {
+      STATE[currentDef.key][idx] = newVal;
+      await saveList();
+    } else if (field) {
+      STATE[currentDef.key][idx][field] = newVal;
+      await saveItem(STATE[currentDef.key][idx]);
+    }
+  }
+
+  async function deleteItem(idx) {
+    const items = STATE[currentDef.key];
+    const item  = items[idx];
+    const label = typeof item === 'string' ? item : (item.name || item.id);
+    if (!confirm(`¿Eliminar "${label}"?`)) return;
+
+    if (currentDef.type === 'list') {
+      items.splice(idx, 1);
+      await saveList();
+    } else {
+      const removed = items.splice(idx, 1)[0];
+      if (window.parent?.deleteDocumentFromFirebase && removed.id) {
+        await window.parent.deleteDocumentFromFirebase(currentDef.col, removed.id);
+      }
+      // Update DB_STATE
+      if (window.parent?.DB_STATE?.[currentDef.key]) {
+        window.parent.DB_STATE[currentDef.key] = window.parent.DB_STATE[currentDef.key]
+          .filter(x => x.id !== removed.id);
+      }
+    }
+
+    renderItems();
+    renderSidebar();
+    flash();
+  }
+
+  // ── Save helpers ─────────────────────────────────────────────────────
+  async function saveList() {
+    // {list:[...]} pattern — save as single doc 'main'
+    const list = STATE[currentDef.key];
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase(currentDef.col, 'main', { list });
+    }
+    // Update DB_STATE
+    if (window.parent?.DB_STATE) {
+      window.parent.DB_STATE[currentDef.key] = [{ _id: 'main', list }];
+    }
+    flash();
+  }
+
+  async function saveItem(item) {
+    if (!item.id) return;
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase(currentDef.col, item.id, item);
+    }
+    // Update DB_STATE
+    if (window.parent?.DB_STATE?.[currentDef.key]) {
+      const idx = window.parent.DB_STATE[currentDef.key].findIndex(x => x.id === item.id);
+      if (idx !== -1) window.parent.DB_STATE[currentDef.key][idx] = item;
+      else window.parent.DB_STATE[currentDef.key].push(item);
+    }
+    flash();
+  }
+
+  function flash() {
+    const b = document.getElementById('saving-badge');
+    b.style.display = 'inline';
+    clearTimeout(b._t);
+    b._t = setTimeout(() => b.style.display = 'none', 2000);
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  }
+
+  document.addEventListener('DOMContentLoaded', loadAll);
 </script>
 </body>
 </html>

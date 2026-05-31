@@ -851,7 +851,12 @@
             await deleteDoc(doc(db, col, docId));
         };
         window.setDocumentInFirebase = async (col, docId, data) => {
-            await setDoc(doc(db, col, docId), data);
+            try {
+                await setDoc(doc(db, col, docId), data);
+            } catch(e) {
+                console.error(`[Firestore] Error writing ${col}/${docId}:`, e.message);
+                throw e;
+            }
         };
         
         window.deleteDocumentInFirebase = async (col, docId) => {

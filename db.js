@@ -12,60 +12,58 @@ function getDB() {
 
 function saveDB(newData) {
   if (!window.parent) return;
-  
-  if (newData._isIncomplete || (window.parent && !window.parent.DB_STATE_LOADED)) {
-      console.warn("BLOCKED saveDB: DB is incomplete or not loaded yet. Ignoring to prevent wipe.");
-      return;
+
+  if (newData._isIncomplete || !window.parent.DB_STATE_LOADED) {
+    console.warn("BLOCKED saveDB: DB not ready.");
+    return;
   }
-  
+
   if (!window.parent.DB_STATE) {
-     window.parent.DB_STATE = newData;
-     return;
+    window.parent.DB_STATE = newData;
+    return;
   }
-  
-  const oldData = window.parent.DB_STATE;
+
+  const liveState = window.parent.DB_STATE;
   const collections = Object.keys(newData);
-  
+
   collections.forEach(col => {
-      if (col === 'attendance_logs') return;
+    if (col === 'attendance_logs' || col === '_isIncomplete') return;
 
-      const oldArr = oldData[col];
-      const newArr = newData[col];
-      
-      if (Array.isArray(newArr) && Array.isArray(oldArr)) {
-          newArr.forEach(newItem => {
-              const id = newItem.id || newItem._id;
-              if (id) {
-                  const oldItem = oldArr.find(x => (x.id || x._id) === id);
-                  if (!oldItem || JSON.stringify(oldItem) !== JSON.stringify(newItem)) {
-                      if(window.parent.setDocumentInFirebase) {
-                          window.parent.setDocumentInFirebase(col, id, newItem);
-                      }
-                  }
-              }
-          });
-          
-          oldArr.forEach(oldItem => {
-              const id = oldItem.id || oldItem._id;
-              if (id) {
-                  const stillExists = newArr.some(x => (x.id || x._id) === id);
-                  if (!stillExists) {
-                      if(window.parent.deleteDocumentFromFirebase) {
-                          window.parent.deleteDocumentFromFirebase(col, id);
-                      }
-                  }
-              }
-          });
-      } else if (col === 'settings' && typeof newArr === 'object') {
-          if (JSON.stringify(oldArr) !== JSON.stringify(newArr)) {
-              if(window.parent.setDocumentInFirebase) {
-                  window.parent.setDocumentInFirebase(col, "main", newArr);
-              }
+    const liveArr = liveState[col];
+    const newArr  = newData[col];
+
+    if (Array.isArray(newArr) && Array.isArray(liveArr)) {
+      newArr.forEach(newItem => {
+        const id = newItem.id || newItem._id;
+        if (!id || newItem._init) return;
+
+        const liveItem = liveArr.find(x => (x.id || x._id) === id);
+        if (!liveItem) {
+          // New item: add to live state and persist
+          liveArr.push(newItem);
+          if (window.parent.setDocumentInFirebase) {
+            window.parent.setDocumentInFirebase(col, id, newItem);
           }
+        } else if (JSON.stringify(liveItem) !== JSON.stringify(newItem)) {
+          // Changed item: update live state and persist
+          const idx = liveArr.indexOf(liveItem);
+          liveArr[idx] = newItem;
+          if (window.parent.setDocumentInFirebase) {
+            window.parent.setDocumentInFirebase(col, id, newItem);
+          }
+        }
+      });
+      // NOTE: intentionally NOT deleting items here.
+      // Deletions must be done explicitly via deleteDocumentFromFirebase.
+    } else if (col === 'settings' && newArr && typeof newArr === 'object' && !Array.isArray(newArr)) {
+      if (JSON.stringify(liveState.settings) !== JSON.stringify(newArr)) {
+        liveState.settings = newArr;
+        if (window.parent.setDocumentInFirebase) {
+          window.parent.setDocumentInFirebase('settings', 'main', newArr);
+        }
       }
+    }
   });
-
-  window.parent.DB_STATE = newData;
 }
 
 window.DB = {
