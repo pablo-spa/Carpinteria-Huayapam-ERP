@@ -301,21 +301,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         </select>
       </div>
 
-      <div class="f-row">
-        <label class="f-lbl">Notas internas (Opcional)</label>
-        <textarea id="f-notes" class="f-input" rows="2" placeholder="Cosas que no van al concepto..."></textarea>
-      </div>
-
-      <!-- Links -->
-      <div class="f-row grid2" id="links-body" style="margin-top: 8px;">
+      <!-- Project & OC links — always visible -->
+      <div class="f-row grid2" id="links-body">
         <div class="f-row" id="proj-wrap">
-          <label class="f-lbl">Vincular a Proyecto</label>
-          <select id="f-proj" class="f-input" data-searchable></select>
+          <label class="f-lbl">Proyecto <span style="font-weight:400; color:var(--subtext);">(opcional)</span></label>
+          <select id="f-proj" class="f-input" data-searchable>
+            <option value="">— Sin proyecto —</option>
+          </select>
         </div>
         <div class="f-row" id="oc-wrap">
-          <label class="f-lbl">Vincular a Orden de Compra</label>
-          <select id="f-oc" class="f-input"></select>
+          <label class="f-lbl">Orden de Compra <span style="font-weight:400; color:var(--subtext);">(opcional)</span></label>
+          <select id="f-oc" class="f-input">
+            <option value="">— Sin OC —</option>
+          </select>
         </div>
+      </div>
+
+      <div class="f-row">
+        <label class="f-lbl">Notas internas <span style="font-weight:400; color:var(--subtext);">(opcional)</span></label>
+        <textarea id="f-notes" class="f-input" rows="2" placeholder="Información adicional que no va en el concepto..."></textarea>
       </div>
 
     </div>
@@ -661,7 +665,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   function openPanel(id=null) {
     document.getElementById('panel-overlay').classList.add('open');
     document.getElementById('llm-box').style.display = 'none';
-    document.getElementById('links-body').style.display = 'none';
     
     // Enable inputs
     document.querySelectorAll('.f-input').forEach(i => i.disabled = false);
@@ -681,12 +684,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       document.getElementById('f-concept').value = m.concept || '';
       document.getElementById('f-cat-input').value = m.category || '';
       document.getElementById('f-notes').value = m.notes || '';
-      document.getElementById('f-proj').value = m.projectId || '';
+      const projEl = document.getElementById('f-proj');
+      projEl.value = m.projectId || '';
+      if (projEl._ssSync) projEl._ssSync();
       document.getElementById('f-oc').value = m.orderId || '';
-      
-      if(m.projectId || m.orderId) {
-        // No hidden container anymore, just bind values
-      }
 
       const badge = document.getElementById('status-badge');
       badge.style.display = 'block';
@@ -712,7 +713,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       document.getElementById('f-cat-input').value = '';
       document.getElementById('f-notes').value = '';
       document.getElementById('status-badge').style.display = 'none';
-      document.getElementById('f-proj').value = '';
+      const projEl2 = document.getElementById('f-proj');
+      projEl2.value = '';
+      if (projEl2._ssSync) projEl2._ssSync();
       document.getElementById('f-oc').value = '';
     }
   }
