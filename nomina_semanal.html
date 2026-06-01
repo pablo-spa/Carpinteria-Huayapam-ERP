@@ -366,7 +366,10 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     <div class="fstat"><span class="lbl">Extras</span><span class="val" id="f-extras" style="color:var(--amber)">$0</span></div>
     <div class="fstat"><span class="lbl">Descuentos</span><span class="val" id="f-descs" style="color:var(--red)">$0</span></div>
   </div>
-  <button class="btn btn-ghost" onclick="showTab('imprimir',document.querySelectorAll('.tab')[2])">🖨 Imprimir</button>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-green" onclick="guardarSemana()">💾 Guardar semana</button>
+    <button class="btn btn-ghost" onclick="showTab('imprimir',document.querySelectorAll('.tab')[2])">🖨 Imprimir</button>
+  </div>
 </div>
 
 <script src="db.js"></script>
@@ -805,7 +808,11 @@ function saveJornadaNomina(workerId, diaIdx) {
 
 function setDia(id,i,st){
   S[id].dias[i].st=st;
-  if(st!=='trabajo') S[id].dias[i].hrs=i<5?9:0;
+  if(st==='trabajo'){
+    if(!S[id].dias[i].hrs) S[id].dias[i].hrs=9;
+  } else {
+    S[id].dias[i].hrs=0;
+  }
   renderDias(id);
   refreshCard(id);
   saveJornadaNomina(id,i);
@@ -877,6 +884,16 @@ function buildChips(id,r){
   if(res.hExt_all>0)html+=`<span class="chip chip-amber">+${res.hExt_all.toFixed(1)}h extra</span>`;
   if(res.prestDesc>0)html+=`<span class="chip chip-gray">−$${res.prestDesc.toLocaleString('es-MX')} prest.</span>`;
   el.innerHTML=html;
+}
+
+function guardarSemana(){
+  let count=0;
+  WORKERS.forEach(w=>{
+    for(let i=0;i<7;i++){
+      if(S[w.id].dias[i].st!=='libre'){ saveJornadaNomina(w.id,i); count++; }
+    }
+  });
+  toast(`✓ ${count} registro${count!==1?'s':''} guardado${count!==1?'s':''}`);
 }
 
 function markVerif(id){
