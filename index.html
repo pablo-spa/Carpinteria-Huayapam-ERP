@@ -821,14 +821,18 @@
         document.getElementById('db-loading-overlay').style.display = 'flex';
         const state = {};
         let isFirebaseEmpty = true;
+        let loadedCount = 0;
         const snaps = await Promise.all(
           collectionsToLoad.map(col =>
-            getDocs(collection(db, col)).catch(e => {
-              console.warn(`[DB] Error cargando colección "${col}":`, e.message);
-              return { docs: [] };
-            })
+            getDocs(collection(db, col))
+              .then(snap => { loadedCount++; return snap; })
+              .catch(e => {
+                console.error(`[DB] ❌ Error cargando "${col}": ${e.code} — ${e.message}`);
+                return { docs: [] };
+              })
           )
         );
+        console.log(`[DB] Cargadas ${loadedCount}/${collectionsToLoad.length} colecciones`);
         collectionsToLoad.forEach((col, i) => {
           state[col] = snaps[i].docs.map(d => ({ _id: d.id, ...d.data() }));
           if (state[col].length > 0) isFirebaseEmpty = false;
