@@ -30,200 +30,163 @@
   }
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  background: var(--base); color: var(--text); padding-bottom: 40px;
-}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); padding-bottom: 40px; }
 
 /* ── Header ── */
-.hdr {
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 14px 20px; display: flex; align-items: center; gap: 14px;
-  position: sticky; top: 0; z-index: 10;
-}
-.back-btn {
-  background: none; border: none; font-size: 20px; cursor: pointer;
-  color: var(--subtext); padding: 0 4px; flex-shrink: 0;
-}
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 13px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+.back-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--subtext); flex-shrink: 0; }
 .back-btn:hover { color: var(--text); }
 .hdr-info { flex: 1; }
 .hdr-nombre { font-size: 17px; font-weight: 800; }
-.hdr-sub { font-size: 12px; color: var(--subtext); margin-top: 1px; }
-.btn {
-  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
-  cursor: pointer; border: none; font-family: inherit; transition: opacity .15s;
-}
+.hdr-sub    { font-size: 12px; color: var(--subtext); margin-top: 1px; }
+.btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: opacity .15s; white-space: nowrap; }
 .btn:hover { opacity: 0.85; }
-.btn-blue { background: var(--blue); color: #fff; }
-.btn-dark { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.btn-blue   { background: var(--blue); color: #fff; }
+.btn-green  { background: var(--green); color: #fff; }
+.btn-dark   { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.btn-red    { background: var(--red-bg); color: var(--red-text); border: 1px solid var(--red); }
+.btn-amber  { background: var(--amber); color: #fff; }
 
-/* ── Main layout ── */
-.main {
-  max-width: 1100px; margin: 0 auto; padding: 20px;
-  display: grid; grid-template-columns: 280px 1fr; gap: 20px;
-}
-@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* ── Layout ── */
+.main { max-width: 1100px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+@media (max-width: 880px) { .main { grid-template-columns: 1fr; } }
 
 /* ── Cards ── */
-.card {
-  background: var(--mantle); border: 1px solid var(--crust);
-  border-radius: var(--radius-lg); padding: 16px;
-}
-.card-title {
-  font-size: 11px; font-weight: 800; color: var(--subtext);
-  text-transform: uppercase; letter-spacing: .05em;
-  margin-bottom: 12px; border-bottom: 1px solid var(--crust);
-  padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-}
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; }
+.card-title { font-size: 11px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; border-bottom: 1px solid var(--crust); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
-/* ── Worker info ── */
-.info-row {
-  display: flex; justify-content: space-between; align-items: baseline;
-  padding: 6px 0; border-bottom: 1px solid var(--crust); font-size: 13px;
-}
+/* ── Info rows ── */
+.info-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--crust); font-size: 13px; }
 .info-row:last-child { border-bottom: none; }
 .info-lbl { color: var(--subtext); }
 .info-val { font-weight: 700; text-align: right; }
 
 /* ── Stats ── */
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.stat-cell {
-  background: var(--base); border: 1px solid var(--crust);
-  border-radius: 8px; padding: 10px 12px; text-align: center;
-}
+.stat-cell { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 10px 12px; text-align: center; }
 .stat-cell .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--subtext); }
 .stat-cell .val { font-size: 22px; font-weight: 800; margin-top: 2px; }
-.val-green { color: var(--green); }
-.val-red   { color: var(--red); }
-.val-amber { color: var(--amber); }
+.val-green { color: var(--green); } .val-red { color: var(--red); } .val-amber { color: var(--amber); }
+
+/* ── Edit worker form ── */
+.edit-section { display: none; flex-direction: column; gap: 10px; margin-top: 12px; }
+.edit-section.open { display: flex; }
+.e-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.e-field { display: flex; flex-direction: column; gap: 4px; }
+.e-field label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--subtext); }
+.e-field input, .e-field select { padding: 7px 10px; border-radius: 7px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-family: inherit; font-size: 13px; }
+.e-field input:focus, .e-field select:focus { outline: none; border-color: var(--blue); }
+
+/* ── Pay weeks ── */
+.pay-week-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--crust); font-size: 13px; }
+.pay-week-row:last-child { border-bottom: none; }
 
 /* ── Calendar ── */
-.cal-nav {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 14px;
-}
-.cal-nav-btn {
-  background: var(--base); border: 1px solid var(--crust); border-radius: 8px;
-  padding: 6px 14px; cursor: pointer; font-size: 16px; color: var(--subtext); font-weight: 700;
-}
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cal-nav-btn { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 16px; color: var(--subtext); font-weight: 700; }
 .cal-nav-btn:hover { color: var(--text); border-color: var(--surface1); }
 .cal-month-lbl { font-size: 16px; font-weight: 800; }
 
-.cal-grid {
-  display: grid; grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-.cal-dow {
-  text-align: center; font-size: 10px; font-weight: 800;
-  text-transform: uppercase; color: var(--subtext); padding: 4px 0;
-}
-.cal-dow.weekend { color: var(--amber); }
+.cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-dow { text-align: center; font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); padding: 4px 0; }
+.cal-dow.wknd { color: var(--amber); }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 4px; }
 
 .cal-cell {
-  aspect-ratio: 1; border-radius: 8px; padding: 5px 4px;
-  display: flex; flex-direction: column; cursor: pointer;
-  border: 1.5px solid var(--crust); position: relative;
-  transition: all .12s; overflow: hidden; min-height: 52px;
+  border-radius: 7px; padding: 5px 4px; cursor: pointer;
+  border: 1.5px solid var(--crust); min-height: 56px;
+  display: flex; flex-direction: column; transition: border-color .1s;
+  position: relative; overflow: hidden;
 }
-.cal-cell.empty { border: none; cursor: default; background: transparent; }
-.cal-cell:not(.empty):hover { border-color: var(--blue); }
-.cal-cell.selected { border-color: var(--blue) !important; box-shadow: 0 0 0 2px var(--blue-bg); }
+.cal-cell.empty    { border: none; cursor: default; background: transparent; pointer-events: none; }
+.cal-cell.future   { opacity: 0.4; }
+.cal-cell.wknd     { background: var(--crust); }
+.cal-cell.today    { box-shadow: inset 0 0 0 2px var(--blue); }
+.cal-cell.selected { border-color: var(--blue) !important; box-shadow: 0 0 0 2px rgba(30,102,245,0.25); }
+.cal-cell:not(.empty):not(.future):hover { border-color: var(--surface0); }
 
 .cal-cell.st-trabajo    { background: var(--green-bg);  border-color: var(--green); }
 .cal-cell.st-falta      { background: var(--red-bg);    border-color: var(--red);   opacity: .85; }
 .cal-cell.st-retardo    { background: var(--amber-bg);  border-color: var(--amber); }
-.cal-cell.st-vacaciones { background: var(--blue-bg);   border-color: var(--blue);  }
-.cal-cell.is-weekend    { background: var(--crust);     }
-.cal-cell.st-trabajo.is-weekend { background: var(--purple-bg); border-color: var(--purple); }
-.cal-cell.is-today      { box-shadow: inset 0 0 0 2px var(--blue); }
-.cal-cell.is-future     { opacity: 0.35; cursor: default; }
+.cal-cell.st-vacaciones { background: var(--blue-bg);   border-color: var(--blue); }
+.cal-cell.st-trabajo.wknd, .cal-cell.st-retardo.wknd { background: var(--purple-bg); border-color: var(--purple); }
 
-.cell-num {
-  font-size: 11px; font-weight: 800; color: var(--subtext);
-}
-.st-trabajo .cell-num, .st-retardo .cell-num, .st-falta .cell-num, .st-vacaciones .cell-num {
-  color: inherit;
-}
-.cell-hrs {
-  font-size: 13px; font-weight: 800; margin-top: 2px;
-  color: var(--green-text);
-}
-.st-falta .cell-hrs     { color: var(--red-text); font-size: 11px; }
+.cell-num  { font-size: 11px; font-weight: 800; color: var(--subtext); line-height: 1; }
+.cell-hrs  { font-size: 13px; font-weight: 800; margin-top: 2px; color: var(--green-text); line-height: 1; }
+.st-falta .cell-hrs     { color: var(--red-text);   font-size: 11px; }
 .st-retardo .cell-hrs   { color: var(--amber-text); }
-.st-vacaciones .cell-hrs{ color: var(--blue-text); font-size: 11px; }
-.st-trabajo.is-weekend .cell-hrs { color: var(--purple); }
+.st-vacaciones .cell-hrs{ color: var(--blue-text);  font-size: 11px; }
+.st-trabajo.wknd .cell-hrs, .st-retardo.wknd .cell-hrs { color: var(--purple); }
+.cell-projs { display: flex; flex-wrap: wrap; gap: 2px; margin-top: auto; }
+.cell-proj  { font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; background: rgba(0,0,0,0.12); color: inherit; white-space: nowrap; overflow: hidden; max-width: 40px; text-overflow: ellipsis; }
+.src-dot    { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; }
+.src-prod   { background: var(--green); }
+.src-chk    { background: var(--amber); }
 
-.cell-projs {
-  display: flex; flex-wrap: wrap; gap: 2px; margin-top: auto;
-}
-.cell-proj-tag {
-  font-size: 9px; font-weight: 700; padding: 1px 4px;
-  border-radius: 3px; background: rgba(0,0,0,0.12); color: inherit;
-  white-space: nowrap; overflow: hidden; max-width: 36px; text-overflow: ellipsis;
-}
+/* ── Day edit panel ── */
+.day-panel { display: none; background: var(--base); border: 1.5px solid var(--blue); border-radius: var(--radius-lg); padding: 16px; margin-top: 12px; }
+.day-panel.open { display: block; }
 
-.cal-source-dot {
-  position: absolute; top: 4px; right: 4px;
-  width: 6px; height: 6px; border-radius: 50%;
-}
-.src-produccion { background: var(--green); }
-.src-checador   { background: var(--amber); }
+.day-panel-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--crust); }
+.day-panel-fecha { font-size: 15px; font-weight: 800; flex: 1; }
 
-/* ── Day detail ── */
-.day-detail {
-  margin-top: 12px; background: var(--base); border: 1px solid var(--crust);
-  border-radius: var(--radius-lg); padding: 14px; display: none;
-}
-.day-detail.open { display: block; }
-.day-detail-hdr {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--crust);
-}
-.day-detail-fecha { font-size: 14px; font-weight: 800; }
-.day-detail-estado { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
+.sbtn-row   { display: flex; gap: 6px; margin-bottom: 14px; }
+.sbtn       { cursor: pointer; border: 1.5px solid var(--crust); border-radius: 8px; background: var(--base); color: var(--subtext); font-size: 13px; font-weight: 700; font-family: inherit; padding: 8px 14px; transition: all .12s; }
+.sbtn.on-trabajo    { background: var(--green);  border-color: var(--green);  color: #fff; }
+.sbtn.on-falta      { background: var(--red);    border-color: var(--red);    color: #fff; }
+.sbtn.on-retardo    { background: var(--amber);  border-color: var(--amber);  color: #fff; }
+.sbtn.on-vacaciones { background: var(--blue);   border-color: var(--blue);   color: #fff; }
 
-.proj-entry {
-  background: var(--mantle); border: 1px solid var(--crust);
-  border-radius: 8px; padding: 10px 12px; margin-top: 8px;
-}
-.proj-entry-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.proj-code-badge {
-  font-size: 11px; font-weight: 800; font-family: monospace;
-  background: var(--blue-bg); color: var(--blue-text);
-  padding: 2px 7px; border-radius: 5px;
-}
-.proj-entry-hrs { font-size: 15px; font-weight: 800; color: var(--green); margin-left: auto; }
-.proj-entry-act { font-size: 12px; color: var(--subtext); }
-.proj-entry-desc { font-size: 12px; color: var(--text); margin-top: 3px; }
+.hrs-grid   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.hr-wrap    { display: flex; flex-direction: column; gap: 4px; }
+.hr-lbl     { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--subtext); }
+.hr-input   { background: var(--base); border: 2px solid var(--crust); border-radius: 8px; padding: 8px; color: var(--text); font-size: 22px; font-weight: 800; text-align: center; font-family: inherit; width: 100%; min-height: 52px; }
+.hr-input:focus { outline: none; }
+.hr-x1 { border-color: var(--green); } .hr-x15 { border-color: var(--amber); } .hr-x2 { border-color: var(--red); }
+.hrs-equiv  { font-size: 12px; font-weight: 700; color: var(--subtext); text-align: center; margin-bottom: 14px; }
 
-/* ── Week summary strip ── */
-.week-strip {
-  display: grid; grid-template-columns: repeat(7, 1fr);
-  gap: 4px; margin-top: 8px;
-}
-.week-total-cell {
-  grid-column: span 7; display: flex; justify-content: flex-end;
-  font-size: 11px; font-weight: 700; color: var(--subtext);
-  padding: 2px 4px;
-}
+.retardo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ret-input   { background: var(--base); border: 2px solid var(--amber); border-radius: 8px; padding: 7px; color: var(--text); font-size: 18px; font-weight: 700; text-align: center; font-family: inherit; width: 80px; }
 
-/* ── Pay weeks ── */
-.pay-week-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 0; border-bottom: 1px solid var(--crust); font-size: 13px;
-}
-.pay-week-row:last-child { border-bottom: none; }
-.pay-range { color: var(--subtext); font-size: 12px; }
+/* Projects in day edit */
+.proj-rows  { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.proj-row   { background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px; position: relative; }
+.proj-r-top { display: grid; grid-template-columns: 1fr 72px; gap: 6px; align-items: end; }
+.proj-r-bot { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-items: end; }
+.p-rm       { position: absolute; top: 6px; right: 6px; background: none; border: none; cursor: pointer; color: var(--subtext); font-size: 14px; }
+.p-rm:hover { color: var(--red); }
+.add-proj   { cursor: pointer; background: var(--base); border: 1.5px dashed var(--crust); border-radius: 8px; color: var(--subtext); font-size: 13px; font-weight: 600; padding: 8px; font-family: inherit; width: 100%; text-align: left; transition: .15s; }
+.add-proj:hover { border-color: var(--green); color: var(--green-text); background: var(--green-bg); }
+.proj-hrs-bar { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 7px; text-align: center; margin-bottom: 8px; }
+.phb-ok    { background: var(--green-bg);  color: var(--green-text); }
+.phb-warn  { background: var(--amber-bg);  color: var(--amber-text); }
+.phb-over  { background: var(--red-bg);    color: var(--red-text); }
+.phb-empty { background: var(--surface0);  color: var(--subtext); }
 
-.pill {
-  padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;
-  text-transform: uppercase; display: inline-block;
-}
+.f-small    { display: flex; flex-direction: column; gap: 4px; }
+.f-small label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--subtext); }
+.f-small input, .f-small select { padding: 6px 10px; border-radius: 7px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-family: inherit; font-size: 13px; width: 100%; }
+.f-small input:focus, .f-small select:focus { outline: none; border-color: var(--blue); }
+
+.day-actions { display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--crust); }
+
+/* Source info banner */
+.src-banner { font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 7px; display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.src-prod-banner { background: var(--green-bg); color: var(--green-text); }
+.src-chk-banner  { background: var(--amber-bg); color: var(--amber-text); }
+
+/* Leyenda */
+.legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; color: var(--subtext); }
+.leg-item { display: flex; align-items: center; gap: 4px; }
+.leg-dot  { width: 10px; height: 10px; border-radius: 2px; border-width: 1px; border-style: solid; flex-shrink: 0; }
+
+/* Pill */
+.pill { padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
 .pill-green  { background: var(--green-bg);  color: var(--green-text); }
-.pill-amber  { background: var(--amber-bg);  color: var(--amber-text); }
 .pill-red    { background: var(--red-bg);    color: var(--red-text); }
+.pill-amber  { background: var(--amber-bg);  color: var(--amber-text); }
 .pill-blue   { background: var(--blue-bg);   color: var(--blue-text); }
-.pill-purple { background: var(--purple-bg); color: var(--purple); }
 .pill-gray   { background: var(--surface0);  color: var(--subtext); }
 </style>
 </head>
@@ -233,9 +196,9 @@ body {
   <button class="back-btn" onclick="goBack()">←</button>
   <div class="hdr-info">
     <div class="hdr-nombre" id="hdr-nombre">Cargando…</div>
-    <div class="hdr-sub" id="hdr-sub"></div>
+    <div class="hdr-sub"    id="hdr-sub"></div>
   </div>
-  <button class="btn btn-dark" onclick="editWorker()">✏️ Editar datos</button>
+  <button class="btn btn-dark" id="btn-editar" onclick="toggleEditWorker()">✏️ Editar</button>
 </div>
 
 <div class="main">
@@ -243,31 +206,56 @@ body {
   <!-- ══ Columna izquierda ══ -->
   <div style="display:flex; flex-direction:column; gap:16px;">
 
-    <!-- Info -->
+    <!-- Info + edición inline -->
     <div class="card">
-      <div class="card-title">Información</div>
+      <div class="card-title">
+        Información
+        <span id="edit-toggle-lbl" style="font-size:12px; font-weight:600; color:var(--blue); cursor:pointer;" onclick="toggleEditWorker()">Editar</span>
+      </div>
       <div id="info-rows"></div>
+
+      <!-- Formulario de edición (oculto por default) -->
+      <div class="edit-section" id="edit-section">
+        <div class="e-grid">
+          <div class="e-field" style="grid-column:span 2;"><label>Nombre Completo</label><input type="text" id="e-name"></div>
+          <div class="e-field"><label>Puesto / Categoría</label><input type="text" id="e-role"></div>
+          <div class="e-field"><label>Salario Base ($/semana)</label><input type="number" id="e-salary" step="any" min="0"></div>
+          <div class="e-field"><label>Teléfono</label><input type="text" id="e-phone"></div>
+          <div class="e-field"><label>RFC</label><input type="text" id="e-rfc" style="text-transform:uppercase;"></div>
+          <div class="e-field"><label>CURP</label><input type="text" id="e-curp" style="text-transform:uppercase;"></div>
+          <div class="e-field"><label>NSS (IMSS)</label><input type="text" id="e-imss"></div>
+          <div class="e-field"><label>Fecha de Ingreso</label><input type="date" id="e-ingreso"></div>
+          <div class="e-field"><label>Días de Vacaciones</label><input type="number" id="e-vacaciones" min="0" step="1"></div>
+          <div class="e-field" style="grid-column:span 2;">
+            <label>Estado</label>
+            <select id="e-activo">
+              <option value="true">✅ Activo</option>
+              <option value="false">❌ Baja</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:4px;">
+          <button class="btn btn-dark" onclick="cancelEditWorker()">Cancelar</button>
+          <button class="btn btn-blue" onclick="saveWorkerInfo()">Guardar</button>
+        </div>
+      </div>
     </div>
 
     <!-- Stats del mes -->
     <div class="card">
-      <div class="card-title">
-        <span id="stats-mes-lbl">Este mes</span>
-      </div>
+      <div class="card-title"><span id="stats-lbl">Este mes</span></div>
       <div class="stats-grid">
-        <div class="stat-cell"><div class="lbl">Horas</div><div class="val val-green" id="stat-hrs">—</div></div>
+        <div class="stat-cell"><div class="lbl">Horas equiv.</div><div class="val val-green" id="stat-hrs">—</div></div>
         <div class="stat-cell"><div class="lbl">Días trab.</div><div class="val val-green" id="stat-dias">—</div></div>
         <div class="stat-cell"><div class="lbl">Faltas</div><div class="val val-red" id="stat-faltas">—</div></div>
-        <div class="stat-cell"><div class="lbl">Retardos</div><div class="val val-amber" id="stat-retardos">—</div></div>
+        <div class="stat-cell"><div class="lbl">Retardos</div><div class="val val-amber" id="stat-ret">—</div></div>
       </div>
     </div>
 
-    <!-- Semanas de pago recientes -->
+    <!-- Semanas recientes -->
     <div class="card">
       <div class="card-title">Últimas semanas</div>
-      <div id="pay-weeks-list">
-        <div style="font-size:12px; color:var(--subtext);">Cargando…</div>
-      </div>
+      <div id="pay-weeks"></div>
     </div>
 
   </div>
@@ -275,443 +263,629 @@ body {
   <!-- ══ Columna derecha: Calendario ══ -->
   <div style="display:flex; flex-direction:column; gap:12px;">
 
-    <div class="card" style="padding-bottom:8px;">
+    <div class="card" style="padding-bottom:10px;">
       <div class="cal-nav">
         <button class="cal-nav-btn" onclick="navMes(-1)">‹</button>
         <div class="cal-month-lbl" id="cal-mes-lbl">—</div>
         <button class="cal-nav-btn" onclick="navMes(1)">›</button>
       </div>
-
-      <!-- Días de la semana header -->
-      <div class="cal-grid" id="cal-dow-hdr">
-        <div class="cal-dow weekend">Dom</div>
-        <div class="cal-dow">Lun</div>
-        <div class="cal-dow">Mar</div>
-        <div class="cal-dow">Mié</div>
-        <div class="cal-dow">Jue</div>
-        <div class="cal-dow">Vie</div>
-        <div class="cal-dow weekend">Sáb</div>
+      <div class="cal-dow-row">
+        <div class="cal-dow wknd">Dom</div><div class="cal-dow">Lun</div><div class="cal-dow">Mar</div>
+        <div class="cal-dow">Mié</div><div class="cal-dow">Jue</div><div class="cal-dow">Vie</div>
+        <div class="cal-dow wknd">Sáb</div>
       </div>
-
-      <!-- Calendar grid -->
-      <div class="cal-grid" id="cal-grid" style="margin-top:4px;"></div>
-
-      <!-- Leyenda -->
-      <div style="display:flex; gap:12px; margin-top:10px; flex-wrap:wrap; font-size:11px; color:var(--subtext);">
-        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green-bg);border:1px solid var(--green);margin-right:3px;"></span>Trabajó</span>
-        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--red-bg);border:1px solid var(--red);margin-right:3px;"></span>Falta</span>
-        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--amber-bg);border:1px solid var(--amber);margin-right:3px;"></span>Retardo</span>
-        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--blue-bg);border:1px solid var(--blue);margin-right:3px;"></span>Vacaciones</span>
-        <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--purple-bg);border:1px solid var(--purple);margin-right:3px;"></span>Sáb/Dom trabajado</span>
-        <span style="margin-left:auto;">
-          <span class="cal-source-dot src-produccion" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:3px;"></span>Producción
-          <span class="cal-source-dot src-checador" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:3px;margin-left:8px;"></span>Checador
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--green-bg);border-color:var(--green);"></div>Trabajó</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--red-bg);border-color:var(--red);"></div>Falta</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--amber-bg);border-color:var(--amber);"></div>Retardo</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--blue-bg);border-color:var(--blue);"></div>Vacaciones</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--purple-bg);border-color:var(--purple);"></div>Fin de semana</div>
+        <span style="margin-left:auto; display:flex; gap:8px;">
+          <span style="display:flex;align-items:center;gap:3px;"><span class="src-dot src-prod" style="display:inline-block;width:8px;height:8px;border-radius:50%;"></span>Producción</span>
+          <span style="display:flex;align-items:center;gap:3px;"><span class="src-dot src-chk" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);"></span>Checador</span>
         </span>
       </div>
     </div>
 
-    <!-- Panel de detalle del día -->
-    <div class="day-detail" id="day-detail">
-      <div class="day-detail-hdr">
-        <div class="day-detail-fecha" id="dd-fecha">—</div>
-        <div id="dd-estado"></div>
-        <button onclick="closeDayDetail()" style="background:none;border:none;color:var(--subtext);cursor:pointer;font-size:18px;margin-left:8px;">✕</button>
+    <!-- Panel de edición del día -->
+    <div class="day-panel" id="day-panel">
+      <div class="day-panel-hdr">
+        <div class="day-panel-fecha" id="dp-fecha">—</div>
+        <div id="dp-src"></div>
+        <button onclick="closeDayPanel()" style="background:none;border:none;color:var(--subtext);cursor:pointer;font-size:18px;margin-left:8px;">✕</button>
       </div>
-      <div id="dd-content"></div>
+
+      <!-- Status buttons -->
+      <div class="sbtn-row">
+        <button class="sbtn" id="dp-sb-trabajo"    onclick="dpSetStatus('trabajo')">✓ Trabajó</button>
+        <button class="sbtn" id="dp-sb-falta"      onclick="dpSetStatus('falta')">✗ Falta</button>
+        <button class="sbtn" id="dp-sb-retardo"    onclick="dpSetStatus('retardo')">⏰ Retardo</button>
+        <button class="sbtn" id="dp-sb-vacaciones" onclick="dpSetStatus('vacaciones')">☀ Vacaciones</button>
+      </div>
+
+      <!-- Retardo minutes (solo si retardo) -->
+      <div class="retardo-row" id="dp-retrow" style="display:none;">
+        <span style="font-size:13px; color:var(--amber); font-weight:700;">⏰ Retardo:</span>
+        <input type="number" class="ret-input" id="dp-ret-min" min="0" max="480" placeholder="min" oninput="dpRetardoChange()">
+        <span style="font-size:13px; color:var(--subtext);">minutos</span>
+      </div>
+
+      <!-- Hours grid (solo si trabajo/retardo) -->
+      <div id="dp-hrs-section" style="display:none;">
+        <div class="hrs-grid">
+          <div class="hr-wrap"><div class="hr-lbl" style="color:var(--green);">Normal ×1</div>
+            <input type="number" class="hr-input hr-x1" id="dp-h1" min="0" max="16" step="0.5" placeholder="9" oninput="dpUpdTotal()" onclick="this.select()"></div>
+          <div class="hr-wrap"><div class="hr-lbl" style="color:var(--amber);">Extra ×1.5</div>
+            <input type="number" class="hr-input hr-x15" id="dp-h15" min="0" max="8" step="0.5" placeholder="0" oninput="dpUpdTotal()" onclick="this.select()"></div>
+          <div class="hr-wrap"><div class="hr-lbl" style="color:var(--red);">Doble ×2</div>
+            <input type="number" class="hr-input hr-x2" id="dp-h2" min="0" max="8" step="0.5" placeholder="0" oninput="dpUpdTotal()" onclick="this.select()"></div>
+        </div>
+        <div class="hrs-equiv" id="dp-hrs-equiv">—</div>
+      </div>
+
+      <!-- Proyectos (solo si trabajo/retardo) -->
+      <div id="dp-proj-section" style="display:none;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--subtext); margin-bottom:6px;">Proyectos del día</div>
+        <div class="proj-rows" id="dp-proj-rows"></div>
+        <div class="proj-hrs-bar phb-empty" id="dp-proj-bar">Sin horas asignadas</div>
+        <button class="add-proj" onclick="dpAddProj()">+ Agregar proyecto</button>
+      </div>
+
+      <!-- Notas -->
+      <div class="f-small" style="margin-top:12px;">
+        <label>Notas (opcional)</label>
+        <input type="text" id="dp-notas" placeholder="Observaciones, incidentes…">
+      </div>
+
+      <!-- Acciones -->
+      <div class="day-actions">
+        <button class="btn btn-green" onclick="dpGuardar()" style="flex:1;">✓ Guardar día</button>
+        <button class="btn btn-red" id="dp-btn-borrar" onclick="dpBorrar()" style="display:none;">Borrar registro</button>
+      </div>
     </div>
 
   </div>
-
 </div>
 
-<!-- Edit modal (lightweight) -->
-<div id="edit-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:none; align-items:center; justify-content:center;">
-  <div style="background:var(--base); border-radius:12px; padding:24px; max-width:460px; width:90%; display:flex; flex-direction:column; gap:14px;">
-    <div style="font-size:16px; font-weight:800;">Editar Trabajador</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-      <div style="display:flex;flex-direction:column;gap:5px;">
-        <label style="font-size:11px;font-weight:700;color:var(--subtext);text-transform:uppercase;">Nombre Completo</label>
-        <input type="text" id="e-name" style="padding:8px;border-radius:8px;border:1px solid var(--crust);background:var(--mantle);color:var(--text);font-family:inherit;font-size:13px;">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px;">
-        <label style="font-size:11px;font-weight:700;color:var(--subtext);text-transform:uppercase;">Puesto</label>
-        <input type="text" id="e-role" style="padding:8px;border-radius:8px;border:1px solid var(--crust);background:var(--mantle);color:var(--text);font-family:inherit;font-size:13px;">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px;">
-        <label style="font-size:11px;font-weight:700;color:var(--subtext);text-transform:uppercase;">Salario Base ($)</label>
-        <input type="number" id="e-salary" style="padding:8px;border-radius:8px;border:1px solid var(--crust);background:var(--mantle);color:var(--text);font-family:inherit;font-size:13px;">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px;">
-        <label style="font-size:11px;font-weight:700;color:var(--subtext);text-transform:uppercase;">Teléfono</label>
-        <input type="text" id="e-phone" style="padding:8px;border-radius:8px;border:1px solid var(--crust);background:var(--mantle);color:var(--text);font-family:inherit;font-size:13px;">
-      </div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;">
-      <button class="btn btn-dark" onclick="closeEdit()">Cancelar</button>
-      <button class="btn btn-blue" onclick="saveEdit()">Guardar</button>
-    </div>
-  </div>
-</div>
-
+<script src="searchable-select.js" onerror="void 0"></script>
 <script src="db.js"></script>
 <script>
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS_L = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-const HOY = new Date().toISOString().slice(0,10);
+const MESES   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_L  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const HOY     = new Date().toISOString().slice(0,10);
 
 let workerId   = null;
 let workerData = null;
 let calYear    = new Date().getFullYear();
-let calMonth   = new Date().getMonth(); // 0-based
+let calMonth   = new Date().getMonth();
 let selectedDay = null;
 
+// Day panel state
+let DP = { status:'', h1:'', h15:'', h2:'', retMin:'', proyectos:[], notas:'', existingId:null };
+let PROYECTOS = [];  // { id: codigo, n: "0042 — Nombre", pieces: [] }
+let ACTIVIDADES = [];
+
 function goBack() {
-  if (window.parent?.openModule) window.parent.openModule('rh_trabajadores.html', 'Trabajadores');
+  if (window.parent?.openModule) window.parent.openModule('rh_trabajadores.html','Trabajadores');
   else window.history.back();
 }
 
 // ── Data helpers ─────────────────────────────────────────────
 function getDayRecord(dateStr) {
   const db = window.DB.get();
-
-  // Priority 1: attendance (producción diaria — más confiable, tiene horas reales)
   const prod = (db.attendance || []).find(a =>
     (a.fecha || a.date) === dateStr &&
-    (a.trabajadorId || a.workerId) === workerId &&
-    !a._init && (a.estado || a.status)
+    (a.trabajadorId || a.workerId) === workerId && !a._init && (a.estado || a.status)
   );
-  if (prod) {
-    return {
-      source:        'produccion',
-      estado:        prod.estado || prod.status,
-      horasTotales:  parseFloat(prod.horasTotales) || parseFloat(prod.horasNormal) || 0,
-      horasNormal:   parseFloat(prod.horasNormal)  || 0,
-      horasExtra:    parseFloat(prod.horasExtra)   || 0,
-      horasDoble:    parseFloat(prod.horasDoble)   || 0,
-      retardoMin:    parseFloat(prod.retardoMin)   || 0,
-      proyectos:     prod.proyectos || prod.projects || [],
-      notas:         prod.notas || ''
-    };
-  }
-
-  // Priority 2: attendance_logs (reloj checador — tiene hora de entrada/salida)
-  const chkLogs = (db.attendance_logs || []).filter(a =>
-    a.fecha === dateStr &&
-    (a.trabajadorId || a.workerId) === workerId &&
+  if (prod) return {
+    source: 'produccion', id: prod.id,
+    estado: prod.estado || prod.status,
+    horasTotales: parseFloat(prod.horasTotales) || parseFloat(prod.horasNormal) || 0,
+    horasNormal:  parseFloat(prod.horasNormal)  || 0,
+    horasExtra:   parseFloat(prod.horasExtra)   || 0,
+    horasDoble:   parseFloat(prod.horasDoble)   || 0,
+    retardoMin:   parseFloat(prod.retardoMin)   || 0,
+    proyectos:    prod.proyectos || prod.projects || [],
+    notas:        prod.notas || ''
+  };
+  const chk = (db.attendance_logs || []).filter(a =>
+    a.fecha === dateStr && (a.trabajadorId || a.workerId) === workerId &&
     a.tipo !== 'entrada' && a.tipo !== 'salida' && !a._init
   );
-  if (chkLogs.length > 0) {
-    const c = chkLogs[0];
-    const hTotal = parseFloat(c.horasTotales) ||
-      (parseFloat(c.horas_x1 || c.horasNormal)||0) +
-      (parseFloat(c.horas_x15 || c.horasExtra)||0)*1.5 +
-      (parseFloat(c.horas_x2  || c.horasDoble)||0)*2;
-    return {
-      source:       'checador',
-      estado:       c.estado || c.status || 'trabajo',
-      horasTotales: hTotal,
-      horasNormal:  parseFloat(c.horas_x1 || c.horasNormal) || hTotal,
-      horasExtra:   parseFloat(c.horas_x15 || c.horasExtra) || 0,
-      horasDoble:   parseFloat(c.horas_x2  || c.horasDoble) || 0,
-      retardoMin:   parseFloat(c.retardoMin) || 0,
-      proyectos:    [],
-      notas:        c.notas || ''
-    };
+  if (chk.length > 0) {
+    const c = chk[0];
+    const hn = parseFloat(c.horasNormal || c.horas_x1) || 0;
+    const he = parseFloat(c.horasExtra  || c.horas_x15)|| 0;
+    const hd = parseFloat(c.horasDoble  || c.horas_x2) || 0;
+    const ht = parseFloat(c.horasTotales) || hn + he*1.5 + hd*2;
+    return { source:'checador', id:c.id, estado: c.estado||c.status||'trabajo',
+      horasTotales:ht, horasNormal:hn, horasExtra:he, horasDoble:hd,
+      retardoMin: parseFloat(c.retardoMin)||0, proyectos:[], notas:c.notas||'' };
   }
-
-  return null; // sin registro
+  return null;
 }
 
-function estadoPill(estado) {
-  const map = { trabajo:'pill-green', falta:'pill-red', retardo:'pill-amber', vacaciones:'pill-blue' };
-  const lbl = { trabajo:'Trabajó', falta:'Falta', retardo:'Retardo', vacaciones:'Vacaciones' };
-  const cls = map[estado] || 'pill-gray';
-  return `<span class="pill ${cls}">${lbl[estado] || estado || 'Sin registro'}</span>`;
+function horasEq(h1, h15, h2) {
+  return (parseFloat(h1)||0) + (parseFloat(h15)||0)*1.5 + (parseFloat(h2)||0)*2;
 }
 
-// ── Render worker info ────────────────────────────────────────
+// ── Worker info display ───────────────────────────────────────
 function renderInfo() {
   const w = workerData;
-  const nombre = w.nombre || w.name || w.givenName || '—';
+  const nombre = w.nombre || w.name || '—';
   const rol    = w.puesto || w.role || '—';
-
   document.getElementById('hdr-nombre').textContent = nombre;
   document.getElementById('hdr-sub').textContent    = rol + (w.activo === false ? ' · BAJA' : '');
 
   const rows = [
-    ['Puesto',        rol],
-    ['Salario Base',  w.salarioBase || w.baseSalary ? `$${parseFloat(w.salarioBase || w.baseSalary).toLocaleString('es-MX')} / semana` : '—'],
-    ['Teléfono',      w.telefono || w.phone || '—'],
-    ['RFC',           w.rfc || '—'],
-    ['CURP',          w.curp || '—'],
-    ['IMSS NSS',      w.imss || '—'],
-    ['Estado',        w.activo === false ? '❌ Baja' : '✅ Activo'],
+    ['Puesto',          rol],
+    ['Salario Semanal', (w.salarioBase||w.baseSalary) ? '$'+parseFloat(w.salarioBase||w.baseSalary).toLocaleString('es-MX') : '—'],
+    ['Teléfono',        w.telefono||w.phone||'—'],
+    ['RFC',             w.rfc||'—'],
+    ['CURP',            w.curp||'—'],
+    ['NSS (IMSS)',       w.imss||'—'],
+    ['Fecha Ingreso',   w.fechaIngreso||w.startDate||w.ingreso||'—'],
+    ['Días Vacaciones', (w.diasVacaciones||w.vacationDays||'—') + (w.diasVacaciones||w.vacationDays ? ' días' : '')],
+    ['Estado',          w.activo === false ? '❌ Baja' : '✅ Activo'],
   ];
-  document.getElementById('info-rows').innerHTML = rows.map(([lbl, val]) => `
-    <div class="info-row">
-      <span class="info-lbl">${lbl}</span>
-      <span class="info-val">${val}</span>
-    </div>
-  `).join('');
+  document.getElementById('info-rows').innerHTML = rows.map(([l, v]) =>
+    `<div class="info-row"><span class="info-lbl">${l}</span><span class="info-val">${v}</span></div>`
+  ).join('');
 }
 
-// ── Render monthly stats ──────────────────────────────────────
-function renderStats(year, month) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  let hrs = 0, dias = 0, faltas = 0, retardos = 0;
+// ── Edit worker ───────────────────────────────────────────────
+function toggleEditWorker() {
+  const sec = document.getElementById('edit-section');
+  const open = sec.classList.contains('open');
+  if (open) { cancelEditWorker(); return; }
+  const w = workerData;
+  document.getElementById('e-name').value       = w.nombre || w.name || '';
+  document.getElementById('e-role').value       = w.puesto || w.role || '';
+  document.getElementById('e-salary').value     = w.salarioBase || w.baseSalary || '';
+  document.getElementById('e-phone').value      = w.telefono || w.phone || '';
+  document.getElementById('e-rfc').value        = w.rfc || '';
+  document.getElementById('e-curp').value       = w.curp || '';
+  document.getElementById('e-imss').value       = w.imss || '';
+  document.getElementById('e-ingreso').value    = w.fechaIngreso || w.startDate || w.ingreso || '';
+  document.getElementById('e-vacaciones').value = w.diasVacaciones || w.vacationDays || '';
+  document.getElementById('e-activo').value     = w.activo === false ? 'false' : 'true';
+  sec.classList.add('open');
+  document.getElementById('edit-toggle-lbl').textContent = 'Cancelar';
+  document.getElementById('btn-editar').textContent = '✕ Cancelar';
+}
+function cancelEditWorker() {
+  document.getElementById('edit-section').classList.remove('open');
+  document.getElementById('edit-toggle-lbl').textContent = 'Editar';
+  document.getElementById('btn-editar').textContent = '✏️ Editar';
+}
+function saveWorkerInfo() {
+  const db = window.DB.get();
+  const idx = (db.contacts||[]).findIndex(c => c.id === workerId);
+  if (idx < 0) return;
+  const w = db.contacts[idx];
+  const nombre  = document.getElementById('e-name').value.trim();
+  const puesto  = document.getElementById('e-role').value.trim();
+  const salario = parseFloat(document.getElementById('e-salary').value) || 0;
+  const tel     = document.getElementById('e-phone').value.trim();
+  w.nombre       = nombre;  w.name        = nombre;  // mantener alias
+  w.puesto       = puesto;  w.role        = puesto;
+  w.salarioBase  = salario; w.baseSalary  = salario;
+  w.telefono     = tel;     w.phone       = tel;
+  w.rfc          = document.getElementById('e-rfc').value.trim().toUpperCase();
+  w.curp         = document.getElementById('e-curp').value.trim().toUpperCase();
+  w.imss         = document.getElementById('e-imss').value.trim();
+  w.fechaIngreso = document.getElementById('e-ingreso').value;
+  w.startDate    = w.fechaIngreso; // alias
+  w.diasVacaciones = parseInt(document.getElementById('e-vacaciones').value) || 0;
+  w.vacationDays   = w.diasVacaciones;
+  w.activo       = document.getElementById('e-activo').value === 'true';
+  window.DB.save(db);
+  if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('contacts', w.id, w);
+  workerData = w;
+  renderInfo();
+  cancelEditWorker();
+  toast('✓ Datos guardados');
+}
 
-  for (let d = 1; d <= daysInMonth; d++) {
+// ── Stats ─────────────────────────────────────────────────────
+function renderStats(year, month) {
+  const days = new Date(year, month+1, 0).getDate();
+  let hrs=0, dias=0, faltas=0, ret=0;
+  for (let d=1; d<=days; d++) {
     const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const rec = getDayRecord(ds);
     if (!rec) continue;
-    if (rec.estado === 'trabajo')    { dias++; hrs += rec.horasTotales; }
-    if (rec.estado === 'retardo')    { dias++; hrs += rec.horasTotales; retardos++; }
-    if (rec.estado === 'falta')      faltas++;
+    if (rec.estado==='trabajo'||rec.estado==='retardo') { dias++; hrs+=rec.horasTotales; }
+    if (rec.estado==='retardo')  ret++;
+    if (rec.estado==='falta')    faltas++;
   }
-
-  document.getElementById('stats-mes-lbl').textContent = MESES[month] + ' ' + year;
-  document.getElementById('stat-hrs').textContent      = hrs.toFixed(1);
-  document.getElementById('stat-dias').textContent     = dias;
-  document.getElementById('stat-faltas').textContent   = faltas;
-  document.getElementById('stat-retardos').textContent = retardos;
+  document.getElementById('stats-lbl').textContent    = MESES[month]+' '+year;
+  document.getElementById('stat-hrs').textContent     = hrs.toFixed(1);
+  document.getElementById('stat-dias').textContent    = dias;
+  document.getElementById('stat-faltas').textContent  = faltas;
+  document.getElementById('stat-ret').textContent     = ret;
 }
 
-// ── Render pay weeks ──────────────────────────────────────────
+// ── Pay weeks ─────────────────────────────────────────────────
 function renderPayWeeks() {
-  const container = document.getElementById('pay-weeks-list');
-  const salario   = parseFloat(workerData.salarioBase || workerData.baseSalary) || 0;
-  if (!salario) {
-    container.innerHTML = '<div style="font-size:12px;color:var(--subtext);">Sin salario base configurado.</div>';
-    return;
+  const cont   = document.getElementById('pay-weeks');
+  const salario= parseFloat(workerData.salarioBase||workerData.baseSalary)||0;
+  if (!salario) { cont.innerHTML='<div style="font-size:12px;color:var(--subtext);">Sin salario base configurado.</div>'; return; }
+  const today  = new Date();
+  const dow    = today.getDay();
+  const dToSat = (dow+1)%7;
+  const thisSat= new Date(today); thisSat.setDate(today.getDate()-dToSat);
+  const weeks  = [];
+  for (let w=0; w<6; w++) {
+    const sat  = new Date(thisSat); sat.setDate(thisSat.getDate()-w*7);
+    const fri  = new Date(sat);     fri.setDate(sat.getDate()+6);
+    const days = Array.from({length:7},(_,i)=>{ const d=new Date(sat); d.setDate(sat.getDate()+i); return d.toISOString().slice(0,10); });
+    let totalHrs=0, diasTrab=0;
+    days.forEach(ds=>{ const r=getDayRecord(ds); if(r&&(r.estado==='trabajo'||r.estado==='retardo')){ totalHrs+=r.horasTotales; diasTrab++; } });
+    const pago = diasTrab>0 ? salario*(Math.min(totalHrs/45,1)) : 0;
+    weeks.push({ rango:`${fmtFecha(sat)} – ${fmtFecha(fri)}`, hrs:totalHrs.toFixed(1), dias:diasTrab, pago:pago.toFixed(0) });
   }
-
-  // Compute last 6 pay weeks (Sáb→Vie)
-  const today = new Date();
-  const dow   = today.getDay();
-  const dToSat = (dow + 1) % 7;
-  const thisWeekSat = new Date(today); thisWeekSat.setDate(today.getDate() - dToSat);
-
-  const weeks = [];
-  for (let w = 0; w < 6; w++) {
-    const sat = new Date(thisWeekSat); sat.setDate(thisWeekSat.getDate() - w * 7);
-    const fri = new Date(sat); fri.setDate(sat.getDate() + 6);
-    const days = Array.from({length:7},(_,i) => {
-      const d = new Date(sat); d.setDate(sat.getDate()+i);
-      return d.toISOString().slice(0,10);
-    });
-
-    let totalHrs = 0, diasTrabajados = 0;
-    days.forEach(ds => {
-      const rec = getDayRecord(ds);
-      if (!rec) return;
-      if (rec.estado === 'trabajo' || rec.estado === 'retardo') {
-        totalHrs += rec.horasTotales;
-        diasTrabajados++;
-      }
-    });
-
-    // Pay calculation (simple: salario * (hrs_worked / 45))
-    const pago = diasTrabajados > 0 ? (salario * Math.min(totalHrs / 45, 1)).toFixed(2) : '0';
-    weeks.push({
-      rango: `${fmtDate(sat)} – ${fmtDate(fri)}`,
-      hrs: totalHrs.toFixed(1),
-      dias: diasTrabajados,
-      pago
-    });
-  }
-
-  container.innerHTML = weeks.map(w => `
+  cont.innerHTML = weeks.map(w=>`
     <div class="pay-week-row">
-      <div>
-        <div style="font-size:12px; font-weight:700;">${w.rango}</div>
-        <div style="font-size:11px; color:var(--subtext);">${w.dias} días · ${w.hrs} hrs</div>
-      </div>
-      <div style="font-size:14px; font-weight:800; color:var(--green);">$${parseFloat(w.pago).toLocaleString('es-MX',{minimumFractionDigits:0})}</div>
-    </div>
-  `).join('');
+      <div><div style="font-size:12px;font-weight:700;">${w.rango}</div>
+        <div style="font-size:11px;color:var(--subtext);">${w.dias} días · ${w.hrs} hrs</div></div>
+      <div style="font-size:14px;font-weight:800;color:var(--green);">$${parseFloat(w.pago).toLocaleString('es-MX')}</div>
+    </div>`).join('');
 }
-
-function fmtDate(d) {
-  return d.toLocaleDateString('es-MX', { day:'numeric', month:'short' });
-}
+function fmtFecha(d) { return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'}); }
 
 // ── Calendar ──────────────────────────────────────────────────
-function renderCalendar() {
-  document.getElementById('cal-mes-lbl').textContent = MESES[calMonth] + ' ' + calYear;
-  renderStats(calYear, calMonth);
+function cellClass(rec, isWknd) {
+  if (!rec) return isWknd ? 'wknd' : '';
+  let cls = 'st-'+rec.estado;
+  if (isWknd && (rec.estado==='trabajo'||rec.estado==='retardo')) cls += ' wknd';
+  else if (isWknd) cls += ' wknd';
+  return cls;
+}
 
-  const firstDow   = new Date(calYear, calMonth, 1).getDay(); // 0=Dom
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+function buildCellContent(rec) {
+  if (!rec) return '';
+  let html = '';
+  if (rec.estado==='trabajo'||rec.estado==='retardo') {
+    const hrsLabel = rec.horasTotales>0 ? rec.horasTotales.toFixed(1)+'h' : '';
+    const retLabel = rec.estado==='retardo' && rec.retardoMin ? ` ⏰${rec.retardoMin}m` : '';
+    html += `<div class="cell-hrs">${hrsLabel}${retLabel}</div>`;
+    const projs = (rec.proyectos||[]).filter(p=>p.p).slice(0,2);
+    if (projs.length) html += `<div class="cell-projs">${projs.map(p=>`<span class="cell-proj">${p.p}</span>`).join('')}</div>`;
+  } else if (rec.estado==='falta')      { html += '<div class="cell-hrs">✗</div>'; }
+    else if (rec.estado==='vacaciones') { html += '<div class="cell-hrs">☀</div>'; }
+  const srcCls = rec.source==='produccion' ? 'src-prod' : 'src-chk';
+  html += `<span class="src-dot ${srcCls}"></span>`;
+  return html;
+}
+
+function renderCalendar() {
+  document.getElementById('cal-mes-lbl').textContent = MESES[calMonth]+' '+calYear;
+  renderStats(calYear, calMonth);
+  const firstDow   = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth= new Date(calYear, calMonth+1, 0).getDate();
   const grid       = document.getElementById('cal-grid');
   let html = '';
-
-  // Empty cells before the 1st
-  for (let i = 0; i < firstDow; i++) html += '<div class="cal-cell empty"></div>';
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const ds      = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dow     = (firstDow + d - 1) % 7;
-    const isWknd  = dow === 0 || dow === 6;
-    const isToday = ds === HOY;
-    const isFuture = ds > HOY;
-    const rec     = getDayRecord(ds);
-
-    let stClass = '';
-    if      (!rec)                        stClass = isWknd ? 'is-weekend' : '';
-    else if (rec.estado === 'trabajo')    stClass = 'st-trabajo';
-    else if (rec.estado === 'falta')      stClass = 'st-falta';
-    else if (rec.estado === 'retardo')    stClass = 'st-retardo';
-    else if (rec.estado === 'vacaciones') stClass = 'st-vacaciones';
-
-    if (isWknd && rec?.estado === 'trabajo') stClass += ' is-weekend';
-    else if (isWknd && !rec) stClass += ' is-weekend';
-
-    const todayClass  = isToday ? ' is-today' : '';
-    const futureClass = isFuture ? ' is-future' : '';
-    const selClass    = ds === selectedDay ? ' selected' : '';
-
-    let cellContent = `<div class="cell-num">${d}</div>`;
-
-    if (rec) {
-      const srcDot = `<span class="cal-source-dot ${rec.source === 'produccion' ? 'src-produccion' : 'src-checador'}"></span>`;
-      if (rec.estado === 'trabajo' || rec.estado === 'retardo') {
-        const hrsLabel = rec.horasTotales > 0 ? rec.horasTotales.toFixed(1) + 'h' : '';
-        const retLabel = rec.estado === 'retardo' ? `⏰${rec.retardoMin || ''}m` : '';
-        cellContent += `<div class="cell-hrs">${hrsLabel}${retLabel}</div>`;
-        if (rec.proyectos?.length > 0) {
-          const projs = rec.proyectos.filter(p => p.p).slice(0, 2);
-          cellContent += `<div class="cell-projs">${projs.map(p => `<span class="cell-proj-tag">${p.p}</span>`).join('')}</div>`;
-        }
-      } else if (rec.estado === 'falta') {
-        cellContent += `<div class="cell-hrs">✗</div>`;
-      } else if (rec.estado === 'vacaciones') {
-        cellContent += `<div class="cell-hrs">☀</div>`;
-      }
-      cellContent += srcDot;
-    }
-
-    const clickHandler = isFuture ? '' : `onclick="selectDay('${ds}')"`;
-    html += `<div class="cal-cell ${stClass}${todayClass}${futureClass}${selClass}" ${clickHandler}>${cellContent}</div>`;
+  for (let i=0; i<firstDow; i++) html += '<div class="cal-cell empty"></div>';
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds     = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow    = (firstDow+d-1)%7;
+    const isWknd = dow===0||dow===6;
+    const isToday= ds===HOY;
+    const isFut  = ds>HOY;
+    const rec    = getDayRecord(ds);
+    const sel    = ds===selectedDay;
+    const cls    = ['cal-cell', cellClass(rec,isWknd), isToday?'today':'', isFut?'future':'', sel?'selected':''].filter(Boolean).join(' ');
+    const clickAttr = `data-date="${ds}" onclick="selectDay('${ds}')"`;
+    html += `<div class="${cls}" ${clickAttr}><div class="cell-num">${d}</div>${buildCellContent(rec)}</div>`;
   }
-
-  // Fill remaining cells to complete last row
-  const totalCells = firstDow + daysInMonth;
-  const remaining  = (7 - (totalCells % 7)) % 7;
-  for (let i = 0; i < remaining; i++) html += '<div class="cal-cell empty"></div>';
-
+  const total = firstDow+daysInMonth;
+  const fill  = (7-(total%7))%7;
+  for (let i=0; i<fill; i++) html += '<div class="cal-cell empty"></div>';
   grid.innerHTML = html;
 }
 
 function navMes(dir) {
   calMonth += dir;
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  if (calMonth < 0)  { calMonth = 11; calYear--; }
-  closeDayDetail();
+  if (calMonth>11){calMonth=0;calYear++;}
+  if (calMonth<0) {calMonth=11;calYear--;}
+  closeDayPanel();
   renderCalendar();
 }
 
-// ── Day detail ────────────────────────────────────────────────
+// ── Day panel ─────────────────────────────────────────────────
 function selectDay(dateStr) {
+  // Quitar selección anterior sin re-renderizar todo
+  if (selectedDay && selectedDay !== dateStr) {
+    const prev = document.querySelector(`.cal-cell[data-date="${selectedDay}"]`);
+    if (prev) prev.classList.remove('selected');
+  }
   selectedDay = dateStr;
-  renderCalendar(); // re-render to update selected class
+  const cell = document.querySelector(`.cal-cell[data-date="${dateStr}"]`);
+  if (cell) cell.classList.add('selected');
 
-  const rec     = getDayRecord(dateStr);
-  const panel   = document.getElementById('day-detail');
-  const d       = new Date(dateStr + 'T12:00:00');
-  const label   = `${DIAS_L[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+  // Llenar el panel
+  const d   = new Date(dateStr+'T12:00:00');
+  const lbl = `${DIAS_L[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+  document.getElementById('dp-fecha').textContent = lbl;
 
-  document.getElementById('dd-fecha').textContent = label;
-  document.getElementById('dd-estado').innerHTML  = estadoPill(rec?.estado);
+  const rec = getDayRecord(dateStr);
+  DP = {
+    status:     rec?.estado    || '',
+    h1:         rec?.horasNormal != null ? String(rec.horasNormal) : '',
+    h15:        rec?.horasExtra  != null ? String(rec.horasExtra)  : '',
+    h2:         rec?.horasDoble  != null ? String(rec.horasDoble)  : '',
+    retMin:     rec?.retardoMin  != null ? String(rec.retardoMin)  : '',
+    proyectos:  rec?.proyectos ? JSON.parse(JSON.stringify(rec.proyectos)) : [],
+    notas:      rec?.notas     || '',
+    existingId: rec?.id        || null
+  };
 
-  let html = '';
+  if (!DP.proyectos.length) DP.proyectos = [{ p:'', horas:'', actividad:'', descripcion:'' }];
 
-  if (!rec) {
-    html = '<div style="font-size:13px; color:var(--subtext); margin-top:8px;">Sin registro para este día.</div>';
-  } else {
-    // Hours summary
-    if (rec.estado === 'trabajo' || rec.estado === 'retardo') {
-      html += `
-        <div style="display:flex; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
-          <div style="font-size:12px; color:var(--subtext);">
-            Normal: <strong>${rec.horasNormal.toFixed(1)}h</strong>
-            ${rec.horasExtra > 0 ? ` · Extra: <strong style="color:var(--amber)">${rec.horasExtra.toFixed(1)}h×1.5</strong>` : ''}
-            ${rec.horasDoble > 0 ? ` · Doble: <strong style="color:var(--red)">${rec.horasDoble.toFixed(1)}h×2</strong>` : ''}
-            · Total equiv: <strong style="color:var(--green)">${rec.horasTotales.toFixed(1)}h</strong>
-          </div>
-          ${rec.retardoMin > 0 ? `<div style="font-size:12px; color:var(--amber);">⏰ Retardo: ${rec.retardoMin} min</div>` : ''}
-          <div style="font-size:11px; color:var(--subtext); margin-left:auto;">Fuente: ${rec.source === 'produccion' ? '🟢 Producción Diaria' : '🟡 Reloj Checador'}</div>
-        </div>
-      `;
+  // Source banner
+  const srcEl = document.getElementById('dp-src');
+  if (rec) {
+    if (rec.source==='produccion') srcEl.innerHTML = '<span class="src-banner src-prod-banner">🟢 Producción Diaria</span>';
+    else srcEl.innerHTML = '<span class="src-banner src-chk-banner">🟡 Reloj Checador</span>';
+  } else { srcEl.innerHTML = ''; }
 
-      if (rec.proyectos?.length > 0) {
-        const db = window.DB.get();
-        rec.proyectos.filter(p => p.p).forEach(p => {
-          const proj = (db.projects || []).find(pr => (pr.codigo || pr.code) === p.p);
-          const nombre = proj ? (proj.nombre || proj.name) : p.p;
-          html += `
-            <div class="proj-entry">
-              <div class="proj-entry-hdr">
-                <span class="proj-code-badge">${p.p}</span>
-                <span style="font-size:13px; font-weight:600;">${nombre}</span>
-                <span class="proj-entry-hrs">${(parseFloat(p.horas)||0).toFixed(1)}h</span>
-              </div>
-              ${p.actividad ? `<div class="proj-entry-act">📋 ${p.actividad}</div>` : ''}
-              ${p.descripcion ? `<div class="proj-entry-desc">${p.descripcion}</div>` : ''}
-            </div>
-          `;
-        });
-      } else {
-        html += '<div style="font-size:12px; color:var(--subtext); margin-top:6px;">Sin proyectos asignados para este día.</div>';
-      }
+  // Si no hay registro y estamos en el día de hoy o pasado, auto-poner trabajo con 9h
+  if (!rec && dateStr <= HOY) {
+    DP.status = 'trabajo'; DP.h1 = '9';
+    if (DP.proyectos[0]) DP.proyectos[0].horas = '9';
+  }
+
+  renderDayPanel();
+  document.getElementById('dp-btn-borrar').style.display = rec ? '' : 'none';
+  document.getElementById('day-panel').classList.add('open');
+  document.getElementById('day-panel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function renderDayPanel() {
+  // Status buttons
+  ['trabajo','falta','retardo','vacaciones'].forEach(st => {
+    const btn = document.getElementById(`dp-sb-${st}`);
+    if (btn) btn.className = `sbtn${DP.status===st?' on-'+st:''}`;
+  });
+  // Retardo row
+  document.getElementById('dp-retrow').style.display = DP.status==='retardo' ? '' : 'none';
+  document.getElementById('dp-ret-min').value = DP.retMin || '';
+  // Hours section
+  const showHrs = DP.status==='trabajo'||DP.status==='retardo';
+  document.getElementById('dp-hrs-section').style.display  = showHrs ? '' : 'none';
+  document.getElementById('dp-proj-section').style.display = showHrs ? '' : 'none';
+  if (showHrs) {
+    document.getElementById('dp-h1').value  = DP.h1  || '';
+    document.getElementById('dp-h15').value = DP.h15 || '';
+    document.getElementById('dp-h2').value  = DP.h2  || '';
+    dpUpdTotal();
+    dpRenderProjs();
+  }
+  document.getElementById('dp-notas').value = DP.notas || '';
+}
+
+function dpSetStatus(st) {
+  DP.status = st;
+  if (st==='trabajo'||st==='retardo') {
+    if (!DP.h1) {
+      // Auto-poner 9h y sincronizar en el primer proyecto
+      DP.h1 = '9';
+      if (DP.proyectos[0]) DP.proyectos[0].horas = '9';
     }
-
-    if (rec.notas) html += `<div style="font-size:12px; color:var(--subtext); margin-top:8px;">📝 ${rec.notas}</div>`;
+  } else {
+    DP.h1=''; DP.h15=''; DP.h2='';
   }
-
-  document.getElementById('dd-content').innerHTML = html;
-  panel.classList.add('open');
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  renderDayPanel();
 }
 
-function closeDayDetail() {
+function dpRetardoChange() {
+  const min = parseFloat(document.getElementById('dp-ret-min').value)||0;
+  DP.retMin = String(min);
+  DP.h1     = String(parseFloat(Math.max(0,9-min/60).toFixed(2)));
+  document.getElementById('dp-h1').value = DP.h1;
+  if (DP.proyectos.length===1) { DP.proyectos[0].horas = dpEquiv().toFixed(1); dpRenderProjs(); }
+  dpUpdTotal();
+}
+
+function dpEquiv() {
+  return (parseFloat(document.getElementById('dp-h1')?.value)||0)
+        +(parseFloat(document.getElementById('dp-h15')?.value)||0)*1.5
+        +(parseFloat(document.getElementById('dp-h2')?.value)||0)*2;
+}
+
+function dpUpdTotal() {
+  const eq = dpEquiv();
+  document.getElementById('dp-hrs-equiv').innerHTML = eq>0
+    ? `<b style="color:var(--green)">${eq.toFixed(1)} horas equivalentes</b>` : '—';
+  // Sync single project
+  if (DP.proyectos.length===1 && eq>0) {
+    DP.proyectos[0].horas = eq.toFixed(1);
+    const firstHrsInput = document.querySelector('.dp-proj-hrs');
+    if (firstHrsInput) firstHrsInput.value = DP.proyectos[0].horas;
+    dpUpdProjBar();
+  }
+  DP.h1  = document.getElementById('dp-h1')?.value  || '';
+  DP.h15 = document.getElementById('dp-h15')?.value || '';
+  DP.h2  = document.getElementById('dp-h2')?.value  || '';
+}
+
+function dpRenderProjs() {
+  const cont = document.getElementById('dp-proj-rows');
+  cont.innerHTML = DP.proyectos.map((pr, i) => {
+    const showRm = DP.proyectos.length > 1;
+    const acts   = ACTIVIDADES.map(a=>`<option value="${a}"${pr.actividad===a?' selected':''}>${a}</option>`).join('');
+    const projs  = PROYECTOS.map(p=>`<option value="${p.id}"${pr.p===p.id?' selected':''}>${p.n}</option>`).join('');
+    return `
+      <div class="proj-row">
+        ${showRm?`<button class="p-rm" onclick="dpRmProj(${i})">✕</button>`:''}
+        <div class="proj-r-top">
+          <div class="f-small"><label>Proyecto</label>
+            <select onchange="DP.proyectos[${i}].p=this.value">
+              <option value="">— Sin proyecto —</option>${projs}
+            </select></div>
+          <div class="f-small"><label>Horas</label>
+            <input type="number" class="dp-proj-hrs" min="0" max="16" step="0.5"
+              value="${pr.horas||''}" placeholder="0"
+              oninput="DP.proyectos[${i}].horas=this.value;dpUpdProjBar()"
+              onclick="this.select()"
+              style="text-align:center;font-size:18px;font-weight:800;padding:6px;"></div>
+        </div>
+        <div class="proj-r-bot">
+          <div class="f-small"><label>Actividad</label>
+            <select onchange="DP.proyectos[${i}].actividad=this.value">
+              <option value="">— Sin especificar —</option>${acts}
+            </select></div>
+          <div class="f-small"><label>Descripción</label>
+            <input type="text" placeholder="Ej: 10 puertas cocina"
+              value="${pr.descripcion||''}"
+              oninput="DP.proyectos[${i}].descripcion=this.value"></div>
+        </div>
+      </div>`;
+  }).join('');
+  dpUpdProjBar();
+}
+
+function dpAddProj() {
+  DP.proyectos.push({ p:'', horas:'', actividad:'', descripcion:'' });
+  dpRenderProjs();
+}
+
+function dpRmProj(i) {
+  DP.proyectos.splice(i, 1);
+  dpRenderProjs();
+}
+
+function dpUpdProjBar() {
+  const total    = dpEquiv();
+  const assigned = DP.proyectos.reduce((s, p) => s+(parseFloat(p.horas)||0), 0);
+  const bar      = document.getElementById('dp-proj-bar');
+  if (!bar) return;
+  if (assigned===0) { bar.className='proj-hrs-bar phb-empty'; bar.textContent='Sin horas asignadas a proyectos'; }
+  else if (total===0) { bar.className='proj-hrs-bar phb-warn'; bar.textContent=`Asignado: ${assigned.toFixed(1)} hrs`; }
+  else {
+    const diff = assigned-total;
+    if (Math.abs(diff)<0.01)     { bar.className='proj-hrs-bar phb-ok';   bar.textContent=`✓ ${assigned.toFixed(1)} / ${total.toFixed(1)} hrs`; }
+    else if (diff<0)             { bar.className='proj-hrs-bar phb-warn'; bar.textContent=`${assigned.toFixed(1)} / ${total.toFixed(1)} hrs — faltan ${Math.abs(diff).toFixed(1)}`; }
+    else                         { bar.className='proj-hrs-bar phb-over'; bar.textContent=`${assigned.toFixed(1)} / ${total.toFixed(1)} hrs — excede ${diff.toFixed(1)}`; }
+  }
+}
+
+function closeDayPanel() {
+  if (selectedDay) {
+    const cell = document.querySelector(`.cal-cell[data-date="${selectedDay}"]`);
+    if (cell) cell.classList.remove('selected');
+  }
   selectedDay = null;
-  document.getElementById('day-detail').classList.remove('open');
-  renderCalendar();
+  document.getElementById('day-panel').classList.remove('open');
 }
 
-// ── Edit worker ───────────────────────────────────────────────
-function editWorker() {
-  const w = workerData;
-  document.getElementById('e-name').value   = w.nombre || w.name || '';
-  document.getElementById('e-role').value   = w.puesto || w.role || '';
-  document.getElementById('e-salary').value = w.salarioBase || w.baseSalary || '';
-  document.getElementById('e-phone').value  = w.telefono || w.phone || '';
-  document.getElementById('edit-overlay').style.display = 'flex';
-}
-function closeEdit() { document.getElementById('edit-overlay').style.display = 'none'; }
-function saveEdit() {
-  const nombre  = document.getElementById('e-name').value.trim();
-  const puesto  = document.getElementById('e-role').value.trim();
-  const salario = parseFloat(document.getElementById('e-salary').value) || 0;
-  const tel     = document.getElementById('e-phone').value.trim();
+// ── Save / Delete day record ──────────────────────────────────
+function dpGuardar() {
+  if (!DP.status) { toast('Selecciona un estado (Trabajó, Falta, etc.)', 'warn'); return; }
+  if (!selectedDay) return;
 
-  const db = window.DB.get();
-  const idx = (db.contacts || []).findIndex(c => c.id === workerId);
-  if (idx > -1) {
-    db.contacts[idx].nombre      = nombre;
-    db.contacts[idx].name        = nombre; // alias
-    db.contacts[idx].puesto      = puesto;
-    db.contacts[idx].role        = puesto;  // alias
-    db.contacts[idx].salarioBase = salario;
-    db.contacts[idx].baseSalary  = salario; // alias
-    db.contacts[idx].telefono    = tel;
-    db.contacts[idx].phone       = tel;     // alias
-    window.DB.save(db);
-    workerData = db.contacts[idx];
-    renderInfo();
-    renderPayWeeks();
+  // Sync inputs to DP
+  DP.h1    = document.getElementById('dp-h1')?.value    || DP.h1;
+  DP.h15   = document.getElementById('dp-h15')?.value   || DP.h15;
+  DP.h2    = document.getElementById('dp-h2')?.value    || DP.h2;
+  DP.notas = document.getElementById('dp-notas')?.value || '';
+
+  const record = {
+    fecha:        selectedDay,
+    trabajadorId: workerId,
+    estado:       DP.status,
+    retardoMin:   parseFloat(DP.retMin)  || 0,
+    horasNormal:  parseFloat(DP.h1)      || 0,
+    horasExtra:   parseFloat(DP.h15)     || 0,
+    horasDoble:   parseFloat(DP.h2)      || 0,
+    horasTotales: dpEquiv(),
+    proyectos:    DP.proyectos.filter(p => p.p || p.horas || p.descripcion),
+    notas:        DP.notas,
+    diaCerrado:   false
+  };
+
+  const db  = window.DB.get();
+  const idx = (db.attendance||[]).findIndex(a =>
+    (a.fecha||a.date) === selectedDay && (a.trabajadorId||a.workerId) === workerId && !a._init
+  );
+
+  if (idx >= 0 || DP.existingId) {
+    // Actualizar existente
+    record.id = DP.existingId || db.attendance[idx]?.id || crypto.randomUUID();
+    if (idx >= 0) {
+      Object.assign(db.attendance[idx], record);
+    } else {
+      db.attendance.push(record);
+    }
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('attendance', record.id, record);
+    // También actualizar attendance_logs
+    window.DB.addAttendance({ ...record, date: record.fecha, workerId: record.trabajadorId, status: record.estado, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
+  } else {
+    // Nuevo registro
+    record.id = crypto.randomUUID();
+    window.DB.addAttendance({ ...record, date: record.fecha, workerId: record.trabajadorId, status: record.estado, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
   }
-  closeEdit();
+
+  DP.existingId = record.id;
+  document.getElementById('dp-btn-borrar').style.display = '';
+
+  // Actualizar SOLO la celda del calendario sin re-renderizar todo
+  updateCell(selectedDay);
+  renderStats(calYear, calMonth);
+  renderPayWeeks();
+  toast('✓ Día guardado');
+}
+
+function dpBorrar() {
+  if (!selectedDay || !DP.existingId) return;
+  if (!confirm(`¿Borrar el registro del ${selectedDay}?`)) return;
+  const db = window.DB.get();
+  const idx = (db.attendance||[]).findIndex(a => a.id === DP.existingId);
+  if (idx >= 0) {
+    const id = db.attendance[idx].id;
+    db.attendance.splice(idx, 1);
+    if (window.parent?.deleteDocumentFromFirebase) window.parent.deleteDocumentFromFirebase('attendance', id);
+    // Also remove from attendance_logs
+    const li = (db.attendance_logs||[]).findIndex(a => a.id === id);
+    if (li >= 0) { db.attendance_logs.splice(li, 1); if (window.parent?.deleteDocumentFromFirebase) window.parent.deleteDocumentFromFirebase('attendance_logs', id); }
+    window.DB.save(db);
+  }
+  updateCell(selectedDay);
+  renderStats(calYear, calMonth);
+  renderPayWeeks();
+  closeDayPanel();
+  toast('Registro borrado', 'warn');
+}
+
+// Actualiza una celda del calendario sin re-renderizar todo
+function updateCell(dateStr) {
+  const cell = document.querySelector(`.cal-cell[data-date="${dateStr}"]`);
+  if (!cell) return;
+  const dow    = new Date(dateStr+'T12:00:00').getDay();
+  const isWknd = dow===0||dow===6;
+  const rec    = getDayRecord(dateStr);
+  // Reset classes
+  cell.className = ['cal-cell', cellClass(rec, isWknd),
+    dateStr===HOY ? 'today' : '',
+    selectedDay===dateStr ? 'selected' : ''
+  ].filter(Boolean).join(' ');
+  cell.querySelector('.cell-num').outerHTML; // keep num
+  // Rebuild content preserving cell-num
+  const num = cell.querySelector('.cell-num')?.outerHTML || `<div class="cell-num">${new Date(dateStr+'T12:00:00').getDate()}</div>`;
+  cell.innerHTML = num + buildCellContent(rec);
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const id = 'toast-'+Date.now();
+  const el = document.createElement('div');
+  el.id = id;
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
 // ── Init ──────────────────────────────────────────────────────
@@ -723,8 +897,18 @@ async function init() {
   await window.DB.query('contacts');
 
   const db = window.DB.get();
-  workerData = (db.contacts || []).find(c => c.id === workerId);
+  workerData = (db.contacts||[]).find(c => c.id === workerId);
   if (!workerData) { goBack(); return; }
+
+  // Cargar proyectos activos y actividades
+  PROYECTOS = (db.projects||[])
+    .filter(p => !p._init && !(p.archivado||p.archived) && (p.codigo||p.code) && (p.nombre||p.name) &&
+      ['en producción','planificación','en pausa'].includes(((p.estado||p.status)||'').toLowerCase()))
+    .map(p => { const c=p.codigo||p.code; const n=p.nombre||p.name; return {id:c, n:`${c} — ${n}`, pieces:p.piezas||p.pieces||[]}; });
+  PROYECTOS.push({id:'general', n:'Trabajo general', pieces:[]});
+
+  const actDoc = (db.actividades_trabajo||[]).find(r=>r._id==='main'||r.list);
+  ACTIVIDADES  = actDoc?.list || [];
 
   renderInfo();
   renderCalendar();
