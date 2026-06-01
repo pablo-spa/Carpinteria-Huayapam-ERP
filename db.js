@@ -7,7 +7,7 @@ function getDB() {
     workers: [], contacts: [], inventory: [], projects: [], quotations: [], orders: [], accounting_movements: [],
     settings: {}, systemEvents: [], attendance: [],
     project_worker_hours: [], viajes: [], anticipos_viaticos: [], gastos_viaticos: [], notifications: [], wood: [],
-    actividades_trabajo: [], inventory_salidas: []
+    actividades_trabajo: [], inventory_salidas: [], attendance_logs: []
   };
 }
 
@@ -259,7 +259,15 @@ window.DB = {
     if(window.parent && window.parent.setDocumentInFirebase) {
         window.parent.setDocumentInFirebase("attendance_logs", attLog.id, attLog);
     }
-    
+
+    // Sync to live DB_STATE (saveDB skips attendance_logs intentionally)
+    if (window.parent && window.parent.DB_STATE) {
+        if (!window.parent.DB_STATE.attendance_logs) window.parent.DB_STATE.attendance_logs = [];
+        const liveIdx = window.parent.DB_STATE.attendance_logs.findIndex(x => x.id === attLog.id);
+        if (liveIdx >= 0) window.parent.DB_STATE.attendance_logs[liveIdx] = attLog;
+        else window.parent.DB_STATE.attendance_logs.push(attLog);
+    }
+
     // Maintain legacy attendance collection for compatibility
     d.attendance.push(record);
     if(window.parent && window.parent.setDocumentInFirebase) {

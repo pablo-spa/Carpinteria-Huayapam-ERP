@@ -528,7 +528,7 @@ function processRealCheckins(off) {
           return;
         }
         // Fallback: checador log
-        const chk = checRecs.filter(c => c.workerId === w.id && c.fecha === dateStr && c.tipo !== 'entrada' && c.tipo !== 'salida');
+        const chk = checRecs.filter(c => c.workerId === w.id && c.fecha === dateStr && (c.tipo === 'entrada' || !c.tipo));
         if (chk.length > 0) {
           const isFalta = chk.some(c => (c.status||'').toLowerCase().includes('falta'));
           if (isFalta) {
