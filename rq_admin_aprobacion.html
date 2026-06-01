@@ -117,7 +117,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 /* Concept autocomplete */
 .ac-wrap { position:relative; }
-.ac-drop { position:absolute; top:calc(100% + 3px); left:0; right:0; background:var(--base); border:1px solid var(--surface0); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.12); z-index:500; max-height:200px; overflow-y:auto; display:none; }
+.ac-drop { position:fixed; background:var(--base); border:1px solid var(--surface0); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.12); z-index:9999; max-height:200px; overflow-y:auto; display:none; }
 .ac-drop.open { display:block; }
 .ac-item { padding:8px 12px; font-size:13px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--crust); }
 .ac-item:last-child { border-bottom:none; }
@@ -136,6 +136,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 </div>
 
 <script src="searchable-select.js"></script>
+<script src="ui.js"></script>
 <script src="db.js"></script>
 <script>
   let ALL_ORDERS = [];
@@ -367,6 +368,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     if (results.length === 0 && !q) { drop.classList.remove('open'); return; }
 
+    // Position fixed dropdown under the input
+    const rect = input.getBoundingClientRect();
+    drop.style.top    = (rect.bottom + 4) + 'px';
+    drop.style.left   = rect.left + 'px';
+    drop.style.width  = rect.width + 'px';
+
     results.forEach((item, idx) => {
       const div = document.createElement('div');
       div.className = 'ac-item';
@@ -454,7 +461,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       }
     });
 
-    if (!items.length) return alert('Agrega al menos un material.');
+    if (!items.length) { toast('Agrega al menos un material.', 'error'); return; }
 
     const now = new Date();
     const folio = 'ADM-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') +
@@ -473,17 +480,22 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       authorizedAt: now.toISOString(),
     };
 
-    if (window.parent?.setDocumentInFirebase) {
-      await window.parent.setDocumentInFirebase('purchase_orders', order.id, order);
-      if (window.parent.DB_STATE?.purchase_orders) {
-        window.parent.DB_STATE.purchase_orders.push(order);
+    try {
+      if (window.parent?.setDocumentInFirebase) {
+        await window.parent.setDocumentInFirebase('purchase_orders', order.id, order);
+        if (window.parent.DB_STATE) {
+          if (!window.parent.DB_STATE.purchase_orders) window.parent.DB_STATE.purchase_orders = [];
+          window.parent.DB_STATE.purchase_orders.push(order);
+        }
       }
+      ALL_ORDERS.push(order);
+      closeNewOrder();
+      setTab('all');
+      toast(`Pedido ${folio} creado y autorizado.`);
+    } catch(e) {
+      console.error('Error guardando pedido:', e);
+      toast('Error al guardar el pedido: ' + e.message, 'error');
     }
-
-    ALL_ORDERS.push(order);
-    closeNewOrder();
-    setTab('all');
-    alert(`✅ Pedido ${folio} creado y autorizado. Compras puede agregarle precio y marcarlo como comprado.`);
   }
 
   init();
