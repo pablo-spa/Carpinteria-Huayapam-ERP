@@ -552,7 +552,7 @@ function buildCard(w) {
           <span style="color:var(--amber);font-weight:700;font-size:13px;">⏰ Retardo</span>
           <input type="number" class="retardo-input" min="0" max="480" placeholder="min"
             value="${ws.retardoMin}"
-            oninput="getWS('${w.id}').retardoMin=this.value">
+            oninput="onRetardoChange('${w.id}',this.value)">
           <span style="font-size:13px;color:var(--subtext)">minutos</span>
         </div>
       </div>
@@ -565,19 +565,19 @@ function buildCard(w) {
             <div class="hr-lbl" style="color:var(--green)">Normal ×1</div>
             <input type="number" class="hr-input hr-x1" id="h1-${w.id}" min="0" max="16" step="0.5"
               placeholder="9" value="${ws.horasNormal}"
-              oninput="getWS('${w.id}').horasNormal=this.value;updHrsTotal('${w.id}');updProjBar('${w.id}')" onclick="this.select()">
+              oninput="onHoraChange('${w.id}','horasNormal',this.value)" onclick="this.select()">
           </div>
           <div class="hr-wrap">
             <div class="hr-lbl" style="color:var(--amber)">Extra ×1.5</div>
             <input type="number" class="hr-input hr-x15" id="h15-${w.id}" min="0" max="8" step="0.5"
               placeholder="0" value="${ws.horasExtra}"
-              oninput="getWS('${w.id}').horasExtra=this.value;updHrsTotal('${w.id}');updProjBar('${w.id}')" onclick="this.select()">
+              oninput="onHoraChange('${w.id}','horasExtra',this.value)" onclick="this.select()">
           </div>
           <div class="hr-wrap">
             <div class="hr-lbl" style="color:var(--red)">Doble ×2</div>
             <input type="number" class="hr-input hr-x2" id="h2-${w.id}" min="0" max="8" step="0.5"
               placeholder="0" value="${ws.horasDoble}"
-              oninput="getWS('${w.id}').horasDoble=this.value;updHrsTotal('${w.id}');updProjBar('${w.id}')" onclick="this.select()">
+              oninput="onHoraChange('${w.id}','horasDoble',this.value)" onclick="this.select()">
           </div>
         </div>
         <div class="hrs-equiv" id="htot-${w.id}">—</div>
@@ -732,6 +732,80 @@ function updHrsTotal(wId) {
     : 'Ingresa las horas trabajadas';
 }
 
+// Llamado por oninput de los campos de horas. Si hay un solo proyecto, lo mantiene sincronizado.
+function onHoraChange(wId, field, val) {
+  const ws = getWS(wId);
+  ws[field] = val;
+  updHrsTotal(wId);
+  if (ws.proyectos.length === 1) {
+    const eq = horasEq(ws);
+    if (eq > 0) { ws.proyectos[0].horas = eq.toFixed(1); renderProyRows(wId); }
+  }
+  updProjBar(wId);
+}
+
+// Retardo → reduce horasNormal automáticamente
+function onRetardoChange(wId, val) {
+  const ws  = getWS(wId);
+  const min = parseFloat(val) || 0;
+  ws.retardoMin = val;
+  const reduced = parseFloat(Math.max(0, 9 - min / 60).toFixed(2));
+  ws.horasNormal = reduced;
+  const h1 = document.getElementById(`h1-${wId}`);
+  if (h1) h1.value = reduced;
+  updHrsTotal(wId);
+  if (ws.proyectos.length === 1) {
+    const eq = horasEq(ws);
+    if (eq > 0) { ws.proyectos[0].horas = eq.toFixed(2); renderProyRows(wId); }
+  }
+  updProjBar(wId);
+}
+
+// Sincroniza los inputs del DOM al estado antes de validar (por si oninput no se disparó)
+function syncFromDOM(wId) {
+  const ws  = getWS(wId);
+  const h1  = document.getElementById(`h1-${wId}`);
+  const h15 = document.getElementById(`h15-${wId}`);
+  const h2  = document.getElementById(`h2-${wId}`);
+  if (h1  && h1.value  !== '') ws.horasNormal = h1.value;
+  if (h15 && h15.value !== '') ws.horasExtra  = h15.value;
+  if (h2  && h2.value  !== '') ws.horasDoble  = h2.value;
+}
+
+// Guarda el registro de un trabajador en Firebase (upsert)
+function saveWorkerRecord(wId) {
+  const ws = getWS(wId);
+  if (!ws.status) return;
+  const db = window.DB.get();
+  const record = {
+    date:         currentDate,
+    workerId:     wId,
+    status:       ws.status,
+    retardoMin:   parseFloat(ws.retardoMin)   || 0,
+    horasNormal:  parseFloat(ws.horasNormal)  || 0,
+    horasExtra:   parseFloat(ws.horasExtra)   || 0,
+    horasDoble:   parseFloat(ws.horasDoble)   || 0,
+    horasTotales: horasEq(ws),
+    projects:     ws.proyectos.filter(pr => pr.p || pr.horas || pr.descripcion),
+    notas:        ws.notas || ''
+  };
+  // Upsert: si ya existe un registro para este trabajador+fecha, actualizar
+  const existing = (db.attendance || []).find(a =>
+    a.date === currentDate && a.workerId === wId && !a._init && a.status);
+  if (existing) {
+    record.id = existing.id;
+    Object.assign(existing, record);
+    if (window.parent?.setDocumentInFirebase) {
+      window.parent.setDocumentInFirebase('attendance', record.id, existing);
+    }
+    // También actualizar attendance_logs (upsert interno)
+    window.DB.addAttendance({ ...record, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
+  } else {
+    record.id = crypto.randomUUID();
+    window.DB.addAttendance({ ...record, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
+  }
+}
+
 // ── Status ────────────────────────────────────────────────────
 function setStatus(wId, newStatus) {
   if (diaCerrado) { toast('Día cerrado — usa "↩ Reabrir día" para editar','warn'); return; }
@@ -752,15 +826,21 @@ function setStatus(wId, newStatus) {
 
   if (ws.status === 'trabajo' || ws.status === 'retardo') {
     if (!ws.horasNormal) {
-      ws.horasNormal = '9';
+      ws.horasNormal = 9;
+      ws.proyectos[0] = ws.proyectos[0] || { p:'', horas:'', actividad:'', descripcion:'', pieza:'' };
+      ws.proyectos[0].horas = '9';
       const h1 = document.getElementById(`h1-${wId}`);
-      if (h1) { h1.value = '9'; updHrsTotal(wId); updProjBar(wId); }
+      if (h1) h1.value = '9';
+      updHrsTotal(wId);
+      renderProyRows(wId);
+      updProjBar(wId);
     }
     if (!diaCerrado) openDetail(wId);
   } else {
     ws.horasNormal = ''; ws.horasExtra = ''; ws.horasDoble = '';
     const h1 = document.getElementById(`h1-${wId}`);
-    if (h1) { h1.value = ''; updHrsTotal(wId); updProjBar(wId); }
+    if (h1) h1.value = '';
+    updHrsTotal(wId); updProjBar(wId);
   }
 
   updateFooter();
@@ -809,23 +889,25 @@ function confirmEdit(wId) {
 
 // ── Mark done ─────────────────────────────────────────────────
 function marcarListo(wId) {
+  syncFromDOM(wId);           // asegurar que el estado refleje lo que hay en los inputs
   const ws = getWS(wId);
   if (!isComplete(ws)) {
     toast('⚠ Ingresa al menos las horas trabajadas', 'warn');
     document.getElementById(`h1-${wId}`)?.focus();
     return;
   }
+  saveWorkerRecord(wId);      // guardar en Firebase inmediatamente
   closeDetail(wId);
   ws.done = true;
-  const card     = document.getElementById(`card-${wId}`);
-  const listReg  = document.getElementById('list-registrados');
+  const card    = document.getElementById(`card-${wId}`);
+  const listReg = document.getElementById('list-registrados');
   if (card && listReg) listReg.appendChild(card);
   card.querySelector('.sbtn-row').style.display = 'none';
   document.getElementById(`edit-${wId}`).style.display = '';
   buildChips(wId);
   document.getElementById('registrados-section').style.display = '';
   updateLabels(); updateFooter();
-  toast(`✓ ${WORKERS.find(w=>w.id===wId)?.nombre} registrado`);
+  toast(`✓ ${WORKERS.find(w=>w.id===wId)?.nombre} guardado`);
 }
 
 function buildChips(wId) {
@@ -889,29 +971,10 @@ function cerrarDia() {
   const t = WORKERS.filter(w => {const s=getWS(w.id).status; return s==='trabajo'||s==='retardo';}).length;
   const f = WORKERS.filter(w => getWS(w.id).status==='falta').length;
 
+  // Guardar/actualizar todos los trabajadores con status en Firebase
   WORKERS.forEach(w => {
-    const ws = getWS(w.id);
-    if (!ws.status) return;
-    const record = {
-      id:          crypto.randomUUID(),
-      date:        currentDate,
-      workerId:    w.id,
-      status:      ws.status,
-      retardoMin:  parseFloat(ws.retardoMin) || 0,
-      horasNormal: parseFloat(ws.horasNormal) || 0,
-      horasExtra:  parseFloat(ws.horasExtra)  || 0,
-      horasDoble:  parseFloat(ws.horasDoble)  || 0,
-      horasTotales: horasEq(ws),
-      projects:    ws.proyectos.filter(pr => pr.p || pr.descripcion || pr.horas),
-      notas:       ws.notas || ''
-    };
-    // addAttendance saves to attendance_logs (upsert) + attendance (push) + production_logs
-    window.DB.addAttendance({
-      ...record,
-      hours:      record.horasNormal,  // legacy field for compatibility
-      horas_x15:  record.horasExtra,
-      horas_x2:   record.horasDoble
-    });
+    syncFromDOM(w.id);
+    saveWorkerRecord(w.id);
   });
 
   STATE[currentDate] = { cerrado: true, data: getState(currentDate).data };
