@@ -81,7 +81,14 @@ window.DB = {
       }
       
       let parentState = (window.parent && window.parent !== window && window.parent.DB_STATE) ? window.parent.DB_STATE : window.DB_STATE;
-      
+
+      // Carga bajo demanda: si la colección aún no está en DB_STATE, pedirla al padre
+      if (parentState && parentState[collectionName] === undefined &&
+          window.parent && window.parent !== window && window.parent.cargar_coleccion) {
+        await window.parent.cargar_coleccion(collectionName);
+        parentState = window.parent.DB_STATE;
+      }
+
       let data = [];
       if (parentState && parentState[collectionName]) {
          data = parentState[collectionName];

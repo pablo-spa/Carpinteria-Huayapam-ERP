@@ -792,7 +792,10 @@
     const auth = getAuth(app);
     window.db = db;
     
-    const collectionsToLoad = ['workers', 'contacts', 'inventory', 'projects', 'project_phases', 'quotations', 'pieces', 'orders', 'production_logs', 'payroll_weeks', 'payroll_lines', 'worker_loans', 'worker_loan_payments', 'attendance', 'attendance_logs', 'piece_types', 'expense_categories', 'purchase_orders', 'purchase_order_lines', 'lumber_batches', 'lumber_boards', 'material_requests', 'suppliers', 'project_worker_hours', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'notifications', 'accounting_movements', 'settings', 'systemEvents', 'wood', 'users', 'worker_roles', 'concept_categories', 'concept_units', 'bank_accounts', 'payment_methods', 'viatico_categories', 'actividades_trabajo', 'inventory_salidas'];
+    // Colecciones esenciales — se cargan al inicio (mínimo para que la app funcione)
+    const collectionsToLoad = ['contacts', 'projects', 'settings', 'users', 'workers'];
+    // Resto de colecciones — se cargan bajo demanda cuando un módulo las necesita
+    window._col_pendiente = {};  // flag para evitar solicitudes duplicadas
 
     window.DB_STATE = null; // Wait for it
     
@@ -944,13 +947,31 @@
           }
         }
 
-        // Aliases to stick with UI expects
-        if(state.attendance) state.attendance_logs = state.attendance; 
-        else state.attendance = []; // from "attendance" vs "attendance_logs" problem
-        
         window.DB_STATE = state;
         window.DB_STATE_LOADED = true;
         document.getElementById('db-loading-overlay').style.display = 'none';
+
+        // Carga bajo demanda: se llama desde db.js cuando un módulo pide una colección no cargada
+        window.cargar_coleccion = async (col) => {
+          if (!window.DB_STATE) return;
+          if (window.DB_STATE[col] !== undefined) return; // ya cargada
+          if (window._col_pendiente[col]) {
+            // Esperar a que termine la solicitud en vuelo
+            while (window._col_pendiente[col]) await new Promise(r => setTimeout(r, 50));
+            return;
+          }
+          window._col_pendiente[col] = true;
+          try {
+            const snap = await getDocs(collection(db, col)).catch(e => {
+              console.warn(`[DB] No se pudo cargar "${col}": ${e.code}`);
+              return { docs: [] };
+            });
+            window.DB_STATE[col] = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+            console.log(`[DB] ✓ "${col}" cargado: ${window.DB_STATE[col].length} docs`);
+          } finally {
+            window._col_pendiente[col] = false;
+          }
+        };
         
         // Fetch permissions
         try {
