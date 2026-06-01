@@ -404,10 +404,13 @@ async function submitNewOrder() {
     createdAt:  now.toISOString()
   };
 
+  const db = window.DB.get();
+  if (!db.purchase_orders) db.purchase_orders = [];
+  db.purchase_orders.unshift(order);
+  window.DB.save(db);
+
   if (window.parent?.setDocumentInFirebase) {
     await window.parent.setDocumentInFirebase('purchase_orders', order.id, order);
-    if (!window.parent.DB_STATE.purchase_orders) window.parent.DB_STATE.purchase_orders = [];
-    window.parent.DB_STATE.purchase_orders.unshift(order);
   }
 
   hideNewOrderForm();

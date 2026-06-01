@@ -134,6 +134,14 @@ td { color: var(--text); }
 <div class="main">
   <!-- VIEW: LIST -->
   <div id="view-list" class="view active">
+    <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; background: var(--mantle); padding: 12px; border-radius: 8px; border: 1px solid var(--crust);">
+      <label style="font-size: 13px; font-weight: 700; color: var(--subtext);">Filtrar por Estado:</label>
+      <select id="f-filter-status" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="renderList()">
+        <option value="todos">Todos los Viajes</option>
+        <option value="activo" selected>En Curso / Activos</option>
+        <option value="cerrado">Cerrados / Liquidados</option>
+      </select>
+    </div>
     <div id="list-container" class="trip-list">
       <!-- trips will be loaded here -->
     </div>
@@ -143,20 +151,13 @@ td { color: var(--text); }
   <div id="view-form" class="view">
     <div class="card">
       <h2 class="card-title">Registrar Nuevo Viaje</h2>
-      
-      <div class="form-group">
-        <label>Trabajador(es)</label>
-        <!-- Simple select for now, multiple not well supported in standard without custom component, let's use a normal select for 1 -> or multiple if possible. Multiple is fine. -->
-        <select id="f-workers" class="form-control" multiple size="4">
-          <!-- loaded via js -->
-        </select>
-        <div style="font-size:11px;color:var(--subtext);margin-top:4px;">Mantén presionado Ctrl (o Cmd) para seleccionar varios.</div>
-      </div>
 
       <div class="form-row">
         <div class="form-group">
           <label>Proyecto</label>
-          <input type="text" id="f-project" class="form-control" placeholder="Ej: Obra Tulum">
+          <select id="f-project" class="form-control" data-searchable>
+            <option value="">— General / Sin proyecto —</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Tipo de Viaje</label>
@@ -201,10 +202,19 @@ td { color: var(--text); }
         </div>
         <div id="d-meta" style="color:var(--subtext); font-size:14px; margin-bottom:12px;"></div>
         <div id="d-workers" style="font-size:14px; font-weight:600;"></div>
+        <div id="d-nota-cierre" style="font-size:13px; font-style:italic; color:var(--amber); margin-top:8px; display:none;"></div>
       </div>
       <div style="display:flex; gap:8px;">
         <button id="btn-cerrar-viaje" class="btn btn-green" onclick="comenzarLiquidacion()" style="display:none;">Liquidar y Cerrar</button>
         <button id="btn-reabrir-viaje" class="btn" onclick="reabrirViaje()" style="display:none;">Reabrir Viaje</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-workers">
+      <h3 class="card-title">Personal Asignado al Viaje</h3>
+      <div class="form-group" style="margin-bottom:0;">
+        <select id="d-workers-select" class="form-control" multiple size="4" onchange="updateViajeWorkers()"></select>
+        <div style="font-size:11px;color:var(--subtext);margin-top:6px;">Mantén Ctrl/Cmd para seleccionar varios. Los cambios se guardan automáticamente.</div>
       </div>
     </div>
 
@@ -228,8 +238,12 @@ td { color: var(--text); }
           </select>
         </div>
         <div class="form-group">
-          <label>Entregó</label>
-          <input type="text" id="fa-por" class="form-control" placeholder="Nombre">
+          <label>Recibió (Trabajador)</label>
+          <select id="fa-recibe" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label>Entregó (Admin/Contador)</label>
+          <select id="fa-por" class="form-control"></select>
         </div>
         <div class="form-group">
           <button class="btn btn-blue" style="width:100%; height:42px;" onclick="addAnticipo()">+ Agregar</button>
@@ -238,8 +252,15 @@ td { color: var(--text); }
 
       <div class="table-wrapper">
         <table>
-          <thead><tr><th>Fecha</th><th>Monto</th><th>Forma</th><th>Entregó</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Monto</th><th>Forma</th><th>Recibió</th><th>Entregó</th><th></th></tr></thead>
           <tbody id="tb-anticipos"></tbody>
+          <tfoot style="border-top: 2px solid var(--crust); background: var(--base);">
+            <tr>
+              <td style="text-align: right; font-weight: 700; font-size: 12px; color: var(--subtext);" colspan="1">TOTAL:</td>
+              <td id="tf-anticipos-total" style="font-weight: 800; font-size: 14px; color: var(--text);">$0.00</td>
+              <td colspan="4"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
@@ -266,6 +287,10 @@ td { color: var(--text); }
           <label>Descripción / Ticket</label>
           <input type="text" id="fg-desc" class="form-control" placeholder="Ej. Comida restaurante X">
         </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Enlace al Comprobante (Drive / URL)</label>
+          <input type="text" id="fg-url" class="form-control" placeholder="https://...">
+        </div>
         <div class="form-group" style="display:flex; align-items:center; padding-bottom: 10px;">
           <label class="chk-label"><input type="checkbox" id="fg-just" checked> Justificado con Nota/Factura</label>
         </div>
@@ -278,6 +303,13 @@ td { color: var(--text); }
         <table>
           <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th class="num-col">Monto</th><th style="text-align:center;">Justif.</th><th></th></tr></thead>
           <tbody id="tb-gastos"></tbody>
+          <tfoot style="border-top: 2px solid var(--crust); background: var(--base);">
+            <tr>
+              <td colspan="3" style="text-align: right; font-weight: 700; font-size: 12px; color: var(--subtext);">TOTAL GASTOS:</td>
+              <td class="num-col" id="tf-gastos-total" style="font-weight: 800; font-size: 14px; color: var(--text);">$0.00</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
@@ -308,6 +340,7 @@ td { color: var(--text); }
   </div>
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
 let currentViajeId = null;
@@ -347,8 +380,7 @@ async function init() {
 
   // Init workers select
   const contacts = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
-  const sel = document.getElementById('f-workers');
-  sel.innerHTML = '';
+  const sel = document.getElementById('d-workers-select');
   sel.innerHTML = '';
   contacts.forEach(w => {
     const opt = document.createElement('option');
@@ -356,6 +388,23 @@ async function init() {
     opt.textContent = w.name || w.givenName || '-';
     sel.appendChild(opt);
   });
+
+  // Init Admin / Contador select
+  const adminRoles = ['admin', 'administracion', 'administrador', 'contador', 'contabilidad', 'compras', 'recursos humanos', 'oficina'];
+  const admins = (db.contacts || []).filter(c => (typeof c.tipo === 'string' && adminRoles.includes(c.tipo.toLowerCase())) || (typeof c.rol === 'string' && adminRoles.includes(c.rol.toLowerCase())));
+  let adminOpts = admins.map(a => `<option value="${a.name || a.nombre || a.givenName}">${a.name || a.nombre || a.givenName}</option>`).join('');
+  if (!adminOpts) {
+     adminOpts = `<option value="Administración">Administración</option><option value="Contabilidad">Contabilidad</option><option value="Compras">Compras</option>`;
+  }
+  document.getElementById('fa-por').innerHTML = '<option value="">— Seleccionar —</option>' + adminOpts;
+
+  // Init projects select
+  const projects = await window.DB.query('projects');
+  const pSel = document.getElementById('f-project');
+  pSel.innerHTML = '<option value="">— General / Sin proyecto —</option>' + 
+    projects.filter(p => !p._init).map(p => `<option value="${p.id}">${p.codigo||p.code} - ${p.nombre||p.name}</option>`).join('');
+  // Iniciar componente de búsqueda si está disponible
+  if (pSel._ssInit) pSel._ssRefresh(); else if (typeof SearchableSelect !== 'undefined') SearchableSelect.init(pSel);
   
   // Set default dates
   const today = new Date().toISOString().split('T')[0];
@@ -396,14 +445,20 @@ function getWorkerNames(db, ids) {
   if(!ids || !ids.length) return 'Ninguno';
   const all = [...(db.contacts||[]), ...(db.workers||[])];
   const w = all.filter(wk => ids.includes(wk.id));
-  return w.map(wk => (wk.name || wk.givenName || wk.id).split(' ').slice(0,2).join(' ')).join(', ') || 'Desconocido';
+  return w.map(wk => String(wk.nombre || wk.name || wk.givenName || wk.id || '').split(' ').slice(0,2).join(' ')).join(', ') || 'Desconocido';
 }
 
 function renderList() {
   const db = window.DB.get();
   const list = document.getElementById('list-container');
-  const viajes = (db.viajes || []).filter(v => v.id && !v._init && v.fecha_salida);
+  let viajes = (db.viajes || []).filter(v => v.id && !v._init && v.fecha_salida);
   
+  const filterSel = document.getElementById('f-filter-status');
+  const statusFilter = filterSel ? filterSel.value : 'activo';
+  if (statusFilter !== 'todos') {
+    viajes = viajes.filter(v => v.estado === statusFilter);
+  }
+
   if (viajes.length === 0) {
     list.innerHTML = `<div class="empty-state">
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -434,11 +489,14 @@ function renderList() {
       </div>`;
     }
 
+    const pObj = (db.projects||[]).find(p => p.id === v.project_id);
+    const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'Sin proyecto / General';
+
     html += `
     <div class="trip-item" onclick="openDetalle('${v.id}')">
       <div class="trip-info">
         <div style="display:flex; align-items:center; gap:8px;">
-          <div class="trip-title">${v.project_id || 'Sin proyecto'}</div>
+          <div class="trip-title">${pName}</div>
           <span class="badge badge-${v.estado}">${v.estado}</span>
         </div>
         <div class="trip-meta">${workerNames}</div>
@@ -462,13 +520,10 @@ function renderList() {
 
 function saveViaje() {
   const db = window.DB.get();
-  const sel = document.getElementById('f-workers');
-  const wids = Array.from(sel.selectedOptions).map(o => o.value);
-  if(wids.length === 0) { alert('Selecciona al menos un trabajador'); return; }
   
   const v = {
     id: crypto.randomUUID(),
-    worker_ids: wids,
+    worker_ids: [],
     project_id: document.getElementById('f-project').value.trim(),
     descripcion: document.getElementById('f-desc').value.trim(),
     fecha_salida: document.getElementById('f-salida').value,
@@ -477,12 +532,12 @@ function saveViaje() {
     estado: 'activo'
   };
   
+  db.viajes = db.viajes || [];
+  db.viajes.push(v);
+  window.DB.save(db);
+
   if (window.parent && window.parent.setDocumentInFirebase) {
     window.parent.setDocumentInFirebase('viajes', v.id, v);
-  }
-  if (window.parent && window.parent.DB_STATE) {
-    if (!window.parent.DB_STATE.viajes) window.parent.DB_STATE.viajes = [];
-    window.parent.DB_STATE.viajes.push(v);
   }
 
   showView('list');
@@ -494,12 +549,23 @@ function openDetalle(id) {
   currentViaje = db.viajes.find(v => v.id === id);
   if(!currentViaje) return;
   
-  document.getElementById('d-title').textContent = currentViaje.project_id || 'Viaje';
+  const pObj = (db.projects||[]).find(p => p.id === currentViaje.project_id);
+  const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'Viaje General / Sin Proyecto';
+  
+  document.getElementById('d-title').textContent = pName;
   document.getElementById('d-badge').textContent = currentViaje.estado.toUpperCase();
   document.getElementById('d-badge').className = 'badge badge-' + currentViaje.estado;
   
   document.getElementById('d-meta').innerHTML = `<strong>${currentViaje.descripcion||'Sin descripción'}</strong> &nbsp;&bull;&nbsp; 📅 ${formatDateDMM(currentViaje.fecha_salida)} → ${formatDateDMM(currentViaje.fecha_regreso_real || currentViaje.fecha_regreso_est)}`;
   document.getElementById('d-workers').textContent = `Personal: ${getWorkerNames(db, currentViaje.worker_ids)}`;
+  
+  const notaEl = document.getElementById('d-nota-cierre');
+  if (currentViaje.nota_cierre) {
+    notaEl.innerHTML = `Nota de cierre: ${currentViaje.nota_cierre} <button onclick="editNotaCierre()" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;" title="Editar/Eliminar Nota">✏️</button>`;
+    notaEl.style.display = 'block';
+  } else {
+    notaEl.style.display = 'none';
+  }
   
   const isCerrado = currentViaje.estado === 'cerrado';
   document.getElementById('form-anticipo').style.display = isCerrado ? 'none' : 'grid';
@@ -508,8 +574,39 @@ function openDetalle(id) {
   document.getElementById('btn-cerrar-viaje').style.display = isCerrado ? 'none' : 'inline-flex';
   document.getElementById('btn-reabrir-viaje').style.display = isCerrado ? 'inline-flex' : 'none';
 
+  const wSel = document.getElementById('d-workers-select');
+  Array.from(wSel.options).forEach(opt => opt.selected = (currentViaje.worker_ids||[]).includes(opt.value));
+  wSel.disabled = isCerrado;
+
+  // Populate Recibió select specifically with workers from this trip
+  const allWorkers = (db.contacts||[]).filter(c => c.tipo === 'trabajador' || c.tipo === 'worker');
+  const tripWorkers = allWorkers.filter(w => (currentViaje.worker_ids||[]).includes(w.id));
+  document.getElementById('fa-recibe').innerHTML = '<option value="">— Seleccionar —</option>' +
+     tripWorkers.map(w => `<option value="${w.name || w.nombre || w.givenName}">${w.name || w.nombre || w.givenName}</option>`).join('');
+
   renderDetalles();
   showView('detail');
+}
+
+function updateViajeWorkers() {
+  if(!currentViaje) return;
+  const sel = document.getElementById('d-workers-select');
+  const wids = Array.from(sel.selectedOptions).map(o => o.value);
+  currentViaje.worker_ids = wids;
+  
+  const db = window.DB.get();
+  const idx = (db.viajes||[]).findIndex(v => v.id === currentViaje.id);
+  if (idx > -1) {
+    db.viajes[idx].worker_ids = wids;
+    window.DB.save(db);
+    if (window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', currentViaje.id, db.viajes[idx]);
+  }
+  
+  document.getElementById('d-workers').textContent = `Personal: ${getWorkerNames(db, wids)}`;
+  
+  const allWorkers = (db.contacts||[]).filter(c => c.tipo === 'trabajador' || c.tipo === 'worker');
+  const tripWorkers = allWorkers.filter(w => wids.includes(w.id));
+  document.getElementById('fa-recibe').innerHTML = '<option value="">— Seleccionar —</option>' + tripWorkers.map(w => `<option value="${w.name || w.nombre || w.givenName}">${w.name || w.nombre || w.givenName}</option>`).join('');
 }
 
 function renderDetalles() {
@@ -518,30 +615,34 @@ function renderDetalles() {
   
   // Anticipos tb
   const tbAnt = document.getElementById('tb-anticipos');
-  tbAnt.innerHTML = stats.anticipos.length ? '' : '<tr><td colspan="5" style="text-align:center;color:var(--subtext);">No hay anticipos</td></tr>';
+  tbAnt.innerHTML = stats.anticipos.length ? '' : '<tr><td colspan="6" style="text-align:center;color:var(--subtext);">No hay anticipos</td></tr>';
   stats.anticipos.forEach(a => {
     tbAnt.innerHTML += `<tr>
       <td>${formatDateDMM(a.fecha)}</td>
       <td style="font-weight:600;">${formatMoney(a.monto)}</td>
       <td style="text-transform:capitalize;">${a.forma}</td>
+      <td>${a.recibido_por || '-'}</td>
       <td>${a.entregado_por || '-'}</td>
       <td style="text-align:right;">${currentViaje.estado==='cerrado'?'':`<button class="btn btn-small" onclick="delAnticipo('${a.id}')" style="color:var(--red);">✕</button>`}</td>
     </tr>`;
   });
+  document.getElementById('tf-anticipos-total').textContent = formatMoney(stats.totalAnt);
 
   // Gastos tb
   const tbGas = document.getElementById('tb-gastos');
   tbGas.innerHTML = stats.gastos.length ? '' : '<tr><td colspan="6" style="text-align:center;color:var(--subtext);">No hay gastos</td></tr>';
   stats.gastos.forEach(g => {
+    const linkHtml = g.url ? `<a href="${g.url}" target="_blank" style="text-decoration:none; margin-left:6px;" title="Ver comprobante">🔗</a>` : '';
     tbGas.innerHTML += `<tr>
       <td>${formatDateDMM(g.fecha)}</td>
       <td>${CAT_LABELS[g.categoria]||g.categoria}</td>
-      <td>${g.descripcion || '-'}</td>
+      <td>${g.descripcion || '-'}${linkHtml}</td>
       <td class="num-col" style="font-weight:600;">${formatMoney(g.monto)}</td>
       <td style="text-align:center;">${g.justificado ? '<span style="color:var(--green-text);">Sí 📄</span>' : '<span style="color:var(--amber-text);">No</span>'}</td>
       <td style="text-align:right;">${currentViaje.estado==='cerrado'?'':`<button class="btn btn-small" onclick="delGasto('${g.id}')" style="color:var(--red);">✕</button>`}</td>
     </tr>`;
   });
+  document.getElementById('tf-gastos-total').textContent = formatMoney(stats.totalGas);
 
   // Summary
   const cats = {};
@@ -589,22 +690,43 @@ function renderDetalles() {
 function addAnticipo() {
   const m = parseFloat(document.getElementById('fa-monto').value);
   if(!m || m<=0) return;
+  const recibe = document.getElementById('fa-recibe').value;
+  const por = document.getElementById('fa-por').value;
+  if(!recibe || !por) { alert('Debes seleccionar quién recibe y quién entrega el anticipo.'); return; }
+
+  const movId = crypto.randomUUID();
   const ant = {
     id: crypto.randomUUID(),
     viaje_id: currentViajeId,
     fecha: document.getElementById('fa-fecha').value,
     monto: m,
     forma: document.getElementById('fa-forma').value,
-    entregado_por: document.getElementById('fa-por').value,
+    recibido_por: recibe,
+    entregado_por: por,
+    movimiento_id: movId,
     nota: ''
   };
+
+  const db = window.DB.get();
+  db.anticipos_viaticos = db.anticipos_viaticos || [];
+  db.anticipos_viaticos.push(ant);
+  window.DB.save(db);
+
   if (window.parent && window.parent.setDocumentInFirebase) {
     window.parent.setDocumentInFirebase('anticipos_viaticos', ant.id, ant);
   }
-  if (window.parent && window.parent.DB_STATE) {
-    if (!window.parent.DB_STATE.anticipos_viaticos) window.parent.DB_STATE.anticipos_viaticos = [];
-    window.parent.DB_STATE.anticipos_viaticos.push(ant);
-  }
+
+  // Integración con Finanzas: Registrar salida del dinero
+  const pObj = (db.projects||[]).find(p => p.id === currentViaje.project_id);
+  const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'General';
+  const cuentaOrigen = ant.forma === 'transferencia' ? 'CHU' : 'CAJA';
+  window.DB.addMovement({
+    id: movId, type: 'Gasto', date: ant.fecha, amount: ant.monto,
+    account: cuentaOrigen, concept: `Anticipo Viáticos: ${pName}`,
+    category: 'Viáticos e Instalación', projectId: currentViaje.project_id, status: 'confirmado'
+  });
+  if(window.toast) window.toast(`Anticipo sumado y descontado de ${cuentaOrigen} en Finanzas.`);
+
   document.getElementById('fa-monto').value = '';
   renderDetalles();
 }
@@ -620,68 +742,139 @@ function addGasto() {
     descripcion: document.getElementById('fg-desc').value,
     monto: m,
     justificado: document.getElementById('fg-just').checked,
+    url: document.getElementById('fg-url').value.trim(),
     nota: ''
   };
+
+  const db = window.DB.get();
+  db.gastos_viaticos = db.gastos_viaticos || [];
+  db.gastos_viaticos.push(gas);
+  window.DB.save(db);
+
   if (window.parent && window.parent.setDocumentInFirebase) {
     window.parent.setDocumentInFirebase('gastos_viaticos', gas.id, gas);
   }
-  if (window.parent && window.parent.DB_STATE) {
-    if (!window.parent.DB_STATE.gastos_viaticos) window.parent.DB_STATE.gastos_viaticos = [];
-    window.parent.DB_STATE.gastos_viaticos.push(gas);
-  }
   document.getElementById('fg-monto').value = '';
   document.getElementById('fg-desc').value = '';
+  document.getElementById('fg-url').value = '';
   renderDetalles();
 }
 
 function delAnticipo(id) {
-  if(!confirm('¿Eliminar este anticipo?')) return;
+  if(!confirm('¿Eliminar este anticipo? (Esto también eliminará la salida de dinero en Finanzas automáticamente)')) return;
+  const db = window.DB.get();
+  if (db.anticipos_viaticos) { 
+    const ant = db.anticipos_viaticos.find(a => a.id === id);
+    if (ant && ant.movimiento_id) {
+      if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.accounting_movements) {
+        window.parent.DB_STATE.accounting_movements = window.parent.DB_STATE.accounting_movements.filter(m => m.id !== ant.movimiento_id);
+      }
+      if (window.parent && window.parent.deleteDocumentFromFirebase) {
+        window.parent.deleteDocumentFromFirebase('accounting_movements', ant.movimiento_id);
+      }
+    }
+    if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.anticipos_viaticos) window.parent.DB_STATE.anticipos_viaticos = window.parent.DB_STATE.anticipos_viaticos.filter(a => a.id !== id);
+    db.anticipos_viaticos = db.anticipos_viaticos.filter(a => a.id !== id); 
+    window.DB.save(db); 
+  }
   if (window.parent && window.parent.deleteDocumentFromFirebase) {
     window.parent.deleteDocumentFromFirebase('anticipos_viaticos', id);
-  }
-  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.anticipos_viaticos) {
-    window.parent.DB_STATE.anticipos_viaticos = window.parent.DB_STATE.anticipos_viaticos.filter(a => a.id !== id);
   }
   renderDetalles();
 }
 
 function delGasto(id) {
   if(!confirm('¿Eliminar este gasto?')) return;
+  const db = window.DB.get();
+  if (db.gastos_viaticos) { 
+    if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.gastos_viaticos) window.parent.DB_STATE.gastos_viaticos = window.parent.DB_STATE.gastos_viaticos.filter(g => g.id !== id);
+    db.gastos_viaticos = db.gastos_viaticos.filter(g => g.id !== id); window.DB.save(db); 
+  }
   if (window.parent && window.parent.deleteDocumentFromFirebase) {
     window.parent.deleteDocumentFromFirebase('gastos_viaticos', id);
-  }
-  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.gastos_viaticos) {
-    window.parent.DB_STATE.gastos_viaticos = window.parent.DB_STATE.gastos_viaticos.filter(g => g.id !== id);
   }
   renderDetalles();
 }
 
 function comenzarLiquidacion() {
-  if(!confirm('¿Deseas cerrar este viaje y marcarlo como liquidado? Ya no se podrán agregar más gastos o anticipos.')) return;
-  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.viajes) {
-    const v = window.parent.DB_STATE.viajes.find(vx => vx.id === currentViajeId);
-    if(v) {
-      v.estado = 'cerrado';
-      v.fecha_regreso_real = new Date().toISOString().split('T')[0];
-      if (window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+  const nota = prompt('¿Deseas cerrar este viaje y marcarlo como liquidado?\\nEsto generará automáticamente ajustes de caja en Finanzas.\\n\\nSi deseas, agrega una nota de cierre (opcional):');
+  if(nota === null) return; // cancelado por el usuario
+
+  const db = window.DB.get();
+  const v = (db.viajes || []).find(vx => vx.id === currentViajeId);
+  if(v) {
+    v.estado = 'cerrado';
+    v.fecha_regreso_real = new Date().toISOString().split('T')[0];
+    if (nota.trim() !== '') v.nota_cierre = nota.trim();
+
+    // Integración con Finanzas (Ajuste final)
+    const stats = calcViajeStats(db, currentViajeId);
+    const saldo = stats.totalAnt - stats.totalGas;
+    const pObj = (db.projects||[]).find(p => p.id === v.project_id);
+    const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'General';
+    const notaExt = v.nota_cierre ? ` (${v.nota_cierre})` : '';
+    
+    if (saldo > 0) {
+      const movId = crypto.randomUUID();
+      v.movimiento_cierre_id = movId;
+      window.DB.addMovement({
+        id: movId, type: 'Ingreso', date: v.fecha_regreso_real, amount: saldo, account: 'CAJA', concept: `Devolución sobrante viáticos: ${pName}${notaExt}`,
+        category: 'Devoluciones', projectId: v.project_id, status: 'confirmado'
+      });
+      if(window.toast) window.toast(`Liquidado. INGRESO a CAJA por sobrante: ${formatMoney(saldo)}`);
+    } else if (saldo < 0) {
+      const movId = crypto.randomUUID();
+      v.movimiento_cierre_id = movId;
+      window.DB.addMovement({
+        id: movId, type: 'Gasto', date: v.fecha_regreso_real, amount: Math.abs(saldo), account: 'CAJA', concept: `Reembolso faltante viáticos: ${pName}${notaExt}`,
+        category: 'Viáticos e Instalación', projectId: v.project_id, status: 'confirmado'
+      });
+      if(window.toast) window.toast(`Liquidado. GASTO de CAJA por reembolso: ${formatMoney(Math.abs(saldo))}`);
+    } else {
+      if(window.toast) window.toast("Liquidación exacta. Cierre completado.");
     }
+
+    window.DB.save(db);
+    if (window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
   }
   openDetalle(currentViajeId);
 }
 
 function reabrirViaje() {
-  if(!confirm('¿Reabrir este viaje para modificaciones?')) return;
-  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.viajes) {
-    const v = window.parent.DB_STATE.viajes.find(vx => vx.id === currentViajeId);
-    if(v) {
-      v.estado = 'activo';
-      if (window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+  if(!confirm('¿Reabrir este viaje para modificaciones? (Si hubo ajustes de saldo en caja al liquidarlo, se eliminarán)')) return;
+  const db = window.DB.get();
+  const v = (db.viajes || []).find(vx => vx.id === currentViajeId);
+  if(v) {
+    v.estado = 'activo';
+    if (v.movimiento_cierre_id) {
+      if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.accounting_movements) {
+        window.parent.DB_STATE.accounting_movements = window.parent.DB_STATE.accounting_movements.filter(m => m.id !== v.movimiento_cierre_id);
+      }
+      if (window.parent && window.parent.deleteDocumentFromFirebase) {
+        window.parent.deleteDocumentFromFirebase('accounting_movements', v.movimiento_cierre_id);
+      }
+      v.movimiento_cierre_id = null;
     }
+    window.DB.save(db);
+    if (window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
   }
   openDetalle(currentViajeId);
 }
 
-window.addEventListener('DOMContentLoaded', init);
+function editNotaCierre() {
+  const nuevaNota = prompt('Edita la nota de cierre (déjalo en blanco para eliminarla):', currentViaje.nota_cierre || '');
+  if (nuevaNota === null) return; // Cancelado por el usuario
+  const db = window.DB.get();
+  const v = (db.viajes || []).find(vx => vx.id === currentViajeId);
+  if (v) {
+    v.nota_cierre = nuevaNota.trim();
+    window.DB.save(db);
+    if (window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+    openDetalle(currentViajeId);
+  }
+}
+
+init(); // Llamada directa (sin esperar al evento que podría ya haber pasado)
 </script>
 </body>
 </html>

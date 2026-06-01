@@ -1,0 +1,86 @@
+/* ==========================================================================
+   Estilos Globales - Carpintería Huayapam ERP (Theme: Catppuccin)
+   ========================================================================== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  /* Latte (Modo Claro) */
+  --base: #eff1f5; --bg: #eff1f5;
+  --mantle: #e6e9ef; --surface: #ffffff;
+  --crust: #dce0e8;
+  --surface0: #ccd0da;
+  --surface1: #bcc0cc;
+  
+  --text: #4c4f69;
+  --subtext: #8c8fa1; --muted: #8c8fa1;
+  --hint: #bcc0cc;
+  
+  --green: #40a02b; --green-text: #317222; --green-bg: rgba(64,160,43,0.15);
+  --amber: #df8e1d; --amber-text: #b87315; --amber-bg: rgba(223,142,29,0.15);
+  --red: #d20f39;   --red-text: #a80c2e;   --red-bg: rgba(210,15,57,0.15);
+  --blue: #1e66f5;  --blue-text: #1750c1;  --blue-bg: rgba(30,102,245,0.15);
+  --mauve: #8839ef; --purple: #8839ef;     --purple-bg: rgba(136,57,239,0.15);
+  
+  --border: var(--surface0);
+  --border-strong: var(--surface1);
+  --radius: 8px; 
+  --radius-lg: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Mocha (Modo Oscuro) */
+    --base: #1e1e2e; --bg: #16161a;
+    --mantle: #181825; --surface: #222228;
+    --crust: #11111b;
+    --surface0: #313244;
+    --surface1: #45475a;
+    
+    --text: #cdd6f4;
+    --subtext: #a6adc8; --muted: #999;
+    --hint: #585b70;
+    
+    --green: #a6da95; --green-text: #a6da95; --green-bg: rgba(166,218,149,0.15);
+    --amber: #f9e2af; --amber-text: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
+    --red: #f38ba8;   --red-text: #f38ba8;   --red-bg: rgba(243,139,168,0.15);
+    --blue: #8caaee;  --blue-text: #8caaee;  --blue-bg: rgba(140,170,238,0.15);
+    --mauve: #cba6f7; --purple: #cba6f7;     --purple-bg: rgba(203,166,247,0.15);
+    
+    --border: var(--surface1);
+    --border-strong: #585b70;
+  }
+}
+
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+  background: var(--base); 
+  color: var(--text); 
+}
+
+/* ── Botones Universales ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: var(--radius); border: 1px solid var(--surface0); background: var(--mantle); color: var(--text); font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; transition: all .15s; text-decoration: none; }
+.btn:hover { background: var(--surface0); border-color: var(--surface1); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; pointer-events: none; }
+.btn-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-blue:hover { opacity: 0.9; background: var(--blue); color: #fff; }
+.btn-green { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-green:hover { opacity: 0.9; background: var(--green); color: #fff; }
+.btn-red { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-red:hover { opacity: 0.9; background: var(--red); color: #fff; }
+.btn-amber { background: var(--amber); color: #111; border-color: var(--amber); }
+.btn-amber:hover { opacity: 0.9; background: var(--amber); color: #111; }
+.btn-dark { background: var(--surface0); color: var(--text); border-color: var(--surface1); }
+.btn-dark:hover { background: var(--surface1); border-color: var(--subtext); }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--crust); }
+.btn-ghost:hover { background: var(--surface0); }
+
+/* ── Notificaciones (Toasts) Globales ── */
+.toast-wrap { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: var(--text); color: var(--base); padding: 12px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.15); animation: toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-width: 320px; pointer-events: auto; }
+.toast.ok { background: var(--green); color: #fff; }
+.toast.error { background: var(--red); color: #fff; }
+.toast.warn { background: var(--amber); color: #111; }
+@keyframes toast-in { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes toast-out { to { transform: translateX(120%); opacity: 0; margin-top: -50px; } }

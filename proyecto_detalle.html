@@ -239,6 +239,20 @@
         </div>
       </div>
 
+      <!-- Viáticos y Viajes -->
+      <div class="card">
+        <div class="card-title">Viáticos del Proyecto</div>
+        <div class="kv">
+          <span class="kv-lbl">Anticipos Entregados</span>
+          <span class="kv-val" id="p-viat-ant" style="color:var(--text);">$0.00</span>
+        </div>
+        <div class="kv">
+          <span class="kv-lbl">Gastos Comprobados</span>
+          <span class="kv-val" id="p-viat-gas" style="color:var(--text);">$0.00</span>
+        </div>
+        <div id="p-viat-list" style="max-height:140px; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:4px;"></div>
+      </div>
+
       <!-- Horas por Categoría -->
       <div class="card">
         <div class="card-title">
@@ -595,6 +609,39 @@
       if (projData && projData.pagos !== totalConfirmed) projData.pagos = totalConfirmed;
     }
 
+    // ── Viáticos del Proyecto ─────────────────────────
+    function renderViaticos(d) {
+      if (!projId) return;
+      
+      const viajes = (d.viajes || []).filter(v => v.project_id === projId);
+      
+      let totAnt = 0, totGas = 0, html = '';
+      if (viajes.length === 0) {
+        html = '<div style="font-size:12px; color:var(--subtext);">No hay viajes ni viáticos registrados para este proyecto.</div>';
+      } else {
+        viajes.forEach(v => {
+          const vAnts = (d.anticipos_viaticos || []).filter(a => a.viaje_id === v.id);
+          const vGas  = (d.gastos_viaticos || []).filter(g => g.viaje_id === v.id);
+          
+          let sumA = 0; vAnts.forEach(a => sumA += Number(a.monto));
+          let sumG = 0; vGas.forEach(g => sumG += Number(g.monto));
+          
+          totAnt += sumA;
+          totGas += sumG;
+          
+          html += `
+            <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid var(--crust);">
+              <div><span style="font-size:10px; font-weight:800; color:var(--blue); margin-right:4px;">${v.estado.toUpperCase()}</span>${v.descripcion || 'Viaje'}</div>
+              <div style="font-weight:700;">${fmt(sumG)}</div>
+            </div>
+          `;
+        });
+      }
+      document.getElementById('p-viat-ant').textContent = fmt(totAnt);
+      document.getElementById('p-viat-gas').textContent = fmt(totGas);
+      document.getElementById('p-viat-list').innerHTML = html;
+    }
+
     // ── Archivar ──────────────────────────────────────
     function archiveProject() {
       if (!projId) return;
@@ -718,6 +765,7 @@
       renderQuotes();
       renderPayments(d);
       renderActualMaterials(d);
+      renderViaticos(d);
     }
 
     init();

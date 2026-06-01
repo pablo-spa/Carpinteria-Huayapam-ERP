@@ -437,7 +437,8 @@
         { id: 'nav-db', html: `<span class="icon">⚙️</span> Esquema de DB`, file: 'admin_db.html', label: 'Gestión de Esquemas' },
         { id: 'nav-config', html: `<span class="icon">🛠️</span> Reglas y Ajustes`, file: 'admin_config.html', label: 'Configuración General' },
         { id: 'nav-listas', html: `<span class="icon">📋</span> Editar Listas`, file: 'admin_listas.html', label: 'Editar Listas de Sistema' },
-        { id: 'nav-permisos', html: `<span class="icon">🔐</span> Admin Permisos`, file: 'admin_permisos.html', label: 'Permisos de Acceso' }
+        { id: 'nav-permisos', html: `<span class="icon">🔐</span> Admin Permisos`, file: 'admin_permisos.html', label: 'Permisos de Acceso' },
+        { id: 'nav-wiki', html: `<span class="icon">📖</span> Wiki / Manual`, file: 'wiki.html', label: 'Manual del Sistema' }
       ]
     }
   ];
@@ -466,6 +467,7 @@
     'admin_db.html': 'admin_db',
     'admin_permisos.html': 'admin_permisos',
     'admin_usuarios.html': 'admin_usuarios',
+    'wiki.html': 'dashboard', /* Acceso general heredado del dashboard */
   };
 
   function loadMenu() {
@@ -678,6 +680,7 @@
     'viaticos.html':          'nav-viaticos',
     'admin_usuarios.html':    'nav-usuarios',
     'admin_permisos.html':    'nav-permisos',
+    'wiki.html':              'nav-wiki',
   };
 
   function renderBreadcrumbs() {
