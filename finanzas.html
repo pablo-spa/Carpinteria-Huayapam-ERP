@@ -147,11 +147,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     Movimientos
   </div>
   <div style="display:flex; gap:8px; align-items:center;">
-    <div style="display:flex; gap:2px; background:var(--mantle); border:1px solid var(--crust); border-radius:8px; padding:3px;">
-      <button id="iv-7d"  class="btn iv-btn act" onclick="setInterval('7d')">7d</button>
-      <button id="iv-30d" class="btn iv-btn"     onclick="setInterval('30d')">1m</button>
-      <button id="iv-180d"class="btn iv-btn"     onclick="setInterval('180d')">6m</button>
-      <button id="iv-365d"class="btn iv-btn"     onclick="setInterval('365d')">1a</button>
+    <div style="display:flex; align-items:center; gap:6px; background:var(--mantle); border:1px solid var(--crust); border-radius:8px; padding:4px 10px; font-size:12px;">
+      <span style="color:var(--subtext); font-weight:600; white-space:nowrap;">Var. desde</span>
+      <input type="date" id="iv-desde" class="f-input" style="padding:4px 8px;font-size:12px;height:28px;width:130px;" onchange="onIntervalChange()">
+      <span style="color:var(--subtext);">hasta hoy</span>
     </div>
     <button class="btn btn-outline" style="background:var(--base);" onclick="showViaticosReport()">📊 Reporte Viáticos</button>
     <button class="btn btn-outline" style="background:var(--base);" onclick="openNuevaCuenta()">+ Cuenta</button>
@@ -161,34 +160,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
 <div class="main">
   
-  <!-- Tarjetas de Cuenta -->
+  <!-- Tarjetas de Cuenta — la tarjeta ALL es fija, el resto se genera dinámicamente -->
   <div class="acc-grid" id="acc-grid">
     <div class="acc-card act" id="acard-ALL" onclick="filterAccount('ALL')">
       <div class="acc-name">TODAS LAS CUENTAS</div>
       <div class="acc-bal" id="bal-ALL">$0.00</div>
       <div class="acc-meta" id="meta-ALL">Consolidado general</div>
     </div>
-    <div class="acc-card" id="acard-CHU" onclick="filterAccount('CHU')">
-      <div class="acc-name">CHU (Banco)</div>
-      <div class="acc-bal" id="bal-CHU">$0.00</div>
-      <div class="acc-meta"><span class="acc-var" id="var-CHU">—</span></div>
-    </div>
-    <div class="acc-card" id="acard-SATP" onclick="filterAccount('SATP')">
-      <div class="acc-name">SATP (Banco)</div>
-      <div class="acc-bal" id="bal-SATP">$0.00</div>
-      <div class="acc-meta"><span class="acc-var" id="var-SATP">—</span></div>
-    </div>
-    <div class="acc-card" id="acard-CAJA" onclick="filterAccount('CAJA')">
-      <div class="acc-name">CAJA Efectivo</div>
-      <div class="acc-bal" id="bal-CAJA">$0.00</div>
-      <div class="acc-meta"><span class="acc-var" id="var-CAJA">—</span></div>
-    </div>
-    <div class="acc-card" id="acard-OTROS" onclick="filterAccount('OTROS')">
-      <div class="acc-name">OTROS</div>
-      <div class="acc-bal" id="bal-OTROS">$0.00</div>
-      <div class="acc-meta"><span class="acc-var" id="var-OTROS">—</span></div>
-    </div>
-    <!-- Tarjetas dinámicas (cuentas nuevas) se inyectan aquí por JS -->
+    <!-- Tarjetas por cuenta se inyectan aquí por JS desde renderDynamicCards() -->
   </div>
 
   <!-- Banner vista parcial -->
@@ -439,15 +418,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     STATE_ACCOUNT_BALANCES = {};
     (rawBal || []).forEach(d => { STATE_ACCOUNT_BALANCES[d.account || d.id] = d; });
 
-    // Load bank accounts and payment methods from DB
-    const rawAccounts = window.DB.get().bank_accounts || [];
-    STATE_BANK_ACCOUNTS = rawAccounts[0]?.list || rawAccounts.filter(x => typeof x === 'string');
+    // Cargar cuentas y formas de pago con query async (no .get() síncrono)
+    const rawAccSnap = await window.DB.query('bank_accounts');
+    STATE_BANK_ACCOUNTS = rawAccSnap[0]?.list || [];
     if (STATE_BANK_ACCOUNTS.length) {
       const accOpts = STATE_BANK_ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
       document.getElementById('f-acc').innerHTML  = accOpts;
       document.getElementById('f-dest').innerHTML = accOpts;
     }
+
+    const rawMethodsSnap = await window.DB.query('payment_methods');
+    const methods = rawMethodsSnap[0]?.list || [];
+    if (methods.length) {
+      document.getElementById('f-method').innerHTML = methods.map(m => `<option value="${m}">${m}</option>`).join('');
+    }
+
     renderDynamicCards();
+    initIntervalPicker();
 
     const rawMethods = window.DB.get().payment_methods || [];
     const methods = rawMethods[0]?.list || rawMethods.filter(x => typeof x === 'string');
@@ -552,13 +539,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     sorted.forEach(m => {
       // Filtering logic
-      if(currentAccFilter !== 'ALL') {
-        const MAIN = new Set(['CHU','SATP','CAJA']);
-        if (currentAccFilter === 'OTROS') {
-          if (MAIN.has(m.account) && MAIN.has(m.destAccount || m.account)) return;
-        } else {
-          if (m.account !== currentAccFilter && m.destAccount !== currentAccFilter) return;
-        }
+      if (currentAccFilter !== 'ALL') {
+        if (m.account !== currentAccFilter && m.destAccount !== currentAccFilter) return;
       }
       if(typeF && m.type !== typeF) return;
       if(catF) {
@@ -709,11 +691,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       const badge = document.getElementById('status-badge');
       badge.style.display = 'block';
       if(m.status === 'confirmado') {
-        badge.className='pill pill-green'; badge.textContent='Confirmado (Abre solo lectura parcial)';
-        // Disable somewhat to enforce explicit changes
-        document.getElementById('sp-title').innerHTML = `Editar Registro Cerrado <span style="font-size:12px;color:var(--amber)">⚠️</span>`;
+        badge.className='pill pill-green'; badge.textContent='Confirmado';
       } else {
-        badge.className='pill pill-amber'; badge.textContent='Borrador (Edición Libre)';
+        badge.className='pill pill-amber'; badge.textContent='Borrador';
       }
 
     } else {
@@ -741,17 +721,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     document.getElementById('panel-overlay').classList.remove('open');
   }
 
+  function updateCategoryOptions(type) {
+    const typeMap = { 'Ingreso': 'ingreso', 'Gasto': 'gasto', 'Transferencia': 'transferencia' };
+    const t = typeMap[type];
+    const cats = STATE_CATEGORIES.filter(c => c.type === t);
+    const opts = '<option value="">-- Sin categorizar --</option>' +
+      cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    document.getElementById('f-cat-input').innerHTML = opts;
+  }
+
   function setPanelType(type) {
     document.getElementById('f-type-val').value = type;
     const btns = document.querySelectorAll('.ts-btn');
     btns.forEach(b => b.className = 'ts-btn');
-    
+
     document.getElementById('dest-wrap').style.display = 'none';
     document.getElementById('method-wrap').style.display = 'flex';
     document.getElementById('entity-wrap').style.display = 'flex';
     document.getElementById('proj-wrap').style.display = 'flex';
     document.getElementById('lbl-acc').textContent = 'Cuenta';
-    
+
+    updateCategoryOptions(type);
+
     if(type === 'Ingreso') {
       btns[1].classList.add('act', 't-inc');
       document.getElementById('lbl-entity').textContent = 'Depositante / Cliente';
@@ -878,42 +869,48 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   // ── Estado de saldos y cuentas ──────────────────────────────────────────────
   let STATE_ACCOUNT_BALANCES = {}; // id → doc de account_balances
   let STATE_BANK_ACCOUNTS    = []; // lista de todas las cuentas
-  let currentInterval        = '7d';
+  let currentInterval        = '30d';
 
   const HARDCODED_ACCOUNTS   = new Set(['CHU','SATP','CAJA','OTROS','ALL']);
   const MAIN_ACCOUNTS        = new Set(['CHU','SATP','CAJA']);
-  const INTERVAL_LABELS      = { '7d':'últ. 7 días','30d':'últ. 30 días','180d':'últ. 6 meses','365d':'últ. 1 año' };
 
-  function setInterval(iv) {
-    currentInterval = iv;
-    document.querySelectorAll('.iv-btn').forEach(b => b.classList.remove('act'));
-    document.getElementById('iv-' + iv).classList.add('act');
+  function initIntervalPicker() {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    document.getElementById('iv-desde').value = since.toISOString().slice(0,10);
+  }
+
+  function onIntervalChange() {
+    const desde = document.getElementById('iv-desde').value;
+    if (!desde) return;
+    const daysAgo = Math.round((Date.now() - new Date(desde)) / 86400000);
+    if      (daysAgo <= 10)  currentInterval = '7d';
+    else if (daysAgo <= 60)  currentInterval = '30d';
+    else if (daysAgo <= 270) currentInterval = '180d';
+    else                     currentInterval = '365d';
     calcBalances();
   }
 
-  function varHTML(current, before, iv) {
+  function varHTML(current, before) {
     if (before === 0 && current === 0) return `<span style="color:var(--subtext)">sin mov.</span>`;
     const change = current - before;
-    const pct = before !== 0 ? ((change / Math.abs(before)) * 100).toFixed(1) : '—';
+    const pct = before !== 0 ? ((change / Math.abs(before)) * 100).toFixed(1) : null;
     const col  = change > 0 ? 'var(--green)' : change < 0 ? 'var(--red)' : 'var(--subtext)';
     const sign = change >= 0 ? '+' : '';
-    const label = INTERVAL_LABELS[iv] || iv;
-    return `<span style="color:${col};font-weight:700">${sign}${pct}%</span> <span style="color:var(--subtext)">${label}</span>`;
+    const fmtChange = (change >= 0 ? '+' : '') + '$' + Math.abs(change).toLocaleString('es-MX', {minimumFractionDigits:0, maximumFractionDigits:0});
+    const pctStr = pct !== null ? `${sign}${pct}%` : '—';
+    return `<span style="color:${col};font-weight:700">${pctStr}</span> <span style="color:var(--subtext);font-size:10px">${fmtChange}</span>`;
   }
 
   function calcBalances() {
     const iv = currentInterval;
     const beforeKey = `before_${iv}`;
 
-    // Calcular ALL y OTROS sumando desde STATE_ACCOUNT_BALANCES
-    let allBal = 0, allBefore = 0, otrosBal = 0, otrosBefore = 0;
-    for (const [acc, data] of Object.entries(STATE_ACCOUNT_BALANCES)) {
+    // Calcular ALL sumando todas las cuentas conocidas
+    let allBal = 0, allBefore = 0;
+    for (const data of Object.values(STATE_ACCOUNT_BALANCES)) {
       allBal    += data.balance    || 0;
       allBefore += data[beforeKey] || 0;
-      if (!MAIN_ACCOUNTS.has(acc)) {
-        otrosBal    += data.balance    || 0;
-        otrosBefore += data[beforeKey] || 0;
-      }
     }
 
     const setCard = (acc, bal, before) => {
@@ -922,26 +919,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       if (!balEl) return;
       balEl.textContent = fmt(bal);
       balEl.style.color = bal < 0 ? 'var(--red)' : 'var(--text)';
-      if (varEl) varEl.innerHTML = varHTML(bal, before, iv);
+      if (varEl) varEl.innerHTML = varHTML(bal, before);
     };
 
-    // Tarjetas fijas
-    setCard('ALL',  allBal,   allBefore);
-    setCard('OTROS',otrosBal, otrosBefore);
-    ['CHU','SATP','CAJA'].forEach(acc => {
+    setCard('ALL', allBal, allBefore);
+
+    // Una tarjeta por cada cuenta registrada
+    STATE_BANK_ACCOUNTS.forEach(acc => {
       const d = STATE_ACCOUNT_BALANCES[acc] || {};
       setCard(acc, d.balance || 0, d[beforeKey] || 0);
     });
 
-    // Tarjetas dinámicas
-    STATE_BANK_ACCOUNTS.filter(a => !HARDCODED_ACCOUNTS.has(a)).forEach(acc => {
-      const d = STATE_ACCOUNT_BALANCES[acc] || {};
-      setCard(acc, d.balance || 0, d[beforeKey] || 0);
-    });
-
-    // Actualizar texto meta de ALL
     const metaAll = document.getElementById('meta-ALL');
-    if (metaAll) metaAll.innerHTML = varHTML(allBal, allBefore, iv);
+    if (metaAll) metaAll.innerHTML = varHTML(allBal, allBefore);
 
     // Avisos (pendientes / sin categoría) — sigue usando DBm local
     const drafts = DBm.filter(m => m.status === 'pendiente');
@@ -962,9 +952,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   function renderDynamicCards() {
     const grid = document.getElementById('acc-grid');
-    // Quitar cards dinámicas anteriores
     grid.querySelectorAll('.acc-card-dynamic').forEach(el => el.remove());
-    STATE_BANK_ACCOUNTS.filter(a => !HARDCODED_ACCOUNTS.has(a)).forEach(acc => {
+    // Todas las cuentas de bank_accounts tienen su propia tarjeta
+    STATE_BANK_ACCOUNTS.forEach(acc => {
       const div = document.createElement('div');
       div.className = 'acc-card acc-card-dynamic';
       div.id = 'acard-' + acc;
