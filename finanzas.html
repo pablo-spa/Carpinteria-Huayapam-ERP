@@ -51,6 +51,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .acc-card.act { border-color: var(--blue); border-top-color: var(--blue); background: var(--blue-bg); }
 .acc-card.bal-pos { border-top-color: var(--green); }
 .acc-card.bal-neg { border-top-color: var(--red); }
+.acc-card.dragging { opacity: 0.35; transform: scale(0.97); }
+.acc-card.drag-over { border-color: var(--blue); border-top-color: var(--blue); box-shadow: 0 0 0 2px var(--blue); }
 .acc-name { font-size: 11px; font-weight: 800; color: var(--subtext); letter-spacing: 0.8px; text-transform: uppercase; }
 .acc-bal { font-size: 22px; font-weight: 800; color: var(--text); margin-top: 6px; line-height: 1.1; }
 .acc-meta { font-size: 11px; color: var(--subtext); margin-top: 8px; }
@@ -923,16 +925,53 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     document.getElementById('notice-block').style.display = hasNotice ? 'block' : 'none';
   }
 
+  let _dragSrc = null;
+
   function renderDynamicCards() {
     const grid = document.getElementById('acc-grid');
     grid.querySelectorAll('.acc-card-dynamic').forEach(el => el.remove());
-    // Todas las cuentas de bank_accounts tienen su propia tarjeta
+
     STATE_BANK_ACCOUNTS.forEach(acc => {
       const div = document.createElement('div');
       div.className = 'acc-card acc-card-dynamic';
       div.id = 'acard-' + acc;
-      div.onclick = () => filterAccount(acc);
+      div.draggable = true;
       div.innerHTML = `<div class="acc-name">${acc}</div><div class="acc-bal" id="bal-${acc}">$0.00</div><div class="acc-meta"><span class="acc-var" id="var-${acc}">—</span></div>`;
+
+      div.onclick = () => filterAccount(acc);
+
+      div.addEventListener('dragstart', e => {
+        _dragSrc = acc;
+        div.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      div.addEventListener('dragend', () => {
+        div.classList.remove('dragging');
+        grid.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      });
+      div.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (_dragSrc && _dragSrc !== acc) div.classList.add('drag-over');
+      });
+      div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+      div.addEventListener('drop', e => {
+        e.preventDefault();
+        div.classList.remove('drag-over');
+        if (!_dragSrc || _dragSrc === acc) return;
+        // Reordenar
+        const fromIdx = STATE_BANK_ACCOUNTS.indexOf(_dragSrc);
+        const toIdx   = STATE_BANK_ACCOUNTS.indexOf(acc);
+        STATE_BANK_ACCOUNTS.splice(fromIdx, 1);
+        STATE_BANK_ACCOUNTS.splice(toIdx, 0, _dragSrc);
+        // Guardar en Firestore
+        if (window.parent && window.parent.setDocumentInFirebase) {
+          window.parent.setDocumentInFirebase('bank_accounts', 'main', { list: [...STATE_BANK_ACCOUNTS] });
+        }
+        renderDynamicCards();
+        calcBalances();
+      });
+
       grid.appendChild(div);
     });
   }
