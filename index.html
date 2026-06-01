@@ -787,7 +787,7 @@
   </script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -800,7 +800,10 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app, "carpinteria-huayapam-erp");
+    
+    const db = initializeFirestore(app, {
+      localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+    }, 'carpinteria-huayapam-erp');
     const auth = getAuth(app);
     window.db = db;
     
@@ -835,7 +838,6 @@
         window.DB_STATE_IS_LOADING = true;
         document.getElementById('db-loading-overlay').style.display = 'flex';
         const state = {};
-        let isFirebaseEmpty = true;
         let loadedCount = 0;
         const snaps = await Promise.all(
           collectionsToLoad.map(col =>
@@ -861,7 +863,6 @@
         console.log(`[DB] Cargadas ${loadedCount}/${collectionsToLoad.length} colecciones`);
         collectionsToLoad.forEach((col, i) => {
           state[col] = snaps[i].docs.map(d => ({ _id: d.id, ...d.data() }));
-          if (state[col].length > 0) isFirebaseEmpty = false;
         });
 
         // Setup the role if not the main programmer
@@ -900,75 +901,9 @@
             await deleteDoc(doc(db, col, docId));
         };
         
-        // Seed workers one time
-        if (!localStorage.getItem('workers_seeded_v1')) {
-            const defaultWorkers = [
-               {id:'EDD92',givenName:'Eddie', paterno:'Santiago', name:'Santiago Sanchez Eddie',       role:'Jefe de Planta', baseSalary:4150, personalId: 'EDD92', scanCode: 'EDD92'},
-               {id:'DIE85',givenName:'Diego', paterno:'Romero', name:'Romero Frias Diego',       role:'Administración', baseSalary:4000, personalId: 'DIE85', scanCode: 'DIE85'},
-               {id:'NAR69',givenName:'Narciso', paterno:'Martinez', name:'Martinez Chavez Narciso R.', role:'Maestro A', baseSalary:3800, personalId: 'NAR69', scanCode: 'NAR69'},
-               {id:'HER71',givenName:'Herón', paterno:'Pacheco', name:'Pacheco Garcia Heron C.',   role:'Maestro A', baseSalary:3700, personalId: 'HER71', scanCode: 'HER71'},
-               {id:'GAB82',givenName:'Gabriel', paterno:'Santiago', name:'Santiago Moreno Gabriel',     role:'Contador', baseSalary:3700, personalId: 'GAB82', scanCode: 'GAB82'},
-               {id:'VIC75',givenName:'Vicente', paterno:'Cruz', name:'Cruz Morales Vicente A.', role:'Maestro A', baseSalary:3600, personalId: 'VIC75', scanCode: 'VIC75'},
-               {id:'ANG70',givenName:'Angel', paterno:'Chincoya', name:'Chincoya Rodriguez Angel L.', role:'Maestro A', baseSalary:3550, personalId: 'ANG70', scanCode: 'ANG70'},
-               {id:'NEP80',givenName:'Neptali', paterno:'Hernandez', name:'Hernandez Gaytan Neptali', role:'Maestro B', baseSalary:3500, personalId: 'NEP80', scanCode: 'NEP80'},
-               {id:'GAB72',givenName:'Gabriel', paterno:'Torija', name:'Torija Hernandez Gabriel',  role:'Mantenimiento', baseSalary:3500, personalId: 'GAB72', scanCode: 'GAB72'},
-               {id:'MIL97',givenName:'Milena', paterno:'Spada', name:'Spada Tello Milena',      role:'Administración', baseSalary:3500, personalId: 'MIL97', scanCode: 'MIL97'},
-               {id:'GRE75',givenName:'Gregorio', paterno:'Cruz', name:'Cruz Cruz Gregorio',    role:'Barniz', baseSalary:3250, personalId: 'GRE75', scanCode: 'GRE75'},
-               {id:'CAR74',givenName:'Carlos', paterno:'Padilla', name:'Padilla Cruz Carlos A.',   role:'Oficial A', baseSalary:3100, personalId: 'CAR74', scanCode: 'CAR74'},
-               {id:'MAR73',givenName:'Martha', paterno:'Mendoza', name:'Mendoza Arellano Martha',      role:'Compras', baseSalary:3000, personalId: 'MAR73', scanCode: 'MAR73'},
-               {id:'MIG81',givenName:'Miguel', paterno:'Mendez', name:'Mendez Santiago Miguel A.',   role:'Oficial A', baseSalary:2900, personalId: 'MIG81', scanCode: 'MIG81'},
-               {id:'PAO95',givenName:'Paola', paterno:'Padilla', name:'Padilla Contreras Paola',       role:'Oficial B', baseSalary:2900, personalId: 'PAO95', scanCode: 'PAO95'},
-               {id:'GUI90',givenName:'Guillermo', paterno:'Flores', name:'Flores Garcia Guillermo',   role:'Oficial B', baseSalary:2650, personalId: 'GUI90', scanCode: 'GUI90'},
-               {id:'SAN04',givenName:'Sandra', paterno:'Garcia', name:'Garcia Hernandez Sandra',   role:'Oficial B', baseSalary:2600, personalId: 'SAN04', scanCode: 'SAN04'},
-               {id:'ALF80',givenName:'Alfredo', paterno:'Garcia', name:'Garcia Garcia Alfredo',   role:'Oficial B', baseSalary:2600, personalId: 'ALF80', scanCode: 'ALF80'},
-               {id:'NAP81',givenName:'Napoleon', paterno:'Hernandez', name:'Hernandez Ignacio Napoleon',   role:'Chofer', baseSalary:2450, personalId: 'NAP81', scanCode: 'NAP81'},
-               {id:'CHR91',givenName:'Christopher', paterno:'Hernandez', name:'Hernandez Ramirez Christopher',   role:'Aprendiz', baseSalary:2400, personalId: 'CHR91', scanCode: 'CHR91'},
-               {id:'ANG65',givenName:'Angeles', paterno:'Rojas', name:'Rojas Aragon Angeles',   role:'Empleye', baseSalary:2400, personalId: 'ANG65', scanCode: 'ANG65'},
-               {id:'LEX01',givenName:'Lexee', paterno:'Jimenez', name:'Jimenez Carranza Lexee',   role:'Chalán', baseSalary:2350, personalId: 'LEX01', scanCode: 'LEX01'},
-               {id:'JEN79',givenName:'Jenny', paterno:'Velasco', name:'Velasco Vazquez Jenny',   role:'Pulido', baseSalary:2300, personalId: 'JEN79', scanCode: 'JEN79'},
-               {id:'DIE04',givenName:'Diego', paterno:'Hernandez', name:'Hernandez Ramirez Diego',   role:'Chalán', baseSalary:2300, personalId: 'DIE04', scanCode: 'DIE04'},
-               {id:'COS70',givenName:'Cosme', paterno:'Perez', name:'Perez Ramirez Cosme',   role:'Almacén', baseSalary:2300, personalId: 'COS70', scanCode: 'COS70'},
-               {id:'YES80',givenName:'Yesenia', paterno:'Velasco', name:'Velasco Vazquez Yesenia',   role:'Pulido', baseSalary:2250, personalId: 'YES80', scanCode: 'YES80'},
-               {id:'ELO03',givenName:'Eloy', paterno:'Hernandez', name:'Hernandez Ramirez Eloy',   role:'Chalán', baseSalary:2205, personalId: 'ELO03', scanCode: 'ELO03'},
-               {id:'GLA77',givenName:'Gladis', paterno:'Bautista', name:'Bautista Santiago Gladis',   role:'Limpieza', baseSalary:2205, personalId: 'GLA77', scanCode: 'GLA77'},
-               {id:'CAR02',givenName:'Carolina', paterno:'Santiago', name:'Santiago Reyes Carolina',   role:'Pulido', baseSalary:2205, personalId: 'CAR02', scanCode: 'CAR02'}
-            ];
-            
-            console.log("Seeding workers...");
-            localStorage.setItem('workers_seeded_v1', 'true');
-            setTimeout(async () => {
-                for(const w of defaultWorkers) {
-                   try { 
-                       await setDoc(doc(db, "workers", w.id), w);
-                       if (!state.workers) state.workers = [];
-                       if (!state.workers.find(x => x.id === w.id)) state.workers.push(w);
-                   } catch(e) { console.error("Worker seed error:", e); }
-                }
-            }, 500);
-        }
-        
         // Show role/user
         document.getElementById('current-user-name').innerText = user.displayName || user.email.split('@')[0];
         document.getElementById('current-user-role').innerText = role.toUpperCase();
-        
-        // ONE-TIME MIGRATION FROM LOCALSTORAGE
-        if (isFirebaseEmpty) {
-          console.log("Firebase is empty! Migrating from localStorage...");
-          const localStr = localStorage.getItem("huayapam_db") || localStorage.getItem("erp_data");
-          if (localStr) {
-             const localData = JSON.parse(localStr);
-             try {
-                await fetch("/api/db-sync", {
-                   method: "POST",
-                   headers: { "Content-Type": "application/json" },
-                   body: JSON.stringify(localData)
-                });
-                console.log("Local data migrated to Firebase. Reloading to fetch collections.");
-                window.location.reload();
-                return;
-             } catch(e) { console.error("Migration failed:", e); }
-          }
-        }
 
         window.DB_STATE = state;
         window.DB_STATE_LOADED = true;
