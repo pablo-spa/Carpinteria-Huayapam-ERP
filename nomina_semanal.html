@@ -489,34 +489,60 @@ let weekOffset = 0;
 
 function weekDates(off) {
   const now = new Date();
-  const day = now.getDay();
-  const toMon = day===0 ? -6 : 1-day;
-  const mon = new Date(now); mon.setDate(now.getDate()+toMon+off*7);
-  const fri = new Date(mon); fri.setDate(mon.getDate()+4);
-  const sat = new Date(mon); sat.setDate(mon.getDate()+5);
-  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-  return {mon, fri, sat, sun};
+  const dow = now.getDay();
+  // Pay week: prev Saturday → this Friday
+  // Days since last Saturday: Sat=0, Sun=1, Mon=2, ..., Fri=6
+  const dToSat = (dow + 1) % 7;
+  const sat = new Date(now); sat.setDate(now.getDate() - dToSat + off * 7);
+  const sun = new Date(sat); sun.setDate(sat.getDate() + 1);
+  const mon = new Date(sat); mon.setDate(sat.getDate() + 2);
+  const fri = new Date(sat); fri.setDate(sat.getDate() + 6);
+  return { mon, fri, sat, sun };
 }
 
 function processRealCheckins(off) {
-  const {mon} = weekDates(off);
-  const dates = Array.from({length:7},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d.toISOString().split('T')[0]; });
-  
+  const { mon, sat, sun } = weekDates(off);
+  // dates[0..4] = Mon-Fri, dates[5] = prev-Sat, dates[6] = prev-Sun
+  const monFri = Array.from({length:5},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d.toISOString().slice(0,10); });
+  const dates = [...monFri, sat.toISOString().slice(0,10), sun.toISOString().slice(0,10)];
+
   if (window.DB) {
     const db = window.DB.get();
-    const checkins = db.attendance_logs || db.attendance || [];
-    
+    // Production records (from produccion_diaria): attendance collection with 'date' field
+    const prodRecs   = db.attendance       || [];
+    // Checador records: attendance_logs with 'fecha' field
+    const checRecs   = db.attendance_logs  || [];
+
     WORKERS.forEach(w => {
       dates.forEach((dateStr, i) => {
-        const dCheckins = checkins.filter(c => c.workerId === w.id && (c.fecha === dateStr || c.date === dateStr));
-        if (dCheckins.length > 0) {
-           const isFalta = dCheckins.some(c => (c.status || '').toLowerCase().includes('falta'));
-           if (isFalta) {
-             S[w.id].dias[i] = {st: 'falta', hrs: 0};
-           } else {
-             // Assuming full day 9 hours if there's an entry
-             S[w.id].dias[i] = {st: 'trabajo', hrs: 9};
-           }
+        // Prefer production record (has real hours) over checador
+        const prod = prodRecs.find(c => c.workerId === w.id && c.date === dateStr && !c._init && c.status);
+        if (prod) {
+          const st = (prod.status || '').toLowerCase();
+          if (st === 'falta') {
+            S[w.id].dias[i] = { st: 'falta', hrs: 0 };
+          } else if (st === 'vacaciones') {
+            S[w.id].dias[i] = { st: 'vacaciones', hrs: 0 };
+          } else {
+            // Use real hours: horasTotales from produccion_diaria, or fallback
+            const hrs = prod.horasTotales != null ? prod.horasTotales
+                      : (prod.hours != null ? prod.hours : 9);
+            S[w.id].dias[i] = { st: st || 'trabajo', hrs: parseFloat(hrs) || 9 };
+          }
+          return;
+        }
+        // Fallback: checador log
+        const chk = checRecs.filter(c => c.workerId === w.id && c.fecha === dateStr && c.tipo !== 'entrada' && c.tipo !== 'salida');
+        if (chk.length > 0) {
+          const isFalta = chk.some(c => (c.status||'').toLowerCase().includes('falta'));
+          if (isFalta) {
+            S[w.id].dias[i] = { st: 'falta', hrs: 0 };
+          } else {
+            const hrs = chk[0].horas_x1 != null
+              ? (parseFloat(chk[0].horas_x1)||0) + (parseFloat(chk[0].horas_x15)||0)*1.5 + (parseFloat(chk[0].horas_x2)||0)*2
+              : 9;
+            S[w.id].dias[i] = { st: 'trabajo', hrs };
+          }
         }
       });
     });
@@ -524,15 +550,16 @@ function processRealCheckins(off) {
 }
 
 function dayDates(off) {
-  const {mon} = weekDates(off);
-  return Array.from({length:7},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+  const { mon, sat, sun } = weekDates(off);
+  const monFri = Array.from({length:5},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+  return [...monFri, sat, sun];
 }
 function fmtS(d) { return d.toLocaleDateString('es-MX',{day:'numeric',month:'short'}); }
 function weekNum(d){ const s=new Date(d.getFullYear(),0,1); return Math.ceil(((d-s)/86400000+s.getDay()+1)/7); }
 function updWeekLbl(){
-  const {mon,fri}=weekDates(weekOffset);
-  document.getElementById('week-lbl').textContent=`Semana ${weekNum(mon)} — ${mon.getFullYear()}`;
-  document.getElementById('week-sub').textContent=`${fmtS(mon)} – ${fmtS(fri)}`;
+  const {mon,fri,sat}=weekDates(weekOffset);
+  document.getElementById('week-lbl').textContent=`Semana ${weekNum(mon)} — ${fri.getFullYear()}`;
+  document.getElementById('week-sub').textContent=`${fmtS(sat)} – ${fmtS(fri)}`;
 }
 function chgWeek(d){ 
   weekOffset+=d; 

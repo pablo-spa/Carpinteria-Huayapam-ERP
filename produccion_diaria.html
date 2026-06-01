@@ -7,851 +7,951 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
-  --bg: #f0f0ee; --surface: #ffffff;
-  --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.16);
-  --text: #1a1a1a; --muted: #6b6b6b; --hint: #bbb;
-  --green: #1D9E75; --green-bg: #E1F5EE; --green-text: #0F6E56;
-  --amber: #C97B00; --amber-bg: #FEF3DA; --amber-text: #7A4A00;
-  --red: #B33030; --red-bg: #FDEAEA; --red-text: #7A1010;
-  --blue: #185FA5; --blue-bg: #E6F1FB; --blue-text: #185FA5;
-  --radius: 10px; --radius-lg: 14px;
+  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
+  --surface0: #ccd0da; --surface1: #bcc0cc;
+  --text: #4c4f69; --subtext: #8c8fa1;
+  --green: #40a02b; --green-bg: #e5f4e3; --green-text: #2d6e1e;
+  --blue: #1e66f5; --blue-bg: #e6eaf6; --blue-text: #1e66f5;
+  --amber: #df8e1d; --amber-bg: #fdf3e5; --amber-text: #8a5500;
+  --red: #d20f39; --red-bg: #fde8ed; --red-text: #9a0a29;
+  --purple: #8839ef; --purple-bg: rgba(136,57,239,0.1);
+  --radius: 8px; --radius-lg: 12px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #16161a; --surface: #222228;
-    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.14);
-    --text: #e8e8e4; --muted: #999; --hint: #555;
-    --green: #27c98e; --green-bg: #0b2820; --green-text: #3de0a5;
-    --amber: #f0a940; --amber-bg: #2a1e04; --amber-text: #f0a940;
-    --red: #e06060; --red-bg: #2a0a0a; --red-text: #e06060;
-    --blue: #5ba3f5; --blue-bg: #0a1f38; --blue-text: #7dbcff;
+    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+    --surface0: #313244; --surface1: #45475a;
+    --text: #cdd6f4; --subtext: #a6adc8;
+    --green: #a6da95; --green-bg: rgba(166,218,149,0.15); --green-text: #a6da95;
+    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15); --blue-text: #8caaee;
+    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15); --amber-text: #f9e2af;
+    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15); --red-text: #f38ba8;
+    --purple: #cba6f7; --purple-bg: rgba(203,166,247,0.15);
   }
 }
 
-body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; min-height: 100vh; }
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; min-height: 100vh; padding-bottom: 80px; }
 
-/* Header */
-.header {
+/* ── Header ── */
+.hdr {
   position: sticky; top: 0; z-index: 100;
-  background: var(--surface); border-bottom: 1px solid var(--border-strong);
+  background: var(--mantle); border-bottom: 1px solid var(--crust);
   padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
-.header-brand { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-.header-date { font-size: 18px; font-weight: 800; }
-.header-left { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.date-input { background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; padding: 4px 8px; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
-.date-input:focus { outline: none; border-color: var(--green); }
-.badge { background: var(--green-bg); color: var(--green-text); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 99px; white-space: nowrap; }
-.btn { cursor: pointer; border: none; border-radius: var(--radius); padding: 10px 18px; font-size: 14px; font-weight: 700; font-family: inherit; min-height: 44px; transition: opacity .15s; }
-.btn:active { opacity: .75; transform: scale(.97); }
-.btn-primary { background: var(--green); color: #fff; }
-.btn-ghost   { background: transparent; border: 1.5px solid var(--border-strong); color: var(--text); }
+.hdr-left { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.hdr-brand { font-size: 11px; color: var(--subtext); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.hdr-date-row { display: flex; align-items: center; gap: 8px; }
+.date-input { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 4px 8px; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
+.date-input:focus { outline: none; border-color: var(--blue); }
+.dia-label { font-size: 13px; color: var(--subtext); font-weight: 600; }
+.badge { font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 99px; white-space: nowrap; background: var(--blue-bg); color: var(--blue-text); }
+.btn { cursor: pointer; border: none; border-radius: var(--radius); padding: 9px 16px; font-size: 13px; font-weight: 700; font-family: inherit; min-height: 40px; transition: opacity .15s; white-space: nowrap; }
+.btn:active { opacity: .75; }
+.btn-green  { background: var(--green); color: #fff; }
+.btn-ghost  { background: transparent; border: 1.5px solid var(--crust); color: var(--text); }
+.btn-red    { background: var(--red-bg); color: var(--red-text); border: 1px solid var(--red); }
+.btn-amber  { background: var(--amber-bg); color: var(--amber-text); border: 1px solid var(--amber); }
 
-/* Quick Calendar */
-.quick-cal {
-  display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 4px; background: var(--surface); border-bottom: 1px solid var(--border);
-  scrollbar-width: none;
+/* ── Calendar Strip ── */
+.cal-wrap {
+  background: var(--mantle); border-bottom: 1px solid var(--crust);
+  display: flex; align-items: center; gap: 0;
 }
-.quick-cal::-webkit-scrollbar { display: none; }
+.cal-nav { background: none; border: none; color: var(--subtext); font-size: 20px; cursor: pointer; padding: 10px 12px; flex-shrink: 0; }
+.cal-nav:hover { color: var(--text); }
+.cal-strip { display: flex; gap: 6px; overflow-x: auto; padding: 10px 4px; flex: 1; scrollbar-width: none; }
+.cal-strip::-webkit-scrollbar { display: none; }
 .cal-day {
-  flex-shrink: 0; min-width: 64px; text-align: center; padding: 8px; border-radius: 12px; border: 1.5px solid var(--border-strong); cursor: pointer; transition: all 0.2s;
+  flex-shrink: 0; min-width: 60px; text-align: center; padding: 7px 6px; border-radius: 10px;
+  border: 1.5px solid var(--crust); cursor: pointer; transition: all 0.15s;
 }
-.cal-day.active { background: var(--green-bg); border-color: var(--green); color: var(--green-text); }
-.cal-day.closed { opacity: 0.6; background: var(--bg); }
-.cal-day-name { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-.cal-day-num { font-size: 18px; font-weight: 800; }
-.cal-day-status { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 4px; border-radius: 4px; padding: 2px 4px; }
-.status-green { background: var(--green); color: #fff; }
-.status-amber { background: var(--amber); color: #fff; }
+.cal-day:hover { border-color: var(--surface1); }
+.cal-day.is-active { border-color: var(--blue); background: var(--blue-bg); }
+.cal-day.is-weekend { background: var(--crust); opacity: 0.8; }
+.cal-day.is-weekend.is-active { background: var(--blue-bg); opacity: 1; }
+.cal-day-name { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); margin-bottom: 3px; }
+.cal-day-num  { font-size: 17px; font-weight: 800; }
+.cal-day-status { font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px; padding: 2px 5px; border-radius: 4px; }
+.cs-cerrado { background: var(--green); color: #fff; }
+.cs-pendiente { background: var(--amber); color: #fff; }
+.cs-libre { color: var(--subtext); }
 
-/* Main */
-.main { max-width: 780px; margin: 0 auto; padding: 14px 12px 120px; display: flex; flex-direction: column; gap: 6px; }
-.section-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 8px 4px 4px; }
+/* ── Banner ── */
+.banner {
+  margin: 12px 12px 0; padding: 10px 14px; border-radius: var(--radius-lg);
+  font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.banner-green  { background: var(--green-bg);  color: var(--green-text);  border: 1px solid var(--green); }
+.banner-amber  { background: var(--amber-bg);  color: var(--amber-text);  border: 1px solid var(--amber); }
 
-/* Worker card */
+/* ── Main ── */
+.main { max-width: 820px; margin: 0 auto; padding: 10px 10px 20px; display: flex; flex-direction: column; gap: 4px; }
+.sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); padding: 10px 4px 4px; }
+
+/* ── Worker Card ── */
 .worker-card {
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-lg); overflow: hidden;
-  transition: border-color .18s;
+  background: var(--mantle); border: 2px solid var(--crust);
+  border-radius: var(--radius-lg); overflow: hidden; transition: border-color .15s;
 }
-.worker-card.st-trabajo   { border-color: var(--green); }
-.worker-card.st-falta     { border-color: var(--red);   opacity: .75; }
-.worker-card.st-retardo   { border-color: var(--amber); }
-.worker-card.st-vacaciones{ border-color: var(--blue);  }
+.worker-card.st-trabajo    { border-color: var(--green); }
+.worker-card.st-falta      { border-color: var(--red);    opacity: .8; }
+.worker-card.st-retardo    { border-color: var(--amber); }
+.worker-card.st-vacaciones { border-color: var(--blue); }
 
-/* Worker row */
-.worker-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; min-height: 62px; cursor: pointer; }
-.worker-avatar {
-  width: 40px; height: 40px; border-radius: 99px; flex-shrink: 0;
+/* Card row */
+.wcard-row { display: flex; align-items: center; gap: 10px; padding: 11px 13px; min-height: 58px; cursor: pointer; }
+.w-avatar {
+  width: 38px; height: 38px; border-radius: 99px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; letter-spacing: -.5px;
-  background: var(--bg); color: var(--muted); transition: background .18s, color .18s;
+  font-size: 12px; font-weight: 800; background: var(--base); color: var(--subtext); transition: .15s;
 }
-.worker-card.st-trabajo   .worker-avatar { background: var(--green-bg); color: var(--green-text); }
-.worker-card.st-falta     .worker-avatar { background: var(--red-bg);   color: var(--red-text);   }
-.worker-card.st-retardo   .worker-avatar { background: var(--amber-bg); color: var(--amber-text); }
-.worker-card.st-vacaciones .worker-avatar{ background: var(--blue-bg);  color: var(--blue-text);  }
+.st-trabajo    .w-avatar { background: var(--green-bg);  color: var(--green-text); }
+.st-falta      .w-avatar { background: var(--red-bg);    color: var(--red-text); }
+.st-retardo    .w-avatar { background: var(--amber-bg);  color: var(--amber-text); }
+.st-vacaciones .w-avatar { background: var(--blue-bg);   color: var(--blue-text); }
 
-.worker-info { flex: 1; min-width: 0; }
-.worker-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.worker-sub  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.w-info { flex: 1; min-width: 0; }
+.w-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-sub  { font-size: 12px; color: var(--subtext); }
 
-/* Summary chips (visible when collapsed but complete) */
-.summary-chips { display: flex; gap: 5px; flex-wrap: wrap; flex-shrink: 0; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; flex-shrink: 0; }
 .chip { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
-.chip-green  { background: var(--green-bg); color: var(--green-text); }
-.chip-amber  { background: var(--amber-bg); color: var(--amber-text); }
-.chip-red    { background: var(--red-bg);   color: var(--red-text);   }
-.chip-blue   { background: var(--blue-bg);  color: var(--blue-text);  }
-.chip-gray   { background: var(--bg);       color: var(--muted); border: 1px solid var(--border-strong); }
+.chip-green  { background: var(--green-bg);  color: var(--green-text); }
+.chip-amber  { background: var(--amber-bg);  color: var(--amber-text); }
+.chip-red    { background: var(--red-bg);    color: var(--red-text); }
+.chip-blue   { background: var(--blue-bg);   color: var(--blue-text); }
+.chip-gray   { background: var(--surface0);  color: var(--subtext); border: 1px solid var(--crust); }
 
-/* Status buttons */
-.status-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.sbtn-row { display: flex; gap: 5px; flex-shrink: 0; }
 .sbtn {
-  cursor: pointer; border: 1.5px solid var(--border-strong);
-  border-radius: 8px; background: var(--bg); color: var(--muted);
+  cursor: pointer; border: 1.5px solid var(--crust);
+  border-radius: 8px; background: var(--base); color: var(--subtext);
   font-size: 14px; font-weight: 700; font-family: inherit;
-  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-  transition: all .12s;
+  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; transition: all .12s;
 }
 .sbtn:active { transform: scale(.88); }
-.sbtn.on-trabajo   { background: var(--green); border-color: var(--green); color: #fff; }
-.sbtn.on-falta     { background: var(--red);   border-color: var(--red);   color: #fff; }
-.sbtn.on-retardo   { background: var(--amber); border-color: var(--amber); color: #fff; }
-.sbtn.on-vacaciones{ background: var(--blue);  border-color: var(--blue);  color: #fff; }
+.sbtn.on-trabajo    { background: var(--green);  border-color: var(--green);  color: #fff; }
+.sbtn.on-falta      { background: var(--red);    border-color: var(--red);    color: #fff; }
+.sbtn.on-retardo    { background: var(--amber);  border-color: var(--amber);  color: #fff; }
+.sbtn.on-vacaciones { background: var(--blue);   border-color: var(--blue);   color: #fff; }
 
-/* Edit button (for cards in registrados) */
 .edit-btn {
-  cursor: pointer; background: var(--bg); border: 1.5px solid var(--border-strong);
-  border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: 700;
-  padding: 6px 10px; font-family: inherit; white-space: nowrap; flex-shrink: 0;
+  cursor: pointer; background: var(--base); border: 1.5px solid var(--crust);
+  border-radius: 8px; color: var(--subtext); font-size: 12px; font-weight: 700;
+  padding: 5px 10px; font-family: inherit; white-space: nowrap; flex-shrink: 0;
 }
-.edit-btn:active { opacity: .7; }
+
+/* Edit confirmation overlay (inside card) */
+.edit-confirm {
+  display: none; border-top: 1px solid var(--crust);
+  background: var(--amber-bg); padding: 12px 14px;
+  flex-direction: column; gap: 8px;
+}
+.edit-confirm.open { display: flex; }
+.edit-confirm-msg { font-size: 13px; font-weight: 700; color: var(--amber-text); }
+.edit-confirm-btns { display: flex; gap: 8px; }
 
 /* Detail section */
-.worker-detail {
-  border-top: 1px solid var(--border);
-  padding: 16px 14px 18px;
-  display: none; /* hidden by default */
-  flex-direction: column; gap: 16px;
-}
-.worker-detail.open { display: flex; }
+.wcard-detail { border-top: 1px solid var(--crust); padding: 16px 14px 18px; display: none; flex-direction: column; gap: 18px; }
+.wcard-detail.open { display: flex; }
 
 /* Field */
 .field { display: flex; flex-direction: column; gap: 5px; }
-.field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); }
 .field input, .field select {
-  background: var(--bg); border: 1.5px solid var(--border-strong);
-  border-radius: 8px; padding: 9px 12px; color: var(--text);
-  font-size: 14px; font-family: inherit; min-height: 46px; width: 100%; box-sizing: border-box;
+  background: var(--base); border: 1.5px solid var(--crust);
+  border-radius: 8px; padding: 8px 12px; color: var(--text);
+  font-size: 14px; font-family: inherit; min-height: 42px; width: 100%;
 }
-.field input:focus, .field select:focus { outline: none; border-color: var(--green); }
+.field input:focus, .field select:focus { outline: none; border-color: var(--blue); }
 
-/* Hours */
-.hours-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.hour-wrap { display: flex; flex-direction: column; gap: 5px; }
-.hour-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
-.hour-input {
-  background: var(--bg); border: 2px solid var(--border-strong);
-  border-radius: 8px; padding: 10px; color: var(--text);
-  font-size: 22px; font-weight: 800; text-align: center; font-family: inherit;
-  width: 100%; min-height: 56px; box-sizing: border-box;
-}
-.hour-input:focus { outline: none; }
-.hour-x1  { border-color: var(--green); }
-.hour-x15 { border-color: var(--amber); }
-.hour-x2  { border-color: var(--red); }
-.hours-total { font-size: 12px; font-weight: 600; color: var(--muted); text-align: center; margin-top: 2px; }
-
-/* Retardo */
+/* Retardo row */
 .retardo-row { display: flex; align-items: center; gap: 10px; }
 .retardo-input {
-  background: var(--bg); border: 2px solid var(--amber);
-  border-radius: 8px; padding: 9px 12px; color: var(--text);
+  background: var(--base); border: 2px solid var(--amber);
+  border-radius: 8px; padding: 8px; color: var(--text);
   font-size: 18px; font-weight: 700; text-align: center; font-family: inherit;
-  width: 100px; min-height: 46px;
+  width: 90px; min-height: 42px;
 }
 .retardo-input:focus { outline: none; }
 
-/* Projects */
-.project-rows { display: flex; flex-direction: column; gap: 8px; }
-.project-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
-.f-proy  { flex: 1; min-width: 140px; }
-.f-pieza { flex: 1; min-width: 140px; }
+/* Hours grid */
+.hrs-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.hr-wrap { display: flex; flex-direction: column; gap: 4px; }
+.hr-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.hr-input {
+  background: var(--base); border: 2px solid var(--crust);
+  border-radius: 8px; padding: 8px; color: var(--text);
+  font-size: 22px; font-weight: 800; text-align: center; font-family: inherit;
+  width: 100%; min-height: 52px;
+}
+.hr-input:focus { outline: none; }
+.hr-x1  { border-color: var(--green); }
+.hr-x15 { border-color: var(--amber); }
+.hr-x2  { border-color: var(--red); }
+.hrs-equiv { font-size: 12px; font-weight: 700; color: var(--subtext); text-align: center; margin-top: 2px; }
+
+/* Project rows */
+.proj-section { display: flex; flex-direction: column; gap: 8px; }
+.proj-row { background: var(--base); border: 1px solid var(--crust); border-radius: var(--radius); padding: 10px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+.proj-row-top { display: grid; grid-template-columns: 1fr 76px; gap: 8px; align-items: end; }
+.proj-row-mid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: end; }
 .rm-btn {
-  cursor: pointer; background: none; border: 1.5px solid var(--border-strong);
-  border-radius: 8px; color: var(--muted); font-size: 16px;
-  width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
+  position: absolute; top: 8px; right: 8px;
+  background: none; border: none; color: var(--subtext); font-size: 16px; cursor: pointer; padding: 2px;
 }
-.rm-btn:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
-.add-proj {
-  cursor: pointer; background: var(--bg); border: 1.5px dashed var(--border-strong);
-  border-radius: 8px; color: var(--muted); font-size: 13px; font-weight: 600;
-  padding: 10px 14px; font-family: inherit; width: 100%; text-align: left;
-  transition: all .15s;
+.rm-btn:hover { color: var(--red); }
+.proj-hours-bar { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 8px; text-align: center; }
+.phb-ok    { background: var(--green-bg);  color: var(--green-text); }
+.phb-warn  { background: var(--amber-bg);  color: var(--amber-text); }
+.phb-over  { background: var(--red-bg);    color: var(--red-text); }
+.phb-empty { background: var(--surface0);  color: var(--subtext); }
+.add-proj-btn {
+  cursor: pointer; background: var(--base); border: 1.5px dashed var(--crust);
+  border-radius: 8px; color: var(--subtext); font-size: 13px; font-weight: 600;
+  padding: 9px 14px; font-family: inherit; width: 100%; text-align: left; transition: .15s;
 }
-.add-proj:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+.add-proj-btn:hover { border-color: var(--green); color: var(--green-text); background: var(--green-bg); }
 
-/* Listo button */
-.listo-row { display: flex; gap: 8px; padding-top: 4px; border-top: 1px dashed var(--border-strong); }
-.btn-listo { flex: 1; background: var(--green); color: #fff; }
-.btn-colapsar { background: var(--bg); border: 1.5px solid var(--border-strong); color: var(--muted); }
-
-/* Empty state */
-.empty-state { text-align: center; padding: 20px; color: var(--hint); font-size: 13px; font-weight: 600; }
+/* Listo row */
+.listo-row { display: flex; gap: 8px; padding-top: 4px; border-top: 1px dashed var(--crust); }
+.btn-listo    { flex: 1; background: var(--green); color: #fff; }
+.btn-colapsar { background: var(--base); border: 1.5px solid var(--crust); color: var(--subtext); }
 
 /* Footer */
 .footer {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--surface); border-top: 2px solid var(--border-strong);
-  padding: 11px 16px; z-index: 100;
+  background: var(--mantle); border-top: 2px solid var(--crust);
+  padding: 10px 16px; z-index: 100;
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
 }
-.footer-stats { display: flex; gap: 18px; }
+.footer-stats { display: flex; gap: 16px; }
 .stat { display: flex; flex-direction: column; }
-.stat .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
-.stat .val { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stat .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); font-weight: 700; }
+.stat .val { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .val-green { color: var(--green); }
 .val-red   { color: var(--red); }
 .val-amber { color: var(--amber); }
 
 /* Toast */
-.toast-wrap { position: fixed; top: 70px; right: 14px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
-.toast { background: var(--text); color: var(--surface); padding: 10px 16px; border-radius: var(--radius); font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.2); animation: tin .2s; max-width: 290px; }
-.toast.ok { background: var(--green); }
-.toast.warn { background: var(--amber); color: #000; }
+.toast-wrap { position: fixed; top: 70px; right: 14px; z-index: 999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: var(--text); color: var(--mantle); padding: 10px 16px; border-radius: var(--radius); font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.2); animation: tin .2s; max-width: 290px; }
+.toast.ok   { background: var(--green); color: #fff; }
+.toast.warn { background: var(--amber); color: var(--mantle); }
+.toast.err  { background: var(--red);   color: #fff; }
 @keyframes tin { from { transform: translateX(110%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+.empty-state { text-align: center; padding: 20px; color: var(--subtext); font-size: 13px; font-weight: 600; }
 </style>
 </head>
 <body>
 
 <div class="toast-wrap" id="toasts"></div>
 
-<div class="header">
-  <div class="header-left">
-    <div class="header-brand">Carpintería Huayapam · Registro de Producción</div>
-    <div style="display:flex; align-items:center; gap:8px;">
+<!-- ── Header ── -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-brand">Carpintería Huayapam · Producción Diaria</div>
+    <div class="hdr-date-row">
       <input type="date" class="date-input" id="fecha" onchange="onDateChange()">
-      <span id="dia-label" style="font-size:13px;color:var(--muted);font-weight:600;"></span>
+      <span class="dia-label" id="dia-label"></span>
     </div>
   </div>
-  <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
-    <span class="badge" id="hdr-badge">Cargando...</span>
-    <button class="btn btn-ghost" onclick="collapseAll()">Colapsar todo</button>
-    <button class="btn btn-primary" onclick="cerrarDia()">✓ Cerrar día</button>
-  </div>
+  <span class="badge" id="hdr-badge">—</span>
+  <button class="btn btn-ghost" onclick="collapseAll()">Colapsar</button>
+  <button class="btn btn-green" id="btn-cerrar" onclick="cerrarDia()">✓ Cerrar día</button>
+  <button class="btn btn-amber" id="btn-reabrir" style="display:none;" onclick="reabrirDia()">↩ Reabrir día</button>
 </div>
 
-<div class="quick-cal" id="quick-cal">
-  <!-- Filled dynamically -->
+<!-- ── Calendar Strip ── -->
+<div class="cal-wrap">
+  <button class="cal-nav" onclick="navWeek(-1)" title="Semana anterior">‹</button>
+  <div class="cal-strip" id="cal-strip"></div>
+  <button class="cal-nav" onclick="navWeek(1)" title="Semana siguiente">›</button>
 </div>
 
-<div class="main">
-  <!-- Mensaje si está cerrado o estamos en otro día -->
-  <div id="msg-dia-cerrado" style="display:none; padding:12px; background:var(--green-bg); color:var(--green-text); font-weight:700; border-radius:10px; margin-bottom:10px;">
-    ✓ Este día ya fue cerrado. No se permiten más modificaciones.
-  </div>
+<!-- ── Banner (closed/reopen message) ── -->
+<div id="banner-cerrado" class="banner banner-green" style="display:none;">
+  ✓ Este día fue cerrado. Para modificar, usa el botón "↩ Reabrir día".
+</div>
 
-  <div class="section-label" id="lbl-pendientes">Cargando trabajadores...</div>
+<!-- ── Main content ── -->
+<div class="main" id="main-content">
+  <div class="sec-lbl" id="lbl-pendientes">Cargando…</div>
   <div id="list-pendientes"></div>
-
   <div id="registrados-section" style="display:none;">
-    <div class="section-label" id="lbl-registrados">Registrados hoy (0)</div>
+    <div class="sec-lbl" id="lbl-registrados">Registrados (0)</div>
     <div id="list-registrados"></div>
   </div>
 </div>
 
+<!-- ── Footer ── -->
 <div class="footer">
   <div class="footer-stats">
     <div class="stat"><span class="lbl">Trabajaron</span><span class="val val-green" id="f-t">0</span></div>
     <div class="stat"><span class="lbl">Faltas</span><span class="val val-red" id="f-f">0</span></div>
     <div class="stat"><span class="lbl">Retardos</span><span class="val val-amber" id="f-r">0</span></div>
-    <div class="stat"><span class="lbl">Horas equiv.</span><span class="val" id="f-h">0.0</span></div>
-    <div class="stat"><span class="lbl">Sin registrar</span><span class="val" id="f-p" style="color:var(--muted)">0</span></div>
+    <div class="stat"><span class="lbl">Hrs equiv.</span><span class="val" id="f-h">0.0</span></div>
+    <div class="stat"><span class="lbl">Pendientes</span><span class="val" id="f-p" style="color:var(--subtext)">0</span></div>
   </div>
-  <button class="btn btn-primary" onclick="cerrarDia()">✓ Cerrar día</button>
+  <button class="btn btn-green" id="btn-cerrar-ft" onclick="cerrarDia()">✓ Cerrar día</button>
 </div>
 
 <script src="db.js"></script>
 <script>
-// ── Datos ─────────────────────────────────────────────────────────────────────
-let WORKERS = [];
-let PROYECTOS = [];
+// ── Constants ─────────────────────────────────────────────────
+const DIAS_L = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DIAS_S = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
-async function loadDataFromDB() {
-  const allWorkers = await window.DB.query("contacts", { tipo: "trabajador" });
-  const dbs = allWorkers.filter(w => w.activo !== false && (w.name || w.givenName));
-  WORKERS = dbs.map(w => {
-    const parts = (w.name || "").split(' ');
-    const nombre = w.givenName || parts[0] || 'Desconocido';
-    const ape = w.paterno || parts.slice(1).join(' ');
-    const ini = w.name ? w.name.substring(0, 2).toUpperCase() : 'N';
-    return { id: w.id, nombre: nombre, ape: ape, cat: w.role || '', ini: ini };
-  });
-  
-  const allProjs = await window.DB.query("projects");
+// ── Global state ──────────────────────────────────────────────
+let WORKERS      = [];
+let PROYECTOS    = [];   // { id: code, n: "0042 — Nombre", pieces: [] }
+let ACTIVIDADES  = [];   // strings from actividades_trabajo
 
-  PROYECTOS = allProjs.filter(p => {
-      if (p._init) return false;
-      if (!p.status && !p.estado) return true;
-      const st = (p.status || p.estado || '').toLowerCase().trim();
-      // Match active statuses (case-insensitive, with/without accents)
-      return ['en producción','en produccion','planificación','planificacion','activo','en curso','en proceso'].some(s => st === s)
-          || st.includes('producci') || st.includes('planific');
-  }).map(p => {
-    return {id: p.code || p.id, n: (p.code || '') + ' — ' + (p.name || '')};
-  });
-  PROYECTOS.push({id:'gen',n:'Trabajo general / sin proyecto'});
+let calWeekOffset = 0;
+let currentDate   = '';
+let diaCerrado    = false;
+let STATE = {};  // { [date]: { cerrado:bool, data:{ [workerId]: workerState } } }
+
+// ── DB helpers ────────────────────────────────────────────────
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+function blankWorkerState() {
+  return {
+    status: '', retardoMin: '',
+    horasNormal: '', horasExtra: '', horasDoble: '',
+    proyectos: [{ p:'', horas:'', actividad:'', descripcion:'', pieza:'' }],
+    notas: '', done: false
+  };
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let STATE_POR_DIA = {};
-let currentDate = '';
-let diaCerrado = false;
+function horasEq(ws) {
+  return (parseFloat(ws.horasNormal)||0)
+       + (parseFloat(ws.horasExtra) ||0)*1.5
+       + (parseFloat(ws.horasDoble) ||0)*2;
+}
 
-function initDailyState() {
-  const S = {};
-  const db = window.DB.get();
-  // Get both attendance_logs (checkins) and attendance (legacy manual entries that might be used as the collection behind addAttendance) 
-  const checkins = db.attendance_logs || [];
-  const attendances = db.attendance || [];
-  const todayStr = currentDate; // currentDate may be set when this is called
+function isComplete(ws) {
+  if (!ws.status) return false;
+  if (ws.status === 'falta' || ws.status === 'vacaciones') return true;
+  return (parseFloat(ws.horasNormal)||0) + (parseFloat(ws.horasExtra)||0) + (parseFloat(ws.horasDoble)||0) > 0;
+}
 
+// ── Load data from DB ─────────────────────────────────────────
+async function loadMasterData() {
+  const [workers, projects, actRaw] = await Promise.all([
+    window.DB.query('contacts', { tipo: 'trabajador' }),
+    window.DB.query('projects'),
+    window.DB.query('actividades_trabajo'),
+  ]);
+
+  WORKERS = workers
+    .filter(w => w.activo !== false && (w.name || w.givenName) && !w._init)
+    .map(w => {
+      const name = w.name || (w.givenName + ' ' + (w.paterno||'')).trim();
+      const parts = name.split(' ');
+      return {
+        id: w.id,
+        nombre: w.givenName || parts[0] || 'Sin nombre',
+        ape:    w.paterno   || parts.slice(1).join(' ') || '',
+        cat:    w.role || '',
+        ini:    name.substring(0,2).toUpperCase()
+      };
+    });
+
+  PROYECTOS = projects
+    .filter(p => !p._init && !p.archived && p.code && p.name &&
+      ['en producción','planificación','en pausa'].includes((p.status||'').toLowerCase()))
+    .map(p => ({ id: p.code, n: p.code + ' — ' + p.name, pieces: p.pieces || [] }));
+  PROYECTOS.push({ id: 'general', n: 'Trabajo general', pieces: [] });
+
+  // actividades_trabajo is stored as {list:[...]} in a single 'main' doc
+  const mainDoc = actRaw.find(r => r._id === 'main' || r.list);
+  ACTIVIDADES = mainDoc?.list || [];
+}
+
+function loadDayFromDB(dateStr) {
+  const db   = window.DB.get();
+  // Production records: attendance with date field
+  const recs  = (db.attendance || []).filter(a => a.date === dateStr && !a._init && a.workerId && a.status);
+  const cerrado = recs.length > 0;
+
+  const data = {};
   WORKERS.forEach(w => {
-    S[w.id] = { status:'', x1:'', x15:'', x2:'', retMin:'', proyectos:[{p:'',pieza:''}], notas:'', done:false };
-    
-    // First priority: user has already manually closed or supervised this day in attendance list?
-    const savedAtt = attendances.find(a => a.date === todayStr && a.workerId === w.id);
-    if (savedAtt) {
-        S[w.id].status = savedAtt.status;
-        S[w.id].done = true;
-        S[w.id].proyectos = savedAtt.projects || [{p:'',pieza:''}];
-        // Note: we'd need to inverse math to get x1, x15 safely but standard is set.
-        return;
-    }
-    
-    // Second priority: Auto-fill from Reloj Checador (attendance_logs)
-    const logs = checkins.filter(c => c.workerId === w.id && c.fecha === todayStr);
-    if (logs.length > 0) {
-      const log = logs[0];
-      if (log.status && log.status.toLowerCase().includes('retardo')) {
-        S[w.id].status = 'retardo';
-        S[w.id].retMin = log.retardoMin || '';
-      } else if (log.status && log.status.toLowerCase().includes('falta')) {
-        S[w.id].status = 'falta';
-        S[w.id].done = true;
-      } else {
-        S[w.id].status = 'trabajo';
-      }
-      
-      if (S[w.id].status === 'trabajo' || S[w.id].status === 'retardo') {
-        S[w.id].x1 = '9'; // Default equivalent hours assuming they stay
-      }
+    const rec = recs.find(r => r.workerId === w.id);
+    if (rec) {
+      data[w.id] = {
+        status:      rec.status || '',
+        retardoMin:  rec.retardoMin || '',
+        horasNormal: rec.horasNormal != null ? rec.horasNormal : (rec.hours || ''),
+        horasExtra:  rec.horasExtra  != null ? rec.horasExtra  : '',
+        horasDoble:  rec.horasDoble  != null ? rec.horasDoble  : '',
+        proyectos:   rec.projects?.length ? rec.projects : [{ p:'', horas:'', actividad:'', descripcion:'', pieza:'' }],
+        notas:       rec.notas || '',
+        done:        true
+      };
+    } else {
+      data[w.id] = blankWorkerState();
     }
   });
-  return S;
+  return { cerrado, data };
 }
 
-function getS() {
-  if (!STATE_POR_DIA[currentDate]) {
-    STATE_POR_DIA[currentDate] = { cerrado: false, data: initDailyState() };
+function getState(dateStr) {
+  if (!STATE[dateStr]) {
+    STATE[dateStr] = loadDayFromDB(dateStr);
   }
-  return STATE_POR_DIA[currentDate].data;
+  return STATE[dateStr];
 }
 
-// ── Visual Calendar ───────────────────────────────────────────────────────────
-const DIAS_CORTOS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+function getWS(wId) { return getState(currentDate).data[wId]; }
+
+// ── Calendar ──────────────────────────────────────────────────
+function payWeekDays(weekOffset) {
+  const today = new Date();
+  const dow   = today.getDay();
+  // Days since last Saturday: Sat=0, Sun=1, Mon=2, ..., Fri=6
+  const dToSat = (dow + 1) % 7;
+  const sat = new Date(today);
+  sat.setDate(today.getDate() - dToSat + weekOffset * 7);
+  sat.setHours(12,0,0,0);
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(sat); d.setDate(sat.getDate() + i); return d;
+  });
+}
 
 function buildCalendar() {
-  const cal = document.getElementById('quick-cal');
-  const d = new Date();
-  
-  // mock a week (say, from last Monday to this Sunday)
-  const toMon = d.getDay() === 0 ? -6 : 1 - d.getDay();
-  const start = new Date(d); start.setDate(d.getDate() + toMon);
-  
-  let html = '';
-  for(let i=0; i<6; i++) {
-    const iterDate = new Date(start); iterDate.setDate(start.getDate() + i);
-    const dateStr = iterDate.toISOString().slice(0,10);
-    
-    // Simulate previous days being "closed"
-    let statusClass = 'status-amber';
-    let statusTxt = 'PENDIENTE';
-    let isClosed = false;
-    
-    if (i < 3) {
-      statusClass = 'status-green';
-      statusTxt = 'CERRADO';
-      isClosed = true;
-      if(!STATE_POR_DIA[dateStr]) STATE_POR_DIA[dateStr] = { cerrado: true, data: initDailyState() };
-    }
-    
+  const days  = payWeekDays(calWeekOffset);
+  const strip = document.getElementById('cal-strip');
+  const db    = window.DB.get();
+
+  strip.innerHTML = days.map((d,i) => {
+    const dateStr  = d.toISOString().slice(0,10);
+    const isWknd   = i < 2; // Sat + Sun
     const isActive = dateStr === currentDate;
-    const closedClass = isClosed ? 'closed' : '';
-    
-    html += `
-      <div class="cal-day ${isActive ? 'active' : ''} ${closedClass}" onclick="setDate('${dateStr}')">
-        <div class="cal-day-name">${DIAS_CORTOS[iterDate.getDay()]}</div>
-        <div class="cal-day-num">${iterDate.getDate()}</div>
-        <div class="cal-day-status ${statusClass}">${statusTxt}</div>
+
+    // Cerrado: state in memory OR records exist in DB
+    let cerrado = STATE[dateStr]?.cerrado;
+    if (!cerrado && db.attendance) {
+      cerrado = (db.attendance || []).some(a => a.date === dateStr && !a._init && a.workerId && a.status);
+    }
+
+    const statusHtml = cerrado
+      ? `<div class="cal-day-status cs-cerrado">Cerrado</div>`
+      : isWknd
+        ? `<div class="cal-day-status cs-libre">Descanso</div>`
+        : `<div class="cal-day-status cs-pendiente">Pendiente</div>`;
+
+    return `
+      <div class="cal-day ${isActive?'is-active':''} ${isWknd?'is-weekend':''}" onclick="setDate('${dateStr}')">
+        <div class="cal-day-name">${DIAS_S[d.getDay()]}</div>
+        <div class="cal-day-num">${d.getDate()}</div>
+        ${statusHtml}
       </div>
     `;
-  }
-  cal.innerHTML = html;
+  }).join('');
 }
+
+function navWeek(dir) { calWeekOffset += dir; buildCalendar(); }
 
 function setDate(dateStr) {
-  if(dateStr === currentDate) return;
+  if (dateStr === currentDate) return;
   document.getElementById('fecha').value = dateStr;
   onDateChange();
-  toast('Fecha cambiada al ' + dateStr, 'ok');
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
-
-function onDateChange(){
+// ── Date change ───────────────────────────────────────────────
+function onDateChange() {
   currentDate = document.getElementById('fecha').value;
-  const d = new Date(currentDate+'T12:00:00');
-  document.getElementById('dia-label').textContent = DIAS[d.getDay()];
-  
+  const d = new Date(currentDate + 'T12:00:00');
+  document.getElementById('dia-label').textContent = DIAS_L[d.getDay()];
   buildCalendar();
 
-  const dayInfo = STATE_POR_DIA[currentDate];
-  diaCerrado = dayInfo ? dayInfo.cerrado : false;
-  
-  document.getElementById('msg-dia-cerrado').style.display = diaCerrado ? 'block' : 'none';
-  const btnsPrimary = document.querySelectorAll('.btn-primary');
-  btnsPrimary.forEach(b => {
-    if (diaCerrado) {
-       b.textContent = '✓ Día cerrado';
-       b.disabled = true;
-       b.style.opacity = '.6';
-    } else {
-       b.textContent = '✓ Cerrar día';
-       b.disabled = false;
-       b.style.opacity = '1';
-    }
-  });
-
+  const dayState = getState(currentDate);
+  diaCerrado = dayState.cerrado;
+  updateCerradoUI();
   renderAll();
 }
 
-function proyOpts(sel){
-  return '<option value="">— Sin proyecto —</option>'+PROYECTOS.map(p=>`<option value="${p.id}"${sel===p.id?' selected':''}>${p.n}</option>`).join('');
-}
-function horasEq(id){
-  const s=getS()[id];
-  return (parseFloat(s.x1)||0)+(parseFloat(s.x15)||0)*1.5+(parseFloat(s.x2)||0)*2;
-}
-function isComplete(id){
-  const s=getS()[id];
-  if(!s.status) return false;
-  if(s.status==='falta'||s.status==='vacaciones') return true;
-  // trabajo / retardo: necesita al menos alguna hora
-  return (parseFloat(s.x1)||0)+(parseFloat(s.x15)||0)+(parseFloat(s.x2)||0) > 0;
+function updateCerradoUI() {
+  document.getElementById('banner-cerrado').style.display = diaCerrado ? 'flex' : 'none';
+  document.getElementById('btn-cerrar').style.display    = diaCerrado ? 'none' : '';
+  document.getElementById('btn-cerrar-ft').style.display = diaCerrado ? 'none' : '';
+  document.getElementById('btn-reabrir').style.display   = diaCerrado ? ''     : 'none';
 }
 
-// ── Build card DOM (called once per worker) ───────────────────────────────────
-function buildCard(w){
-  const s=getS()[w.id];
+// ── Render all workers ────────────────────────────────────────
+function renderAll() {
+  const listPend = document.getElementById('list-pendientes');
+  const listReg  = document.getElementById('list-registrados');
+  listPend.innerHTML = '';
+  listReg.innerHTML  = '';
+  document.getElementById('registrados-section').style.display = 'none';
+
+  WORKERS.forEach(w => {
+    const ws   = getWS(w.id);
+    const card = buildCard(w);
+
+    if (ws.done) {
+      listReg.appendChild(card);
+      card.querySelector('.sbtn-row').style.display = 'none';
+      card.querySelector('.edit-btn').style.display = '';
+      document.getElementById('registrados-section').style.display = '';
+    } else {
+      listPend.appendChild(card);
+    }
+    buildChips(w.id);
+    renderProyRows(w.id);
+    updHrsTotal(w.id);
+  });
+
+  updateLabels();
+  updateFooter();
+}
+
+// ── Build card ────────────────────────────────────────────────
+function buildCard(w) {
+  const ws  = getWS(w.id);
   const div = document.createElement('div');
-  div.className = `worker-card${s.status?' st-'+s.status:''}`;
-  div.id = `card-${w.id}`;
+  div.id        = `card-${w.id}`;
+  div.className = `worker-card${ws.status?' st-'+ws.status:''}`;
+
   div.innerHTML = `
     <!-- Row -->
-    <div class="worker-row" onclick="togDet('${w.id}', event)">
-      <div class="worker-avatar" id="av-${w.id}">${w.ini}</div>
-      <div class="worker-info">
-        <div class="worker-name">${w.nombre} <span style="font-weight:500;color:var(--muted)">${w.ape}</span></div>
-        <div class="worker-sub">${w.cat}</div>
+    <div class="wcard-row" onclick="togDet('${w.id}',event)">
+      <div class="w-avatar" id="av-${w.id}">${w.ini}</div>
+      <div class="w-info">
+        <div class="w-name">${w.nombre} <span style="font-weight:500;color:var(--subtext)">${w.ape}</span></div>
+        <div class="w-sub">${w.cat}</div>
       </div>
-      <div class="summary-chips" id="chips-${w.id}"></div>
-      <div class="status-btns">
-        <button class="sbtn${s.status==='trabajo'?' on-trabajo':''}" id="sb-trabajo-${w.id}"   onclick="event.stopPropagation(); setStatus('${w.id}','trabajo')"    title="Trabajó">✓</button>
-        <button class="sbtn${s.status==='falta'?' on-falta':''}" id="sb-falta-${w.id}"     onclick="event.stopPropagation(); setStatus('${w.id}','falta')"      title="Falta">✗</button>
-        <button class="sbtn${s.status==='retardo'?' on-retardo':''}" id="sb-retardo-${w.id}"   onclick="event.stopPropagation(); setStatus('${w.id}','retardo')"    title="Retardo">⏰</button>
-        <button class="sbtn${s.status==='vacaciones'?' on-vacaciones':''}" id="sb-vacaciones-${w.id}"onclick="event.stopPropagation(); setStatus('${w.id}','vacaciones')" title="Vacaciones">☀</button>
+      <div class="chips" id="chips-${w.id}"></div>
+      <div class="sbtn-row">
+        <button class="sbtn${ws.status==='trabajo'?' on-trabajo':''}"    id="sb-trabajo-${w.id}"    onclick="event.stopPropagation();setStatus('${w.id}','trabajo')"    title="Trabajó">✓</button>
+        <button class="sbtn${ws.status==='falta'?' on-falta':''}"       id="sb-falta-${w.id}"      onclick="event.stopPropagation();setStatus('${w.id}','falta')"       title="Falta">✗</button>
+        <button class="sbtn${ws.status==='retardo'?' on-retardo':''}"   id="sb-retardo-${w.id}"    onclick="event.stopPropagation();setStatus('${w.id}','retardo')"     title="Retardo">⏰</button>
+        <button class="sbtn${ws.status==='vacaciones'?' on-vacaciones':''}" id="sb-vacaciones-${w.id}" onclick="event.stopPropagation();setStatus('${w.id}','vacaciones')" title="Vacaciones">☀</button>
       </div>
-      <button class="edit-btn" id="edit-${w.id}" onclick="event.stopPropagation(); openDetail('${w.id}')" style="display:none">Editar</button>
+      <button class="edit-btn" id="edit-${w.id}" onclick="event.stopPropagation();requestEdit('${w.id}')" style="display:none">Editar</button>
     </div>
+
+    <!-- Edit confirmation panel -->
+    <div class="edit-confirm" id="econf-${w.id}">
+      <div class="edit-confirm-msg">⚠ Este registro ya fue guardado. ¿Seguro que quieres editarlo?</div>
+      <div class="edit-confirm-btns">
+        <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;" onclick="cancelEdit('${w.id}')">Cancelar</button>
+        <button class="btn btn-amber" style="padding:6px 12px;font-size:12px;" onclick="confirmEdit('${w.id}')">Sí, editar</button>
+      </div>
+    </div>
+
     <!-- Detail -->
-    <div class="worker-detail" id="det-${w.id}">
-      <!-- Retardo row (only for retardo) -->
-      <div id="retrow-${w.id}" style="display:${s.status==='retardo'?'':'none'}">
+    <div class="wcard-detail" id="det-${w.id}">
+
+      <!-- Retardo -->
+      <div id="retrow-${w.id}" style="display:${ws.status==='retardo'?'':'none'}">
         <div class="retardo-row">
           <span style="color:var(--amber);font-weight:700;font-size:13px;">⏰ Retardo</span>
           <input type="number" class="retardo-input" min="0" max="480" placeholder="min"
-            value="${s.retMin}"
-            oninput="getS()['${w.id}'].retMin=this.value" onclick="this.select()">
-          <span style="font-size:13px;color:var(--muted)">minutos</span>
+            value="${ws.retardoMin}"
+            oninput="getWS('${w.id}').retardoMin=this.value">
+          <span style="font-size:13px;color:var(--subtext)">minutos</span>
         </div>
       </div>
-      <!-- Hours -->
+
+      <!-- Horas del día -->
       <div>
-        <div class="section-label" style="padding-top:0;margin-bottom:8px;">Horas del día</div>
-        <div class="hours-grid">
-          <div class="hour-wrap">
-            <div class="hour-label" style="color:var(--green)">Normal ×1</div>
-            <input type="number" class="hour-input hour-x1" id="h1-${w.id}" min="0" max="16" step="0.5"
-              placeholder="9" value="${s.x1}" oninput="getS()['${w.id}'].x1=this.value;updHrsTotal('${w.id}')" onclick="this.select()">
+        <div class="sec-lbl" style="padding-top:0;margin-bottom:8px;">Horas del día</div>
+        <div class="hrs-grid">
+          <div class="hr-wrap">
+            <div class="hr-lbl" style="color:var(--green)">Normal ×1</div>
+            <input type="number" class="hr-input hr-x1" id="h1-${w.id}" min="0" max="16" step="0.5"
+              placeholder="9" value="${ws.horasNormal}"
+              oninput="getWS('${w.id}').horasNormal=this.value;updHrsTotal('${w.id}');updProjBar('${w.id}')" onclick="this.select()">
           </div>
-          <div class="hour-wrap">
-            <div class="hour-label" style="color:var(--amber)">Extra ×1.5</div>
-            <input type="number" class="hour-input hour-x15" id="h15-${w.id}" min="0" max="8" step="0.5"
-              placeholder="0" value="${s.x15}" oninput="getS()['${w.id}'].x15=this.value;updHrsTotal('${w.id}')" onclick="this.select()">
+          <div class="hr-wrap">
+            <div class="hr-lbl" style="color:var(--amber)">Extra ×1.5</div>
+            <input type="number" class="hr-input hr-x15" id="h15-${w.id}" min="0" max="8" step="0.5"
+              placeholder="0" value="${ws.horasExtra}"
+              oninput="getWS('${w.id}').horasExtra=this.value;updHrsTotal('${w.id}');updProjBar('${w.id}')" onclick="this.select()">
           </div>
-          <div class="hour-wrap">
-            <div class="hour-label" style="color:var(--red)">Doble ×2</div>
-            <input type="number" class="hour-input hour-x2" id="h2-${w.id}" min="0" max="8" step="0.5"
-              placeholder="0" value="${s.x2}" oninput="getS()['${w.id}'].x2=this.value;updHrsTotal('${w.id}')" onclick="this.select()">
+          <div class="hr-wrap">
+            <div class="hr-lbl" style="color:var(--red)">Doble ×2</div>
+            <input type="number" class="hr-input hr-x2" id="h2-${w.id}" min="0" max="8" step="0.5"
+              placeholder="0" value="${ws.horasDoble}"
+              oninput="getWS('${w.id}').horasDoble=this.value;updHrsTotal('${w.id}');updProjBar('${w.id}')" onclick="this.select()">
           </div>
         </div>
-        <div class="hours-total" id="htot-${w.id}">Ingresa las horas trabajadas</div>
+        <div class="hrs-equiv" id="htot-${w.id}">—</div>
       </div>
-      <!-- Projects -->
+
+      <!-- Proyectos -->
       <div>
-        <div class="section-label" style="padding-top:0;margin-bottom:8px;">Proyecto del día <span style="color:var(--hint);font-weight:500;text-transform:none">(opcional)</span></div>
-        <div class="project-rows" id="proys-${w.id}"></div>
-        <button class="add-proj" onclick="addProy('${w.id}')">+ Agregar otro proyecto</button>
+        <div class="sec-lbl" style="padding-top:0;margin-bottom:8px;">
+          Trabajo realizado
+          <span style="color:var(--subtext);font-weight:400;text-transform:none;font-size:11px;">(distribución de horas por proyecto)</span>
+        </div>
+        <div class="proj-section" id="proys-${w.id}"></div>
+        <div id="proj-bar-${w.id}" class="proj-hours-bar phb-empty" style="margin-top:8px;">Sin horas asignadas a proyectos</div>
+        <button class="add-proj-btn" style="margin-top:6px;" onclick="addProy('${w.id}')">+ Agregar proyecto</button>
       </div>
-      <!-- Notes -->
+
+      <!-- Notas -->
       <div class="field">
-        <label>Notas <span style="color:var(--hint);font-weight:400;text-transform:none">(opcional)</span></label>
-        <input type="text" placeholder="Observaciones, trabajo especial, incidentes..."
-          value="${s.notas}"
-          oninput="getS()['${w.id}'].notas=this.value">
+        <label>Notas <span style="color:var(--subtext);font-weight:400;text-transform:none">(opcional)</span></label>
+        <input type="text" placeholder="Observaciones, incidentes…"
+          value="${ws.notas}"
+          oninput="getWS('${w.id}').notas=this.value">
       </div>
-      <!-- Action buttons -->
+
+      <!-- Actions -->
       <div class="listo-row">
-        <button class="btn btn-listo btn-primary" onclick="marcarListo('${w.id}')">✓ Listo</button>
+        <button class="btn btn-listo" onclick="marcarListo('${w.id}')">✓ Listo</button>
         <button class="btn btn-colapsar btn-ghost" onclick="closeDetail('${w.id}')">Colapsar</button>
       </div>
-    </div>`;
+    </div>
+  `;
   return div;
 }
 
-// ── Project rows ─────────────────────────────────────────────────────────────
-function renderProyRows(id){
-  const s = getS()[id];
-  const cont = document.getElementById(`proys-${id}`);
-  if(!cont) return;
-  cont.innerHTML = s.proyectos.map((p,i)=>`
-    <div class="project-row">
-      <div class="field f-proy">
-        <label>Proyecto</label>
-        <select onchange="getS()['${id}'].proyectos[${i}].p=this.value">${proyOpts(p.p)}</select>
+// ── Project rows ──────────────────────────────────────────────
+function actOpts(sel) {
+  const empty = `<option value="">— Sin especificar —</option>`;
+  return empty + ACTIVIDADES.map(a => `<option value="${a}"${sel===a?' selected':''}>${a}</option>`).join('');
+}
+
+function projOpts(sel) {
+  return `<option value="">— Sin proyecto —</option>` +
+    PROYECTOS.map(p => `<option value="${p.id}"${sel===p.id?' selected':''}>${p.n}</option>`).join('');
+}
+
+function piezaOpts(projCode, selPieza) {
+  const proj = PROYECTOS.find(p => p.id === projCode);
+  const pieces = proj?.pieces || [];
+  if (pieces.length === 0) return null; // no pieza field
+  return `<option value="">— Sin pieza —</option>` +
+    pieces.map(pz => `<option value="${pz}"${selPieza===pz?' selected':''}>${pz}</option>`).join('');
+}
+
+function renderProyRows(wId) {
+  const ws   = getWS(wId);
+  const cont = document.getElementById(`proys-${wId}`);
+  if (!cont) return;
+
+  cont.innerHTML = ws.proyectos.map((pr, i) => {
+    const showRm = ws.proyectos.length > 1;
+    const piezaOptsHtml = piezaOpts(pr.p, pr.pieza);
+    const piezaHtml = piezaOptsHtml
+      ? `<div class="field">
+           <label>Pieza</label>
+           <select onchange="getWS('${wId}').proyectos[${i}].pieza=this.value">${piezaOptsHtml}</select>
+         </div>`
+      : '';
+
+    return `
+      <div class="proj-row">
+        ${showRm ? `<button class="rm-btn" onclick="removeProy('${wId}',${i})">✕</button>` : ''}
+        <div class="proj-row-top">
+          <div class="field">
+            <label>Proyecto</label>
+            <select onchange="onProjChange('${wId}',${i},this.value)">${projOpts(pr.p)}</select>
+          </div>
+          <div class="field">
+            <label>Horas</label>
+            <input type="number" min="0" max="16" step="0.5" placeholder="0"
+              value="${pr.horas}"
+              oninput="getWS('${wId}').proyectos[${i}].horas=this.value;updProjBar('${wId}')"
+              onclick="this.select()"
+              style="font-size:18px;font-weight:800;text-align:center;">
+          </div>
+        </div>
+        <div class="proj-row-mid">
+          <div class="field">
+            <label>Actividad</label>
+            <select onchange="getWS('${wId}').proyectos[${i}].actividad=this.value">${actOpts(pr.actividad)}</select>
+          </div>
+          <div class="field">
+            <label>Descripción <span style="font-weight:400;color:var(--subtext)">(opcional)</span></label>
+            <input type="text" placeholder="Ej: 10 puertas cocina"
+              value="${pr.descripcion||''}"
+              oninput="getWS('${wId}').proyectos[${i}].descripcion=this.value">
+          </div>
+        </div>
+        ${piezaHtml}
       </div>
-      <div class="field f-pieza">
-        <label>Pieza (opcional)</label>
-        <input type="text" placeholder="ej: 170-MC1" value="${p.pieza}"
-          oninput="getS()['${id}'].proyectos[${i}].pieza=this.value">
-      </div>
-      ${s.proyectos.length>1?`<button class="rm-btn" onclick="removeProy('${id}',${i})">✕</button>`:''}
-    </div>`).join('');
-}
-function addProy(id){
-  getS()[id].proyectos.push({p:'',pieza:''});
-  renderProyRows(id);
-}
-function removeProy(id,i){
-  getS()[id].proyectos.splice(i,1);
-  renderProyRows(id);
+    `;
+  }).join('');
+
+  updProjBar(wId);
 }
 
-// ── Hours total label ─────────────────────────────────────────────────────────
-function updHrsTotal(id){
-  const eq = horasEq(id);
-  const el = document.getElementById(`htot-${id}`);
-  if(el) el.innerHTML = eq>0 ? `<b style="color:var(--green)">${eq.toFixed(1)} horas equivalentes</b>` : 'Ingresa las horas trabajadas';
+function onProjChange(wId, i, newProjId) {
+  getWS(wId).proyectos[i].p     = newProjId;
+  getWS(wId).proyectos[i].pieza = '';   // reset pieza when project changes
+  renderProyRows(wId);
 }
 
-// ── Status ─────────────────────────────────────────────────────────────────────
-function setStatus(id, newStatus){
-  if(diaCerrado) { toast('Día cerrado, modificaciones deshabilitadas','warn'); return; }
-  
-  const s = getS()[id];
-  const prev = s.status;
+function addProy(wId) {
+  getWS(wId).proyectos.push({ p:'', horas:'', actividad:'', descripcion:'', pieza:'' });
+  renderProyRows(wId);
+}
 
-  if(s.done){
-    undoDone(id);
-  }
+function removeProy(wId, i) {
+  getWS(wId).proyectos.splice(i, 1);
+  renderProyRows(wId);
+  updProjBar(wId);
+}
 
-  if(prev === newStatus){
-    s.status = '';
-    closeDetail(id);
+function updProjBar(wId) {
+  const ws     = getWS(wId);
+  const total  = horasEq(ws);
+  const assigned = ws.proyectos.reduce((s, pr) => s + (parseFloat(pr.horas)||0), 0);
+  const bar    = document.getElementById(`proj-bar-${wId}`);
+  if (!bar) return;
+  if (assigned === 0) {
+    bar.className = 'proj-hours-bar phb-empty'; bar.textContent = 'Sin horas asignadas a proyectos';
+  } else if (total === 0) {
+    bar.className = 'proj-hours-bar phb-warn'; bar.textContent = `Asignado: ${assigned.toFixed(1)} hrs (ingresa horas del día primero)`;
   } else {
-    s.status = newStatus;
-    ['trabajo','falta','retardo','vacaciones'].forEach(st=>{
-      const btn = document.getElementById(`sb-${st}-${id}`);
-      if(btn) btn.className = `sbtn${s.status===st?' on-'+st:''}`;
-    });
-    const card = document.getElementById(`card-${id}`);
-    card.className = `worker-card${s.status?' st-'+s.status:''}`;
-    const rr = document.getElementById(`retrow-${id}`);
-    if(rr) rr.style.display = s.status==='retardo'?'':'none';
-
-    if(s.status==='trabajo'||s.status==='retardo'){
-      if(!s.x1){
-        s.x1='9';
-        const h1 = document.getElementById(`h1-${id}`);
-        if(h1) h1.value='9';
-        updHrsTotal(id);
-      }
+    const diff = assigned - total;
+    if (Math.abs(diff) < 0.01) {
+      bar.className = 'proj-hours-bar phb-ok'; bar.textContent = `✓ ${assigned.toFixed(1)} / ${total.toFixed(1)} hrs — completo`;
+    } else if (diff < 0) {
+      bar.className = 'proj-hours-bar phb-warn'; bar.textContent = `Asignado: ${assigned.toFixed(1)} / ${total.toFixed(1)} hrs — faltan ${Math.abs(diff).toFixed(1)} hrs`;
     } else {
-      const h1 = document.getElementById(`h1-${id}`);
-      if(h1) h1.value='';
-      getS()[id].x1=0; getS()[id].x15=0; getS()[id].x2=0;
+      bar.className = 'proj-hours-bar phb-over'; bar.textContent = `Asignado: ${assigned.toFixed(1)} / ${total.toFixed(1)} hrs — excede ${diff.toFixed(1)} hrs`;
     }
-    openDetail(id);
   }
+}
+
+// ── Hours total ───────────────────────────────────────────────
+function updHrsTotal(wId) {
+  const ws  = getWS(wId);
+  const eq  = horasEq(ws);
+  const el  = document.getElementById(`htot-${wId}`);
+  if (el) el.innerHTML = eq > 0
+    ? `<b style="color:var(--green)">${eq.toFixed(1)} horas equivalentes</b>`
+    : 'Ingresa las horas trabajadas';
+}
+
+// ── Status ────────────────────────────────────────────────────
+function setStatus(wId, newStatus) {
+  if (diaCerrado) { toast('Día cerrado — usa "↩ Reabrir día" para editar','warn'); return; }
+  const ws = getWS(wId);
+  if (ws.done) { requestEdit(wId); return; }
+
+  ws.status = (ws.status === newStatus) ? '' : newStatus;
+  const card = document.getElementById(`card-${wId}`);
+  card.className = `worker-card${ws.status?' st-'+ws.status:''}`;
+
+  ['trabajo','falta','retardo','vacaciones'].forEach(st => {
+    const btn = document.getElementById(`sb-${st}-${wId}`);
+    if (btn) btn.className = `sbtn${ws.status===st?' on-'+st:''}`;
+  });
+
+  const retrow = document.getElementById(`retrow-${wId}`);
+  if (retrow) retrow.style.display = ws.status==='retardo' ? '' : 'none';
+
+  if (ws.status === 'trabajo' || ws.status === 'retardo') {
+    if (!ws.horasNormal) {
+      ws.horasNormal = '9';
+      const h1 = document.getElementById(`h1-${wId}`);
+      if (h1) { h1.value = '9'; updHrsTotal(wId); updProjBar(wId); }
+    }
+    if (!diaCerrado) openDetail(wId);
+  } else {
+    ws.horasNormal = ''; ws.horasExtra = ''; ws.horasDoble = '';
+    const h1 = document.getElementById(`h1-${wId}`);
+    if (h1) { h1.value = ''; updHrsTotal(wId); updProjBar(wId); }
+  }
+
   updateFooter();
 }
 
-// ── Open / close detail (in-place, no scroll) ─────────────────────────────────
-function togDet(id, e){
-  // Check if click was on buttons to prevent double toggling
-  if (e.target.closest('.status-btns') || e.target.closest('.edit-btn')) return;
-  const det = document.getElementById(`det-${id}`);
-  if(det){ 
-     if(det.classList.contains('open')) closeDetail(id);
-     else openDetail(id);
-  }
-}
-function openDetail(id){
-  const det = document.getElementById(`det-${id}`);
-  if(det){ det.classList.add('open'); }
-  const edit = document.getElementById(`edit-${id}`);
-  if(edit) edit.style.display='none';
-}
-function closeDetail(id){
-  const det = document.getElementById(`det-${id}`);
-  if(det){ det.classList.remove('open'); }
+// ── Open / close detail ───────────────────────────────────────
+function togDet(wId, e) {
+  if (e.target.closest('.sbtn-row') || e.target.closest('.edit-btn') || e.target.closest('.edit-confirm')) return;
+  const det = document.getElementById(`det-${wId}`);
+  if (!det) return;
+  det.classList.contains('open') ? closeDetail(wId) : openDetail(wId);
 }
 
-// ── Mark done → move card to "Registrados hoy" ───────────────────────────────
-function marcarListo(id){
-  const s = getS()[id];
-  if(!isComplete(id)){
-    toast('⚠ Ingresa al menos las horas trabajadas','warn');
-    document.getElementById(`h1-${id}`)?.focus();
+function openDetail(wId) {
+  document.getElementById(`det-${wId}`)?.classList.add('open');
+  document.getElementById(`edit-${wId}`).style.display = 'none';
+}
+
+function closeDetail(wId) {
+  document.getElementById(`det-${wId}`)?.classList.remove('open');
+  document.getElementById(`econf-${wId}`)?.classList.remove('open');
+}
+
+// ── Edit confirmation ─────────────────────────────────────────
+function requestEdit(wId) {
+  document.getElementById(`econf-${wId}`)?.classList.add('open');
+}
+
+function cancelEdit(wId) {
+  document.getElementById(`econf-${wId}`)?.classList.remove('open');
+}
+
+function confirmEdit(wId) {
+  document.getElementById(`econf-${wId}`)?.classList.remove('open');
+  const ws = getWS(wId);
+  ws.done = false;
+  const card = document.getElementById(`card-${wId}`);
+  document.getElementById('list-pendientes').appendChild(card);
+  card.querySelector('.sbtn-row').style.display = '';
+  document.getElementById(`edit-${wId}`).style.display = 'none';
+  document.getElementById(`chips-${wId}`).innerHTML = '';
+  renderProyRows(wId);
+  openDetail(wId);
+  updateLabels(); updateFooter();
+}
+
+// ── Mark done ─────────────────────────────────────────────────
+function marcarListo(wId) {
+  const ws = getWS(wId);
+  if (!isComplete(ws)) {
+    toast('⚠ Ingresa al menos las horas trabajadas', 'warn');
+    document.getElementById(`h1-${wId}`)?.focus();
     return;
   }
-  closeDetail(id);
-  markDone(id);
-  toast(`✓ ${WORKERS.find(w=>w.id===id).nombre} registrado`);
+  closeDetail(wId);
+  ws.done = true;
+  const card     = document.getElementById(`card-${wId}`);
+  const listReg  = document.getElementById('list-registrados');
+  if (card && listReg) listReg.appendChild(card);
+  card.querySelector('.sbtn-row').style.display = 'none';
+  document.getElementById(`edit-${wId}`).style.display = '';
+  buildChips(wId);
+  document.getElementById('registrados-section').style.display = '';
+  updateLabels(); updateFooter();
+  toast(`✓ ${WORKERS.find(w=>w.id===wId)?.nombre} registrado`);
 }
 
-function markDone(id){
-  const s = getS()[id];
-  s.done = true;
-  const card = document.getElementById(`card-${id}`);
-  const listReg = document.getElementById('list-registrados');
-  if(card && listReg) listReg.appendChild(card);
-
-  const statusBtns = document.querySelector(`#card-${id} .status-btns`);
-  if(statusBtns) statusBtns.style.display='none';
-  const edit = document.getElementById(`edit-${id}`);
-  if(edit) edit.style.display='';
-
-  buildChips(id);
-
-  document.getElementById('registrados-section').style.display='';
-  updateLabels();
-  updateFooter();
-}
-
-function undoDone(id){
-  const s = getS()[id];
-  s.done = false;
-  const card = document.getElementById(`card-${id}`);
-  if(card) {
-      document.getElementById('list-pendientes').appendChild(card);
-      const statusBtns = document.querySelector(`#card-${id} .status-btns`);
-      if(statusBtns) statusBtns.style.display='';
-      const edit = document.getElementById(`edit-${id}`);
-      if(edit) edit.style.display='none';
-      const chips = document.getElementById(`chips-${id}`);
-      if(chips) chips.innerHTML='';
-  }
-  updateLabels();
-  updateFooter();
-}
-
-function buildChips(id){
-  const s = getS()[id];
-  const cont = document.getElementById(`chips-${id}`);
-  if(!cont) return;
+function buildChips(wId) {
+  const ws   = getWS(wId);
+  const cont = document.getElementById(`chips-${wId}`);
+  if (!cont) return;
   let html = '';
-  if(s.status==='falta')      html=`<span class="chip chip-red">✗ Falta</span>`;
-  if(s.status==='vacaciones') html=`<span class="chip chip-blue">☀ Vacaciones</span>`;
-  if(s.status==='trabajo'||s.status==='retardo'){
-    const eq = horasEq(id);
-    const color = s.status==='retardo'?'chip-amber':'chip-green';
-    const label = s.status==='retardo'?`⏰ ${eq.toFixed(1)}h`:`✓ ${eq.toFixed(1)}h`;
-    html += `<span class="chip ${color}">${label}</span>`;
-    
-    // Add unique projects assigned
-    const uniqueProys = [...new Set(s.proyectos.map(p=>p.p).filter(Boolean))];
-    uniqueProys.forEach(pId => {
-       const prj = PROYECTOS.find(pr=>pr.id===pId);
-       if(prj) {
-            const nombre = prj.n.split('—')[0].trim();
-            html += `<span class="chip chip-gray">${nombre}</span>`;
-       }
+  if (ws.status === 'falta')      html = `<span class="chip chip-red">✗ Falta</span>`;
+  if (ws.status === 'vacaciones') html = `<span class="chip chip-blue">☀ Vacaciones</span>`;
+  if (ws.status === 'trabajo' || ws.status === 'retardo') {
+    const eq    = horasEq(ws);
+    const cls   = ws.status === 'retardo' ? 'chip-amber' : 'chip-green';
+    const lbl   = ws.status === 'retardo' ? `⏰ ${eq.toFixed(1)}h` : `✓ ${eq.toFixed(1)}h`;
+    html += `<span class="chip ${cls}">${lbl}</span>`;
+    const uniqueProjs = [...new Set(ws.proyectos.map(p=>p.p).filter(Boolean))];
+    uniqueProjs.forEach(pid => {
+      const prj = PROYECTOS.find(p=>p.id===pid);
+      if (prj) html += `<span class="chip chip-gray">${prj.id}</span>`;
     });
   }
   cont.innerHTML = html;
 }
 
-// ── Labels and footer ─────────────────────────────────────────────────────────
-function updateLabels(){
+// ── Labels & footer ───────────────────────────────────────────
+function updateLabels() {
   const total = WORKERS.length;
-  const done  = Object.values(getS()).filter(s=>s.done).length;
-  const pend  = total - done;
-  document.getElementById('lbl-pendientes').textContent  = `Sin registrar (${pend})`;
-  document.getElementById('lbl-registrados').textContent = `Registrados hoy (${done})`;
-  document.getElementById('hdr-badge').textContent = `${done} / ${total}`;
-}
-function updateFooter(){
-  const sState = getS();
-  const vals = Object.values(sState);
-  const t  = vals.filter(s=>s.status==='trabajo').length;
-  const r  = vals.filter(s=>s.status==='retardo').length;
-  const f  = vals.filter(s=>s.status==='falta').length;
-  const v  = vals.filter(s=>s.status==='vacaciones').length;
-  const p  = vals.filter(s=>!s.status).length;
-  
-  let hrs  = 0;
-  WORKERS.forEach(w=>{ 
-      if(sState[w.id].status==='trabajo'||sState[w.id].status==='retardo') 
-          hrs+=horasEq(w.id); 
-  });
-  
-  document.getElementById('f-t').textContent  = t+r;
-  document.getElementById('f-f').textContent  = f;
-  document.getElementById('f-r').textContent  = r;
-  document.getElementById('f-h').textContent  = hrs.toFixed(1);
-  document.getElementById('f-p').textContent  = p;
+  const done  = WORKERS.filter(w => getWS(w.id).done).length;
+  document.getElementById('lbl-pendientes').textContent  = `Sin registrar (${total - done})`;
+  document.getElementById('lbl-registrados').textContent = `Registrados (${done})`;
+  document.getElementById('hdr-badge').textContent       = `${done} / ${total}`;
 }
 
-// ── Collapse all (open details) ───────────────────────────────────────────────
-function collapseAll(){
-  WORKERS.forEach(w=>closeDetail(w.id));
-}
-
-// ── Cerrar día ────────────────────────────────────────────────────────────────
-function cerrarDia(){
-  if(diaCerrado) return;
-  const sState = getS();
-  const pend = WORKERS.filter(w=>!sState[w.id].status);
-  if(pend.length>0){
-    const ns = pend.slice(0,3).map(w=>w.nombre).join(', ')+(pend.length>3?` y ${pend.length-3} más`:'');
-    if(!confirm(`${pend.length} sin registrar:\n${ns}\n\n¿Cerrar el día de todas formas?`)) return;
-  }
-  const t = WORKERS.filter(w=>sState[w.id].status==='trabajo'||sState[w.id].status==='retardo').length;
-  const f = WORKERS.filter(w=>sState[w.id].status==='falta').length;
-  
-  // Save to DB
+function updateFooter() {
+  let t=0, f=0, r=0, v=0, p=0, hrs=0;
   WORKERS.forEach(w => {
-    const s = sState[w.id];
-    if(s.status) {
-      window.DB.addAttendance({
-        date: currentDate,
-        workerId: w.id,
-        status: s.status,
-        hours: horasEq(w.id),
-        projects: s.proyectos
-      });
-      
-      if(window.parent && window.parent.setDocumentInFirebase) {
-          const prodLogId = crypto.randomUUID();
-          window.parent.setDocumentInFirebase("production_logs", prodLogId, {
-             id: prodLogId,
-             date: currentDate,
-             workerId: w.id,
-             hours: horasEq(w.id),
-             projects: s.proyectos,
-             status: s.status,
-             notes: s.notas || ''
-          });
-      }
-      
-      // Add equivalence hours to worker record in contacts
-      if ((s.status==='trabajo' || s.status==='retardo') && window.DB) {
-        const d = window.DB.get();
-        const storedW = (d.contacts || []).find(x => x.id === w.id && x.tipo === 'trabajador');
-        if (storedW) {
-          storedW.savedHours = (storedW.savedHours || 0) + horasEq(w.id);
-          if (window.parent && window.parent.setDocumentInFirebase) {
-            window.parent.setDocumentInFirebase('contacts', storedW.id, storedW);
-          }
-          if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.contacts) {
-            const idx = window.parent.DB_STATE.contacts.findIndex(c => c.id === storedW.id);
-            if (idx !== -1) window.parent.DB_STATE.contacts[idx] = storedW;
-          }
-        }
-      }
-    }
+    const ws = getWS(w.id);
+    if (ws.status === 'trabajo')    { t++; hrs += horasEq(ws); }
+    else if (ws.status === 'retardo')  { r++; hrs += horasEq(ws); }
+    else if (ws.status === 'falta')    f++;
+    else if (ws.status === 'vacaciones') v++;
+    else p++;
+  });
+  document.getElementById('f-t').textContent = t + r;
+  document.getElementById('f-f').textContent = f;
+  document.getElementById('f-r').textContent = r;
+  document.getElementById('f-h').textContent = hrs.toFixed(1);
+  document.getElementById('f-p').textContent = p;
+}
+
+function collapseAll() { WORKERS.forEach(w => closeDetail(w.id)); }
+
+// ── Cerrar día ────────────────────────────────────────────────
+function cerrarDia() {
+  if (diaCerrado) return;
+  const pend = WORKERS.filter(w => !getWS(w.id).status);
+  if (pend.length > 0) {
+    const ns = pend.slice(0,3).map(w=>w.nombre).join(', ') + (pend.length>3 ? ` y ${pend.length-3} más`:'');
+    if (!confirm(`${pend.length} trabajador(es) sin registrar:\n${ns}\n\n¿Cerrar el día de todas formas?`)) return;
+  }
+
+  const t = WORKERS.filter(w => {const s=getWS(w.id).status; return s==='trabajo'||s==='retardo';}).length;
+  const f = WORKERS.filter(w => getWS(w.id).status==='falta').length;
+
+  WORKERS.forEach(w => {
+    const ws = getWS(w.id);
+    if (!ws.status) return;
+    const record = {
+      id:          crypto.randomUUID(),
+      date:        currentDate,
+      workerId:    w.id,
+      status:      ws.status,
+      retardoMin:  parseFloat(ws.retardoMin) || 0,
+      horasNormal: parseFloat(ws.horasNormal) || 0,
+      horasExtra:  parseFloat(ws.horasExtra)  || 0,
+      horasDoble:  parseFloat(ws.horasDoble)  || 0,
+      horasTotales: horasEq(ws),
+      projects:    ws.proyectos.filter(pr => pr.p || pr.descripcion || pr.horas),
+      notas:       ws.notas || ''
+    };
+    // addAttendance saves to attendance_logs (upsert) + attendance (push) + production_logs
+    window.DB.addAttendance({
+      ...record,
+      hours:      record.horasNormal,  // legacy field for compatibility
+      horas_x15:  record.horasExtra,
+      horas_x2:   record.horasDoble
+    });
   });
 
+  STATE[currentDate] = { cerrado: true, data: getState(currentDate).data };
+  diaCerrado = true;
+  updateCerradoUI();
+  buildCalendar();
   toast(`✓ Día cerrado — ${t} trabajaron, ${f} faltas`);
-  STATE_POR_DIA[currentDate].cerrado = true;
-  onDateChange();
 }
 
-function renderAll() {
-  const listPend = document.getElementById('list-pendientes');
-  const listReg = document.getElementById('list-registrados');
-  listPend.innerHTML = '';
-  listReg.innerHTML = '';
-  
-  document.getElementById('registrados-section').style.display='none';
-  
-  WORKERS.forEach(w => { 
-      const card = buildCard(w);
-      if (getS()[w.id].done) {
-          listReg.appendChild(card);
-          document.querySelector(`#card-${w.id} .status-btns`).style.display='none';
-          document.getElementById(`edit-${w.id}`).style.display='';
-          buildChips(w.id);
-          document.getElementById('registrados-section').style.display='';
-      } else {
-          listPend.appendChild(card);
-      }
-      renderProyRows(w.id);
-      updHrsTotal(w.id);
-  });
-  
-  updateLabels();
-  updateFooter();
+// ── Reabrir día ───────────────────────────────────────────────
+function reabrirDia() {
+  if (!confirm(`¿Reabrir el día ${currentDate}?\n\nLos datos ya guardados en Firebase NO se borran. Solo podrás volver a registrar. Al cerrar de nuevo se sobrescribirán los registros.`)) return;
+  STATE[currentDate].cerrado = false;
+  diaCerrado = false;
+  updateCerradoUI();
+  buildCalendar();
+  toast('Día reabierto — edita y vuelve a cerrar', 'warn');
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-function toast(msg, type=''){
-  const c=document.getElementById('toasts');
-  const el=document.createElement('div');
-  el.className='toast'+(type==='warn'?' warn':type===''?' ok':'');
-  el.textContent=msg;
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const c  = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
   c.appendChild(el);
-  setTimeout(()=>el.remove(),3200);
+  setTimeout(() => el.remove(), 3400);
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        document.getElementById('list-pendientes').innerHTML = '<div style="padding:20px;text-align:center;">Cargando...</div>';
-        await loadDataFromDB();
-        document.getElementById('list-pendientes').innerHTML = '';
-        document.getElementById('fecha').value = todayStr();
-        onDateChange();
-    } catch (e) {
-        document.getElementById('list-pendientes').innerHTML = `<div style="padding:20px;color:red;">Error: ${e.message}</div>`;
-        console.error(e);
-    }
+  try {
+    document.getElementById('list-pendientes').innerHTML = '<div style="padding:20px;text-align:center;color:var(--subtext);">Cargando…</div>';
+    await loadMasterData();
+    document.getElementById('fecha').value = todayStr();
+    onDateChange();
+  } catch (e) {
+    document.getElementById('list-pendientes').innerHTML = `<div style="padding:20px;color:var(--red);">Error: ${e.message}</div>`;
+    console.error(e);
+  }
 });
 </script>
 </body>
