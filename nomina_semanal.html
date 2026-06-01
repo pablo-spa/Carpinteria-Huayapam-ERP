@@ -366,10 +366,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     <div class="fstat"><span class="lbl">Extras</span><span class="val" id="f-extras" style="color:var(--amber)">$0</span></div>
     <div class="fstat"><span class="lbl">Descuentos</span><span class="val" id="f-descs" style="color:var(--red)">$0</span></div>
   </div>
-  <div style="display:flex;gap:8px;">
-    <button class="btn btn-green" onclick="guardarSemana()">💾 Guardar semana</button>
-    <button class="btn btn-ghost" onclick="showTab('imprimir',document.querySelectorAll('.tab')[2])">🖨 Imprimir</button>
-  </div>
+  <button class="btn btn-ghost" onclick="showTab('imprimir',document.querySelectorAll('.tab')[2])">🖨 Imprimir</button>
 </div>
 
 <script src="db.js"></script>
@@ -704,6 +701,7 @@ function buildCard(w){
 
       <div class="listo-row">
         <button class="btn btn-green" onclick="markVerif('${w.id}')">✓ Listo</button>
+        <button class="btn btn-amber" onclick="guardarTrabajador('${w.id}')">💾 Guardar</button>
         <button class="btn btn-ghost" onclick="togDet('${w.id}')">Colapsar</button>
       </div>
     </div>`;
@@ -886,14 +884,12 @@ function buildChips(id,r){
   el.innerHTML=html;
 }
 
-function guardarSemana(){
+function guardarTrabajador(id){
   let count=0;
-  WORKERS.forEach(w=>{
-    for(let i=0;i<7;i++){
-      if(S[w.id].dias[i].st!=='libre'){ saveJornadaNomina(w.id,i); count++; }
-    }
-  });
-  toast(`✓ ${count} registro${count!==1?'s':''} guardado${count!==1?'s':''}`);
+  for(let i=0;i<7;i++){
+    if(S[id].dias[i].st!=='libre'){ saveJornadaNomina(id,i); count++; }
+  }
+  toast(`✓ ${count} día${count!==1?'s':''} guardado${count!==1?'s':''}`);
 }
 
 function markVerif(id){
