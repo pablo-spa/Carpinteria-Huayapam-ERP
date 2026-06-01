@@ -350,7 +350,7 @@ document.getElementById('fecha').value = new Date().toISOString().slice(0, 10);
 
 async function loadDBData() {
   INV_DB = await window.DB.query('inventory');
-  PROJ_DB = (await window.DB.query('projects')).filter(p => !p._init && p.code && p.name);
+  PROJ_DB = (await window.DB.query('projects')).filter(p => !p._init && !p.archived && p.code && p.name);
 
   // Populate proveedor from contacts
   const proveedores = (await window.DB.query('contacts', { tipo: 'proveedor' })).filter(c => !c._init);

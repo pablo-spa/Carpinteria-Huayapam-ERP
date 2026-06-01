@@ -92,7 +92,7 @@ async function init() {
   });
 
   const pSel = document.getElementById('proj');
-  projects.filter(p => !p._init && p.code && p.name).forEach(p => {
+  projects.filter(p => !p._init && !p.archived && p.code && p.name).forEach(p => {
     const o = document.createElement('option');
     o.value = p.code;
     o.textContent = `${p.code} — ${p.name}`;

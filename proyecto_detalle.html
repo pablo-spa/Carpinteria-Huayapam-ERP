@@ -13,7 +13,9 @@
       --green: #40a02b; --green-bg: #e5f4e3;
       --blue: #1e66f5; --blue-bg: #e6eaf6;
       --amber: #df8e1d; --amber-bg: #fdf3e5;
-      --red: #d20f39; --radius: 8px; --radius-lg: 12px;
+      --red: #d20f39;
+      --purple: #8839ef; --purple-bg: rgba(136,57,239,0.12);
+      --radius: 8px; --radius-lg: 12px;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -24,95 +26,152 @@
         --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
         --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
         --red: #f38ba8;
+        --purple: #cba6f7; --purple-bg: rgba(203,166,247,0.15);
       }
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: var(--base); color: var(--text); padding-bottom: 40px;
+      background: var(--base); color: var(--text); padding-bottom: 60px;
     }
 
     .hdr {
       background: var(--mantle); border-bottom: 1px solid var(--crust);
-      padding: 16px 24px; display: flex; align-items: center; gap: 16px;
+      padding: 14px 24px; display: flex; align-items: center; gap: 16px;
       position: sticky; top: 0; z-index: 10;
     }
-    .back-btn {
-      background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--subtext);
-    }
+    .back-btn { background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--subtext); }
     .back-btn:hover { color: var(--text); }
-    .hdr-title { font-size: 18px; font-weight: 800; color: var(--text); flex: 1; }
+    .hdr-title { font-size: 17px; font-weight: 800; color: var(--text); flex: 1; }
 
     .btn {
       padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
       cursor: pointer; transition: opacity .15s; border: none; font-family: inherit;
     }
-    .btn-blue { background: var(--blue); color: #fff; }
-    .btn-dark { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
-    .btn:hover { opacity: 0.9; }
+    .btn-blue   { background: var(--blue); color: #fff; }
+    .btn-dark   { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+    .btn-red    { background: transparent; color: var(--red); border: 1px solid var(--red); }
+    .btn-amber  { background: var(--amber); color: #fff; }
+    .btn:hover  { opacity: 0.85; }
 
     .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
     @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
 
     .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; }
-    .card-title { font-size: 14px; font-weight: 800; color: var(--subtext); text-transform: uppercase; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--crust); padding-bottom: 8px; }
+    .card-title {
+      font-size: 11px; font-weight: 800; color: var(--subtext); text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--crust); padding-bottom: 8px;
+    }
 
     .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .f-field { display: flex; flex-direction: column; gap: 6px; }
     .f-field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
-    .f-field input, .f-field select { background: var(--base); border: 1px solid var(--crust); padding: 8px 12px; border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px; width: 100%; box-sizing: border-box; min-height: 40px; }
+    .f-field input, .f-field select {
+      background: var(--base); border: 1px solid var(--crust); padding: 8px 12px;
+      border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px;
+      width: 100%; min-height: 38px;
+    }
     .f-field input:focus, .f-field select:focus { outline: none; border-color: var(--blue); }
 
-    .drive-link { display: flex; align-items: center; gap: 8px; background: var(--surface0); padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text); font-weight: 600; font-size: 13px; margin-top: 16px; border: 1px solid var(--surface1); }
+    .drive-link {
+      display: flex; align-items: center; gap: 8px; background: var(--surface0);
+      padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text);
+      font-weight: 600; font-size: 13px; margin-top: 10px; border: 1px solid var(--surface1);
+    }
     .drive-link:hover { background: var(--surface1); }
 
     .prog-slider { width: 100%; cursor: pointer; }
-    .prog-val { font-size: 24px; font-weight: 800; color: var(--green); text-align: right; }
+    .prog-val { font-size: 26px; font-weight: 800; color: var(--green); }
 
-    .timeline { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+    /* Milestones */
+    .milestones { display: flex; flex-direction: column; gap: 8px; }
+    .ms-item { display: flex; align-items: center; gap: 12px; background: var(--base); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--crust); }
+    .ms-chk  { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    .ms-title { flex: 1; font-size: 13px; font-weight: 600; }
+    .ms-date { font-size: 12px; color: var(--subtext); }
+    .ms-delete { background: none; border: none; color: var(--red); cursor: pointer; opacity: 0.5; font-size: 14px; }
+    .ms-delete:hover { opacity: 1; }
+    .ms-add { margin-top: 8px; display: flex; gap: 8px; }
+    .ms-add input { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 12px; flex: 1; font-family: inherit; }
+
+    /* Timeline */
+    .timeline { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
     .tl-item { display: flex; gap: 12px; }
-    .tl-dot { width: 12px; height: 12px; background: var(--blue); border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-    .tl-content { background: var(--base); padding: 12px; border-radius: 8px; flex: 1; border: 1px solid var(--crust); }
+    .tl-dot { width: 10px; height: 10px; background: var(--blue); border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .tl-content { background: var(--base); padding: 10px 12px; border-radius: 8px; flex: 1; border: 1px solid var(--crust); }
     .tl-date { font-size: 11px; color: var(--subtext); font-weight: 600; margin-bottom: 4px; }
     .tl-text { font-size: 13px; color: var(--text); line-height: 1.4; }
 
-    .milestones { display: flex; flex-direction: column; gap: 8px; }
-    .ms-item { display: flex; align-items: center; gap: 12px; background: var(--base); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--crust); }
-    .ms-chk { width: 18px; height: 18px; cursor: pointer; }
-    .ms-title { flex: 1; font-size: 13px; font-weight: 600; }
-    .ms-date { font-size: 12px; color: var(--subtext); }
-    .ms-delete { background: none; border: none; color: var(--red); cursor: pointer; opacity: 0.6; }
-    .ms-delete:hover { opacity: 1; }
-    .ms-add { margin-top: 8px; display: flex; gap: 8px; }
-    .ms-add input { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 12px; flex: 1; }
+    /* KV rows */
+    .kv { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--crust); font-size: 13px; }
+    .kv:last-child { border-bottom: none; }
+    .kv-lbl { color: var(--subtext); }
+    .kv-val { font-weight: 700; text-align: right; }
 
+    /* Hours by category table */
+    .hrs-table { width: 100%; border-collapse: collapse; }
+    .hrs-table td { padding: 5px 4px; font-size: 12px; }
+    .hrs-table td:last-child { text-align: right; }
+    .hrs-input {
+      width: 72px; text-align: right; padding: 4px 8px;
+      border-radius: 6px; border: 1px solid var(--crust);
+      background: var(--base); color: var(--text);
+      font-family: inherit; font-size: 12px;
+    }
+    .hrs-input:focus { outline: none; border-color: var(--blue); }
+    .hrs-total-row td { font-weight: 800; font-size: 13px; border-top: 2px solid var(--crust); padding-top: 8px; }
+
+    /* Material comparison */
+    .mat-cmp { display: flex; flex-direction: column; gap: 6px; }
+    .mat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--crust); }
+    .mat-row:last-child { border-bottom: none; }
+
+    /* Cotizaciones */
+    .quot-card { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 12px; }
+    .quot-card + .quot-card { margin-top: 10px; }
+
+    /* Pill */
+    .pill { padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; white-space: nowrap; display: inline-block; }
+    .pill-blue   { background: var(--blue-bg); color: var(--blue); }
+    .pill-green  { background: var(--green-bg); color: var(--green); }
+    .pill-amber  { background: var(--amber-bg); color: var(--amber); }
+    .pill-purple { background: var(--purple-bg); color: var(--purple); }
+    .pill-gray   { background: var(--surface0); color: var(--text); }
   </style>
 </head>
 <body>
 
   <div class="hdr">
     <button class="back-btn" onclick="goBack()">←</button>
-    <div class="hdr-title" id="h-title">Cargando Proyecto...</div>
+    <div class="hdr-title" id="h-title">Cargando…</div>
+    <button class="btn btn-red" id="btn-archive" onclick="archiveProject()" style="padding:6px 12px; font-size:12px; display:none;">Archivar</button>
     <button class="btn btn-blue" onclick="saveData()">Guardar Cambios</button>
   </div>
 
   <div class="main">
-    
-    <!-- Left Column -->
+
+    <!-- ═══ Columna Izquierda ═══ -->
     <div style="display:flex; flex-direction:column; gap:24px;">
-      
+
       <!-- Info General -->
       <div class="card">
         <div class="card-title">Información General</div>
         <div class="f-row">
-          <div class="f-field"><label>Código / Folio</label><input type="text" id="f-code"></div>
+          <div class="f-field"><label>Código</label><input type="text" id="f-code" maxlength="4"></div>
           <div class="f-field"><label>Nombre del Proyecto</label><input type="text" id="f-name"></div>
         </div>
         <div class="f-row">
-          <div class="f-field"><label>Cliente / Contacto</label><select id="f-contact" data-searchable></select></div>
-          <div class="f-field"><label>Estado</label>
+          <div class="f-field">
+            <label>Cliente / Contacto</label>
+            <select id="f-contact" data-searchable></select>
+          </div>
+          <div class="f-field">
+            <label>Estado</label>
             <select id="f-status">
               <option value="Planificación">Planificación</option>
               <option value="En Producción">En Producción</option>
+              <option value="En Pausa">En Pausa</option>
               <option value="Terminado">Terminado / Entregado</option>
             </select>
           </div>
@@ -121,73 +180,129 @@
           <div class="f-field"><label>Fecha Inicio</label><input type="date" id="f-start"></div>
           <div class="f-field"><label>Fecha Fin (Estimada)</label><input type="date" id="f-end"></div>
         </div>
-        
-        <div class="f-field" style="margin-top:12px;">
-          <label>Enlace a Carpeta de Google Drive</label>
+        <div class="f-field" style="margin-top:8px;">
+          <label>Enlace a Carpeta Google Drive</label>
           <input type="text" id="f-drive" placeholder="https://drive.google.com/drive/folders/...">
-          <a href="#" id="l-drive" target="_blank" class="drive-link" style="display:none;">📁 Abrir Carpeta en Drive</a>
+          <a href="#" id="l-drive" target="_blank" class="drive-link" style="display:none;">📁 Abrir en Google Drive</a>
         </div>
       </div>
 
-      <!-- Progreso y Milestones -->
+      <!-- Avance y Milestones -->
       <div class="card">
-        <div class="card-title">Avance Manual y Fechas Clave</div>
-        
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div style="font-size:13px; font-weight:700;">Porcentaje de Avance (Estimado)</div>
+        <div class="card-title">Avance y Fechas Clave</div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:700;">Porcentaje de Avance</div>
           <div class="prog-val" id="p-val">0%</div>
         </div>
-        <input type="range" id="f-progress" min="0" max="100" value="0" class="prog-slider" oninput="document.getElementById('p-val').textContent = this.value + '%'">
+        <input type="range" id="f-progress" min="0" max="100" value="0" class="prog-slider"
+          oninput="document.getElementById('p-val').textContent = this.value + '%'">
 
-        <div style="margin-top:24px; font-size:13px; font-weight:700; margin-bottom:12px;">Hitos / Fechas Importantes</div>
+        <div style="margin-top:20px; font-size:13px; font-weight:700; margin-bottom:10px;">Hitos / Fechas Importantes</div>
         <div class="milestones" id="ms-list"></div>
-        
-        <div class="ms-add">
-          <input type="text" id="ms-new-title" placeholder="Ej: Pago de 1er anticipo">
+        <div class="ms-add" style="margin-top:10px;">
+          <input type="text" id="ms-new-title" placeholder="Ej: Pago de anticipo">
           <input type="date" id="ms-new-date" style="max-width:130px;">
           <button class="btn btn-dark" style="padding:6px 12px; font-size:11px;" onclick="addMilestone()">Añadir</button>
         </div>
       </div>
-      
+
       <!-- Cotizaciones -->
       <div class="card">
         <div class="card-title">
           Cotizaciones
-          <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="newQuote()">+ Nueva Cot.</button>
+          <button class="btn btn-dark" style="padding:4px 10px; font-size:11px;" onclick="newQuote()">+ Nueva</button>
         </div>
-        <div id="quotes-list" style="display:flex; flex-direction:column; gap:12px;">
-          <!-- JS -->
-        </div>
+        <div id="quotes-list"></div>
       </div>
 
     </div>
 
-    <!-- Right Column -->
+    <!-- ═══ Columna Derecha ═══ -->
     <div style="display:flex; flex-direction:column; gap:24px;">
-      
-      <!-- Finanzas / Horas -->
-      <div class="card">
-        <div class="card-title">Asignación y Costos</div>
-        <div class="f-field" style="margin-bottom:12px;"><label>Valor Cotizado Total ($)</label><input type="number" id="f-val" step="any"></div>
-        <div class="f-field" style="margin-bottom:12px;">
-           <label>Pagos / Anticipos Recibidos ($)</label>
-           <div id="p-total-cobrado" style="font-size:18px; font-weight:700; color:var(--text);">$0.00 <span style="font-size:11px; font-weight:400; color:var(--subtext);">(Auto-calculado)</span></div>
-        </div>
-        <div id="p-pagos-list" style="margin-bottom:16px; border:1px solid var(--crust); border-radius:6px; background:var(--mantle); padding:8px; display:flex; flex-direction:column; gap:4px; max-height:150px; overflow-y:auto;">
-           <!-- rendered by js -->
-        </div>
 
-        <div class="f-field" style="margin-bottom:12px;"><label>Horas Estimadas de Trabajo</label><input type="number" id="f-hrs-est" step="any"></div>
-        <div class="f-field"><label>Pies Tablares Estimados (Madera)</label><input type="number" id="f-wood-est" step="any"></div>
+      <!-- Finanzas -->
+      <div class="card">
+        <div class="card-title">Finanzas del Proyecto</div>
+        <div class="f-field" style="margin-bottom:12px;">
+          <label>Valor Cotizado Total ($)</label>
+          <input type="number" id="f-val" step="any" min="0">
+        </div>
+        <div class="kv">
+          <span class="kv-lbl">Pagos Recibidos</span>
+          <div id="p-total-cobrado" style="font-weight:700; font-size:14px; color:var(--green);">$0.00</div>
+        </div>
+        <div id="p-pagos-list" style="max-height:140px; overflow-y:auto; margin:8px 0; display:flex; flex-direction:column; gap:4px;"></div>
+        <div class="kv" id="saldo-row" style="margin-top:4px;">
+          <span class="kv-lbl">Saldo Pendiente</span>
+          <span class="kv-val" id="v-saldo" style="color:var(--red);">$0.00</span>
+        </div>
       </div>
 
-      <!-- Timeline Logs -->
+      <!-- Horas por Categoría -->
       <div class="card">
-        <div class="card-title">Timeline de Trabajo (Bitácora)</div>
-        <div style="font-size:12px; color:var(--subtext);">Historial de horas invertidas según el reporte de producción diaria.</div>
-        <div class="timeline" id="tl-list">
-          <!-- Rendered by JS -->
+        <div class="card-title">
+          Mano de Obra Estimada
+          <button class="btn btn-dark" onclick="calcFromQuotation()" style="padding:3px 9px; font-size:11px;">⟳ Desde Cotización</button>
         </div>
+        <div id="quote-source-note" style="font-size:11px; color:var(--subtext); margin-bottom:10px; display:none;"></div>
+        <table class="hrs-table">
+          <tbody id="hrs-table-body"></tbody>
+          <tfoot>
+            <tr class="hrs-total-row">
+              <td style="color:var(--subtext);">TOTAL</td>
+              <td><span id="hrs-total-val">0.0</span> hrs</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Madera -->
+      <div class="card">
+        <div class="card-title">
+          Madera Estimada
+          <button class="btn btn-dark" onclick="calcFromQuotation()" style="padding:3px 9px; font-size:11px;">⟳ Desde Cotización</button>
+        </div>
+        <div class="f-field" style="margin-bottom:12px;">
+          <label>Total Pies Tabla (pt)</label>
+          <input type="number" id="f-wood-est" step="any" min="0">
+        </div>
+        <div id="wood-breakdown" style="display:none;">
+          <div style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase; margin-bottom:6px;">Desglose por material (de cotización)</div>
+          <div id="wood-breakdown-list" class="mat-cmp"></div>
+        </div>
+      </div>
+
+      <!-- Otros Materiales -->
+      <div class="card">
+        <div class="card-title">
+          Otros Materiales
+          <button class="btn btn-dark" onclick="calcFromQuotation()" style="padding:3px 9px; font-size:11px;">⟳ Desde Cotización</button>
+        </div>
+        <div class="kv">
+          <span class="kv-lbl">Costo Estimado (Cotización)</span>
+          <span class="kv-val">
+            <input type="number" id="f-other-mat-est" step="any" min="0" style="width:120px; text-align:right; padding:4px 8px; border-radius:6px; border:1px solid var(--crust); background:var(--base); color:var(--text); font-size:13px;">
+          </span>
+        </div>
+        <div class="kv">
+          <span class="kv-lbl">Salido de Almacén (real)</span>
+          <span class="kv-val" id="actual-mat-cost" style="color:var(--text);">$0.00</span>
+        </div>
+        <div class="kv" id="mat-diff-row">
+          <span class="kv-lbl">Diferencia</span>
+          <span class="kv-val" id="mat-diff-val">—</span>
+        </div>
+        <div style="font-size:11px; color:var(--subtext); margin-top:8px; line-height:1.5;">
+          Incluye herrajes, bisagras, consumibles y todo material que no sea madera. El costo real se toma del inventario al momento de la salida.
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="card">
+        <div class="card-title">Bitácora de Trabajo (Horas Reales)</div>
+        <div style="font-size:12px; color:var(--subtext); line-height:1.5;">Horas invertidas según Producción Diaria.</div>
+        <div class="timeline" id="tl-list"></div>
       </div>
 
     </div>
@@ -197,356 +312,443 @@
   <script src="searchable-select.js"></script>
   <script src="db.js"></script>
   <script>
-    let projId = null;
+    let projId   = null;
     let projData = null;
+
+    const RATE_KEYS   = ['maestroA','maestroB','oficialA','aprendiz','barniz','pulido','empaque','chofer'];
+    const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Oficial A', aprendiz:'Aprendiz', barniz:'Barniz', pulido:'Pulido', empaque:'Empaque', chofer:'Chofer' };
+
+    function fmt(n) { return '$' + (parseFloat(n)||0).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
     function goBack() { window.location.href = 'proyectos.html'; }
 
-    function loadURLData() {
-      const params = new URLSearchParams(window.location.search);
-      if(params.get('id')) {
-        projId = params.get('id');
-      } else if(params.get('new')){
-        projId = null; // means new project
-      } else {
-        goBack();
-      }
-    }
-
-    function renderSelects() {
-      const d = window.DB.get();
-      const sel = document.getElementById('f-contact');
-      sel.innerHTML = '<option value="">-- Sin contacto --</option>' +
-        (d.contacts || []).filter(c => !c._init).map(c => `<option value="${c.id}">${c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`).join('');
-      if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
-    }
-
-    function renderMilestones() {
-      const lst = document.getElementById('ms-list');
-      lst.innerHTML = '';
-      if(!projData.milestones) projData.milestones = [];
-      projData.milestones.sort((a,b) => new Date(a.date) - new Date(b.date));
-      
-      projData.milestones.forEach((m, i) => {
-        const item = document.createElement('div');
-        item.className = 'ms-item';
-        item.innerHTML = `
-          <input type="checkbox" class="ms-chk" ${m.done ? 'checked' : ''} onchange="toggleMilestone(${i}, this.checked)">
-          <div class="ms-title" style="text-decoration:${m.done?'line-through':'none'}; color:${m.done?'var(--subtext)':'var(--text)'}">${m.title}</div>
-          <div class="ms-date">${m.date || ''}</div>
-          <button class="ms-delete" onclick="deleteMilestone(${i})">✕</button>
-        `;
-        lst.appendChild(item);
-      });
-    }
-
-    function addMilestone() {
-      const title = document.getElementById('ms-new-title').value.trim();
-      const date = document.getElementById('ms-new-date').value;
-      if(!title) return;
-      projData.milestones.push({ title, date, done: false });
-      document.getElementById('ms-new-title').value = '';
-      document.getElementById('ms-new-date').value = '';
-      renderMilestones();
-    }
-
-    function toggleMilestone(i, checked) {
-      if(projData.milestones[i]) {
-        projData.milestones[i].done = checked;
-        renderMilestones();
-      }
-    }
-
-    function deleteMilestone(i) {
-      projData.milestones.splice(i, 1);
-      renderMilestones();
-    }
-
+    // ── Drive link ───────────────────────────────────
+    document.getElementById('f-drive').addEventListener('input', detectDriveLink);
     function detectDriveLink() {
       const val = document.getElementById('f-drive').value.trim();
       const lnk = document.getElementById('l-drive');
-      if(val && val.startsWith('http')) {
-        lnk.href = val;
-        lnk.style.display = 'flex';
-      } else {
-        lnk.style.display = 'none';
-      }
+      if (val && val.startsWith('http')) { lnk.href = val; lnk.style.display = 'flex'; }
+      else { lnk.style.display = 'none'; }
     }
-    document.getElementById('f-drive').addEventListener('input', detectDriveLink);
 
+    // ── Milestones ───────────────────────────────────
+    function renderMilestones() {
+      if (!projData.milestones) projData.milestones = [];
+      projData.milestones.sort((a, b) => new Date(a.date) - new Date(b.date));
+      const lst = document.getElementById('ms-list');
+      lst.innerHTML = projData.milestones.map((m, i) => `
+        <div class="ms-item">
+          <input type="checkbox" class="ms-chk" ${m.done ? 'checked' : ''} onchange="toggleMilestone(${i},this.checked)">
+          <div class="ms-title" style="text-decoration:${m.done?'line-through':'none'}; color:${m.done?'var(--subtext)':'var(--text)'};">${m.title}</div>
+          <div class="ms-date">${m.date || ''}</div>
+          <button class="ms-delete" onclick="deleteMilestone(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+    function addMilestone() {
+      const title = document.getElementById('ms-new-title').value.trim();
+      const date  = document.getElementById('ms-new-date').value;
+      if (!title) return;
+      projData.milestones.push({ title, date, done: false });
+      document.getElementById('ms-new-title').value = '';
+      document.getElementById('ms-new-date').value  = '';
+      renderMilestones();
+    }
+    function toggleMilestone(i, checked) { if (projData.milestones[i]) { projData.milestones[i].done = checked; renderMilestones(); } }
+    function deleteMilestone(i) { projData.milestones.splice(i, 1); renderMilestones(); }
+
+    // ── Hours by category ─────────────────────────────
+    function renderHoursTable() {
+      const cats = projData.estimatedHoursByCategory || {};
+      const tbody = document.getElementById('hrs-table-body');
+      tbody.innerHTML = RATE_KEYS.map(k => `
+        <tr>
+          <td style="color:var(--subtext);">${RATE_LABELS[k]}</td>
+          <td>
+            <input type="number" class="hrs-input" data-key="${k}"
+              value="${(cats[k] || 0).toFixed(1)}" min="0" step="0.5"
+              oninput="updateHoursTotal()">
+          </td>
+        </tr>
+      `).join('');
+      updateHoursTotal();
+    }
+
+    function updateHoursTotal() {
+      let total = 0;
+      document.querySelectorAll('.hrs-input').forEach(inp => { total += parseFloat(inp.value) || 0; });
+      document.getElementById('hrs-total-val').textContent = total.toFixed(1);
+    }
+
+    function getHoursCategoryValues() {
+      const cats = {};
+      document.querySelectorAll('.hrs-input').forEach(inp => {
+        cats[inp.dataset.key] = parseFloat(inp.value) || 0;
+      });
+      return cats;
+    }
+
+    // ── Calc from active quotation ────────────────────
+    function calcFromQuotation() {
+      const d = window.DB.get();
+      if (!projId) { alert('Guarda el proyecto primero.'); return; }
+
+      const quotes = (d.quotations || []).filter(q => q.projectId === projId && q.status === 'Activa');
+      if (quotes.length === 0) { alert('No hay cotización activa para este proyecto. Activa una cotización primero.'); return; }
+
+      const q = quotes[0]; // use first active quote
+
+      // Hours
+      const hours = {};
+      RATE_KEYS.forEach(k => hours[k] = 0);
+
+      // Wood: by material name (unit = 'pt')
+      const woodByMat = {};
+      let woodTotal   = 0;
+      let otherCost   = 0;
+
+      (q.pieces || []).forEach(piece => {
+        RATE_KEYS.forEach(k => { hours[k] += parseFloat(piece.hrs?.[k] || 0); });
+        (piece.mats || []).forEach(m => {
+          if ((m.u || '').toLowerCase() === 'pt') {
+            const matName = m.n || 'Madera';
+            woodByMat[matName] = (woodByMat[matName] || 0) + (parseFloat(m.qty) || 0);
+            woodTotal += parseFloat(m.qty) || 0;
+          } else {
+            otherCost += (parseFloat(m.qty) || 0) * (parseFloat(m.p) || 0);
+          }
+        });
+      });
+
+      // Update hours inputs
+      RATE_KEYS.forEach(k => {
+        const inp = document.querySelector(`.hrs-input[data-key="${k}"]`);
+        if (inp) inp.value = hours[k].toFixed(1);
+      });
+      updateHoursTotal();
+
+      // Update wood
+      document.getElementById('f-wood-est').value = woodTotal.toFixed(2);
+      renderWoodBreakdown(woodByMat);
+
+      // Update other materials
+      document.getElementById('f-other-mat-est').value = otherCost.toFixed(2);
+      updateMatDiff();
+
+      // Show source note
+      const note = document.getElementById('quote-source-note');
+      note.textContent = `Calculado desde cotización ${q.id} — ${q.date}`;
+      note.style.display = 'block';
+    }
+
+    function renderWoodBreakdown(woodByMat) {
+      const entries = Object.entries(woodByMat);
+      const wrap = document.getElementById('wood-breakdown');
+      const list = document.getElementById('wood-breakdown-list');
+      if (entries.length === 0) { wrap.style.display = 'none'; return; }
+      wrap.style.display = 'block';
+      list.innerHTML = entries.map(([name, qty]) => `
+        <div class="mat-row">
+          <span style="color:var(--subtext);">${name}</span>
+          <span style="font-weight:700;">${qty.toFixed(2)} pt</span>
+        </div>
+      `).join('');
+    }
+
+    function updateMatDiff() {
+      const est    = parseFloat(document.getElementById('f-other-mat-est').value) || 0;
+      const actual = parseFloat(document.getElementById('actual-mat-cost').dataset.raw || 0);
+      if (est === 0 && actual === 0) { document.getElementById('mat-diff-val').textContent = '—'; return; }
+      const diff = actual - est;
+      const el   = document.getElementById('mat-diff-val');
+      if (diff > 0) { el.textContent = fmt(diff) + ' sobre estimado'; el.style.color = 'var(--red)'; }
+      else if (diff < 0) { el.textContent = fmt(Math.abs(diff)) + ' bajo estimado'; el.style.color = 'var(--green)'; }
+      else { el.textContent = 'Exacto'; el.style.color = 'var(--green)'; }
+    }
+    document.getElementById('f-other-mat-est').addEventListener('input', updateMatDiff);
+
+    // ── Actual materials from almacen salidas ─────────
+    function renderActualMaterials(d) {
+      if (!projData || !projData.code) return;
+      const salidas = (d.inventory_salidas || []).filter(s => s.proyecto === projData.code);
+      const inv     = d.inventory || [];
+      let actualCost = 0;
+
+      salidas.forEach(s => {
+        (s.items || []).forEach(item => {
+          const invItem = inv.find(i => i.code === item.code);
+          const unitCost = invItem ? (parseFloat(invItem.cost) || 0) : 0;
+          actualCost += (parseFloat(item.qty) || 0) * unitCost;
+        });
+      });
+
+      const el = document.getElementById('actual-mat-cost');
+      el.textContent = fmt(actualCost);
+      el.dataset.raw = actualCost;
+      updateMatDiff();
+    }
+
+    // ── Quotations ────────────────────────────────────
     function renderQuotes() {
       const d = window.DB.get();
       const qList = document.getElementById('quotes-list');
-      if(!projId) {
+      if (!projId) {
         qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>';
         return;
       }
-      const quotes = d.quotations ? d.quotations.filter(q => q.projectId === projId) : [];
-      if(quotes.length === 0) {
+      const quotes = (d.quotations || []).filter(q => q.projectId === projId);
+      if (quotes.length === 0) {
         qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay cotizaciones registradas.</div>';
         return;
       }
-      
-      quotes.sort((a,b) => new Date(b.date) - new Date(a.date));
-      let hs = '';
-      
-      const stColor = {
-        'Activa': 'var(--green)',
-        'Cancelada': 'var(--red)',
-        'En Pausa': 'var(--amber)',
-        'Esperando Autorización': 'var(--blue)'
-      };
+      quotes.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      quotes.forEach(q => {
-        hs += `
-          <div style="background:var(--base); border:1px solid var(--crust); border-radius:8px; padding:12px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-              <strong style="font-size:14px;">Cotización ${q.id}</strong>
-              <span style="font-size:11px; font-weight:700; color:${stColor[q.status]||'var(--text)'};">${q.status}</span>
-            </div>
-            <div style="font-size:12px; color:var(--subtext); margin-bottom:8px;">
-              Fecha: ${q.date} &nbsp; | &nbsp; Monto: $${(q.total||0).toLocaleString('es-MX', {minimumFractionDigits:2})}
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="window.open('cotizacion.html?viewId=${q.id}','_blank')">Imprimir PDF</button>
-              <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reviseQuote('${q.id}')">Realizar Cambio</button>
-              ${q.status === 'Esperando Autorización' ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--green);" onclick="acceptQuote('${q.id}')">Aceptar</button>` : ''}
-              ${q.status !== 'Cancelada' ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="cancelQuote('${q.id}')">Cancelar</button>` : ''}
-            </div>
+      const stColor = { 'Activa':'var(--green)', 'Cancelada':'var(--red)', 'En Pausa':'var(--amber)', 'Esperando Autorización':'var(--blue)' };
+
+      qList.innerHTML = quotes.map(q => `
+        <div class="quot-card">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <strong style="font-size:14px;">Cotización ${q.id}</strong>
+            <span style="font-size:11px; font-weight:800; color:${stColor[q.status]||'var(--subtext)'};">${q.status}</span>
           </div>
-        `;
-      });
-      qList.innerHTML = hs;
+          <div style="font-size:12px; color:var(--subtext); margin-bottom:8px;">
+            ${q.date} &nbsp;|&nbsp; ${fmt(q.total||0)}
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="window.open('cotizacion.html?viewId=${q.id}','_blank')">Imprimir PDF</button>
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reviseQuote('${q.id}')">Realizar Cambio</button>
+            ${q.status === 'Esperando Autorización' ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--green);" onclick="acceptQuote('${q.id}')">Aceptar</button>` : ''}
+            ${q.status !== 'Cancelada' ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="cancelQuote('${q.id}')">Cancelar</button>` : ''}
+          </div>
+        </div>
+      `).join('');
     }
 
-    function newQuote() {
-      if(!projId) return alert('Primero guarda el proyecto.');
-      window.location.href = 'cotizacion.html?projectId=' + projId;
-    }
-
-    function reviseQuote(qId) {
-      if(!projId) return;
-      window.location.href = 'cotizacion.html?projectId=' + projId + '&cloneQuoteId=' + qId;
-    }
+    function newQuote()       { if (!projId) { alert('Primero guarda el proyecto.'); return; } window.location.href = 'cotizacion.html?projectId=' + projId; }
+    function reviseQuote(qId) { if (!projId) return; window.location.href = 'cotizacion.html?projectId=' + projId + '&cloneQuoteId=' + qId; }
 
     function acceptQuote(qId) {
       const d = window.DB.get();
       const idx = d.quotations.findIndex(q => q.id === qId);
-      if(idx > -1) {
-        // Find existing 'Activa' and cancel or pause it? Wait, rule: accepting new quote cancels old ones that are in pause?
-        // Or just let's mark it Activa and mark others Cancelada since only one should be active.
-        d.quotations.filter(q => q.projectId === projId && q.id !== qId && q.status === 'En Pausa').forEach(q => q.status = 'Cancelada');
-        
-        d.quotations[idx].status = 'Activa';
-        
-        // Update project total value if desired
-        const projIdx = d.projects.findIndex(p => p.id === projId);
-        if(projIdx > -1) {
-          d.projects[projIdx].totalValue = d.quotations[idx].total;
-          
-          let mPt = 0, hrs = 0;
-          if(d.quotations[idx].pieces) {
-             d.quotations[idx].pieces.forEach(p => {
-                let t = 0;
-                Object.values(p.hrs||{}).forEach(v => t += v);
-                hrs += t;
-                (p.mats||[]).forEach(m => { if(m.u==='pt' || m.u==='pza' || m.u.includes('TAB')) mPt += (m.qty||0)*2 });
-             });
-          }
-          d.projects[projIdx].estimatedHours = hrs;
-          d.projects[projIdx].estimatedWoodPt = mPt;
-        }
-        
-        window.DB.save(d);
-        renderQuotes();
-      }
+      if (idx < 0) return;
+      d.quotations.filter(q => q.projectId === projId && q.id !== qId && q.status === 'En Pausa').forEach(q => q.status = 'Cancelada');
+      d.quotations[idx].status = 'Activa';
+      const pi = d.projects.findIndex(p => p.id === projId);
+      if (pi > -1) { d.projects[pi].totalValue = d.quotations[idx].total || 0; }
+      window.DB.save(d);
+      document.getElementById('f-val').value = d.quotations[idx].total || 0;
+      renderQuotes();
     }
-    
+
     function cancelQuote(qId) {
       const d = window.DB.get();
       const idx = d.quotations.findIndex(q => q.id === qId);
-      if(idx > -1) {
-        d.quotations[idx].status = 'Cancelada';
-        window.DB.save(d);
-        renderQuotes();
-      }
+      if (idx > -1) { d.quotations[idx].status = 'Cancelada'; window.DB.save(d); renderQuotes(); }
     }
 
+    // ── Timeline (horas reales) ───────────────────────
     function renderTimeline() {
       const d = window.DB.get();
       const tlList = document.getElementById('tl-list');
-      if(!projData || !projData.code) {
-        tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>';
-        return;
-      }
+      if (!projData?.code) { tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>'; return; }
 
       let logs = [];
-      // Use attendance records that mention this project
-      const attendances = (d.attendance || []).filter(a => !a._init);
-      attendances.forEach(att => {
-        if(!att.workers || !Array.isArray(att.workers)) return;
-        let workersInProj = [];
-        let totalHrsDay = 0;
+      (d.attendance || []).filter(a => !a._init).forEach(att => {
+        if (!att.workers || !Array.isArray(att.workers)) return;
+        let workersInProj = [], totalHrsDay = 0;
         att.workers.forEach(w => {
-          if(!w.projects || !Array.isArray(w.projects)) return;
-          let pLogs = w.projects.filter(p => p.p === projData.code);
-          if(pLogs.length > 0) {
-            let h = pLogs.reduce((sum, pl) => sum + parseFloat(pl.t || 0), 0);
-            let descs = pLogs.map(pl => pl.desc).filter(Boolean).join(', ');
-            totalHrsDay += h;
-            const wName = ((d.contacts || d.workers || []).find(wk => wk.id === w.wId) || {}).name || w.wId;
-            workersInProj.push(`${wName} (${h}h)${descs ? ': '+descs : ''}`);
-          }
+          if (!w.projects || !Array.isArray(w.projects)) return;
+          const pLogs = w.projects.filter(p => p.p === projData.code);
+          if (pLogs.length === 0) return;
+          const h = pLogs.reduce((s, pl) => s + parseFloat(pl.t || 0), 0);
+          const descs = pLogs.map(pl => pl.desc).filter(Boolean).join(', ');
+          totalHrsDay += h;
+          const wName = ((d.contacts || []).find(wk => wk.id === w.wId) || {}).name || w.wId;
+          workersInProj.push(`${wName} (${h}h)${descs ? ': ' + descs : ''}`);
         });
-
-        if(workersInProj.length > 0) {
-          logs.push({
-            date: att.date,
-            totalHrsDay,
-            details: workersInProj.join('<br>')
-          });
-        }
+        if (workersInProj.length > 0) logs.push({ date: att.date, totalHrsDay, details: workersInProj.join('<br>') });
       });
 
-      logs.sort((a,b) => new Date(b.date) - new Date(a.date));
+      logs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      if(logs.length === 0) {
-        tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay registros de horas trabajadas para este proyecto en la bitácora aún.</div>';
+      if (logs.length === 0) {
+        tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext); margin-top:8px;">No hay registros de horas para este proyecto todavía.</div>';
         return;
       }
-
       tlList.innerHTML = logs.map(l => `
         <div class="tl-item">
           <div class="tl-dot"></div>
           <div class="tl-content">
-            <div class="tl-date">${l.date} — ${l.totalHrsDay.toFixed(1)} hrs invertidas</div>
+            <div class="tl-date">${l.date} — ${l.totalHrsDay.toFixed(1)} hrs</div>
             <div class="tl-text">${l.details}</div>
           </div>
         </div>
       `).join('');
     }
 
-    async function init() {
-      loadURLData();
-      await window.DB.query('projects'); // wait for DB_STATE_LOADED
-      renderSelects();
-
-      const d = window.DB.get();
-      if(projId) {
-        projData = (d.projects || []).find(p => p.id === projId) || null;
-      }
-      
-      if(!projData) {
-        projData = {
-          code: 'PRY-' + Math.floor(Math.random()*1000),
-          name: '',
-          status: 'Planificación',
-          startDate: new Date().toISOString().slice(0,10),
-          progress: 0,
-          milestones: []
-        };
-        document.getElementById('h-title').textContent = 'Nuevo Proyecto';
-      } else {
-        document.getElementById('h-title').textContent = `${projData.code} - ${projData.name}`;
-      }
-
-      // Populate forms
-      document.getElementById('f-code').value = projData.code || '';
-      document.getElementById('f-name').value = projData.name || '';
-      document.getElementById('f-contact').value = projData.contactId || '';
-      document.getElementById('f-status').value = projData.status || 'Planificación';
-      document.getElementById('f-start').value = projData.startDate || '';
-      document.getElementById('f-end').value = projData.endDate || '';
-      document.getElementById('f-drive').value = projData.driveLink || '';
-      
-      document.getElementById('f-progress').value = projData.progress || 0;
-      document.getElementById('p-val').textContent = (projData.progress||0) + '%';
-      
-      document.getElementById('f-val').value = projData.totalValue || '';
-      document.getElementById('f-hrs-est').value = projData.estimatedHours || '';
-      document.getElementById('f-wood-est').value = projData.estimatedWoodPt || '';
-      
-      detectDriveLink();
-      renderMilestones();
-      renderTimeline();
-      renderQuotes();
-      renderPayments(d);
-    }
-
+    // ── Payments ──────────────────────────────────────
     function renderPayments(d) {
-      if(!projId) return;
-      
-      const movs = d.accounting_movements || [];
-      const projectMovs = movs.filter(m => m.projectId === projId && m.type === 'Ingreso');
-      projectMovs.sort((a,b) => new Date(b.date) - new Date(a.date));
-      
+      if (!projId) return;
+      const movs = (d.accounting_movements || []).filter(m => m.projectId === projId && m.type === 'Ingreso');
+      movs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
       let totalConfirmed = 0;
       let html = '';
-      
-      if(projectMovs.length === 0) {
-        html = '<div style="font-size:12px; color:var(--subtext); text-align:center;">No hay pagos registrados asociados a este proyecto.</div>';
+
+      if (movs.length === 0) {
+        html = '<div style="font-size:12px; color:var(--subtext);">No hay pagos registrados.</div>';
       } else {
-        projectMovs.forEach(m => {
-          if (m.status === 'confirmado') totalConfirmed += m.amount;
+        movs.forEach(m => {
+          if (m.status === 'confirmado') totalConfirmed += parseFloat(m.amount) || 0;
           const color = m.status === 'confirmado' ? 'var(--green)' : 'var(--amber)';
           html += `
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--crust); padding-bottom:4px;">
-              <div>
-                <span style="font-size:10px; font-weight:bold; color:${color}; margin-right:4px;">${m.status.toUpperCase()}</span>
-                <span style="font-size:12px;">${m.date} - ${m.concept}</span>
-              </div>
-              <div style="font-size:12px; font-weight:700;">$${m.amount.toLocaleString('es-MX', {minimumFractionDigits:2})}</div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid var(--crust);">
+              <div><span style="font-size:10px; font-weight:800; color:${color}; margin-right:4px;">${m.status.toUpperCase()}</span>${m.date} — ${m.concept}</div>
+              <div style="font-weight:700;">${fmt(m.amount)}</div>
             </div>
           `;
         });
       }
-      
+
       document.getElementById('p-pagos-list').innerHTML = html;
-      document.getElementById('p-total-cobrado').innerHTML = `$${totalConfirmed.toLocaleString('es-MX', {minimumFractionDigits:2})} <span style="font-size:11px; font-weight:400; color:var(--subtext);">(Auto-calculado)</span>`;
-      
-      // Update actual project payments in DB silently so other views can sync
-      if(projData.payments !== totalConfirmed) {
-         projData.payments = totalConfirmed;
-         window.DB.save(d);
+      document.getElementById('p-total-cobrado').textContent = fmt(totalConfirmed);
+
+      const val   = parseFloat(document.getElementById('f-val').value) || 0;
+      const saldo = val - totalConfirmed;
+      const saldoEl = document.getElementById('v-saldo');
+      saldoEl.textContent = fmt(Math.max(0, saldo));
+      saldoEl.style.color = saldo <= 0 ? 'var(--green)' : 'var(--red)';
+
+      if (projData && projData.payments !== totalConfirmed) {
+        projData.payments = totalConfirmed;
       }
     }
 
+    // ── Archive ───────────────────────────────────────
+    function archiveProject() {
+      if (!projId) return;
+      if (!confirm('¿Archivar este proyecto? Dejará de aparecer en la lista principal. Puedes verlo en "Archivados".')) return;
+      const d = window.DB.get();
+      const pi = d.projects.findIndex(p => p.id === projId);
+      if (pi > -1) {
+        d.projects[pi].archived = true;
+        window.DB.save(d);
+        window.location.href = 'proyectos.html';
+      }
+    }
+
+    // ── Save ──────────────────────────────────────────
     function saveData() {
       const code = document.getElementById('f-code').value.trim();
       const name = document.getElementById('f-name').value.trim();
-      
-      if(!code || !name) return alert('El código y el nombre son obligatorios.');
+      if (!code || !name) { alert('El código y el nombre son obligatorios.'); return; }
 
-      projData.code = code;
-      projData.name = name;
+      projData.code      = code;
+      projData.name      = name;
       projData.contactId = document.getElementById('f-contact').value;
-      projData.status = document.getElementById('f-status').value;
+      projData.status    = document.getElementById('f-status').value;
       projData.startDate = document.getElementById('f-start').value;
-      projData.endDate = document.getElementById('f-end').value;
+      projData.endDate   = document.getElementById('f-end').value;
       projData.driveLink = document.getElementById('f-drive').value.trim();
-      
-      projData.progress = parseInt(document.getElementById('f-progress').value) || 0;
-      
+      projData.progress  = parseInt(document.getElementById('f-progress').value) || 0;
       projData.totalValue = parseFloat(document.getElementById('f-val').value) || 0;
-      // payments and other dynamic calculations are maintained separately
-      projData.estimatedHours = parseFloat(document.getElementById('f-hrs-est').value) || 0;
-      projData.estimatedWoodPt = parseFloat(document.getElementById('f-wood-est').value) || 0;
+      projData.estimatedWoodPt          = parseFloat(document.getElementById('f-wood-est').value) || 0;
+      projData.estimatedOtherMatCost    = parseFloat(document.getElementById('f-other-mat-est').value) || 0;
+      projData.estimatedHoursByCategory = getHoursCategoryValues();
+      projData.estimatedHours = Object.values(projData.estimatedHoursByCategory).reduce((s, v) => s + v, 0);
 
-      if(projId) {
+      if (projId) {
         window.DB.updateProject(projData);
-        alert('Proyecto actualizado correctamente.');
-        document.getElementById('h-title').textContent = `${projData.code} - ${projData.name}`;
+        document.getElementById('h-title').textContent = `${projData.code} — ${projData.name}`;
+        alert('Proyecto guardado.');
       } else {
         projData.id = crypto.randomUUID();
-        projId = projData.id;
+        projId      = projData.id;
         window.DB.addProject(projData);
-        alert('Proyecto creado exitosamente.');
-        document.getElementById('h-title').textContent = `${projData.code} - ${projData.name}`;
+        document.getElementById('h-title').textContent = `${projData.code} — ${projData.name}`;
         window.history.replaceState(null, '', `?id=${projId}`);
+        document.getElementById('btn-archive').style.display = 'inline-flex';
+        alert('Proyecto creado.');
       }
-      
-      renderTimeline(); // reload timeline to catch new code if changed
+
+      renderTimeline();
       renderQuotes();
+    }
+
+    // ── Init ──────────────────────────────────────────
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('id'))        projId = params.get('id');
+      else if (!params.get('new')) { goBack(); return; }
+
+      await window.DB.query('projects');
+
+      const d = window.DB.get();
+
+      // Populate contact select
+      const sel = document.getElementById('f-contact');
+      sel.innerHTML = '<option value="">— Sin contacto —</option>' +
+        (d.contacts || []).filter(c => !c._init).map(c =>
+          `<option value="${c.id}">${c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`
+        ).join('');
+      if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
+
+      if (projId) {
+        projData = (d.projects || []).find(p => p.id === projId) || null;
+      }
+
+      if (!projData) {
+        // New project
+        const max = (d.projects || []).filter(p => !p._init && p.code).reduce((m, p) => {
+          const n = parseInt(p.code.replace(/\D/g, ''), 10);
+          return (!isNaN(n) && n > m) ? n : m;
+        }, 0);
+        projData = {
+          code: String(max + 1).padStart(4, '0'),
+          name: '', status: 'Planificación',
+          startDate: new Date().toISOString().slice(0, 10),
+          progress: 0, milestones: [],
+          estimatedHours: 0, estimatedHoursByCategory: {},
+          estimatedWoodPt: 0, estimatedOtherMatCost: 0,
+          totalValue: 0, payments: 0
+        };
+        document.getElementById('h-title').textContent = 'Nuevo Proyecto';
+      } else {
+        document.getElementById('h-title').textContent = `${projData.code} — ${projData.name}`;
+        document.getElementById('btn-archive').style.display = 'inline-flex';
+      }
+
+      // Ensure default values
+      projData.milestones              = projData.milestones              || [];
+      projData.estimatedHoursByCategory = projData.estimatedHoursByCategory || {};
+      projData.estimatedHours          = projData.estimatedHours          || 0;
+      projData.estimatedWoodPt         = projData.estimatedWoodPt         || 0;
+      projData.estimatedOtherMatCost   = projData.estimatedOtherMatCost   || 0;
+      projData.totalValue              = projData.totalValue              || 0;
+      projData.payments                = projData.payments                || 0;
+      projData.progress                = projData.progress                || 0;
+
+      // Populate form fields
+      document.getElementById('f-code').value    = projData.code      || '';
+      document.getElementById('f-name').value    = projData.name      || '';
+      document.getElementById('f-contact').value = projData.contactId || '';
+      document.getElementById('f-status').value  = projData.status    || 'Planificación';
+      document.getElementById('f-start').value   = projData.startDate || '';
+      document.getElementById('f-end').value     = projData.endDate   || '';
+      document.getElementById('f-drive').value   = projData.driveLink || '';
+      document.getElementById('f-progress').value = projData.progress;
+      document.getElementById('p-val').textContent = projData.progress + '%';
+      document.getElementById('f-val').value      = projData.totalValue || '';
+      document.getElementById('f-wood-est').value = projData.estimatedWoodPt || '';
+      document.getElementById('f-other-mat-est').value = projData.estimatedOtherMatCost || '';
+
+      detectDriveLink();
+      renderMilestones();
+      renderHoursTable();
+      renderTimeline();
+      renderQuotes();
+      renderPayments(d);
+      renderActualMaterials(d);
     }
 
     init();
