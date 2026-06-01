@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventario General — Huayapam ERP</title>
+<title>Inventario General — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -248,7 +248,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
   function renderTable() {
     const tbody = document.getElementById('inv-body');
-    const filteredInv = STATE_INVENTORY.filter(i => i.category !== 'madera');
+    const filteredInv = STATE_INVENTORY.filter(i => !i.category || i.category.toLowerCase() !== 'madera');
     tbody.innerHTML = filteredInv.map((i, idx) => {
       let pillClass = 'pill-ok';
       if (i.stock === 0) pillClass = 'pill-out';
@@ -265,7 +265,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           <td>${i.category}</td>
           <td><span class="pill ${pillClass}">${i.stock}</span> <span class="td-hint">Mín: ${i.min}</span></td>
           <td>${i.lastPurchaseDate || '-'}</td>
-          <td>$${i.cost.toFixed(2)}</td>
+          <td>$${(i.cost || 0).toFixed(2)}</td>
           <td>${assignedBadge}</td>
           <td>${i.location || '-'}</td>
         </tr>

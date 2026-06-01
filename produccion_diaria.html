@@ -251,7 +251,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <!-- ── Header ── -->
 <div class="hdr">
   <div class="hdr-left">
-    <div class="hdr-brand">Carpintería Huayapam · Producción Diaria</div>
+    <div class="hdr-brand">Carpintería Huayapam · Registro del Día</div>
     <div class="hdr-date-row">
       <input type="date" class="date-input" id="fecha" onchange="onDateChange()">
       <span class="dia-label" id="dia-label"></span>
@@ -374,7 +374,8 @@ function loadDayFromDB(dateStr) {
   const db   = window.DB.get();
   // Production records: attendance with date field
   const recs  = (db.attendance || []).filter(a => a.date === dateStr && !a._init && a.workerId && a.status);
-  const cerrado = recs.length > 0;
+  // Día cerrado SOLO si algún registro tiene el flag explícito diaCerrado:true
+  const cerrado = recs.some(a => a.diaCerrado === true);
 
   const data = {};
   WORKERS.forEach(w => {
@@ -430,10 +431,10 @@ function buildCalendar() {
     const isWknd   = i < 2; // Sat + Sun
     const isActive = dateStr === currentDate;
 
-    // Cerrado: state in memory OR records exist in DB
+    // Cerrado: state en memoria OR flag diaCerrado:true en algún registro guardado
     let cerrado = STATE[dateStr]?.cerrado;
-    if (!cerrado && db.attendance) {
-      cerrado = (db.attendance || []).some(a => a.date === dateStr && !a._init && a.workerId && a.status);
+    if (!cerrado) {
+      cerrado = (db.attendance || []).some(a => a.date === dateStr && !a._init && a.diaCerrado === true);
     }
 
     const statusHtml = cerrado
@@ -976,6 +977,17 @@ function cerrarDia() {
     syncFromDOM(w.id);
     saveWorkerRecord(w.id);
   });
+
+  // Marcar todos los registros del día con diaCerrado:true (flag explícito)
+  const db = window.DB.get();
+  (db.attendance || [])
+    .filter(a => a.date === currentDate && !a._init && a.workerId && a.status)
+    .forEach(a => {
+      a.diaCerrado = true;
+      if (window.parent?.setDocumentInFirebase) {
+        window.parent.setDocumentInFirebase('attendance', a.id, a);
+      }
+    });
 
   STATE[currentDate] = { cerrado: true, data: getState(currentDate).data };
   diaCerrado = true;
