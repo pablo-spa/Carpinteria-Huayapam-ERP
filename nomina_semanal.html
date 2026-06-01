@@ -447,13 +447,9 @@ async function init() {
     });
 
     S[w.id] = {
-      // Indices for dias remain logically 0=Mon..6=Sun
-      dias: [
-        {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9},
-        {st:'trabajo',hrs:9}, {st:'trabajo',hrs:9},
-        {st:'libre',hrs:0},  // Sat (5)
-        {st:'libre',hrs:0},  // Sun (6)
-      ],
+      // Índices: 0=Lun, 1=Mar, 2=Mié, 3=Jue, 4=Vie, 5=Sáb(sem anterior), 6=Dom(sem anterior)
+      // Sin defaults: todos empiezan en 'libre' hasta que processRealCheckins los llene con datos reales
+      dias: Array.from({length:7}, () => ({st:'libre', hrs:0})),
       diasVacExtra: 0,
       manualExt2:   0,
       bono: 0,

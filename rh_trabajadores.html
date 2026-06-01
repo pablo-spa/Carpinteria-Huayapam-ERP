@@ -424,7 +424,12 @@
         const sDir = (w.baseSalary && hrsWeek > 0) ? ((w.baseSalary / hrsWeek) * 8) : 0;
         
         const tr = document.createElement('tr');
-        tr.onclick = () => openFicha(w);
+        // Clic en la fila → abre hoja de detalle del trabajador con calendario
+        tr.onclick = () => {
+          if (window.parent?.openModule) window.parent.openModule('trabajador_detalle.html?id=' + w.id, w.name || w.givenName || 'Trabajador');
+          else window.location.href = 'trabajador_detalle.html?id=' + w.id;
+        };
+        tr.style.cursor = 'pointer';
         if (w.activo === false) tr.style.opacity = '0.45';
 
         tr.innerHTML = `
