@@ -3,225 +3,615 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel de Compras</title>
+<title>Panel de Compras — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
   --surface0: #ccd0da; --surface1: #bcc0cc;
   --text: #4c4f69; --subtext: #8c8fa1;
-  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d;
+  --green: #40a02b; --green-bg: #e5f4e3; --green-text: #2d6e1e;
+  --blue: #1e66f5; --blue-bg: #e6eaf6; --blue-text: #1e66f5;
+  --amber: #df8e1d; --amber-bg: #fdf3e5; --amber-text: #8a5500;
+  --red: #d20f39; --red-bg: #fde8ed;
+  --radius: 8px; --radius-lg: 12px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
     --surface0: #313244; --surface1: #45475a;
     --text: #cdd6f4; --subtext: #a6adc8;
-    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af;
+    --green: #a6da95; --green-bg: rgba(166,218,149,0.15); --green-text: #a6da95;
+    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15); --blue-text: #8caaee;
+    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15); --amber-text: #f9e2af;
+    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15);
   }
 }
-body { background: var(--base); color: var(--text); font-family: 'Inter', sans-serif; padding: 24px; }
-.hdr { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
-.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
-.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
-.badge-ready { background: rgba(64,160,43,0.15); color: var(--green); }
-.btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity .15s; color: white; font-size: 12px; }
-.btn:hover { opacity: .8; }
-.btn-blue { background: var(--blue); }
-.btn-green { background: var(--green); }
-.item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; }
-.item-row input, .item-row select { padding: 6px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; width: 100%; }
-.item-row input:focus, .item-row select:focus { outline: none; border-color: var(--blue); }
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; padding: 20px; }
 
-.card.authorized { border: 2px solid var(--green); }
-.card.unauthorized { border: 2px solid var(--amber); }
-.btn-disabled { opacity: 0.5; pointer-events: none; background: var(--surface1) !important; color: var(--base) !important; }
-.btn-amber { background: var(--amber); color: var(--mantle); }
+.hdr { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hdr h2 { font-size: 18px; font-weight: 800; }
+.btn { padding: 8px 14px; border: none; border-radius: var(--radius); font-weight: 700; cursor: pointer; transition: opacity .15s; font-family: inherit; font-size: 13px; }
+.btn:hover { opacity: .85; }
+.btn-blue  { background: var(--blue);  color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-amber { background: var(--amber); color: #fff; }
+.btn-dark  { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
+.btn-red   { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; }
+.card.c-pending { border: 2px solid var(--amber); }
+.card.c-ready   { border: 2px solid var(--green); }
+.card.c-manual  { border: 2px solid var(--blue);  }
+.card-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 12px; }
+.card-folio { font-size: 14px; font-weight: 800; }
+.card-meta  { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+
+.pill { padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+.pill-amber  { background: var(--amber-bg);  color: var(--amber-text); }
+.pill-green  { background: var(--green-bg);  color: var(--green-text); }
+.pill-blue   { background: var(--blue-bg);   color: var(--blue-text); }
+.pill-gray   { background: var(--surface0);  color: var(--subtext); }
+
+/* Order items table */
+.items-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.items-tbl th { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); padding: 4px 6px; border-bottom: 2px solid var(--crust); text-align: left; white-space: nowrap; }
+.items-tbl td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: middle; }
+.items-tbl tr:last-child td { border-bottom: none; }
+.items-tbl input, .items-tbl select { padding: 6px 8px; border-radius: var(--radius); border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
+.items-tbl input:focus, .items-tbl select:focus { outline: none; border-color: var(--blue); }
+
+.card-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+
+/* ── New Order Form Panel ── */
+#new-order-panel {
+  background: var(--mantle); border: 2px solid var(--blue);
+  border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.f-field { display: flex; flex-direction: column; gap: 5px; }
+.f-field label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--subtext); letter-spacing: .04em; }
+.f-field input, .f-field select, .f-field textarea {
+  padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--crust);
+  background: var(--base); color: var(--text); font-family: inherit; font-size: 13px;
+}
+.f-field input:focus, .f-field select:focus, .f-field textarea:focus { outline: none; border-color: var(--blue); }
+
+.sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--subtext); letter-spacing: .05em; margin-bottom: 8px; }
+
+/* New item rows */
+.new-item-row { background: var(--base); border: 1px solid var(--crust); border-radius: var(--radius); padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+.new-item-top { display: grid; grid-template-columns: 2fr 2fr 80px 90px; gap: 8px; align-items: end; }
+.new-item-bot { display: grid; grid-template-columns: 1fr 1fr 30px; gap: 8px; align-items: end; }
+@media (max-width: 700px) {
+  .new-item-top { grid-template-columns: 1fr 1fr; }
+  .new-item-bot { grid-template-columns: 1fr 1fr 30px; }
+}
+.row-rm { background: none; border: none; cursor: pointer; color: var(--subtext); font-size: 16px; padding: 4px 6px; border-radius: 6px; }
+.row-rm:hover { background: var(--red-bg); color: var(--red); }
+
+.new-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  background: var(--amber-bg); color: var(--amber-text);
+  border: 1px solid var(--amber); border-radius: 5px; padding: 2px 6px;
+  margin-top: 3px;
+}
+
+.add-row-btn { cursor: pointer; background: var(--base); border: 1.5px dashed var(--crust); border-radius: var(--radius); color: var(--subtext); font-size: 13px; font-weight: 600; padding: 9px 14px; font-family: inherit; width: 100%; text-align: left; transition: .15s; margin-bottom: 12px; }
+.add-row-btn:hover { border-color: var(--blue); color: var(--blue-text); background: var(--blue-bg); }
+
+.pending-notice { background: var(--amber-bg); border: 1px solid var(--amber); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; font-weight: 600; color: var(--amber-text); margin-top: 10px; }
 </style>
 </head>
 <body>
+
 <div class="hdr">
-  <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
-    <h2>Panel de Gestión de Compras</h2>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button onclick="if(window.parent?.openModule) window.parent.openModule('almacen_hub.html','Portal Almacén'); else window.history.back();" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <h2>Panel de Compras</h2>
   </div>
-  <button class="btn" style="background:var(--surface0); color:var(--text);" onclick="crearOrden()">+ Nueva Orden Manual</button>
+  <button class="btn btn-blue" onclick="showNewOrderForm()">+ Nueva Orden</button>
 </div>
 
-<div id="orders-list">
-  <!-- Dynamic orders go here -->
+<!-- ── Formulario Nueva Orden ── -->
+<div id="new-order-panel" style="display:none;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <div style="font-size:16px; font-weight:800;">Nueva Orden de Compra</div>
+    <button class="btn btn-dark" onclick="hideNewOrderForm()">✕ Cancelar</button>
+  </div>
+
+  <div class="form-grid">
+    <div class="f-field">
+      <label>Proyecto</label>
+      <select id="no-proyecto">
+        <option value="">— Stock General / Sin proyecto —</option>
+      </select>
+    </div>
+    <div class="f-field">
+      <label>Notas</label>
+      <input type="text" id="no-notas" placeholder="Observaciones opcionales…">
+    </div>
+  </div>
+
+  <div class="sec-lbl">Renglones a comprar</div>
+
+  <div id="no-items-list"></div>
+
+  <button class="add-row-btn" onclick="addNewItemRow()">+ Agregar renglón</button>
+
+  <div id="no-pending-notice" class="pending-notice" style="display:none;">
+    ⚠ Esta orden incluye <span id="no-pending-count">0</span> concepto(s) nuevo(s) y/o proveedor(es) nuevos que aún no están en el catálogo.
+    Se agregarán automáticamente al catálogo cuando autorices la compra.
+  </div>
+
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px; padding-top:14px; border-top:1px solid var(--crust);">
+    <button class="btn btn-dark" onclick="hideNewOrderForm()">Cancelar</button>
+    <button class="btn btn-blue" onclick="submitNewOrder()">Guardar Orden</button>
+  </div>
 </div>
 
+<!-- ── Lista de Órdenes ── -->
+<div id="orders-list"></div>
+
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
-async function init() {
-  // Load bank accounts from DB
-  const rawAcc = window.DB.get().bank_accounts || [];
-  const ACCOUNTS = rawAcc[0]?.list || rawAcc.filter(x => typeof x === 'string');
-  window._ACCOUNTS = ACCOUNTS.length ? ACCOUNTS : ['CAJA (Efectivo)', 'CHU (Banco)', 'SMTP (Banco)', 'SATP (Operativa)'];
+let INV          = [];   // inventory items
+let SUPPLIERS    = [];   // contacts con tipo='proveedor'
+let UNITS        = [];
+let ACCOUNTS     = [];
+let PROJECTS     = [];
+let newRowCount  = 0;
 
-  const d = await window.DB.query("purchase_orders");
-  const fallback = window.DB.get().orders || [];
-  let orders = d && d.length > 0 ? d : fallback;
-  
-  const container = document.getElementById('orders-list');
-  container.innerHTML = '';
-  
-  // Show orders that need purchase action (Confirmado)
-  const toBuy = orders.filter(o => o.status === 'Confirmado' || o.status === 'Pedido');
-  
-  if (toBuy.length === 0) {
-    container.innerHTML = '<div style="color:var(--subtext); text-align:center; padding: 40px;">No hay pedidos pendientes de comprar.</div>';
+// ── Init ──────────────────────────────────────────────────────
+async function init() {
+  await window.DB.query('purchase_orders');
+
+  const db = window.DB.get();
+  INV       = (db.inventory     || []).filter(i => i.code && (i.name||i.nombre) && !i._init);
+  SUPPLIERS = (db.contacts      || []).filter(c => c.tipo === 'proveedor' && !c._init && (c.name||c.nombre));
+  UNITS     = (db.concept_units || [])[0]?.list || ['pza','caja','mt','mt2','lt','kg','gln','rollo','par','juego','bolsa'];
+  ACCOUNTS  = (db.bank_accounts || [])[0]?.list || ['CAJA (Efectivo)','CHU (Banco)','SMTP (Banco)'];
+  PROJECTS  = (db.projects      || []).filter(p => !p._init && !p.archivado && !p.archived && (p.codigo||p.code));
+
+  // Populate project select in new order form
+  const pSel = document.getElementById('no-proyecto');
+  PROJECTS.forEach(p => {
+    const o = document.createElement('option');
+    const cod = p.codigo||p.code; const nom = p.nombre||p.name;
+    o.value = cod; o.textContent = `${cod} — ${nom}`;
+    pSel.appendChild(o);
+  });
+
+  renderOrders();
+}
+
+// ── Concept select options ─────────────────────────────────────
+function buildConceptOpts(selectedCode) {
+  return `<option value="">— Buscar concepto —</option>` +
+    INV.map(i => {
+      const nom = i.name || i.nombre || i.code;
+      return `<option value="${i.code}" data-unit="${i.unit||'pza'}" ${i.code===selectedCode?'selected':''}>${i.code} — ${nom}</option>`;
+    }).join('') +
+    `<option value="_new" style="font-weight:700;color:var(--blue);">✚ Concepto nuevo…</option>`;
+}
+
+function buildSupplierOpts(selectedId) {
+  return `<option value="">— Seleccionar proveedor —</option>` +
+    SUPPLIERS.map(s => {
+      const nom = s.nombre||s.name;
+      return `<option value="${s.id}" ${s.id===selectedId?'selected':''}>${nom}</option>`;
+    }).join('') +
+    `<option value="_new" style="font-weight:700;color:var(--blue);">✚ Proveedor nuevo…</option>`;
+}
+
+function buildUnitOpts(selected) {
+  return UNITS.map(u => `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
+}
+
+function buildAccountOpts(selected) {
+  return `<option value="">— Cuenta —</option>` + ACCOUNTS.map(a => `<option value="${a}" ${a===selected?'selected':''}>${a}</option>`).join('');
+}
+
+// ── New order form ─────────────────────────────────────────────
+function showNewOrderForm() {
+  document.getElementById('no-items-list').innerHTML = '';
+  newRowCount = 0;
+  addNewItemRow();
+  document.getElementById('new-order-panel').style.display = 'block';
+  document.getElementById('new-order-panel').scrollIntoView({ behavior:'smooth' });
+}
+
+function hideNewOrderForm() {
+  document.getElementById('new-order-panel').style.display = 'none';
+}
+
+function addNewItemRow(data = {}) {
+  const rowId = `nr-${++newRowCount}`;
+  const cont  = document.getElementById('no-items-list');
+  const div   = document.createElement('div');
+  div.className = 'new-item-row';
+  div.id        = rowId;
+
+  const showCustomConcept  = data.conceptoPendiente ? 'block' : 'none';
+  const showCustomSupplier = data.proveedorPendiente ? 'block' : 'none';
+
+  div.innerHTML = `
+    <div class="new-item-top">
+      <!-- Concepto -->
+      <div class="f-field">
+        <label>Concepto</label>
+        <select class="ni-concepto" onchange="handleConceptChange('${rowId}',this)">
+          ${buildConceptOpts(data.code||'')}
+        </select>
+        <div class="ni-concepto-nuevo" style="display:${showCustomConcept}; margin-top:4px;">
+          <input type="text" class="ni-concepto-txt" placeholder="Nombre del concepto nuevo" value="${data.conceptoPendiente?.nombre||''}">
+          <span class="new-badge">✦ Nuevo — pendiente aprobación</span>
+        </div>
+      </div>
+      <!-- Proveedor -->
+      <div class="f-field">
+        <label>Proveedor</label>
+        <select class="ni-proveedor" onchange="handleSupplierChange('${rowId}',this)">
+          ${buildSupplierOpts(data.proveedorId||'')}
+        </select>
+        <div class="ni-proveedor-nuevo" style="display:${showCustomSupplier}; margin-top:4px;">
+          <input type="text" class="ni-proveedor-txt" placeholder="Nombre del proveedor nuevo" value="${data.proveedorPendiente?.nombre||''}">
+          <span class="new-badge">✦ Nuevo — pendiente aprobación</span>
+        </div>
+      </div>
+      <!-- Cantidad -->
+      <div class="f-field">
+        <label>Cantidad</label>
+        <input type="number" class="ni-qty" value="${data.qty||1}" min="0.01" step="any" style="text-align:center;">
+      </div>
+      <!-- Unidad -->
+      <div class="f-field">
+        <label>Unidad</label>
+        <select class="ni-unit">${buildUnitOpts(data.unit||'pza')}</select>
+      </div>
+    </div>
+    <div class="new-item-bot">
+      <!-- Precio -->
+      <div class="f-field">
+        <label>Precio Unitario ($)</label>
+        <input type="number" class="ni-price" value="${data.price||''}" min="0" step="any" placeholder="0.00">
+      </div>
+      <!-- Cuenta -->
+      <div class="f-field">
+        <label>Cuenta</label>
+        <select class="ni-account">${buildAccountOpts(data.account||'')}</select>
+      </div>
+      <!-- Remove -->
+      <div style="display:flex; align-items:flex-end; padding-bottom:2px;">
+        <button class="row-rm" onclick="document.getElementById('${rowId}').remove(); updPendingNotice()">✕</button>
+      </div>
+    </div>
+  `;
+  cont.appendChild(div);
+  updPendingNotice();
+}
+
+function handleConceptChange(rowId, sel) {
+  const row      = document.getElementById(rowId);
+  const nuevoDiv = row.querySelector('.ni-concepto-nuevo');
+  const unitSel  = row.querySelector('.ni-unit');
+  if (sel.value === '_new') {
+    sel.value = '';
+    nuevoDiv.style.display = 'block';
+    row.querySelector('.ni-concepto-txt').focus();
+  } else if (sel.value) {
+    nuevoDiv.style.display = 'none';
+    const opt = sel.options[sel.selectedIndex];
+    if (opt.dataset.unit) unitSel.value = opt.dataset.unit;
   } else {
-    toBuy.forEach(o => {
-      const itemsHtml = (o.items || []).map(i => {
-        return `
-        <div class="item-row">
-          <div>${i.qty}x ${i.name} <span style="color:var(--subtext)">(${i.unit})</span></div>
-          <div><input type="text" value="${o.provider || ''}" placeholder="Proveedor..."></div>
-          <div><input type="number" class="val-price" placeholder="$ 0.00" value="${i.price || ''}"></div>
-          <div>
-            <select class="val-acc">
-              <option value="">-- Cuenta --</option>
-              ${(window._ACCOUNTS||[]).map(a=>`<option value="${a}">${a}</option>`).join('')}
-            </select>
-          </div>
-        </div>`;
-      }).join('');
-      
-      const card = document.createElement('div');
-      card.className = 'card authorized';
-      card.id = o.id;
-      card.innerHTML = `
-        <div class="card-title">
-          <span>Pedido: ${o.folio || 'Sin Folio'} (${o.project || 'Stock General'})</span>
-          <span class="badge ${o.status==='Confirmado'?'badge-ready':''}" style="${o.status!=='Confirmado'?'background:var(--surface0); color:var(--subtext)':''}">${o.status}</span>
-        </div>
-        <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Solicitante: ${o.requester || '-'}</div>
-        
-        <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
-          <div>Item / Cantidad</div>
-          <div>Proveedor</div>
-          <div>Precio Unitario</div>
-          <div>Cuenta</div>
-        </div>
-        
-        ${itemsHtml}
-        
-        <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-          <button class="btn btn-amber" onclick="alert('Precios guardados.')">💾 Guardar Precios</button>
-          <button class="btn btn-blue" onclick="act('${o.id}', 'Comprado')">1. Marcar como Comprado</button>
-          <button class="btn btn-green" onclick="act('${o.id}', 'Recibido')">2. Marcar Comprado y Recibido</button>
-        </div>
-      `;
-      container.appendChild(card);
-    });
+    nuevoDiv.style.display = 'none';
   }
+  updPendingNotice();
+}
+
+function handleSupplierChange(rowId, sel) {
+  const row      = document.getElementById(rowId);
+  const nuevoDiv = row.querySelector('.ni-proveedor-nuevo');
+  if (sel.value === '_new') {
+    sel.value = '';
+    nuevoDiv.style.display = 'block';
+    row.querySelector('.ni-proveedor-txt').focus();
+  } else {
+    nuevoDiv.style.display = 'none';
+  }
+  updPendingNotice();
+}
+
+function updPendingNotice() {
+  let pendingCount = 0;
+  document.querySelectorAll('#no-items-list .new-item-row').forEach(row => {
+    if (row.querySelector('.ni-concepto-nuevo')?.style.display  !== 'none') pendingCount++;
+    if (row.querySelector('.ni-proveedor-nuevo')?.style.display !== 'none') pendingCount++;
+  });
+  const notice = document.getElementById('no-pending-notice');
+  document.getElementById('no-pending-count').textContent = pendingCount;
+  notice.style.display = pendingCount > 0 ? 'block' : 'none';
+}
+
+function collectItems() {
+  const items = [];
+  document.querySelectorAll('#no-items-list .new-item-row').forEach(row => {
+    const concSel   = row.querySelector('.ni-concepto');
+    const concTxt   = row.querySelector('.ni-concepto-txt');
+    const concNuevo = row.querySelector('.ni-concepto-nuevo')?.style.display !== 'none';
+    const provSel   = row.querySelector('.ni-proveedor');
+    const provTxt   = row.querySelector('.ni-proveedor-txt');
+    const provNuevo = row.querySelector('.ni-proveedor-nuevo')?.style.display !== 'none';
+    const qty       = parseFloat(row.querySelector('.ni-qty')?.value) || 0;
+    const unit      = row.querySelector('.ni-unit')?.value || 'pza';
+    const price     = parseFloat(row.querySelector('.ni-price')?.value) || 0;
+    const account   = row.querySelector('.ni-account')?.value || '';
+
+    if (qty <= 0) return;
+
+    const item = { qty, unit, price, account };
+
+    if (concNuevo) {
+      const nombre = concTxt?.value.trim();
+      if (!nombre) return;
+      item.code             = '';
+      item.name             = nombre;
+      item.conceptoPendiente = { nombre, unidad: unit };
+    } else {
+      item.code = concSel?.value || '';
+      const inv = INV.find(i => i.code === item.code);
+      item.name = inv ? (inv.name || inv.nombre) : (concSel?.options[concSel.selectedIndex]?.text || item.code);
+      if (!item.code && !item.name) return;
+    }
+
+    if (provNuevo) {
+      const nombre = provTxt?.value.trim();
+      item.proveedorId       = '';
+      item.proveedorNombre   = nombre || '';
+      if (nombre) item.proveedorPendiente = { nombre };
+    } else {
+      item.proveedorId     = provSel?.value || '';
+      const sup = SUPPLIERS.find(s => s.id === item.proveedorId);
+      item.proveedorNombre = sup ? (sup.nombre || sup.name) : '';
+    }
+
+    items.push(item);
+  });
+  return items;
+}
+
+async function submitNewOrder() {
+  const items = collectItems();
+  if (!items.length) { alert('Agrega al menos un renglón con concepto y cantidad.'); return; }
+
+  const now   = new Date();
+  const folio = 'ORD-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') +
+                String(now.getDate()).padStart(2,'0') + '-' + String(now.getTime()).slice(-4);
+
+  const order = {
+    id:         crypto.randomUUID(),
+    folio,
+    date:       now.toISOString().slice(0,10),
+    status:     'Pedido',
+    project:    document.getElementById('no-proyecto').value,
+    requester:  'Compras',
+    notes:      document.getElementById('no-notas').value.trim(),
+    items,
+    manual:     true,
+    createdAt:  now.toISOString()
+  };
+
+  if (window.parent?.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('purchase_orders', order.id, order);
+    if (!window.parent.DB_STATE.purchase_orders) window.parent.DB_STATE.purchase_orders = [];
+    window.parent.DB_STATE.purchase_orders.unshift(order);
+  }
+
+  hideNewOrderForm();
+  renderOrders();
+  showToast(`✓ Orden ${folio} guardada`);
+}
+
+// ── Render existing orders ─────────────────────────────────────
+function renderOrders() {
+  const db     = window.DB.get();
+  const orders = (db.purchase_orders || db.orders || [])
+    .filter(o => o.status === 'Confirmado' || o.status === 'Pedido')
+    .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
+
+  const cont = document.getElementById('orders-list');
+  if (!orders.length) {
+    cont.innerHTML = '<div style="color:var(--subtext); text-align:center; padding:48px; background:var(--mantle); border-radius:12px; border:1px solid var(--crust);">No hay órdenes pendientes de compra.</div>';
+    return;
+  }
+  cont.innerHTML = '';
+  orders.forEach(o => {
+    const isReady  = o.status === 'Confirmado';
+    const isManual = o.manual === true;
+    const card     = document.createElement('div');
+    card.id        = 'ord-' + o.id;
+    card.className = `card ${isManual ? 'c-manual' : isReady ? 'c-ready' : 'c-pending'}`;
+
+    const pillCls  = isManual ? 'pill-blue' : isReady ? 'pill-green' : 'pill-amber';
+    const pillTxt  = isManual ? 'Manual' : o.status;
+
+    // Pending items warning
+    const hasPending = o.items?.some(i => i.conceptoPendiente || i.proveedorPendiente);
+    const pendingHtml = hasPending
+      ? `<div class="pending-notice" style="margin-bottom:10px;">⚠ Esta orden tiene conceptos o proveedores nuevos que se confirmarán al autorizar la compra.</div>`
+      : '';
+
+    // Build items table
+    const itemsHtml = (o.items||[]).map((item, i) => `
+      <tr>
+        <td>
+          <div style="font-weight:600;">${item.name||item.code||'—'}</div>
+          ${item.conceptoPendiente ? '<div class="new-badge" style="display:inline-flex;">✦ Concepto nuevo</div>' : ''}
+        </td>
+        <td style="text-align:center;">${item.qty} ${item.unit||''}</td>
+        <td>
+          ${item.proveedorPendiente
+            ? `<div style="font-size:12px; font-weight:600;">${item.proveedorNombre||'—'} <span class="new-badge">✦ Nuevo</span></div>`
+            : `<select class="prov-sel-${o.id}-${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
+                 ${buildSupplierOpts(item.proveedorId||'')}
+               </select>`
+          }
+        </td>
+        <td><input type="number" class="iprice" data-order="${o.id}" data-idx="${i}" value="${item.price||''}" placeholder="0.00" min="0" step="any" style="width:90px;text-align:right;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;"></td>
+        <td>
+          <select class="iaccount" data-order="${o.id}" data-idx="${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
+            ${buildAccountOpts(item.account||'')}
+          </select>
+        </td>
+      </tr>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="card-hdr">
+        <div>
+          <div class="card-folio">${o.folio||'Sin folio'} ${o.project ? '· '+o.project : ''}</div>
+          <div class="card-meta">${o.date||''} · Solicitante: ${o.requester||'—'} ${o.notes ? '· '+o.notes : ''}</div>
+        </div>
+        <span class="pill ${pillCls}">${pillTxt}</span>
+      </div>
+      ${pendingHtml}
+      <table class="items-tbl">
+        <thead><tr>
+          <th>Concepto</th><th>Cantidad</th><th style="min-width:140px;">Proveedor</th>
+          <th>$ Precio Unit.</th><th>Cuenta</th>
+        </tr></thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+      <div class="card-actions">
+        <button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
+        <button class="btn btn-blue"  onclick="act('${o.id}','Comprado')">✓ Marcar Comprado</button>
+        <button class="btn btn-green" onclick="act('${o.id}','Recibido')">✓✓ Comprado y Recibido</button>
+      </div>
+    `;
+    cont.appendChild(card);
+  });
+}
+
+// ── Save prices without authorizing ──────────────────────────
+async function guardarPrecios(ordId) {
+  const db    = window.DB.get();
+  const order = (db.purchase_orders||db.orders||[]).find(o => o.id === ordId);
+  if (!order) return;
+  readPricesFromCard(ordId, order);
+  if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
+  showToast('Precios guardados');
+}
+
+function readPricesFromCard(ordId, order) {
+  const card = document.getElementById('ord-'+ordId);
+  if (!card) return;
+  card.querySelectorAll('.iprice').forEach(inp => {
+    const idx = parseInt(inp.dataset.idx);
+    if (order.items[idx] !== undefined) order.items[idx].price = parseFloat(inp.value)||0;
+  });
+  card.querySelectorAll('.iaccount').forEach(sel => {
+    const idx = parseInt(sel.dataset.idx);
+    if (order.items[idx] !== undefined) order.items[idx].account = sel.value;
+  });
+  // Read supplier selects (for items without pending supplier)
+  (order.items||[]).forEach((item, i) => {
+    if (!item.proveedorPendiente) {
+      const sel = card.querySelector(`.prov-sel-${ordId}-${i}`);
+      if (sel) {
+        item.proveedorId     = sel.value;
+        const sup            = SUPPLIERS.find(s => s.id === sel.value);
+        item.proveedorNombre = sup ? (sup.nombre||sup.name) : '';
+      }
+    }
+  });
+}
+
+// ── Authorize purchase (and process pending items) ────────────
+async function act(ordId, newStatus) {
+  const card = document.getElementById('ord-'+ordId);
+  if (!card) return;
+
+  // Validate: need price and account on all items
+  const prices  = card.querySelectorAll('.iprice');
+  const missing = Array.from(prices).some(p => !p.value || parseFloat(p.value) <= 0);
+  if (missing) { alert('Ingresa el precio unitario en todos los renglones antes de autorizar.'); return; }
+
+  const db    = window.DB.get();
+  const order = (db.purchase_orders || db.orders || []).find(o => o.id === ordId);
+  if (!order) { alert('Orden no encontrada'); return; }
+
+  readPricesFromCard(ordId, order);
+  order.status      = newStatus;
+  order.fechaCompra = new Date().toISOString().slice(0,10);
+
+  // ── Process pending concepts → add to inventory ──────────────
+  const newConcepts  = [];
+  const newSuppliers = [];
+
+  (order.items||[]).forEach(item => {
+    if (item.conceptoPendiente) {
+      const newInvItem = {
+        id:       crypto.randomUUID(),
+        code:     'NCON-' + Date.now().toString().slice(-5),
+        name:     item.conceptoPendiente.nombre,
+        nombre:   item.conceptoPendiente.nombre,
+        unit:     item.conceptoPendiente.unidad || item.unit || 'pza',
+        unidad:   item.conceptoPendiente.unidad || item.unit || 'pza',
+        category: 'General',
+        stock:    0, min: 0, cost: item.price || 0
+      };
+      db.inventory.push(newInvItem);
+      if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('inventory', newInvItem.id, newInvItem);
+      item.code             = newInvItem.code;
+      newConcepts.push(newInvItem.name);
+      delete item.conceptoPendiente;
+    }
+
+    if (item.proveedorPendiente) {
+      const newSupplier = {
+        id:     crypto.randomUUID(),
+        name:   item.proveedorPendiente.nombre,
+        nombre: item.proveedorPendiente.nombre,
+        tipo:   'proveedor',
+        activo: true,
+        phone: '', email: '', address: ''
+      };
+      db.contacts.push(newSupplier);
+      if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('contacts', newSupplier.id, newSupplier);
+      item.proveedorId     = newSupplier.id;
+      item.proveedorNombre = newSupplier.nombre;
+      SUPPLIERS.push(newSupplier);
+      newSuppliers.push(newSupplier.nombre);
+      delete item.proveedorPendiente;
+    }
+  });
+
+  window.DB.save(db);
+  if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
+
+  let msg = `✓ Orden marcada como "${newStatus}"`;
+  if (newConcepts.length) msg += `\n→ ${newConcepts.length} concepto(s) agregado(s) al inventario: ${newConcepts.join(', ')}`;
+  if (newSuppliers.length) msg += `\n→ ${newSuppliers.length} proveedor(es) agregado(s) al CRM: ${newSuppliers.join(', ')}`;
+  alert(msg);
+
+  card.style.opacity = '0.4';
+  card.style.pointerEvents = 'none';
+  setTimeout(() => { card.style.display = 'none'; }, 400);
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
-function validarOpciones(el) {
-  let valido = true;
-  const prices = el.querySelectorAll('.val-price');
-  const accs = el.querySelectorAll('.val-acc');
-  prices.forEach(p => { if(!p.value.trim() || Number(p.value) <= 0) valido = false; });
-  accs.forEach(a => { if(!a.value) valido = false; });
-  return valido;
-}
-
-async function act(id, state) {
-  const el = document.getElementById(id);
-
-  if (!validarOpciones(el)) {
-    alert('Por favor llene el Precio Unitario y seleccione una Cuenta Operativa en todos los renglones.');
-    return;
-  }
-
-  const d = await window.DB.query('purchase_orders');
-  const order = d.find(o => o.id === id) || (window.DB.get().orders || []).find(o => o.id === id);
-  if (!order) { alert('Pedido no encontrado'); return; }
-
-  // Save prices from form
-  const prices = el.querySelectorAll('.val-price');
-  const accs   = el.querySelectorAll('.val-acc');
-  if (order.items) {
-    order.items.forEach((item, i) => {
-      item.price   = parseFloat(prices[i]?.value) || item.price || 0;
-      item.account = accs[i]?.value || item.account || '';
-    });
-  }
-
-  order.status = state;
-  order.fechaCompra = new Date().toISOString().slice(0, 10);
-
-  if (window.parent && window.parent.setDocumentInFirebase) {
-    await window.parent.setDocumentInFirebase('purchase_orders', id, order);
-    ['purchase_orders', 'orders'].forEach(col => {
-      if (window.parent.DB_STATE && window.parent.DB_STATE[col]) {
-        const idx = window.parent.DB_STATE[col].findIndex(o => o.id === id);
-        if (idx !== -1) window.parent.DB_STATE[col][idx] = order;
-      }
-    });
-  }
-
-  el.style.opacity = '0.5';
-  el.style.pointerEvents = 'none';
-  setTimeout(() => el.style.display = 'none', 300);
-}
-
-let newId = 100;
-function crearOrden() {
-  const container = document.getElementById('orders-list');
-  const id = 'comp' + (++newId);
-  
-  const html = `
-    <div class="card-title">
-      <span>Orden de Compra Libre</span>
-      <span class="badge" style="background:var(--surface0); color:var(--text);">Manual - Falta Autorización</span>
-    </div>
-    <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Generada directamente en Compras. Para proceder, pide a Administración que la autorice.</div>
-    
-    <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
-      <div>Item / Descripción</div>
-      <div>Proveedor</div>
-      <div>Precio Unitario</div>
-      <div>Cuenta</div>
-    </div>
-    
-    <div class="item-row">
-      <div><input type="text" placeholder="Ej. Lijas grano 120..."></div>
-      <div><input type="text" placeholder="Ej. Ferretería El Centro..."></div>
-      <div><input type="number" class="val-price" placeholder="$ 0.00"></div>
-      <div>
-        <select class="val-acc" id="manual-acc">
-          <option value="">-- Cuenta --</option>
-        </select>
-      </div>
-    </div>
-    
-    <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end;">
-      <button class="btn btn-amber" onclick="alert('Precios guardados. Administración ya puede verlos para autorizar.')">💾 Guardar Precios para Autorizar</button>
-      <button class="btn btn-blue btn-disabled" title="Pendiente de autorización" disabled>1. Marcar como Comprado</button>
-      <button class="btn btn-green btn-disabled" title="Pendiente de autorización" disabled>2. Marcar Comprado y Recibido</button>
-    </div>`;
-  
-  // Populate the manual account select after HTML is built
-  setTimeout(() => {
-    const s = document.getElementById('manual-acc');
-    if (s && window._ACCOUNTS) {
-      s.innerHTML = '<option value="">-- Cuenta --</option>' +
-        window._ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
-    }
-  }, 0);
-
-  const div = document.createElement('div');
-  div.className = "card unauthorized";
-  div.id = id;
-  div.innerHTML = html.trim();
-  container.insertBefore(div, container.firstChild);
-}
 </script>
 </body>
 </html>
