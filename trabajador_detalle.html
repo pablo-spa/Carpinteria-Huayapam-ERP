@@ -391,7 +391,7 @@ function getDayRecord(dateStr) {
   };
   const chk = (db.attendance_logs || []).filter(a =>
     a.fecha === dateStr && (a.trabajadorId || a.workerId) === workerId &&
-    a.tipo !== 'entrada' && a.tipo !== 'salida' && !a._init
+    (a.tipo === 'entrada' || !a.tipo) && !a._init
   );
   if (chk.length > 0) {
     const c = chk[0];
@@ -792,43 +792,20 @@ function dpGuardar() {
   DP.h2    = document.getElementById('dp-h2')?.value    || DP.h2;
   DP.notas = document.getElementById('dp-notas')?.value || '';
 
-  const record = {
-    fecha:        selectedDay,
-    trabajadorId: workerId,
-    estado:       DP.status,
-    retardoMin:   parseFloat(DP.retMin)  || 0,
-    horasNormal:  parseFloat(DP.h1)      || 0,
-    horasExtra:   parseFloat(DP.h15)     || 0,
-    horasDoble:   parseFloat(DP.h2)      || 0,
-    horasTotales: dpEquiv(),
-    proyectos:    DP.proyectos.filter(p => p.p || p.horas || p.descripcion),
-    notas:        DP.notas,
-    diaCerrado:   false
-  };
+  const saved = window.DB.saveJornada(workerId, selectedDay, {
+    estado:              DP.status,
+    retardoMin:          parseFloat(DP.retMin)  || 0,
+    horasNormal:         parseFloat(DP.h1)      || 0,
+    horasExtra:          parseFloat(DP.h15)     || 0,
+    horasDoble:          parseFloat(DP.h2)      || 0,
+    horasTotales:        dpEquiv(),
+    proyectos:           DP.proyectos.filter(p => p.p || p.horas || p.descripcion),
+    notas:               DP.notas,
+    editado_manualmente: true,
+    editado_por:         'perfil',
+  });
 
-  const db  = window.DB.get();
-  const idx = (db.attendance||[]).findIndex(a =>
-    (a.fecha||a.date) === selectedDay && (a.trabajadorId||a.workerId) === workerId && !a._init
-  );
-
-  if (idx >= 0 || DP.existingId) {
-    // Actualizar existente
-    record.id = DP.existingId || db.attendance[idx]?.id || crypto.randomUUID();
-    if (idx >= 0) {
-      Object.assign(db.attendance[idx], record);
-    } else {
-      db.attendance.push(record);
-    }
-    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('attendance', record.id, record);
-    // También actualizar attendance_logs
-    window.DB.addAttendance({ ...record, date: record.fecha, workerId: record.trabajadorId, status: record.estado, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
-  } else {
-    // Nuevo registro
-    record.id = crypto.randomUUID();
-    window.DB.addAttendance({ ...record, date: record.fecha, workerId: record.trabajadorId, status: record.estado, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
-  }
-
-  DP.existingId = record.id;
+  DP.existingId = saved.id;
   document.getElementById('dp-btn-borrar').style.display = '';
 
   // Actualizar SOLO la celda del calendario sin re-renderizar todo

@@ -376,6 +376,63 @@ window.DB = {
       saveDB(d);
     }
   },
+  saveJornada: (workerId, fecha, fields) => {
+    const d = getDB();
+    if (!d.attendance) d.attendance = [];
+    const existing = d.attendance.find(a =>
+      (a.fecha || a.date) === fecha &&
+      (a.trabajadorId || a.workerId) === workerId && !a._init
+    );
+    const record = {
+      ...(existing || {}),
+      ...fields,
+      id: existing ? existing.id : (fields.id || crypto.randomUUID()),
+      fecha,
+      date: fecha,
+      trabajadorId: workerId,
+      workerId,
+    };
+    if (existing) {
+      d.attendance[d.attendance.indexOf(existing)] = record;
+    } else {
+      d.attendance.push(record);
+    }
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('attendance', record.id, record);
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.attendance) window.parent.DB_STATE.attendance = [];
+      const li = window.parent.DB_STATE.attendance.findIndex(a => a.id === record.id);
+      if (li >= 0) window.parent.DB_STATE.attendance[li] = record;
+      else window.parent.DB_STATE.attendance.push(record);
+    }
+    // Sync attendance_logs
+    if (!d.attendance_logs) d.attendance_logs = [];
+    const al = {
+      id: record.id,
+      trabajadorId: workerId, workerId,
+      fecha,
+      estado: record.estado || record.status || '',
+      status: record.estado || record.status || '',
+      horasNormal:  record.horasNormal  || 0,
+      horasExtra:   record.horasExtra   || 0,
+      horasDoble:   record.horasDoble   || 0,
+      horasTotales: record.horasTotales || record.horasNormal || 0,
+      retardoMin:   record.retardoMin   || 0,
+      notas:        record.notas        || '',
+      editado_manualmente: record.editado_manualmente || false,
+      editado_por:         record.editado_por         || '',
+    };
+    const ali = d.attendance_logs.findIndex(x => x.id === al.id);
+    if (ali >= 0) d.attendance_logs[ali] = al;
+    else d.attendance_logs.push(al);
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('attendance_logs', al.id, al);
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.attendance_logs) window.parent.DB_STATE.attendance_logs = [];
+      const lli = window.parent.DB_STATE.attendance_logs.findIndex(x => x.id === al.id);
+      if (lli >= 0) window.parent.DB_STATE.attendance_logs[lli] = al;
+      else window.parent.DB_STATE.attendance_logs.push(al);
+    }
+    return record;
+  },
   addQuote: (quote) => {
     const d = getDB();
     if (!quote.id) quote.id = crypto.randomUUID();

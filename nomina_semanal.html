@@ -512,23 +512,27 @@ function processRealCheckins(off) {
     WORKERS.forEach(w => {
       dates.forEach((dateStr, i) => {
         // Prefer production record (has real hours) over checador
-        const prod = prodRecs.find(c => c.workerId === w.id && c.date === dateStr && !c._init && c.status);
+        const prod = prodRecs.find(c =>
+          (c.workerId === w.id || c.trabajadorId === w.id) &&
+          (c.date === dateStr  || c.fecha === dateStr) &&
+          !c._init && (c.estado || c.status)
+        );
         if (prod) {
-          const st = (( prod.estado || prod.status) || '').toLowerCase();
+          const st = ((prod.estado || prod.status) || '').toLowerCase();
           if (st === 'falta') {
             S[w.id].dias[i] = { st: 'falta', hrs: 0 };
-          } else if (st === 'vacaciones') {
-            S[w.id].dias[i] = { st: 'vacaciones', hrs: 0 };
+          } else if (st === 'vacaciones' || st === 'vac') {
+            S[w.id].dias[i] = { st: 'vac', hrs: 0 };
           } else {
-            // Use real hours: horasTotales from produccion_diaria, or fallback
             const hrs = prod.horasTotales != null ? prod.horasTotales
-                      : (prod.hours != null ? prod.hours : 9);
+                      : (prod.horasNormal != null ? prod.horasNormal
+                      : (prod.hours != null ? prod.hours : 9));
             S[w.id].dias[i] = { st: st || 'trabajo', hrs: parseFloat(hrs) || 9 };
           }
           return;
         }
         // Fallback: checador log
-        const chk = checRecs.filter(c => c.workerId === w.id && c.fecha === dateStr && (c.tipo === 'entrada' || !c.tipo));
+        const chk = checRecs.filter(c => (c.workerId === w.id || c.trabajadorId === w.id) && c.fecha === dateStr && (c.tipo === 'entrada' || !c.tipo));
         if (chk.length > 0) {
           const isFalta = chk.some(c => (c.status||'').toLowerCase().includes('falta'));
           if (isFalta) {
@@ -739,7 +743,7 @@ function renderDias(id){
         <td style="text-align:center">
           ${showHrs
             ?`<input type="number" class="hrs-input" value="${hrs||0}" min="0" max="24" step="0.5"
-                oninput="S['${id}'].dias[${i}].hrs=+this.value||0;refreshCard('${id}')" onclick="this.select()">
+                oninput="S['${id}'].dias[${i}].hrs=+this.value||0;refreshCard('${id}');saveJornadaNomina('${id}',${i})" onclick="this.select()">
               <div style="font-size:11px;text-align:center;color:var(--amber-text);margin-top:2px;">${rateLabel}</div>`
             :`<span style="color:var(--hint);font-size:18px;font-weight:800;">—</span>`}
         </td>
@@ -762,7 +766,7 @@ function renderDias(id){
         <td style="text-align:center">
           ${showHrs
             ?`<input type="number" class="hrs-input" value="${hrs||9}" min="0" max="24" step="0.5"
-                oninput="S['${id}'].dias[${i}].hrs=+this.value||0;refreshCard('${id}')" onclick="this.select()">`
+                oninput="S['${id}'].dias[${i}].hrs=+this.value||0;refreshCard('${id}');saveJornadaNomina('${id}',${i})" onclick="this.select()">`
             :`<span style="color:var(--hint);font-size:18px;font-weight:800;">—</span>`}
         </td>
         <td><div class="dia-extra">${hExtra}</div></td>
@@ -784,11 +788,27 @@ function renderDias(id){
   tbody.innerHTML=html;
 }
 
+function saveJornadaNomina(workerId, diaIdx) {
+  const fechaStr = dayDates(weekOffset)[diaIdx].toISOString().slice(0,10);
+  const d = S[workerId]?.dias[diaIdx];
+  if (!d || d.st === 'libre') return;
+  const estadoMap = { trabajo:'trabajo', falta:'falta', vac:'vacaciones', retardo:'retardo' };
+  window.DB.saveJornada(workerId, fechaStr, {
+    estado:              estadoMap[d.st] || d.st,
+    status:              estadoMap[d.st] || d.st,
+    horasNormal:         d.hrs || 0,
+    horasTotales:        d.hrs || 0,
+    editado_manualmente: true,
+    editado_por:         'nomina',
+  });
+}
+
 function setDia(id,i,st){
   S[id].dias[i].st=st;
   if(st!=='trabajo') S[id].dias[i].hrs=i<5?9:0;
   renderDias(id);
   refreshCard(id);
+  saveJornadaNomina(id,i);
 }
 
 function togDet(id){
