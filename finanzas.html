@@ -815,17 +815,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       if(p) { p.payments = (p.payments||0) + m.amount; window.DB.updateProject(p); }
     }
     
+    const saveToFirestore = (mov) => {
+      if (window.parent && window.parent.setDocumentInFirebase) {
+        window.parent.setDocumentInFirebase('accounting_movements', mov.id, mov);
+        window.parent.setDocumentInFirebase('accounting_movements_preview', mov.id, mov);
+      }
+    };
+
     if(id) {
        m.id = id;
        const idx = DBm.findIndex(x => x.id === id);
        const oldMov = DBm[idx];
-       DBm[idx] = m;
-       window.DB.updateMovement(m);
+       if (idx !== -1) DBm[idx] = m; else DBm.unshift(m);
+       saveToFirestore(m);
        updateAccountBalance(m, false, oldMov);
     } else {
        m.id = crypto.randomUUID();
-       DBm.push(m);
-       window.DB.addMovement(m);
+       DBm.unshift(m);
+       saveToFirestore(m);
        updateAccountBalance(m, true, null);
     }
 
