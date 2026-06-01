@@ -10,6 +10,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "seed": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node seed.cjs",
+    "seed:balances": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node seed-balances.cjs",
     "seed:preview": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node seed-movimientos-preview.cjs",
     "seed:movimientos:combine": "node seed-movimientos.cjs --combine",
     "seed:movimientos:import": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node seed-movimientos.cjs --import",
