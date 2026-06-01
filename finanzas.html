@@ -254,12 +254,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
             <option value="">— Cuenta destino —</option>
           </select>
         </div>
-        <div class="f-row" id="method-wrap">
-          <label class="f-lbl">Forma de Pago</label>
-          <select id="f-method" class="f-input">
-            <option value="">— Forma de pago —</option>
-          </select>
-        </div>
       </div>
 
       <div class="f-row" id="entity-wrap">
@@ -440,11 +434,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       document.getElementById('f-dest').innerHTML = accOpts;
     }
 
-    const rawMethodsSnap = await window.DB.query('payment_methods');
-    const methods = rawMethodsSnap[0]?.list || [];
-    if (methods.length) {
-      document.getElementById('f-method').innerHTML = methods.map(m => `<option value="${m}">${m}</option>`).join('');
-    }
 
     renderDynamicCards();
     initIntervalPicker();
@@ -584,7 +573,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
           </div>
           <div class="hide-mob">
              <div style="font-size:12px;color:var(--text);font-weight:600">${m.entity || '--'}</div>
-             ${m.method ? `<div style="font-size:10px;color:var(--subtext)">${m.method}</div>` : ''}
           </div>
           <div class="hide-mob" style="text-align:right;">${m.status==='confirmado'?'<span class="pill pill-green">Confirmado</span>':''}</div>
           <div class="m-amt ${amtColor}">${sign}${fmt(m.amount)}</div>
@@ -686,7 +674,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       document.getElementById('f-amount').value = m.amount;
       document.getElementById('f-acc').value = m.account;
       if(m.destAccount) document.getElementById('f-dest').value = m.destAccount;
-      document.getElementById('f-method').value = m.method || 'Transferencia Bancaria';
       document.getElementById('f-entity').value = m.entity || '';
       document.getElementById('f-concept').value = m.concept || '';
       document.getElementById('f-cat-input').value = m.category || '';
@@ -712,7 +699,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       document.getElementById('f-amount').value = '';
       document.getElementById('f-acc').value = 'CHU';
       document.getElementById('f-dest').value = 'CAJA';
-      document.getElementById('f-method').value = 'Transferencia Bancaria';
       document.getElementById('f-entity').value = '';
       document.getElementById('f-concept').value = '';
       document.getElementById('f-cat-input').value = '';
@@ -744,7 +730,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     btns.forEach(b => b.className = 'ts-btn');
 
     document.getElementById('dest-wrap').style.display = 'none';
-    document.getElementById('method-wrap').style.display = 'flex';
     document.getElementById('entity-wrap').style.display = 'flex';
     document.getElementById('proj-wrap').style.display = 'flex';
     document.getElementById('lbl-acc').textContent = 'Cuenta';
@@ -763,7 +748,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     } else {
       btns[2].classList.add('act', 't-tra');
       document.getElementById('dest-wrap').style.display = 'flex';
-      document.getElementById('method-wrap').style.display = 'none';
       document.getElementById('entity-wrap').style.display = 'none';
       document.getElementById('proj-wrap').style.display = 'none';
       document.getElementById('oc-wrap').style.display = 'none';
@@ -817,7 +801,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       m.destAccount = document.getElementById('f-dest').value;
       if(m.account === m.destAccount) { toast('Origen y destino deben ser distintas.', 'warn'); return; }
     } else {
-      m.method = document.getElementById('f-method').value;
       m.entity = document.getElementById('f-entity').value.trim();
     }
 
