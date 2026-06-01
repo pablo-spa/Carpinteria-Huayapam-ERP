@@ -430,11 +430,12 @@ async function init() {
   }));
 
   WORKERS.forEach(w => {
-     PRESTAMOS[w.id] = loans.filter(l => l.workerId === w.id).map(l => ({
-         desc: l.descripcion || 'Préstamo',
-         saldo: l.saldo || 0,
-         semanasPlan: l.semanasPlan || 1,
-         loanId: l.id
+     PRESTAMOS[w.id] = loans.filter(l => l.workerId === w.id || l.trabajadorId === w.id).map(l => ({
+         desc:        l.descripcion || 'Préstamo',
+         saldo:       l.saldo || 0,
+         semanasPlan: l.semanas_restantes || l.semanasPlan || 1,
+         cuota:       l.cuota_semanal || Math.ceil((l.saldo||0) / (l.semanas_restantes||l.semanasPlan||1)),
+         loanId:      l.id
      }));
   });
 
@@ -892,11 +893,64 @@ function toast(msg, type='ok') {
   setTimeout(() => el.remove(), 3000);
 }
 
+function registrar_pagos_prestamos(id) {
+  const lista = PRESTAMOS[id] || [];
+  if (!lista.length) return;
+
+  const { sat } = weekDates(weekOffset);
+  const semana  = sat.toISOString().slice(0, 10);
+  const hoy     = new Date().toISOString().slice(0, 10);
+  const db      = window.DB.get();
+
+  lista.forEach((p, i) => {
+    if (!S[id].prestAplic[i]) return;
+    const monto = S[id].prestMonto[i] || 0;
+
+    const prestamo = (db.worker_loans || []).find(l => l.id === p.loanId);
+    if (!prestamo) return;
+
+    if (!prestamo.pagos) prestamo.pagos = [];
+
+    // Si ya hay pago registrado esta semana, ajustar saldo
+    const idx_existente = prestamo.pagos.findIndex(pg => pg.semana === semana);
+    if (idx_existente >= 0) {
+      const monto_anterior = prestamo.pagos[idx_existente].monto;
+      prestamo.saldo = Math.max(0, (prestamo.saldo || 0) + monto_anterior - monto);
+      prestamo.pagos[idx_existente] = { id: prestamo.pagos[idx_existente].id, fecha: hoy, monto, semana };
+    } else {
+      prestamo.pagos.push({ id: crypto.randomUUID(), fecha: hoy, monto, semana });
+      prestamo.saldo = Math.max(0, (prestamo.saldo || 0) - monto);
+    }
+
+    // Ajustar plan según lo que realmente se pagó
+    const cuota = prestamo.cuota_semanal || Math.ceil((prestamo.monto_total || 0) / (prestamo.semanas_plan || 1));
+    if (monto === 0) {
+      // Semana saltada: agregar semana al final
+      prestamo.semanas_restantes = (prestamo.semanas_restantes || prestamo.semanas_plan || 1) + 1;
+    } else if (prestamo.saldo > 0) {
+      // Recalcular semanas restantes con base en saldo actual y cuota original
+      prestamo.semanas_restantes = Math.ceil(prestamo.saldo / cuota);
+    }
+
+    if (prestamo.saldo <= 0) {
+      prestamo.saldo = 0;
+      prestamo.estado = 'pagado';
+    }
+
+    // Actualizar estado local
+    PRESTAMOS[id][i].saldo       = prestamo.saldo;
+    PRESTAMOS[id][i].semanasPlan = prestamo.semanas_restantes || prestamo.semanas_plan;
+
+    window.DB.actualizar_prestamo(prestamo);
+  });
+}
+
 function guardarTrabajador(id){
   let count=0;
   for(let i=0;i<7;i++){
     if(S[id].dias[i].st!=='libre'){ saveJornadaNomina(id,i); count++; }
   }
+  registrar_pagos_prestamos(id);
   toast(`✓ ${count} día${count!==1?'s':''} guardado${count!==1?'s':''}`);
 }
 

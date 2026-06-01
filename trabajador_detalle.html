@@ -68,6 +68,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .stat-cell .val { font-size: 22px; font-weight: 800; margin-top: 2px; }
 .val-green { color: var(--green); } .val-red { color: var(--red); } .val-amber { color: var(--amber); }
 
+/* ── Préstamos ── */
+.loan-item { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+.loan-hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.loan-desc { font-weight: 700; font-size: 14px; }
+.loan-meta { font-size: 11px; color: var(--subtext); margin-top: 2px; }
+.loan-progress { height: 5px; background: var(--crust); border-radius: 3px; margin: 8px 0 4px; }
+.loan-progress-fill { height: 100%; background: var(--amber); border-radius: 3px; transition: width .3s; }
+.loan-pago-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid var(--crust); font-size: 11px; }
+.loan-pago-row:last-child { border-bottom: none; }
+.cell-loan { font-size: 8px; color: var(--amber-text); font-weight: 800; line-height: 1.2; }
+/* ── Modal ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--mantle); border-radius: 14px; padding: 20px; width: 320px; max-width: 90vw; display: flex; flex-direction: column; gap: 14px; }
+.modal-title { font-size: 16px; font-weight: 800; }
+.modal-field { display: flex; flex-direction: column; gap: 4px; }
+.modal-field label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--subtext); }
+.modal-field input { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-family: inherit; font-size: 14px; }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
 /* ── Edit worker form ── */
 .edit-section { display: none; flex-direction: column; gap: 10px; margin-top: 12px; }
 .edit-section.open { display: flex; }
@@ -256,6 +275,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     <div class="card">
       <div class="card-title">Últimas semanas</div>
       <div id="pay-weeks"></div>
+    </div>
+
+    <!-- Préstamos -->
+    <div class="card">
+      <div class="card-title">
+        💳 Préstamos
+        <button class="btn btn-amber" style="font-size:11px;padding:4px 10px;" onclick="abrir_modal_prestamo()">+ Nuevo</button>
+      </div>
+      <div id="loans-list"><div style="font-size:12px;color:var(--subtext);">Sin préstamos registrados.</div></div>
     </div>
 
   </div>
@@ -566,6 +594,7 @@ function renderCalendar() {
   const firstDow   = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth= new Date(calYear, calMonth+1, 0).getDate();
   const grid       = document.getElementById('cal-grid');
+  const fechas_pago = fechas_pago_prestamos();
   let html = '';
   for (let i=0; i<firstDow; i++) html += '<div class="cal-cell empty"></div>';
   for (let d=1; d<=daysInMonth; d++) {
@@ -578,7 +607,8 @@ function renderCalendar() {
     const sel    = ds===selectedDay;
     const cls    = ['cal-cell', cellClass(rec,isWknd), isToday?'today':'', isFut?'future':'', sel?'selected':''].filter(Boolean).join(' ');
     const clickAttr = `data-date="${ds}" onclick="selectDay('${ds}')"`;
-    html += `<div class="${cls}" ${clickAttr}><div class="cell-num">${d}</div>${buildCellContent(rec)}</div>`;
+    const pago_marker = fechas_pago.has(ds) ? '<div class="cell-loan">💳</div>' : '';
+    html += `<div class="${cls}" ${clickAttr}><div class="cell-num">${d}</div>${buildCellContent(rec)}${pago_marker}</div>`;
   }
   const total = firstDow+daysInMonth;
   const fill  = (7-(total%7))%7;
@@ -887,12 +917,146 @@ async function init() {
   const actDoc = (db.actividades_trabajo||[]).find(r=>r._id==='main'||r.list);
   ACTIVIDADES  = actDoc?.list || [];
 
+  PRESTAMOS_TRABAJADOR = await window.DB.query('worker_loans', { workerId }) || [];
+
   renderInfo();
   renderCalendar();
   renderPayWeeks();
+  render_prestamos();
+}
+
+// ── Préstamos ─────────────────────────────────────────────────
+let PRESTAMOS_TRABAJADOR = [];
+
+function fechas_pago_prestamos() {
+  const fechas = new Set();
+  PRESTAMOS_TRABAJADOR.filter(p => p.estado === 'activo').forEach(p => {
+    if (!p.fecha_inicio) return;
+    const inicio = new Date(p.fecha_inicio + 'T12:00:00');
+    const semanas = p.semanas_restantes || p.semanas_plan || 0;
+    for (let i = 0; i < semanas; i++) {
+      const d = new Date(inicio);
+      d.setDate(inicio.getDate() + i * 7);
+      fechas.add(d.toISOString().slice(0, 10));
+    }
+  });
+  return fechas;
+}
+
+function render_prestamos() {
+  const cont = document.getElementById('loans-list');
+  if (!cont) return;
+  if (!PRESTAMOS_TRABAJADOR.length) {
+    cont.innerHTML = '<div style="font-size:12px;color:var(--subtext);">Sin préstamos registrados.</div>';
+    return;
+  }
+  const activos = PRESTAMOS_TRABAJADOR.filter(p => p.estado !== 'pagado');
+  const pagados = PRESTAMOS_TRABAJADOR.filter(p => p.estado === 'pagado');
+  cont.innerHTML = [...activos, ...pagados].map(p => {
+    const cuota  = p.cuota_semanal || Math.ceil((p.monto_total||0) / (p.semanas_plan||1));
+    const pagado = (p.monto_total||0) - (p.saldo||0);
+    const pct    = p.monto_total > 0 ? Math.min(100, (pagado / p.monto_total) * 100).toFixed(0) : 0;
+    const semRes = p.semanas_restantes || p.semanas_plan || 0;
+    const pagosHtml = (p.pagos || []).slice(-6).reverse().map(pg =>
+      `<div class="loan-pago-row">
+        <span>${pg.fecha}</span>
+        <span style="font-weight:700;color:var(--${pg.monto>0?'green':'subtext'}-text);">${pg.monto>0?'$'+pg.monto.toLocaleString('es-MX'):'—'}</span>
+      </div>`
+    ).join('');
+    return `<div class="loan-item">
+      <div class="loan-hdr">
+        <div style="flex:1;min-width:0;">
+          <div class="loan-desc">${p.descripcion || 'Préstamo'}</div>
+          <div class="loan-meta">$${(p.monto_total||0).toLocaleString('es-MX')} total · $${cuota.toLocaleString('es-MX')}/sem · ${semRes} sem restantes</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:16px;font-weight:800;color:var(--${p.estado==='pagado'?'green':'amber'}-text);">$${(p.saldo||0).toLocaleString('es-MX')}</div>
+          <div class="loan-meta">${p.estado==='pagado'?'✓ Liquidado':'pendiente'}</div>
+        </div>
+      </div>
+      <div class="loan-progress"><div class="loan-progress-fill" style="width:${pct}%"></div></div>
+      ${pagosHtml ? `<div class="loan-pagos" style="margin-top:6px;">${pagosHtml}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function abrir_modal_prestamo() {
+  document.getElementById('modal-prestamo').classList.add('open');
+  document.getElementById('mp-desc').value    = '';
+  document.getElementById('mp-monto').value   = '';
+  document.getElementById('mp-semanas').value = '';
+  document.getElementById('mp-cuota').textContent = '—';
+}
+function cerrar_modal_prestamo() {
+  document.getElementById('modal-prestamo').classList.remove('open');
+}
+function calcular_cuota_prestamo() {
+  const m = parseFloat(document.getElementById('mp-monto').value)   || 0;
+  const s = parseInt(document.getElementById('mp-semanas').value)   || 0;
+  document.getElementById('mp-cuota').textContent = m && s ? '$' + Math.ceil(m/s).toLocaleString('es-MX') + '/sem' : '—';
+}
+
+async function guardar_prestamo() {
+  const descripcion = document.getElementById('mp-desc').value.trim();
+  const monto_total = parseFloat(document.getElementById('mp-monto').value) || 0;
+  const semanas_plan = parseInt(document.getElementById('mp-semanas').value) || 0;
+  if (!monto_total || !semanas_plan) { toast('Ingresa monto y número de semanas', 'warn'); return; }
+
+  const hoy = new Date();
+  const dias_para_viernes = (5 - hoy.getDay() + 7) % 7 || 7;
+  const primer_viernes = new Date(hoy);
+  primer_viernes.setDate(hoy.getDate() + dias_para_viernes);
+  const fecha_inicio = primer_viernes.toISOString().slice(0, 10);
+
+  const prestamo = {
+    id:                crypto.randomUUID(),
+    trabajadorId:      workerId,
+    workerId:          workerId,
+    descripcion:       descripcion || 'Préstamo',
+    monto_total,
+    saldo:             monto_total,
+    semanas_plan,
+    semanas_restantes: semanas_plan,
+    cuota_semanal:     Math.ceil(monto_total / semanas_plan),
+    fecha_inicio,
+    fecha_creacion:    HOY,
+    estado:            'activo',
+    pagos:             [],
+  };
+
+  window.DB.agregar_prestamo(prestamo);
+  PRESTAMOS_TRABAJADOR.push(prestamo);
+  cerrar_modal_prestamo();
+  render_prestamos();
+  renderCalendar();
+  toast('✓ Préstamo registrado');
 }
 
 init();
 </script>
+
+<!-- Modal: Nuevo Préstamo -->
+<div class="modal-overlay" id="modal-prestamo" onclick="if(event.target===this)cerrar_modal_prestamo()">
+  <div class="modal">
+    <div class="modal-title">Nuevo Préstamo</div>
+    <div class="modal-field">
+      <label>Descripción</label>
+      <input type="text" id="mp-desc" placeholder="Ej: Adelanto para renta">
+    </div>
+    <div class="modal-field">
+      <label>Monto total ($)</label>
+      <input type="number" id="mp-monto" placeholder="0" min="1" oninput="calcular_cuota_prestamo()">
+    </div>
+    <div class="modal-field">
+      <label>Semanas para pagar</label>
+      <input type="number" id="mp-semanas" placeholder="4" min="1" oninput="calcular_cuota_prestamo()">
+    </div>
+    <div style="font-size:13px;color:var(--subtext);padding:2px 0;">Cuota semanal: <strong id="mp-cuota">—</strong></div>
+    <div class="modal-btns">
+      <button class="btn btn-dark" onclick="cerrar_modal_prestamo()">Cancelar</button>
+      <button class="btn btn-amber" onclick="guardar_prestamo()">Guardar préstamo</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

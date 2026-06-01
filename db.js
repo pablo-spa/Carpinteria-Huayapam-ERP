@@ -376,6 +376,31 @@ window.DB = {
       saveDB(d);
     }
   },
+  agregar_prestamo: (prestamo) => {
+    const d = getDB();
+    if (!prestamo.id) prestamo.id = crypto.randomUUID();
+    if (!d.worker_loans) d.worker_loans = [];
+    d.worker_loans.push(prestamo);
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('worker_loans', prestamo.id, prestamo);
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.worker_loans) window.parent.DB_STATE.worker_loans = [];
+      window.parent.DB_STATE.worker_loans.push(prestamo);
+    }
+  },
+  actualizar_prestamo: (prestamo) => {
+    const d = getDB();
+    if (!d.worker_loans) d.worker_loans = [];
+    const idx = d.worker_loans.findIndex(l => l.id === prestamo.id);
+    if (idx >= 0) d.worker_loans[idx] = prestamo;
+    else d.worker_loans.push(prestamo);
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('worker_loans', prestamo.id, prestamo);
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.worker_loans) window.parent.DB_STATE.worker_loans = [];
+      const li = window.parent.DB_STATE.worker_loans.findIndex(l => l.id === prestamo.id);
+      if (li >= 0) window.parent.DB_STATE.worker_loans[li] = prestamo;
+      else window.parent.DB_STATE.worker_loans.push(prestamo);
+    }
+  },
   saveJornada: (workerId, fecha, fields) => {
     const d = getDB();
     if (!d.attendance) d.attendance = [];
