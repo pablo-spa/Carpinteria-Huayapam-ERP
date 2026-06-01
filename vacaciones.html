@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vacaciones — Carpintería Huayapam</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f0f0ee; --surface: #ffffff;
+  --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1a1a; --muted: #6b6b6b; --hint: #bbb;
+  --green: #1D9E75; --green-bg: #E1F5EE; --green-text: #0F6E56;
+  --amber: #C97B00; --amber-bg: #FEF3DA; --amber-text: #7A4A00;
+  --red: #B33030; --red-bg: #FDEAEA; --red-text: #7A1010;
+  --blue: #185FA5; --blue-bg: #E6F1FB; --blue-text: #185FA5;
+  --purple: #6B3FA0; --purple-bg: #F0EBF9; --purple-text: #4A2070;
+  --radius: 10px; --radius-lg: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a; --surface: #222228;
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.14);
+    --text: #e8e8e4; --muted: #999; --hint: #555;
+    --green: #27c98e; --green-bg: #0b2820; --green-text: #3de0a5;
+    --amber: #f0a940; --amber-bg: #2a1e04; --amber-text: #f0a940;
+    --red: #e06060; --red-bg: #2a0a0a; --red-text: #e06060;
+    --blue: #5ba3f5; --blue-bg: #0a1f38; --blue-text: #7dbcff;
+    --purple: #b07ef5; --purple-bg: #1e1030; --purple-text: #c9a0ff;
+  }
+}
+
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; min-height: 100vh; }
+
+/* Header */
+.header { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border-strong); padding: 12px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.header-title { font-size: 18px; font-weight: 900; letter-spacing: -0.3px; }
+.header-sub { font-size: 12px; color: var(--muted); }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+/* Botones */
+.btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: opacity .15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { opacity: 0.85; }
+.btn:active { opacity: 0.7; }
+.btn-blue   { background: var(--blue); color: #fff; }
+.btn-green  { background: var(--green); color: #fff; }
+.btn-ghost  { background: transparent; color: var(--muted); border: 1.5px solid var(--border-strong); }
+.btn-red    { background: var(--red-bg); color: var(--red-text); border: 1px solid var(--red); }
+.btn-sm     { padding: 5px 10px; font-size: 12px; }
+
+/* Summary cards */
+.summary-row { display: flex; gap: 12px; padding: 16px 20px; flex-wrap: wrap; }
+.scard { background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 12px 16px; min-width: 140px; flex: 1; }
+.scard .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 4px; }
+.scard .val { font-size: 26px; font-weight: 900; line-height: 1; }
+.scard.green .val { color: var(--green); }
+.scard.amber .val { color: var(--amber); }
+.scard.red   .val { color: var(--red); }
+.scard.blue  .val { color: var(--blue); }
+
+/* Tabs */
+.tabs-bar { display: flex; gap: 6px; padding: 0 20px 12px; overflow-x: auto; }
+.tab { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1.5px solid var(--border-strong); background: var(--bg); color: var(--muted); transition: all .15s; white-space: nowrap; }
+.tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.tab:hover:not(.active) { border-color: var(--blue); color: var(--blue); }
+
+/* Tabla */
+.table-wrap { padding: 0 20px 40px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-strong); font-size: 13px; }
+thead tr { background: var(--bg); }
+th { padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border-strong); white-space: nowrap; cursor: pointer; user-select: none; }
+th:hover { color: var(--text); }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: rgba(0,0,0,0.02); }
+@media (prefers-color-scheme: dark) { tbody tr:hover { background: rgba(255,255,255,0.025); } }
+tbody tr { cursor: pointer; transition: background .1s; }
+
+/* Badges */
+.badge { display: inline-block; padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 800; }
+.badge-green  { background: var(--green-bg);  color: var(--green-text); }
+.badge-amber  { background: var(--amber-bg);  color: var(--amber-text); }
+.badge-red    { background: var(--red-bg);    color: var(--red-text); }
+.badge-blue   { background: var(--blue-bg);   color: var(--blue-text); }
+.badge-purple { background: var(--purple-bg); color: var(--purple-text); }
+.badge-muted  { background: var(--border-strong); color: var(--muted); }
+
+/* Balance visual */
+.balance-bar { height: 5px; border-radius: 3px; background: var(--border-strong); margin-top: 4px; overflow: hidden; }
+.balance-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+
+/* Drawer de detalle */
+.drawer-row td { padding: 0; border-bottom: 1px solid var(--border-strong); }
+.drawer-inner { padding: 16px 20px 20px; background: var(--bg); display: none; }
+.drawer-inner.open { display: block; }
+.drawer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.dinfo { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; padding: 10px 14px; }
+.dinfo .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.dinfo .val { font-size: 15px; font-weight: 800; }
+
+.log-table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border-strong); overflow: hidden; }
+.log-table th { padding: 7px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border-strong); background: var(--bg); text-align: left; }
+.log-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.log-table tr:last-child td { border-bottom: none; }
+.log-table .del-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; padding: 2px 4px; opacity: .6; }
+.log-table .del-btn:hover { opacity: 1; }
+.log-empty { text-align: center; color: var(--muted); font-style: italic; padding: 20px; font-size: 12px; }
+
+/* Períodos timeline */
+.periods-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.period-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 7px; font-size: 12px; }
+.period-row .p-year { font-weight: 800; min-width: 80px; }
+.period-row .p-dias { color: var(--blue-text); font-weight: 800; min-width: 60px; }
+.period-row .p-bar { flex: 1; height: 6px; background: var(--border-strong); border-radius: 3px; overflow: hidden; }
+.period-row .p-fill { height: 100%; background: var(--blue); border-radius: 3px; }
+.period-row .p-status { font-weight: 700; min-width: 90px; text-align: right; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 22px; width: 380px; max-width: 100%; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.modal-title { font-size: 17px; font-weight: 900; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-top: -10px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.field input, .field select, .field textarea { padding: 9px 12px; border-radius: 8px; border: 1.5px solid var(--border-strong); background: var(--bg); color: var(--text); font-family: inherit; font-size: 14px; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue); }
+.field textarea { resize: vertical; min-height: 70px; }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.balance-hint { padding: 10px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* Sort indicator */
+.sort-asc::after { content: ' ↑'; }
+.sort-desc::after { content: ' ↓'; }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .summary-row { gap: 8px; }
+  .scard { min-width: 100px; }
+  .header { padding: 10px 14px; }
+  .tabs-bar, .table-wrap { padding-left: 14px; padding-right: 14px; }
+  .hide-mobile { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">🌴 Vacaciones</div>
+    <div class="header-sub" id="hdr-sub">Cargando...</div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-blue" onclick="abrirModalRegistrar(null)">+ Registrar días</button>
+  </div>
+</div>
+
+<!-- Resumen -->
+<div class="summary-row" id="summary-row">
+  <div class="scard blue"><div class="lbl">Trabajadores</div><div class="val" id="s-total">—</div></div>
+  <div class="scard amber"><div class="lbl">Días pendientes</div><div class="val" id="s-pendientes">—</div></div>
+  <div class="scard red"><div class="lbl">Balance negativo</div><div class="val" id="s-negativos">—</div></div>
+  <div class="scard green"><div class="lbl">Próx. vencimiento</div><div class="val" id="s-prox" style="font-size:14px;margin-top:4px">—</div></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs-bar">
+  <div class="tab active" data-tab="todos" onclick="setTab('todos',this)">Todos</div>
+  <div class="tab" data-tab="g1" onclick="setTab('g1',this)">Grupo 1</div>
+  <div class="tab" data-tab="g2" onclick="setTab('g2',this)">Grupo 2</div>
+  <div class="tab" data-tab="neg" onclick="setTab('neg',this)">Balance negativo</div>
+  <div class="tab" data-tab="prox" onclick="setTab('prox',this)">Vence en 30 días</div>
+</div>
+
+<!-- Tabla -->
+<div class="table-wrap">
+  <table id="main-table">
+    <thead>
+      <tr>
+        <th onclick="sortBy('nombre')">Trabajador</th>
+        <th onclick="sortBy('anios')" class="hide-mobile">Años</th>
+        <th onclick="sortBy('diasCorresponden')">Días/período</th>
+        <th onclick="sortBy('tomados')" class="hide-mobile">Tomados</th>
+        <th onclick="sortBy('balance')">Balance</th>
+        <th onclick="sortBy('proximoPeriodo')" class="hide-mobile">Próx. período</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+  <div class="empty-state" id="empty-state" style="display:none">
+    <div class="icon">🌴</div>
+    <p>No hay trabajadores que coincidan con el filtro.</p>
+  </div>
+</div>
+
+<!-- Modal registrar días -->
+<div class="modal-overlay" id="modal-registrar">
+  <div class="modal">
+    <div>
+      <div class="modal-title">Registrar días de vacaciones</div>
+      <div class="modal-sub" id="modal-sub">Trabajador</div>
+    </div>
+    <div class="field">
+      <label>Trabajador</label>
+      <select id="m-trabajador" onchange="onChangeTrabajador()"></select>
+    </div>
+    <div class="field">
+      <label>Fecha de inicio</label>
+      <input type="date" id="m-fecha">
+    </div>
+    <div class="field">
+      <label>Número de días</label>
+      <input type="number" id="m-dias" min="0.5" step="0.5" value="1" placeholder="Ej: 5">
+    </div>
+    <div class="field">
+      <label>Nota (opcional)</label>
+      <textarea id="m-nota" placeholder="Ej: Periodo 2024, adelantado, etc."></textarea>
+    </div>
+    <div class="balance-hint" id="m-balance-hint"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-blue" onclick="guardarVacaciones()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+// ─── Escala LFT México (reforma 2023) ───────────────────────────────────────
+function diasPorAnios(n) {
+  if (n < 1)  return 0;
+  if (n === 1) return 12;
+  if (n === 2) return 14;
+  if (n === 3) return 16;
+  if (n === 4) return 18;
+  if (n === 5) return 20;
+  if (n <= 10) return 22;
+  if (n <= 15) return 24;
+  if (n <= 20) return 26;
+  if (n <= 25) return 28;
+  return 30;
+}
+
+// Total de días acumulados desde el ingreso hasta hoy (suma por cada año completo)
+function totalDiasGanados(fechaIngreso) {
+  if (!fechaIngreso) return 0;
+  const hoy = new Date();
+  const ingreso = new Date(fechaIngreso);
+  let aniosCompletos = 0;
+  const d = new Date(ingreso);
+  while (true) {
+    d.setFullYear(d.getFullYear() + 1);
+    if (d > hoy) break;
+    aniosCompletos++;
+  }
+  let total = 0;
+  for (let a = 1; a <= aniosCompletos; a++) total += diasPorAnios(a);
+  return total;
+}
+
+function aniosCumplidos(fechaIngreso) {
+  if (!fechaIngreso) return 0;
+  const hoy = new Date();
+  const ingreso = new Date(fechaIngreso);
+  let n = 0;
+  const d = new Date(ingreso);
+  while (true) {
+    d.setFullYear(d.getFullYear() + 1);
+    if (d > hoy) break;
+    n++;
+  }
+  return n;
+}
+
+function proximoPeriodo(fechaIngreso) {
+  if (!fechaIngreso) return null;
+  const hoy = new Date();
+  const ingreso = new Date(fechaIngreso);
+  const d = new Date(ingreso);
+  while (d <= hoy) d.setFullYear(d.getFullYear() + 1);
+  return d;
+}
+
+function fmtFecha(d) {
+  if (!d) return '—';
+  const dt = typeof d === 'string' ? new Date(d + 'T12:00:00') : d;
+  return dt.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function diasHasta(d) {
+  if (!d) return 9999;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const dt = new Date(d); dt.setHours(0,0,0,0);
+  return Math.ceil((dt - hoy) / 86400000);
+}
+
+function generarId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+// ─── Estado ─────────────────────────────────────────────────────────────────
+let trabajadores = [];
+let vacLogs = [];
+let tabActual = 'todos';
+let sortCol = 'nombre';
+let sortDir = 1;
+let openRow = null;
+
+// ─── Carga inicial ───────────────────────────────────────────────────────────
+async function init() {
+  const contactos = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
+  trabajadores = contactos.filter(c => c.fechaIngreso);
+
+  // Cargar vacation_logs con carga bajo demanda
+  try {
+    vacLogs = await window.DB.query('vacation_logs');
+  } catch(e) {
+    vacLogs = [];
+  }
+  if (!vacLogs) vacLogs = [];
+
+  poblarSelectTrabajador();
+  render();
+}
+
+function datosWorker(w) {
+  const anios = aniosCumplidos(w.fechaIngreso);
+  const diasCorresponden = diasPorAnios(anios);
+  const ganados = totalDiasGanados(w.fechaIngreso);
+  const tomados = vacLogs
+    .filter(l => l.trabajadorId === w.id)
+    .reduce((s, l) => s + (parseFloat(l.dias) || 0), 0);
+  const balance = ganados - tomados;
+  const proxPeriodo = proximoPeriodo(w.fechaIngreso);
+  return { anios, diasCorresponden, ganados, tomados, balance, proxPeriodo };
+}
+
+// ─── Render principal ────────────────────────────────────────────────────────
+function render() {
+  let lista = trabajadores.map(w => ({ ...w, ...datosWorker(w) }));
+
+  // Filtros por tab
+  if (tabActual === 'g1') lista = lista.filter(w => (w.grupoVacaciones || 1) === 1);
+  else if (tabActual === 'g2') lista = lista.filter(w => (w.grupoVacaciones || 1) === 2);
+  else if (tabActual === 'neg') lista = lista.filter(w => w.balance < 0);
+  else if (tabActual === 'prox') lista = lista.filter(w => w.proxPeriodo && diasHasta(w.proxPeriodo) <= 30);
+
+  // Ordenamiento
+  lista.sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (sortCol === 'nombre') { va = nombre(a); vb = nombre(b); }
+    if (sortCol === 'proxPeriodo') { va = va?.getTime() || 9e15; vb = vb?.getTime() || 9e15; }
+    if (typeof va === 'string') return va.localeCompare(vb) * sortDir;
+    return ((va ?? 0) - (vb ?? 0)) * sortDir;
+  });
+
+  // Stats de resumen
+  const activos = trabajadores.length;
+  const totalPend = trabajadores.reduce((s, w) => s + datosWorker(w).balance, 0);
+  const negativos = trabajadores.filter(w => datosWorker(w).balance < 0).length;
+  const proximos = trabajadores
+    .map(w => ({ w, dias: diasHasta(datosWorker(w).proxPeriodo) }))
+    .filter(x => x.dias >= 0 && x.dias <= 30)
+    .sort((a,b) => a.dias - b.dias);
+
+  document.getElementById('s-total').textContent = activos;
+  document.getElementById('s-pendientes').textContent = totalPend.toFixed(1);
+  document.getElementById('s-negativos').textContent = negativos;
+  document.getElementById('s-prox').textContent = proximos.length
+    ? nombre(proximos[0].w) + ' (' + proximos[0].dias + 'd)' : '—';
+  document.getElementById('hdr-sub').textContent =
+    activos + ' trabajadores activos · actualizado hoy';
+
+  // Tabla
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+
+  if (lista.length === 0) {
+    document.getElementById('empty-state').style.display = '';
+    return;
+  }
+  document.getElementById('empty-state').style.display = 'none';
+
+  lista.forEach(w => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = w.id;
+
+    const diasProx = diasHasta(w.proxPeriodo);
+    const proxBadge = diasProx <= 7
+      ? `<span class="badge badge-red">${fmtFecha(w.proxPeriodo)}</span>`
+      : diasProx <= 30
+        ? `<span class="badge badge-amber">${fmtFecha(w.proxPeriodo)}</span>`
+        : `<span style="font-size:12px;color:var(--muted)">${fmtFecha(w.proxPeriodo)}</span>`;
+
+    let balBadge, balColor;
+    if (w.balance < 0)        { balBadge = 'badge-red';    balColor = 'var(--red)'; }
+    else if (w.balance === 0) { balBadge = 'badge-muted';  balColor = 'var(--muted)'; }
+    else if (w.balance <= 5)  { balBadge = 'badge-amber';  balColor = 'var(--amber)'; }
+    else                      { balBadge = 'badge-green';  balColor = 'var(--green)'; }
+
+    const pct = Math.min(100, w.ganados > 0 ? (w.tomados / w.ganados) * 100 : 0);
+
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight:700">${nombre(w)}</div>
+        <div style="font-size:11px;color:var(--muted)">${w.puesto || ''}</div>
+      </td>
+      <td class="hide-mobile" style="font-size:13px">
+        ${w.anios > 0 ? `<b>${w.anios}</b> año${w.anios !== 1 ? 's' : ''}` : '<span style="color:var(--muted)">< 1 año</span>'}
+      </td>
+      <td>
+        ${w.diasCorresponden > 0
+          ? `<span class="badge badge-blue">${w.diasCorresponden} días</span>`
+          : `<span class="badge badge-muted">0 días</span>`}
+      </td>
+      <td class="hide-mobile" style="font-size:13px;color:var(--muted)">${w.tomados}</td>
+      <td>
+        <span class="badge ${balBadge}">${w.balance > 0 ? '+' : ''}${w.balance} días</span>
+        <div class="balance-bar" style="max-width:80px">
+          <div class="balance-fill" style="width:${pct}%;background:${balColor}"></div>
+        </div>
+      </td>
+      <td class="hide-mobile">${proxBadge}</td>
+      <td>
+        <button class="btn btn-blue btn-sm" onclick="event.stopPropagation();abrirModalRegistrar('${w.id}')">
+          + Registrar
+        </button>
+      </td>
+    `;
+
+    tr.addEventListener('click', () => toggleDrawer(w.id, tr));
+    tbody.appendChild(tr);
+
+    // Drawer row
+    const drawerTr = document.createElement('tr');
+    drawerTr.className = 'drawer-row';
+    drawerTr.dataset.drawerFor = w.id;
+    drawerTr.innerHTML = `<td colspan="7"><div class="drawer-inner" id="drawer-${w.id}"></div></td>`;
+    tbody.appendChild(drawerTr);
+  });
+
+  actualizarSortIndicator();
+}
+
+function nombre(w) {
+  return [w.apellidoPaterno || w.apellido_paterno, w.apellidoMaterno || w.apellido_materno, w.nombre]
+    .filter(Boolean).join(' ') || w.nombre || w.name || '—';
+}
+
+// ─── Drawer de detalle ───────────────────────────────────────────────────────
+function toggleDrawer(id, tr) {
+  const drawer = document.getElementById('drawer-' + id);
+  if (!drawer) return;
+
+  if (drawer.classList.contains('open')) {
+    drawer.classList.remove('open');
+    openRow = null;
+    return;
+  }
+
+  // Cerrar otro abierto
+  document.querySelectorAll('.drawer-inner.open').forEach(d => d.classList.remove('open'));
+
+  openRow = id;
+  drawer.classList.add('open');
+  renderDrawer(id, drawer);
+}
+
+function renderDrawer(id, container) {
+  const w = trabajadores.find(x => x.id === id);
+  if (!w) return;
+
+  const d = datosWorker(w);
+  const logs = vacLogs
+    .filter(l => l.trabajadorId === id)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  // Construir períodos históricos
+  const periodos = [];
+  let a = 1;
+  let ingreso = new Date(w.fechaIngreso);
+  while (true) {
+    const ini = new Date(ingreso);
+    ini.setFullYear(ini.getFullYear() + (a - 1));
+    const fin = new Date(ingreso);
+    fin.setFullYear(fin.getFullYear() + a);
+    if (ini > new Date()) break;
+    const dias = diasPorAnios(a);
+    const tomadosEnPeriodo = logs.filter(l => {
+      const f = new Date(l.fecha + 'T12:00:00');
+      return f >= ini && f < fin;
+    }).reduce((s, l) => s + (parseFloat(l.dias) || 0), 0);
+    periodos.push({ anio: a, ini, fin, dias, tomados: tomadosEnPeriodo });
+    a++;
+    if (a > 50) break;
+  }
+
+  container.innerHTML = `
+    <div style="margin-bottom:12px;font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">
+      Detalle: ${nombre(w)}
+    </div>
+    <div class="drawer-grid">
+      <div class="dinfo"><div class="lbl">Fecha de ingreso</div><div class="val">${fmtFecha(w.fechaIngreso)}</div></div>
+      <div class="dinfo"><div class="lbl">Años de servicio</div><div class="val">${d.anios} año${d.anios !== 1 ? 's' : ''}</div></div>
+      <div class="dinfo"><div class="lbl">Días ganados total</div><div class="val" style="color:var(--blue)">${d.ganados}</div></div>
+      <div class="dinfo"><div class="lbl">Días tomados total</div><div class="val">${d.tomados}</div></div>
+      <div class="dinfo"><div class="lbl">Balance actual</div>
+        <div class="val" style="color:${d.balance < 0 ? 'var(--red)' : d.balance === 0 ? 'var(--muted)' : 'var(--green)'}">
+          ${d.balance > 0 ? '+' : ''}${d.balance} días
+        </div>
+      </div>
+      <div class="dinfo"><div class="lbl">Próximo período</div><div class="val" style="font-size:13px">${fmtFecha(d.proxPeriodo)}</div></div>
+    </div>
+
+    <div style="margin-bottom:6px;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase">Períodos acumulados</div>
+    <div class="periods-list" style="margin-bottom:16px">
+      ${periodos.length === 0 ? '<div class="log-empty">Sin períodos acumulados (menos de 1 año de servicio)</div>' :
+        periodos.map(p => {
+          const pct = Math.min(100, p.dias > 0 ? (p.tomados / p.dias) * 100 : 0);
+          const esPasado = new Date() > p.fin;
+          return `<div class="period-row" style="opacity:${esPasado ? '.7' : '1'}">
+            <span class="p-year">Año ${p.anio} <span style="font-size:10px;color:var(--muted)">(${p.fin.getFullYear()})</span></span>
+            <span class="p-dias">${p.dias} días</span>
+            <div class="p-bar"><div class="p-fill" style="width:${pct}%;background:${pct >= 100 ? 'var(--green)' : 'var(--blue)'}"></div></div>
+            <span class="p-status" style="color:${p.tomados > p.dias ? 'var(--red)' : p.tomados === p.dias ? 'var(--green-text)' : 'var(--muted)'}">
+              ${p.tomados}/${p.dias} tomados
+            </span>
+          </div>`;
+        }).join('')}
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase">Registro de días tomados</div>
+      <button class="btn btn-green btn-sm" onclick="abrirModalRegistrar('${id}')">+ Registrar</button>
+    </div>
+    ${logs.length === 0
+      ? '<div class="log-empty">Sin registros de vacaciones.</div>'
+      : `<table class="log-table">
+          <thead><tr><th>Fecha</th><th>Días</th><th>Nota</th><th></th></tr></thead>
+          <tbody>
+            ${logs.map(l => `
+              <tr>
+                <td>${fmtFecha(l.fecha)}</td>
+                <td><b>${l.dias}</b></td>
+                <td style="color:var(--muted)">${l.nota || '—'}</td>
+                <td><button class="del-btn" onclick="eliminarLog('${l.id}','${id}')" title="Eliminar">🗑</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`
+    }
+  `;
+}
+
+// ─── Modal registrar ─────────────────────────────────────────────────────────
+function poblarSelectTrabajador() {
+  const sel = document.getElementById('m-trabajador');
+  sel.innerHTML = '<option value="">— Selecciona —</option>';
+  const sorted = [...trabajadores].sort((a,b) => nombre(a).localeCompare(nombre(b)));
+  sorted.forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w.id;
+    opt.textContent = nombre(w);
+    sel.appendChild(opt);
+  });
+}
+
+function abrirModalRegistrar(workerId) {
+  const overlay = document.getElementById('modal-registrar');
+  overlay.classList.add('open');
+
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('m-fecha').value = hoy;
+  document.getElementById('m-dias').value = 1;
+  document.getElementById('m-nota').value = '';
+
+  if (workerId) {
+    document.getElementById('m-trabajador').value = workerId;
+    onChangeTrabajador();
+  } else {
+    document.getElementById('m-trabajador').value = '';
+    document.getElementById('m-balance-hint').innerHTML = '';
+  }
+}
+
+function onChangeTrabajador() {
+  const id = document.getElementById('m-trabajador').value;
+  if (!id) { document.getElementById('m-balance-hint').innerHTML = ''; return; }
+  const w = trabajadores.find(x => x.id === id);
+  if (!w) return;
+  const d = datosWorker(w);
+  const hint = document.getElementById('m-balance-hint');
+  const color = d.balance < 0 ? 'var(--red-bg)' : d.balance === 0 ? 'var(--amber-bg)' : 'var(--green-bg)';
+  const textColor = d.balance < 0 ? 'var(--red-text)' : d.balance === 0 ? 'var(--amber-text)' : 'var(--green-text)';
+  hint.style.background = color;
+  hint.style.color = textColor;
+  hint.innerHTML = `Balance actual: <b>${d.balance > 0 ? '+' : ''}${d.balance} días</b> · Ganados: ${d.ganados} · Tomados: ${d.tomados}`;
+}
+
+function cerrarModal() {
+  document.getElementById('modal-registrar').classList.remove('open');
+}
+
+async function guardarVacaciones() {
+  const trabajadorId = document.getElementById('m-trabajador').value;
+  const fecha = document.getElementById('m-fecha').value;
+  const dias = parseFloat(document.getElementById('m-dias').value);
+  const nota = document.getElementById('m-nota').value.trim();
+
+  if (!trabajadorId) { alert('Selecciona un trabajador.'); return; }
+  if (!fecha) { alert('Selecciona una fecha.'); return; }
+  if (!dias || dias <= 0) { alert('Ingresa un número de días válido.'); return; }
+
+  const log = {
+    id: generarId(),
+    trabajadorId,
+    fecha,
+    dias,
+    nota,
+    creadoEn: new Date().toISOString()
+  };
+
+  // Guardar en Firestore
+  if (window.parent && window.parent.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('vacation_logs', log.id, log);
+  }
+  // Actualizar estado local
+  if (window.parent && window.parent.DB_STATE) {
+    if (!window.parent.DB_STATE.vacation_logs) window.parent.DB_STATE.vacation_logs = [];
+    window.parent.DB_STATE.vacation_logs.push(log);
+  }
+  vacLogs.push(log);
+
+  cerrarModal();
+
+  // Si hay drawer abierto para ese trabajador, re-renderizarlo
+  if (openRow === trabajadorId) {
+    const drawer = document.getElementById('drawer-' + trabajadorId);
+    if (drawer && drawer.classList.contains('open')) renderDrawer(trabajadorId, drawer);
+  }
+
+  render();
+}
+
+async function eliminarLog(logId, workerId) {
+  if (!confirm('¿Eliminar este registro de vacaciones?')) return;
+
+  // Eliminar de Firestore
+  if (window.parent && window.parent.deleteDocumentInFirebase) {
+    await window.parent.deleteDocumentInFirebase('vacation_logs', logId);
+  }
+  // Actualizar estado local
+  if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.vacation_logs) {
+    window.parent.DB_STATE.vacation_logs = window.parent.DB_STATE.vacation_logs.filter(l => l.id !== logId);
+  }
+  vacLogs = vacLogs.filter(l => l.id !== logId);
+
+  if (openRow === workerId) {
+    const drawer = document.getElementById('drawer-' + workerId);
+    if (drawer) renderDrawer(workerId, drawer);
+  }
+  render();
+}
+
+// ─── Tabs y ordenamiento ─────────────────────────────────────────────────────
+function setTab(tab, el) {
+  tabActual = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  openRow = null;
+  render();
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  render();
+}
+
+function actualizarSortIndicator() {
+  document.querySelectorAll('th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+  const ths = document.querySelectorAll('th');
+  const cols = ['nombre', 'anios', 'diasCorresponden', 'tomados', 'balance', 'proxPeriodo'];
+  cols.forEach((c, i) => {
+    if (c === sortCol && ths[i]) {
+      ths[i].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+// Cerrar modal al hacer click fuera
+document.getElementById('modal-registrar').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+
+init();
+</script>
+</body>
+</html>
