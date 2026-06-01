@@ -166,9 +166,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       <div class="acc-bal" id="bal-CHU">$0.00</div>
       <div class="acc-meta"><span class="acc-var" style="color:var(--green)">+0%</span> últ. 7d</div>
     </div>
-    <div class="acc-card" id="acard-SMTP" onclick="filterAccount('SMTP')">
-      <div class="acc-name">SMTP (Banco)</div>
-      <div class="acc-bal" id="bal-SMTP">$0.00</div>
+    <div class="acc-card" id="acard-SATP" onclick="filterAccount('SATP')">
+      <div class="acc-name">SATP (Banco)</div>
+      <div class="acc-bal" id="bal-SATP">$0.00</div>
       <div class="acc-meta"><span class="acc-var" style="color:var(--red)">-0%</span> últ. 7d</div>
     </div>
     <div class="acc-card" id="acard-CAJA" onclick="filterAccount('CAJA')">
@@ -181,6 +181,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       <div class="acc-bal" id="bal-OTROS">$0.00</div>
       <div class="acc-meta"><span class="acc-var" style="color:var(--green)">+0%</span> últ. 7d</div>
     </div>
+  </div>
+
+  <!-- Banner vista parcial -->
+  <div id="mov-banner" style="display:none; background:var(--amber-bg); border:1px solid var(--amber); border-radius:8px; padding:10px 16px; font-size:13px; color:var(--text); align-items:center; justify-content:space-between; gap:12px;">
+    <span id="mov-banner-txt"></span>
+    <button class="btn btn-dark" style="white-space:nowrap; font-size:12px;" onclick="cargarTodos()">Cargar historial completo</button>
   </div>
 
   <!-- Avisos / Pendientes -->
@@ -349,13 +355,43 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   
   let currentAccFilter = 'ALL';
   let llmTimer = null;
+  let _allMovements = [];
+
+  // ── MODO DE DATOS ──────────────────────────────────────────────────────────
+  // MODO PREVIEW (default): Lee `accounting_movements_preview` — solo los
+  //   últimos 20 movimientos por cuenta (114 docs). Rápido, sin costo.
+  //   Para regenerar el preview: node seed-movimientos-preview.cjs
+  //
+  // MODO HISTORIAL COMPLETO: Cambia MOV_COLLECTION a 'accounting_movements'
+  //   y MOV_LIMIT a null. Carga 19k+ docs — solo hacerlo cuando sea necesario.
+  //   IMPORTANTE: borra el caché local del browser después de cambiar de vuelta.
+  // ──────────────────────────────────────────────────────────────────────────
+  const MOV_COLLECTION = 'accounting_movements_preview'; // ← cambiar a 'accounting_movements' para historial completo
+  const MOV_LIMIT      = null; // ← en preview no hace falta limitar más
 
   function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
+  function updateMovBanner() {
+    const banner = document.getElementById('mov-banner');
+    if (!MOV_LIMIT || DBm.length >= _allMovements.length) { banner.style.display = 'none'; return; }
+    banner.style.display = 'flex';
+    document.getElementById('mov-banner-txt').textContent =
+      `Mostrando los últimos ${DBm.length} de ${_allMovements.length} movimientos. Los saldos son parciales.`;
+  }
+
+  function cargarTodos() {
+    DBm = _allMovements;
+    document.getElementById('mov-banner').style.display = 'none';
+    calcBalances();
+    renderList();
+  }
+
   // Init Data Layer
   async function initData() {
-    DBm = await window.DB.query("accounting_movements");
-    if (!DBm || DBm.length === 0) DBm = window.DB.get().accounting_movements || [];
+    const raw = await window.DB.query(MOV_COLLECTION);
+    _allMovements = (raw && raw.length > 0) ? raw : (window.DB.get()[MOV_COLLECTION] || []);
+    _allMovements.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    DBm = MOV_LIMIT ? _allMovements.slice(0, MOV_LIMIT) : _allMovements;
 
     STATE_PROJECTS = await window.DB.query("projects");
     STATE_CATEGORIES = window.DB.get().expense_categories || []; // Keeping standard config
@@ -410,6 +446,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     if(window.innerWidth > 800) document.getElementById('desktop-new-btn').style.display = 'block';
     
+    updateMovBanner();
     calcBalances();
     renderList();
   }
@@ -482,27 +519,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   // Calculate Balances
   function calcBalances() {
-    let bal = { CHU: 0, SMTP: 0, CAJA: 0, OTROS: 0, ALL: 0 };
+    const MAIN_ACCOUNTS = new Set(['CHU', 'SATP', 'CAJA']);
+    let bal = { CHU: 0, SATP: 0, CAJA: 0, OTROS: 0, ALL: 0 };
     DBm.forEach(m => {
-      // we sum if confirmed OR if it's a draft we still don't?
-      // In many systems balance is only confirmed.
       if(m.status === 'confirmado' || m.status === 'confirmed') {
-        if(m.type === 'Ingreso') {
-          if (bal[m.account] === undefined) bal[m.account] = 0;
-          bal[m.account] += m.amount; bal.ALL += m.amount;
-        } else if (m.type === 'Gasto') {
-          if (bal[m.account] === undefined) bal[m.account] = 0;
-          bal[m.account] -= m.amount; bal.ALL -= m.amount;
-        } else if (m.type === 'Transferencia') {
-          if (bal[m.account] === undefined) bal[m.account] = 0;
-          if (bal[m.destAccount] === undefined) bal[m.destAccount] = 0;
-          bal[m.account] -= m.amount; 
-          bal[m.destAccount] += m.amount;
+        const delta = m.type === 'Ingreso' ? m.amount : m.type === 'Gasto' ? -m.amount : 0;
+        if (m.type === 'Transferencia') {
+          const src = MAIN_ACCOUNTS.has(m.account)     ? m.account     : 'OTROS';
+          const dst = MAIN_ACCOUNTS.has(m.destAccount) ? m.destAccount : 'OTROS';
+          bal[src] -= m.amount; bal[dst] += m.amount;
+        } else {
+          const key = MAIN_ACCOUNTS.has(m.account) ? m.account : 'OTROS';
+          bal[key] += delta;
         }
+        bal.ALL += delta;
       }
     });
-    
-    ['CHU','SMTP','CAJA','OTROS','ALL'].forEach(ac => {
+
+    ['CHU','SATP','CAJA','OTROS','ALL'].forEach(ac => {
       document.getElementById('bal-'+ac).textContent = fmt(bal[ac]);
       if(bal[ac] < 0) document.getElementById('bal-'+ac).style.color = 'var(--red)';
       else document.getElementById('bal-'+ac).style.color = 'var(--text)';
@@ -549,7 +583,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     sorted.forEach(m => {
       // Filtering logic
-      if(currentAccFilter !== 'ALL' && m.account !== currentAccFilter && m.destAccount !== currentAccFilter) return;
+      if(currentAccFilter !== 'ALL') {
+        const MAIN = new Set(['CHU','SATP','CAJA']);
+        if (currentAccFilter === 'OTROS') {
+          if (MAIN.has(m.account) && MAIN.has(m.destAccount || m.account)) return;
+        } else {
+          if (m.account !== currentAccFilter && m.destAccount !== currentAccFilter) return;
+        }
+      }
       if(typeF && m.type !== typeF) return;
       if(catF) {
         if(catF==='pending' && m.category && m.category!=='') return;
