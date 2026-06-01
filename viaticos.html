@@ -123,7 +123,8 @@ td { color: var(--text); }
 <div class="hdr">
   <div class="hdr-title">Gestión de Viáticos</div>
   <div id="hdr-actions">
-    <a href="index.html" class="btn">← Volver</a>
+    <button class="btn" onclick="if(window.parent&&window.parent.goHome){window.parent.goHome()}else{window.history.back()}">← Volver</button>
+    <button class="btn btn-dark" onclick="showReporteMensual()">📊 Reporte Mensual</button>
     <button class="btn btn-blue" onclick="showView('form')">+ Nuevo Viaje</button>
   </div>
   <div id="hdr-actions-detail" style="display:none; gap: 8px;">
@@ -872,6 +873,28 @@ function editNotaCierre() {
     if (window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
     openDetalle(currentViajeId);
   }
+}
+
+async function showReporteMensual() {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthStr = prompt('Mes para el reporte (YYYY-MM):', currentMonth);
+  if (!monthStr) return;
+
+  // Leer desde accounting_movements (carga bajo demanda)
+  const movs = await window.DB.query('accounting_movements_preview');
+  const allMovs = movs || window.DB.get().accounting_movements_preview || [];
+
+  const del = allMovs.filter(m =>
+    (m.status === 'confirmado' || m.status === 'confirmed') &&
+    (m.category === 'Viáticos y Gastos de Viaje' || (m.concept && m.concept.toLowerCase().includes('viático'))) &&
+    m.date && m.date.startsWith(monthStr)
+  );
+
+  const fmt = n => '$' + parseFloat(n).toLocaleString('es-MX', {minimumFractionDigits:2});
+  const salidas = del.filter(m => m.type === 'Gasto').reduce((s,m) => s + m.amount, 0);
+  const entradas = del.filter(m => m.type === 'Ingreso').reduce((s,m) => s + m.amount, 0);
+
+  alert(`📊 REPORTE VIÁTICOS — ${monthStr}\n\nSalidas (anticipos y reembolsos): ${fmt(salidas)}\nEntradas (devoluciones): ${fmt(entradas)}\n\nGASTO NETO: ${fmt(salidas - entradas)}\n\n(Basado en los últimos movimientos cargados. Para el historial completo, usar el botón "Cargar historial completo" en Movimientos.)`);
 }
 
 init(); // Llamada directa (sin esperar al evento que podría ya haber pasado)

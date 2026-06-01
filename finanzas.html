@@ -45,14 +45,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
 
 /* Tarjetas de Cuenta */
-.acc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-@media (max-width: 800px) { .acc-grid { grid-template-columns: repeat(2, 1fr); } }
-.acc-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
-.acc-card:hover { border-color: var(--blue); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-.acc-card.act { border-color: var(--blue); background: var(--blue-bg); }
-.acc-name { font-size: 13px; font-weight: 800; color: var(--subtext); letter-spacing: 0.5px; }
-.acc-bal { font-size: 26px; font-weight: 800; color: var(--text); margin-top: 4px; }
-.acc-meta { font-size: 11px; color: var(--subtext); margin-top: 8px; display: flex; justify-content: space-between; }
+.acc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.acc-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px 18px; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; border-top: 3px solid transparent; }
+.acc-card:hover { border-color: var(--blue); border-top-color: var(--blue); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+.acc-card.act { border-color: var(--blue); border-top-color: var(--blue); background: var(--blue-bg); }
+.acc-card.bal-pos { border-top-color: var(--green); }
+.acc-card.bal-neg { border-top-color: var(--red); }
+.acc-name { font-size: 11px; font-weight: 800; color: var(--subtext); letter-spacing: 0.8px; text-transform: uppercase; }
+.acc-bal { font-size: 22px; font-weight: 800; color: var(--text); margin-top: 6px; line-height: 1.1; }
+.acc-meta { font-size: 11px; color: var(--subtext); margin-top: 8px; }
 .acc-var { font-weight: 700; }
 
 /* Avisos */
@@ -67,21 +68,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .filter-input:focus { border-color: var(--blue); }
 
 /* Lista Movimientos */
-.mov-list { display: flex; flex-direction: column; gap: 8px; }
+.mov-list { display: flex; flex-direction: column; gap: 4px; }
 .mov-row-wrap { display: flex; flex-direction: column; }
-.mov-row { background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; display: grid; grid-template-columns: 85px 60px 2fr 1.5fr minmax(100px, 1fr) 100px; gap: 16px; padding: 12px 16px; align-items: center; cursor: pointer; transition: background 0.15s; }
-.mov-row.active { border-color: var(--blue); border-radius: 8px 8px 0 0; border-bottom: none; }
-.mov-row:hover:not(.active) { background: var(--surface0); }
+.mov-row { background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; display: grid; grid-template-columns: 80px 56px 2fr 1.4fr 1fr 110px; gap: 14px; padding: 11px 16px; align-items: center; cursor: pointer; transition: all 0.12s; border-left: 3px solid transparent; }
+.mov-row.mov-in  { border-left-color: var(--green); }
+.mov-row.mov-out { border-left-color: var(--red); }
+.mov-row.mov-tra { border-left-color: var(--blue); }
+.mov-row.active { border-color: var(--blue); border-left-color: var(--blue); border-radius: 8px 8px 0 0; border-bottom: none; }
+.mov-row:hover:not(.active) { background: var(--surface0); transform: translateX(2px); }
 @media (max-width: 800px) {
   .mov-row { grid-template-columns: 1fr 1fr; gap: 8px; }
   .hide-mob { display: none; }
 }
-.m-date { font-size: 12px; color: var(--subtext); }
-.m-acc { font-size: 11px; font-weight: 800; padding: 3px 6px; border-radius: 4px; background: var(--base); text-align: center; border: 1px solid var(--crust); }
-.m-concept { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; }
-.m-subtitle { font-size: 11px; font-weight: 500; color: var(--subtext); margin-top: 2px; }
-.m-amt { font-size: 15px; font-weight: 800; text-align: right; }
-.amt-in { color: var(--green); }
+.m-date { font-size: 11px; color: var(--subtext); font-weight: 600; line-height: 1.4; }
+.m-acc { font-size: 10px; font-weight: 800; padding: 3px 6px; border-radius: 4px; background: var(--base); text-align: center; border: 1px solid var(--crust); letter-spacing: 0.3px; }
+.m-concept { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; }
+.m-subtitle { font-size: 10px; font-weight: 500; color: var(--subtext); margin-top: 3px; display: flex; align-items: center; gap: 4px; }
+.m-amt { font-size: 14px; font-weight: 800; text-align: right; }
+.amt-in  { color: var(--green); }
 .amt-out { color: var(--text); }
 .amt-neu { color: var(--subtext); }
 
@@ -143,18 +147,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
 <div class="hdr">
   <div class="hdr-title">
-    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('index.html','Inicio')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer; transition:0.15s;">←</button>
+    <button onclick="if(window.parent&&window.parent.goHome){window.parent.goHome()}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;transition:0.15s;padding:4px 8px;border-radius:6px;" onmouseenter="this.style.background='var(--surface0)'" onmouseleave="this.style.background='none'">←</button>
     Movimientos
   </div>
-  <div style="display:flex; gap:8px; align-items:center;">
-    <div style="display:flex; align-items:center; gap:6px; background:var(--mantle); border:1px solid var(--crust); border-radius:8px; padding:4px 10px; font-size:12px;">
-      <span style="color:var(--subtext); font-weight:600; white-space:nowrap;">Var. desde</span>
-      <input type="date" id="iv-desde" class="f-input" style="padding:4px 8px;font-size:12px;height:28px;width:130px;" onchange="onIntervalChange()">
-      <span style="color:var(--subtext);">hasta hoy</span>
-    </div>
-    <button class="btn btn-outline" style="background:var(--base);" onclick="showViaticosReport()">📊 Reporte Viáticos</button>
-    <button class="btn btn-outline" style="background:var(--base);" onclick="openNuevaCuenta()">+ Cuenta</button>
-    <button class="btn btn-dark" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Nuevo Movimiento</button>
+  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--subtext);font-weight:600;">
+      Variación desde
+      <input type="date" id="iv-desde" class="f-input" style="padding:4px 8px;font-size:12px;height:30px;width:128px;" onchange="onIntervalChange()">
+    </label>
+    <button class="btn btn-dark" onclick="openNuevaCuenta()">+ Cuenta</button>
+    <button class="btn btn-blue" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Movimiento</button>
   </div>
 </div>
 
@@ -358,6 +360,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
+  function fmtDate(str) {
+    if (!str) return '—';
+    const today = new Date().toISOString().slice(0,10);
+    const yest  = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    if (str === today) return 'Hoy';
+    if (str === yest)  return 'Ayer';
+    const [y,m,d] = str.split('-');
+    const mo = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1];
+    return `${+d} ${mo}\n'${y.slice(2)}`;
+  }
+
   function updateMovBanner() {
     const banner = document.getElementById('mov-banner');
     if (!MOV_LIMIT || DBm.length >= _allMovements.length) { banner.style.display = 'none'; return; }
@@ -435,12 +448,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     renderDynamicCards();
     initIntervalPicker();
-
-    const rawMethods = window.DB.get().payment_methods || [];
-    const methods = rawMethods[0]?.list || rawMethods.filter(x => typeof x === 'string');
-    if (methods.length) {
-      document.getElementById('f-method').innerHTML = methods.map(m => `<option value="${m}">${m}</option>`).join('');
-    }
 
     populateContacts();
     populateOrders();
@@ -565,10 +572,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       
       let catPill = m.category ? `<span class="pill pill-gray">${m.category}</span>` : `<span class="pill pill-gray" style="opacity:0.6;">Sin categorizar</span>`;
 
+      const rowClass = m.type==='Ingreso' ? 'mov-in' : m.type==='Gasto' ? 'mov-out' : 'mov-tra';
       // Expandable Row
       d.innerHTML = `
-        <div class="mov-row" onclick="toggleDet('${m.id}')" id="row-${m.id}">
-          <div class="m-date">${m.date}</div>
+        <div class="mov-row ${rowClass}" onclick="toggleDet('${m.id}')" id="row-${m.id}">
+          <div class="m-date" style="white-space:pre-line">${fmtDate(m.date)}</div>
           <div class="m-acc">${accLabel}</div>
           <div class="m-concept">
             <span style="opacity: ${m.status==='pendiente'?'0.7':'1'}; font-style: ${m.status==='pendiente'?'italic':'normal'};">${m.concept || '—'}</span>
@@ -841,30 +849,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     renderList();
   }
 
-  function showViaticosReport() {
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const monthStr = prompt("Ingresa el mes para el reporte de viáticos (YYYY-MM):", currentMonth);
-    if (!monthStr) return;
-
-    // Filtrar los movimientos que están confirmados y tienen que ver con viáticos de ese mes
-    const movs = DBm.filter(m => 
-      (m.status === 'confirmado' || m.status === 'confirmed') && 
-      (m.category === 'Viáticos e Instalación' || (m.concept && m.concept.toLowerCase().includes('viático'))) && 
-      (m.date && m.date.startsWith(monthStr))
-    );
-    
-    let outSum = 0;
-    let inSum = 0;
-    
-    movs.forEach(m => {
-      if (m.type === 'Gasto') outSum += m.amount; // Anticipos y reembolsos faltantes
-      if (m.type === 'Ingreso') inSum += m.amount; // Devoluciones
-    });
-    
-    const neto = outSum - inSum;
-    
-    alert(`📊 REPORTE DE VIÁTICOS - ${monthStr}\n\nSalidas (Anticipos entregados y Reembolsos): ${fmt(outSum)}\nEntradas (Devoluciones sobrantes a caja): ${fmt(inSum)}\n\nGASTO NETO DEL MES: ${fmt(neto)}`);
-  }
 
   // ── Estado de saldos y cuentas ──────────────────────────────────────────────
   let STATE_ACCOUNT_BALANCES = {}; // id → doc de account_balances
@@ -914,12 +898,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     }
 
     const setCard = (acc, bal, before) => {
-      const balEl = document.getElementById('bal-' + acc);
-      const varEl = document.getElementById('var-' + acc);
+      const balEl  = document.getElementById('bal-' + acc);
+      const varEl  = document.getElementById('var-' + acc);
+      const cardEl = document.getElementById('acard-' + acc);
       if (!balEl) return;
       balEl.textContent = fmt(bal);
       balEl.style.color = bal < 0 ? 'var(--red)' : 'var(--text)';
       if (varEl) varEl.innerHTML = varHTML(bal, before);
+      if (cardEl && !cardEl.classList.contains('act')) {
+        cardEl.classList.remove('bal-pos','bal-neg');
+        if (bal > 0) cardEl.classList.add('bal-pos');
+        else if (bal < 0) cardEl.classList.add('bal-neg');
+      }
     };
 
     setCard('ALL', allBal, allBefore);
