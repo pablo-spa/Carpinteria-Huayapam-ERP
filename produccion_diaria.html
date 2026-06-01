@@ -360,9 +360,13 @@ async function loadMasterData() {
     });
 
   PROYECTOS = projects
-    .filter(p => !p._init && !p.archived && p.code && p.name &&
-      ['en producción','planificación','en pausa'].includes((p.status||'').toLowerCase()))
-    .map(p => ({ id: p.code, n: p.code + ' — ' + p.name, pieces: p.pieces || [] }));
+    .filter(p => !p._init && !(p.archivado || p.archived) && (p.codigo || p.code) && (p.nombre || p.name) &&
+      ['en producción','planificación','en pausa'].includes(((p.estado || p.status)||'').toLowerCase()))
+    .map(p => {
+      const cod = p.codigo || p.code;
+      const nom = p.nombre || p.name;
+      return { id: cod, n: cod + ' — ' + nom, pieces: p.piezas || p.pieces || [] };
+    });
   PROYECTOS.push({ id: 'general', n: 'Trabajo general', pieces: [] });
 
   // actividades_trabajo is stored as {list:[...]} in a single 'main' doc
@@ -373,21 +377,21 @@ async function loadMasterData() {
 function loadDayFromDB(dateStr) {
   const db   = window.DB.get();
   // Production records: attendance with date field
-  const recs  = (db.attendance || []).filter(a => a.date === dateStr && !a._init && a.workerId && a.status);
+  const recs  = (db.attendance || []).filter(a => (a.fecha || a.date) === dateStr && !a._init && (a.trabajadorId || a.workerId) && (a.estado || a.status));
   // Día cerrado SOLO si algún registro tiene el flag explícito diaCerrado:true
   const cerrado = recs.some(a => a.diaCerrado === true);
 
   const data = {};
   WORKERS.forEach(w => {
-    const rec = recs.find(r => r.workerId === w.id);
+    const rec = recs.find(r => (r.trabajadorId || r.workerId) === w.id);
     if (rec) {
       data[w.id] = {
-        status:      rec.status || '',
+        status:      rec.estado     || rec.status    || '',
         retardoMin:  rec.retardoMin || '',
         horasNormal: rec.horasNormal != null ? rec.horasNormal : (rec.hours || ''),
         horasExtra:  rec.horasExtra  != null ? rec.horasExtra  : '',
         horasDoble:  rec.horasDoble  != null ? rec.horasDoble  : '',
-        proyectos:   rec.projects?.length ? rec.projects : [{ p:'', horas:'', actividad:'', descripcion:'', pieza:'' }],
+        proyectos:   (rec.proyectos || rec.projects)?.length ? (rec.proyectos || rec.projects) : [{ p:'', horas:'', actividad:'', descripcion:'', pieza:'' }],
         notas:       rec.notas || '',
         done:        true
       };
@@ -434,7 +438,7 @@ function buildCalendar() {
     // Cerrado: state en memoria OR flag diaCerrado:true en algún registro guardado
     let cerrado = STATE[dateStr]?.cerrado;
     if (!cerrado) {
-      cerrado = (db.attendance || []).some(a => a.date === dateStr && !a._init && a.diaCerrado === true);
+      cerrado = (db.attendance || []).some(a => (a.fecha || a.date) === dateStr && !a._init && a.diaCerrado === true);
     }
 
     const statusHtml = cerrado
@@ -779,20 +783,20 @@ function saveWorkerRecord(wId) {
   if (!ws.status) return;
   const db = window.DB.get();
   const record = {
-    date:         currentDate,
-    workerId:     wId,
-    status:       ws.status,
-    retardoMin:   parseFloat(ws.retardoMin)   || 0,
-    horasNormal:  parseFloat(ws.horasNormal)  || 0,
-    horasExtra:   parseFloat(ws.horasExtra)   || 0,
-    horasDoble:   parseFloat(ws.horasDoble)   || 0,
-    horasTotales: horasEq(ws),
-    projects:     ws.proyectos.filter(pr => pr.p || pr.horas || pr.descripcion),
-    notas:        ws.notas || ''
+    fecha:         currentDate,
+    trabajadorId:  wId,
+    estado:        ws.status,
+    retardoMin:    parseFloat(ws.retardoMin)  || 0,
+    horasNormal:   parseFloat(ws.horasNormal) || 0,
+    horasExtra:    parseFloat(ws.horasExtra)  || 0,
+    horasDoble:    parseFloat(ws.horasDoble)  || 0,
+    horasTotales:  horasEq(ws),
+    proyectos:     ws.proyectos.filter(pr => pr.p || pr.horas || pr.descripcion),
+    notas:         ws.notas || ''
   };
   // Upsert: si ya existe un registro para este trabajador+fecha, actualizar
   const existing = (db.attendance || []).find(a =>
-    a.date === currentDate && a.workerId === wId && !a._init && a.status);
+    (a.fecha || a.date) === currentDate && (a.trabajadorId || a.workerId) === wId && !a._init && (a.estado || a.status));
   if (existing) {
     record.id = existing.id;
     Object.assign(existing, record);
@@ -800,10 +804,10 @@ function saveWorkerRecord(wId) {
       window.parent.setDocumentInFirebase('attendance', record.id, existing);
     }
     // También actualizar attendance_logs (upsert interno)
-    window.DB.addAttendance({ ...record, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
+    window.DB.addAttendance({ ...record, date: record.fecha, workerId: record.trabajadorId, status: record.estado, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
   } else {
     record.id = crypto.randomUUID();
-    window.DB.addAttendance({ ...record, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
+    window.DB.addAttendance({ ...record, date: record.fecha, workerId: record.trabajadorId, status: record.estado, hours: record.horasNormal, horas_x15: record.horasExtra, horas_x2: record.horasDoble });
   }
 }
 
@@ -981,7 +985,7 @@ function cerrarDia() {
   // Marcar todos los registros del día con diaCerrado:true (flag explícito)
   const db = window.DB.get();
   (db.attendance || [])
-    .filter(a => a.date === currentDate && !a._init && a.workerId && a.status)
+    .filter(a => (a.fecha || a.date) === currentDate && !a._init && (a.trabajadorId || a.workerId) && (a.estado || a.status))
     .forEach(a => {
       a.diaCerrado = true;
       if (window.parent?.setDocumentInFirebase) {

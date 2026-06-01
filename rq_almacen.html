@@ -121,15 +121,15 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     // Projects dropdown — active only
     const activeStatuses = ['Planificación', 'En Producción'];
-    const activeProjs = projects.filter(p => p.code && p.name && activeStatuses.includes(p.status));
-    const histProjs   = projects.filter(p => p.code && p.name && !activeStatuses.includes(p.status));
+    const activeProjs = projects.filter(p => (p.codigo||p.code) && (p.nombre||p.name) && activeStatuses.includes((p.estado||p.status)));
+    const histProjs   = projects.filter(p => (p.codigo||p.code) && (p.nombre||p.name) && !activeStatuses.includes((p.estado||p.status)));
     const projSel = document.getElementById('proj');
     if (activeProjs.length) {
       const grpActive = document.createElement('optgroup');
       grpActive.label = 'Proyectos Activos';
       activeProjs.forEach(p => {
         const o = document.createElement('option');
-        o.value = p.code; o.textContent = `${p.code} – ${p.name}`;
+        o.value = (p.codigo||p.code); o.textContent = `${(p.codigo||p.code)} – ${(p.nombre||p.name)}`;
         grpActive.appendChild(o);
       });
       projSel.appendChild(grpActive);
@@ -139,7 +139,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       grpHist.label = 'Proyectos Anteriores';
       histProjs.forEach(p => {
         const o = document.createElement('option');
-        o.value = p.code; o.textContent = `${p.code} – ${p.name}`;
+        o.value = (p.codigo||p.code); o.textContent = `${(p.codigo||p.code)} – ${(p.nombre||p.name)}`;
         grpHist.appendChild(o);
       });
       projSel.appendChild(grpHist);

@@ -182,7 +182,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     }
 
     list.innerHTML = filtered.map(o => {
-      const proj = d.projects.find(p => p.id === o.projectId || p.code === o.project) || null;
+      const proj = d.projects.find(p => p.id === o.projectId || (p.codigo||p.code) === o.project) || null;
       const projLabel = proj ? `${proj.code} – ${proj.name}` : (o.project || 'Sin proyecto');
 
       const statusMap = {
@@ -285,15 +285,15 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     // Populate project dropdown
     const projSel = document.getElementById('no-proj');
-    const validProjs = projects.filter(p => p.code && p.name);
+    const validProjs = projects.filter(p => (p.codigo||p.code) && (p.nombre||p.name));
     projSel.innerHTML = '<option value="">— Stock General —</option>' +
-      validProjs.map(p => `<option value="${p.code}">${p.code} – ${p.name}</option>`).join('');
+      validProjs.map(p => `<option value="${(p.codigo||p.code)}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('');
 
     // Populate supplier dropdown
     const provSel = document.getElementById('no-prov');
     const provs = contacts.filter(c => c.tipo === 'proveedor' && (c.name || c.givenName));
     provSel.innerHTML = '<option value="">— Sin especificar —</option>' +
-      provs.map(p => `<option value="${p.name||p.givenName}">${p.name||p.givenName}</option>`).join('');
+      provs.map(p => `<option value="${(p.nombre||p.name)||p.givenName}">${(p.nombre||p.name)||p.givenName}</option>`).join('');
 
     if (projSel._ssInit) projSel._ssRefresh(); else SearchableSelect.init(projSel);
     if (provSel._ssInit) provSel._ssRefresh(); else SearchableSelect.init(provSel);

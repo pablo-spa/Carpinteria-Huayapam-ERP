@@ -298,7 +298,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       const tipoLabel = (tipo === 'proveedor' ? 'Proveedor' : tipo === 'trabajador' ? 'Trabajador' : 'Cliente') + bajaLabel;
       const tipoClr = tipo === 'proveedor' ? 'color:var(--green)' : (!isActive && tipo === 'trabajador') ? 'color:var(--red)' : tipo === 'trabajador' ? 'color:var(--mauve)' : 'color:var(--blue)';
       const avt = name.substring(0,2).toUpperCase();
-      const projs = STATE_PROJECTS.filter(p => p.contactId === c.id);
+      const projs = STATE_PROJECTS.filter(p => (p.contactoId||p.contactId) === c.id);
       const jsId = c.id.replace(/'/g, "\\'");
 
       return `
@@ -316,7 +316,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
             ${c.person   ? `<div class="c-row"><span>👤</span>${c.person}</div>` : ''}
             ${c.address  ? `<div class="c-row"><span>📍</span>${c.address}</div>` : ''}
           </div>
-          ${projs.length ? `<div style="display:flex; gap:4px; flex-wrap:wrap;">${projs.slice(0,3).map(p=>`<span class="c-proj-badge">${p.code}</span>`).join('')}${projs.length>3?`<span class="c-proj-badge">+${projs.length-3}</span>`:''}</div>` : ''}
+          ${projs.length ? `<div style="display:flex; gap:4px; flex-wrap:wrap;">${projs.slice(0,3).map(p=>`<span class="c-proj-badge">${(p.codigo||p.code)}</span>`).join('')}${projs.length>3?`<span class="c-proj-badge">+${projs.length-3}</span>`:''}</div>` : ''}
         </div>`;
     }).join('');
     applyFilters();
@@ -606,29 +606,29 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   // ── Projects tab ──────────────────────────────────────────────────────
   function renderProjects(c) {
     if (!c) return;
-    const linked = STATE_PROJECTS.filter(p => p.contactId === c.id && p.name);
+    const linked = STATE_PROJECTS.filter(p => (p.contactoId||p.contactId) === c.id && (p.nombre||p.name));
     const list = document.getElementById('proj-list');
 
     if (!linked.length) {
       list.innerHTML = `<div class="empty-state">Sin proyectos vinculados.<br>Usa "Vincular Proyecto" para asociar uno.</div>`;
     } else {
       list.innerHTML = linked.map(p => {
-        const sc = p.status === 'En Producción' ? 'ps-active' : p.status === 'Terminado' || p.status === 'completado' ? 'ps-done' : 'ps-other';
+        const sc = (p.estado||p.status) === 'En Producción' ? 'ps-active' : (p.estado||p.status) === 'Terminado' || (p.estado||p.status) === 'completado' ? 'ps-done' : 'ps-other';
         return `
           <div class="proj-item" onclick="goToProject('${p.id}')">
-            <span class="proj-code">${p.code}</span>
-            <span class="proj-name">${p.name}</span>
-            <span class="proj-status ${sc}">${p.status || '—'}</span>
+            <span class="proj-code">${(p.codigo||p.code)}</span>
+            <span class="proj-name">${(p.nombre||p.name)}</span>
+            <span class="proj-status ${sc}">${(p.estado||p.status) || '—'}</span>
             <button class="btn" onclick="event.stopPropagation(); unlinkProject('${p.id}')" style="padding:4px 8px; font-size:11px; color:var(--red); border-color:var(--red);">✕</button>
           </div>`;
       }).join('');
     }
 
     // Populate link selector with unlinked projects
-    const unlinked = STATE_PROJECTS.filter(p => p.name && p.code && !p.contactId);
+    const unlinked = STATE_PROJECTS.filter(p => (p.nombre||p.name) && (p.codigo||p.code) && !(p.contactoId||p.contactId));
     const sel = document.getElementById('proj-link-sel');
     sel.innerHTML = '<option value="">— Seleccionar proyecto —</option>' +
-      unlinked.map(p => `<option value="${p.id}">${p.code} – ${p.name}</option>`).join('');
+      unlinked.map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('');
 
     document.getElementById('proj-link-area').style.display = isEditing ? '' : 'none';
   }

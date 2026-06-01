@@ -217,10 +217,10 @@
     `;
 
     // Projs
-    const active = (d.projects || []).filter(p => p.status !== 'Terminado' && p.status !== 'Cancelado');
+    const active = (d.projects || []).filter(p => (p.estado||p.status) !== 'Terminado' && (p.estado||p.status) !== 'Cancelado');
     let pH = '';
     active.forEach(p => {
-      pH += `<div class="list-row"><span class="lr-title">${p.name}</span><span class="lr-val">${p.progress}%</span></div>`;
+      pH += `<div class="list-row"><span class="lr-title">${(p.nombre||p.name)}</span><span class="lr-val">${(p.avance??p.progress)}%</span></div>`;
     });
     document.getElementById('active-projs').innerHTML = active.length > 0 ? pH : '<div class="lr-val">Sin proyectos activos</div>';
 

@@ -365,7 +365,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     // Load selects
     const pSel = document.getElementById('f-proj');
     pSel.innerHTML = '<option value="">-- Seleccionar --</option>' +
-      STATE_PROJECTS.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+      STATE_PROJECTS.map(p => `<option value="${p.id}">${(p.codigo||p.code)} - ${(p.nombre||p.name)}</option>`).join('');
     SearchableSelect.init(pSel);
       
     // Populate expense categories

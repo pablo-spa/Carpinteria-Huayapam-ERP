@@ -350,7 +350,7 @@ document.getElementById('fecha').value = new Date().toISOString().slice(0, 10);
 
 async function loadDBData() {
   INV_DB = await window.DB.query('inventory');
-  PROJ_DB = (await window.DB.query('projects')).filter(p => !p._init && !p.archived && p.code && p.name);
+  PROJ_DB = (await window.DB.query('projects')).filter(p => !p._init && !(p.archivado||p.archived) && (p.codigo||p.code) && (p.nombre||p.name));
 
   // Populate proveedor from contacts
   const proveedores = (await window.DB.query('contacts', { tipo: 'proveedor' })).filter(c => !c._init);
@@ -360,8 +360,8 @@ async function loadDBData() {
   pSel.appendChild(firstOpt);
   proveedores.forEach(p => {
     const o = document.createElement('option');
-    o.value = p.name || p.givenName;
-    o.textContent = p.name || p.givenName;
+    o.value = (p.nombre||p.name) || p.givenName;
+    o.textContent = (p.nombre||p.name) || p.givenName;
     pSel.appendChild(o);
   });
   const otroOpt = document.createElement('option');
@@ -378,7 +378,7 @@ async function loadDBData() {
   // Populate add-proj
   const projSel = document.getElementById('add-proj');
   projSel.innerHTML = '<option value="ALMACEN">Stock Almacén</option>' +
-    PROJ_DB.map(p => `<option value="${p.code}">${p.code} — ${p.name}</option>`).join('');
+    PROJ_DB.map(p => `<option value="${(p.codigo||p.code)}">${(p.codigo||p.code)} — ${(p.nombre||p.name)}</option>`).join('');
 }
 
 document.addEventListener('DOMContentLoaded', loadDBData);

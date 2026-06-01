@@ -108,7 +108,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     }
 
     list.innerHTML = filtered.map(o => {
-      const proj = d.projects.find(p => p.code === o.project || p.id === o.projectId);
+      const proj = d.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
       const projLabel = proj ? `${proj.code} – ${proj.name}` : (o.project || 'Stock General');
       const isPending = o.status === 'Pedido' || o.status === 'Solicitado';
 

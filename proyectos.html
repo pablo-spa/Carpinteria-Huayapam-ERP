@@ -278,24 +278,23 @@ body {
 
   document.getElementById('srch').addEventListener('input', applyFilters);
 
-  function pillClass(status) {
-    if (!status) return 'pill-gray';
-    if (status === 'En Producción')   return 'pill-blue';
-    if (status === 'Terminado' || status === 'completado' || status.includes('Entregado')) return 'pill-green';
-    if (status === 'Planificación')   return 'pill-amber';
-    if (status === 'En Pausa')        return 'pill-purple';
+  function pillClass(estado) {
+    if (!estado) return 'pill-gray';
+    if (estado === 'En Producción')   return 'pill-blue';
+    if (estado === 'Terminado' || estado === 'completado' || estado.includes('Entregado')) return 'pill-green';
+    if (estado === 'Planificación')   return 'pill-amber';
+    if (estado === 'En Pausa')        return 'pill-purple';
     return 'pill-gray';
   }
 
-  function getRealHours(projCode) {
+  function getRealHours(codigo) {
     const db = window.DB.get();
     let total = 0;
     (db.attendance || []).forEach(a => {
-      if (a.projects) {
-        a.projects.forEach(p => {
-          if (p.p === projCode) total += (parseFloat(p.t) || 0);
-        });
-      }
+      const lista = a.proyectos || a.projects || [];
+      lista.forEach(p => {
+        if (p.p === codigo) total += (parseFloat(p.t || p.horas) || 0);
+      });
     });
     return total;
   }
@@ -303,33 +302,42 @@ body {
   function nextProjectCode() {
     const d = window.DB.get();
     let max = 0;
-    (d.projects || []).filter(p => !p._init && p.code).forEach(p => {
-      const n = parseInt(p.code.replace(/\D/g, ''), 10);
+    (d.projects || []).filter(p => !p._init && (p.codigo || p.code)).forEach(p => {
+      const raw = p.codigo || p.code || '';
+      const n = parseInt(raw.replace(/\D/g, ''), 10);
       if (!isNaN(n) && n > max) max = n;
     });
     return String(max + 1).padStart(4, '0');
   }
 
   function projectCard(p, d) {
-    const contact  = (d.contacts || []).find(c => c.id === p.contactId) || { name: 'Sin contacto' };
-    const progress = p.progress || 0;
-    const estHrs   = p.estimatedHours || 0;
-    const realHrs  = getRealHours(p.code);
+    const contactoId = p.contactoId || p.contactId;
+    const contact    = (d.contacts || []).find(c => c.id === contactoId) || { name: 'Sin contacto' };
+    const contactNombre = contact.nombre || contact.name || 'Sin contacto';
+    const codigo     = p.codigo || p.code || '';
+    const nombre     = p.nombre || p.name || '';
+    const estado     = p.estado || p.status || '';
+    const fechaInicio = p.fechaInicio || p.startDate || '';
+    const fechaFin   = p.fechaFin || p.endDate || '';
+    const avance     = p.avance ?? p.progress ?? 0;
+    const estHrs     = p.horasEstimadas || p.estimatedHours || 0;
+    const realHrs    = getRealHours(codigo);
+
     return `
-      <div class="row-card" data-status="${p.status || ''}" data-client="${(contact.name||'').toLowerCase()}" onclick="window.location.href='proyecto_detalle.html?id=${p.id}'">
-        <div class="r-code">${p.code || ''}</div>
+      <div class="row-card" data-status="${estado}" data-client="${contactNombre.toLowerCase()}" onclick="window.location.href='proyecto_detalle.html?id=${p.id}'">
+        <div class="r-code">${codigo}</div>
         <div class="r-main">
-          <div class="r-title" data-code="${p.code || ''}">${p.name}</div>
-          <div class="r-sub">👤 ${contact.name}</div>
+          <div class="r-title" data-code="${codigo}">${nombre}</div>
+          <div class="r-sub">👤 ${contactNombre}</div>
         </div>
         <div class="r-dates">
-          <div><span class="pill ${pillClass(p.status)}">${p.status || 'Sin estado'}</span></div>
-          <div style="margin-top:5px;">Inicio: ${p.startDate || '—'}</div>
-          ${p.endDate ? `<div>Entrega: ${p.endDate}</div>` : ''}
+          <div><span class="pill ${pillClass(estado)}">${estado || 'Sin estado'}</span></div>
+          <div style="margin-top:5px;">Inicio: ${fechaInicio || '—'}</div>
+          ${fechaFin ? `<div>Entrega: ${fechaFin}</div>` : ''}
         </div>
         <div class="r-prog-wrap">
-          <div class="r-prog-meta"><span>Avance</span><span>${progress}%</span></div>
-          <div class="prog-track"><div class="prog-fill" style="width:${progress}%"></div></div>
+          <div class="r-prog-meta"><span>Avance</span><span>${avance}%</span></div>
+          <div class="prog-track"><div class="prog-fill" style="width:${avance}%"></div></div>
           <div style="font-size:10px; color:var(--subtext); text-align:right; margin-top:2px;">
             ${realHrs.toFixed(1)} hrs reales / ${estHrs.toFixed(1)} hrs est.
           </div>
@@ -345,8 +353,8 @@ body {
     const isArchived = currentFilter === 'archived';
 
     let projects = (d.projects || [])
-      .filter(p => p.name && !p._init)
-      .filter(p => isArchived ? p.archived === true : !p.archived);
+      .filter(p => (p.nombre || p.name) && !p._init)
+      .filter(p => isArchived ? (p.archivado || p.archived) === true : !(p.archivado || p.archived));
 
     if (projects.length === 0) {
       lc.innerHTML = '<div class="empty-state">No hay proyectos' + (isArchived ? ' archivados' : '') + '.</div>';
@@ -354,25 +362,23 @@ body {
       return;
     }
 
-    // Hide column headers when grouping by client (they get inline headers)
     document.getElementById('list-header').style.display = sortMode === 'cliente' ? 'none' : '';
 
     if (sortMode === 'cliente') {
-      // Group by client name
       const contactMap = {};
-      (d.contacts || []).forEach(c => { contactMap[c.id] = c.name || c.givenName || 'Sin nombre'; });
+      (d.contacts || []).forEach(c => { contactMap[c.id] = c.nombre || c.name || c.givenName || 'Sin nombre'; });
 
       const grouped = {};
       projects.forEach(p => {
-        const clientName = contactMap[p.contactId] || 'Sin contacto';
+        const cId = p.contactoId || p.contactId;
+        const clientName = contactMap[cId] || 'Sin contacto';
         if (!grouped[clientName]) grouped[clientName] = [];
         grouped[clientName].push(p);
       });
 
-      // Sort clients alphabetically; within each client sort by start date desc
       const clientsSorted = Object.keys(grouped).sort((a, b) => a.localeCompare(b, 'es'));
       clientsSorted.forEach(client => {
-        grouped[client].sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+        grouped[client].sort((a, b) => new Date(b.fechaInicio || b.startDate) - new Date(a.fechaInicio || a.startDate));
       });
 
       lc.innerHTML = clientsSorted.map(client => {
@@ -387,17 +393,16 @@ body {
       }).join('');
 
     } else if (sortMode === 'codigo') {
-      projects.sort((a, b) => (a.code || '').localeCompare(b.code || '', undefined, { numeric: true }));
+      projects.sort((a, b) => (a.codigo || a.code || '').localeCompare(b.codigo || b.code || '', undefined, { numeric: true }));
       lc.innerHTML = projects.map(p => projectCard(p, d)).join('');
 
     } else {
-      // Por fecha: activos primero, terminados al final
       projects.sort((a, b) => {
-        const aTerm = a.status === 'Terminado' || a.status === 'completado';
-        const bTerm = b.status === 'Terminado' || b.status === 'completado';
-        if (aTerm && !bTerm) return 1;
-        if (bTerm && !aTerm) return -1;
-        return new Date(b.startDate) - new Date(a.startDate);
+        const aEst = (a.estado || a.status || '') === 'Terminado' || (a.estado || a.status || '') === 'completado';
+        const bEst = (b.estado || b.status || '') === 'Terminado' || (b.estado || b.status || '') === 'completado';
+        if (aEst && !bEst) return 1;
+        if (bEst && !aEst) return -1;
+        return new Date(b.fechaInicio || b.startDate) - new Date(a.fechaInicio || a.startDate);
       });
       lc.innerHTML = projects.map(p => projectCard(p, d)).join('');
     }
@@ -433,7 +438,6 @@ body {
       c.style.display = show ? (window.innerWidth <= 768 ? 'flex' : 'grid') : 'none';
     });
 
-    // Hide client group headers that have no visible rows
     document.querySelectorAll('.client-group-hdr').forEach(hdr => {
       const clientKey = hdr.dataset.clientHdr;
       const hasVisible = Array.from(document.querySelectorAll(`.row-card[data-client="${clientKey}"]`))
@@ -449,7 +453,7 @@ body {
     const sel = document.getElementById('m-contact');
     sel.innerHTML = '<option value="">— Sin contacto —</option>' +
       (d.contacts || []).filter(c => !c._init).map(c =>
-        `<option value="${c.id}">${c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`
+        `<option value="${c.id}">${c.nombre || c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`
       ).join('');
     if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
   }
@@ -463,23 +467,23 @@ body {
       const d = window.DB.get();
       const p = d.projects.find(x => x.id === id);
       document.getElementById('mod-title').textContent = 'Editar Proyecto';
-      document.getElementById('m-id').value = p.id;
-      document.getElementById('m-code').value = p.code || '';
-      document.getElementById('m-name').value = p.name || '';
-      document.getElementById('m-status').value = p.status || 'Planificación';
-      document.getElementById('m-contact').value = p.contactId || '';
-      document.getElementById('m-start').value = p.startDate || '';
-      document.getElementById('m-end').value = p.endDate || '';
-      document.getElementById('m-pieces').value = (p.pieces || []).join(', ');
+      document.getElementById('m-id').value    = p.id;
+      document.getElementById('m-code').value  = p.codigo  || p.code    || '';
+      document.getElementById('m-name').value  = p.nombre  || p.name    || '';
+      document.getElementById('m-status').value = p.estado || p.status  || 'Planificación';
+      document.getElementById('m-contact').value = p.contactoId || p.contactId || '';
+      document.getElementById('m-start').value = p.fechaInicio || p.startDate || '';
+      document.getElementById('m-end').value   = p.fechaFin   || p.endDate   || '';
+      document.getElementById('m-pieces').value = (p.piezas || p.pieces || []).join(', ');
     } else {
       document.getElementById('mod-title').textContent = 'Nuevo Proyecto';
-      document.getElementById('m-id').value = '';
-      document.getElementById('m-code').value = nextProjectCode();
-      document.getElementById('m-name').value = '';
+      document.getElementById('m-id').value    = '';
+      document.getElementById('m-code').value  = nextProjectCode();
+      document.getElementById('m-name').value  = '';
       document.getElementById('m-status').value = 'Planificación';
       document.getElementById('m-contact').value = '';
       document.getElementById('m-start').value = new Date().toISOString().slice(0, 10);
-      document.getElementById('m-end').value = '';
+      document.getElementById('m-end').value   = '';
       document.getElementById('m-pieces').value = '';
     }
   }
@@ -488,17 +492,17 @@ body {
 
   function showNewContactForm() {
     document.getElementById('new-contact-pane').style.display = 'block';
-    document.getElementById('mc-name').value = '';
+    document.getElementById('mc-name').value  = '';
     document.getElementById('mc-phone').value = '';
   }
 
   function saveInlineContact() {
-    const name = document.getElementById('mc-name').value.trim();
-    const phone = document.getElementById('mc-phone').value.trim();
-    if (!name) return alert('Nombre obligatorio.');
+    const nombre = document.getElementById('mc-name').value.trim();
+    const phone  = document.getElementById('mc-phone').value.trim();
+    if (!nombre) return alert('Nombre obligatorio.');
     const id = crypto.randomUUID();
-    const d = window.DB.get();
-    d.contacts.push({ id, name, phone, tipo: 'cliente', activo: true, person: '', email: '', address: '' });
+    const d  = window.DB.get();
+    d.contacts.push({ id, name: nombre, nombre, phone, tipo: 'cliente', activo: true, email: '', address: '' });
     window.DB.save(d);
     populateContactSelect();
     document.getElementById('m-contact').value = id;
@@ -507,38 +511,38 @@ body {
 
   function saveProject() {
     const id       = document.getElementById('m-id').value;
-    const code     = document.getElementById('m-code').value.trim();
-    const name     = document.getElementById('m-name').value.trim();
+    const codigo   = document.getElementById('m-code').value.trim();
+    const nombre   = document.getElementById('m-name').value.trim();
     const piecesStr = document.getElementById('m-pieces').value;
 
-    if (!code || !name) return alert('Código y Nombre son obligatorios.');
+    if (!codigo || !nombre) return alert('Código y Nombre son obligatorios.');
 
     const d = window.DB.get();
     const existing = id ? d.projects.find(x => x.id === id) : null;
 
     const p = {
-      code,
-      name,
-      status:    document.getElementById('m-status').value,
-      contactId: document.getElementById('m-contact').value,
-      startDate: document.getElementById('m-start').value,
-      endDate:   document.getElementById('m-end').value,
-      pieces:    piecesStr ? piecesStr.split(',').map(s => s.trim()).filter(Boolean) : []
+      codigo,
+      nombre,
+      estado:     document.getElementById('m-status').value,
+      contactoId: document.getElementById('m-contact').value,
+      fechaInicio: document.getElementById('m-start').value,
+      fechaFin:   document.getElementById('m-end').value,
+      piezas:     piecesStr ? piecesStr.split(',').map(s => s.trim()).filter(Boolean) : []
     };
 
     if (existing) {
       Object.assign(existing, p);
       window.DB.save(d);
     } else {
-      p.id                      = crypto.randomUUID();
-      p.estimatedHours          = 0;
-      p.estimatedHoursByCategory = {};
-      p.estimatedWoodPt         = 0;
-      p.estimatedOtherMatCost   = 0;
-      p.totalValue              = 0;
-      p.payments                = 0;
-      p.progress                = 0;
-      p.milestones              = [];
+      p.id              = crypto.randomUUID();
+      p.horasEstimadas  = 0;
+      p.horasPorCategoria = {};
+      p.maderaPt        = 0;
+      p.costoMateriales = 0;
+      p.valorTotal      = 0;
+      p.pagos           = 0;
+      p.avance          = 0;
+      p.hitos           = [];
       window.DB.addProject(p);
     }
 

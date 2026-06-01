@@ -590,7 +590,7 @@ function showPrintPreview(isClient) {
       : '';
     html += `<div class="print-piece">
       <div class="print-piece-hdr">
-        <span>${i + 1}. [${p.code}] ${p.name || ''}</span>
+        <span>${i + 1}. [${(p.codigo||p.code)}] ${(p.nombre||p.name) || ''}</span>
         <span>${isClient ? fmt(c.final) : fmt(c.final)+' (costo base: '+fmt(c.sub3)+')'}</span>
       </div>
       ${matsDetail ? `<div class="print-piece-desc">${matsDetail}</div>` : ''}
@@ -661,14 +661,14 @@ async function loadOptions() {
   
   const pSel = document.getElementById('projectInput');
   const activeStatuses = ['Planificación', 'En Producción'];
-  const activeProjsFiltered = activeProjs.filter(p => p.code && p.name && activeStatuses.includes(p.status));
-  const otherProjs = activeProjs.filter(p => p.code && p.name && !activeStatuses.includes(p.status));
+  const activeProjsFiltered = activeProjs.filter(p => (p.codigo||p.code) && (p.nombre||p.name) && activeStatuses.includes((p.estado||p.status)));
+  const otherProjs = activeProjs.filter(p => (p.codigo||p.code) && (p.nombre||p.name) && !activeStatuses.includes((p.estado||p.status)));
   let projHtml = '<option value="">— Seleccionar Proyecto —</option>';
   if (activeProjsFiltered.length) {
-    projHtml += `<optgroup label="Proyectos Activos">${activeProjsFiltered.map(p => `<option value="${p.id}">${p.code} – ${p.name}</option>`).join('')}</optgroup>`;
+    projHtml += `<optgroup label="Proyectos Activos">${activeProjsFiltered.map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('')}</optgroup>`;
   }
   if (otherProjs.length) {
-    projHtml += `<optgroup label="Otros Proyectos">${otherProjs.map(p => `<option value="${p.id}">${p.code} – ${p.name}</option>`).join('')}</optgroup>`;
+    projHtml += `<optgroup label="Otros Proyectos">${otherProjs.map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('')}</optgroup>`;
   }
   pSel.innerHTML = projHtml;
 

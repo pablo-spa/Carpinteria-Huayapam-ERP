@@ -319,7 +319,6 @@
     const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Oficial A', aprendiz:'Aprendiz', barniz:'Barniz', pulido:'Pulido', empaque:'Empaque', chofer:'Chofer' };
 
     function fmt(n) { return '$' + (parseFloat(n)||0).toLocaleString('es-MX', {minimumFractionDigits:2}); }
-
     function goBack() { window.location.href = 'proyectos.html'; }
 
     // ── Drive link ───────────────────────────────────
@@ -331,35 +330,35 @@
       else { lnk.style.display = 'none'; }
     }
 
-    // ── Milestones ───────────────────────────────────
+    // ── Hitos ────────────────────────────────────────
     function renderMilestones() {
-      if (!projData.milestones) projData.milestones = [];
-      projData.milestones.sort((a, b) => new Date(a.date) - new Date(b.date));
+      if (!projData.hitos) projData.hitos = [];
+      projData.hitos.sort((a, b) => new Date(a.fecha || a.date) - new Date(b.fecha || b.date));
       const lst = document.getElementById('ms-list');
-      lst.innerHTML = projData.milestones.map((m, i) => `
+      lst.innerHTML = projData.hitos.map((m, i) => `
         <div class="ms-item">
           <input type="checkbox" class="ms-chk" ${m.done ? 'checked' : ''} onchange="toggleMilestone(${i},this.checked)">
           <div class="ms-title" style="text-decoration:${m.done?'line-through':'none'}; color:${m.done?'var(--subtext)':'var(--text)'};">${m.title}</div>
-          <div class="ms-date">${m.date || ''}</div>
+          <div class="ms-date">${m.fecha || m.date || ''}</div>
           <button class="ms-delete" onclick="deleteMilestone(${i})">✕</button>
         </div>
       `).join('');
     }
     function addMilestone() {
       const title = document.getElementById('ms-new-title').value.trim();
-      const date  = document.getElementById('ms-new-date').value;
+      const fecha = document.getElementById('ms-new-date').value;
       if (!title) return;
-      projData.milestones.push({ title, date, done: false });
+      projData.hitos.push({ title, fecha, done: false });
       document.getElementById('ms-new-title').value = '';
       document.getElementById('ms-new-date').value  = '';
       renderMilestones();
     }
-    function toggleMilestone(i, checked) { if (projData.milestones[i]) { projData.milestones[i].done = checked; renderMilestones(); } }
-    function deleteMilestone(i) { projData.milestones.splice(i, 1); renderMilestones(); }
+    function toggleMilestone(i, checked) { if (projData.hitos[i]) { projData.hitos[i].done = checked; renderMilestones(); } }
+    function deleteMilestone(i) { projData.hitos.splice(i, 1); renderMilestones(); }
 
-    // ── Hours by category ─────────────────────────────
+    // ── Horas por categoría ───────────────────────────
     function renderHoursTable() {
-      const cats = projData.estimatedHoursByCategory || {};
+      const cats = projData.horasPorCategoria || projData.estimatedHoursByCategory || {};
       const tbody = document.getElementById('hrs-table-body');
       tbody.innerHTML = RATE_KEYS.map(k => `
         <tr>
@@ -394,18 +393,13 @@
       if (!projId) { alert('Guarda el proyecto primero.'); return; }
 
       const quotes = (d.quotations || []).filter(q => q.projectId === projId && q.status === 'Activa');
-      if (quotes.length === 0) { alert('No hay cotización activa para este proyecto. Activa una cotización primero.'); return; }
+      if (quotes.length === 0) { alert('No hay cotización activa para este proyecto.'); return; }
 
-      const q = quotes[0]; // use first active quote
-
-      // Hours
+      const q = quotes[0];
       const hours = {};
       RATE_KEYS.forEach(k => hours[k] = 0);
-
-      // Wood: by material name (unit = 'pt')
       const woodByMat = {};
-      let woodTotal   = 0;
-      let otherCost   = 0;
+      let woodTotal = 0, otherCost = 0;
 
       (q.pieces || []).forEach(piece => {
         RATE_KEYS.forEach(k => { hours[k] += parseFloat(piece.hrs?.[k] || 0); });
@@ -420,22 +414,16 @@
         });
       });
 
-      // Update hours inputs
       RATE_KEYS.forEach(k => {
         const inp = document.querySelector(`.hrs-input[data-key="${k}"]`);
         if (inp) inp.value = hours[k].toFixed(1);
       });
       updateHoursTotal();
-
-      // Update wood
       document.getElementById('f-wood-est').value = woodTotal.toFixed(2);
       renderWoodBreakdown(woodByMat);
-
-      // Update other materials
       document.getElementById('f-other-mat-est').value = otherCost.toFixed(2);
       updateMatDiff();
 
-      // Show source note
       const note = document.getElementById('quote-source-note');
       note.textContent = `Calculado desde cotización ${q.id} — ${q.date}`;
       note.style.display = 'block';
@@ -448,10 +436,7 @@
       if (entries.length === 0) { wrap.style.display = 'none'; return; }
       wrap.style.display = 'block';
       list.innerHTML = entries.map(([name, qty]) => `
-        <div class="mat-row">
-          <span style="color:var(--subtext);">${name}</span>
-          <span style="font-weight:700;">${qty.toFixed(2)} pt</span>
-        </div>
+        <div class="mat-row"><span style="color:var(--subtext);">${name}</span><span style="font-weight:700;">${qty.toFixed(2)} pt</span></div>
       `).join('');
     }
 
@@ -461,59 +446,47 @@
       if (est === 0 && actual === 0) { document.getElementById('mat-diff-val').textContent = '—'; return; }
       const diff = actual - est;
       const el   = document.getElementById('mat-diff-val');
-      if (diff > 0) { el.textContent = fmt(diff) + ' sobre estimado'; el.style.color = 'var(--red)'; }
+      if (diff > 0)      { el.textContent = fmt(diff) + ' sobre estimado'; el.style.color = 'var(--red)'; }
       else if (diff < 0) { el.textContent = fmt(Math.abs(diff)) + ' bajo estimado'; el.style.color = 'var(--green)'; }
-      else { el.textContent = 'Exacto'; el.style.color = 'var(--green)'; }
+      else               { el.textContent = 'Exacto'; el.style.color = 'var(--green)'; }
     }
     document.getElementById('f-other-mat-est').addEventListener('input', updateMatDiff);
 
-    // ── Actual materials from almacen salidas ─────────
+    // ── Materiales reales de almacén ──────────────────
     function renderActualMaterials(d) {
-      if (!projData || !projData.code) return;
-      const salidas = (d.inventory_salidas || []).filter(s => s.proyecto === projData.code);
+      const codigo = projData?.codigo || projData?.code;
+      if (!codigo) return;
+      const salidas = (d.inventory_salidas || []).filter(s => s.proyecto === codigo);
       const inv     = d.inventory || [];
       let actualCost = 0;
-
       salidas.forEach(s => {
         (s.items || []).forEach(item => {
           const invItem = inv.find(i => i.code === item.code);
-          const unitCost = invItem ? (parseFloat(invItem.cost) || 0) : 0;
-          actualCost += (parseFloat(item.qty) || 0) * unitCost;
+          actualCost += (parseFloat(item.qty) || 0) * (parseFloat(invItem?.cost) || 0);
         });
       });
-
       const el = document.getElementById('actual-mat-cost');
       el.textContent = fmt(actualCost);
       el.dataset.raw = actualCost;
       updateMatDiff();
     }
 
-    // ── Quotations ────────────────────────────────────
+    // ── Cotizaciones ──────────────────────────────────
     function renderQuotes() {
       const d = window.DB.get();
       const qList = document.getElementById('quotes-list');
-      if (!projId) {
-        qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>';
-        return;
-      }
+      if (!projId) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>'; return; }
       const quotes = (d.quotations || []).filter(q => q.projectId === projId);
-      if (quotes.length === 0) {
-        qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay cotizaciones registradas.</div>';
-        return;
-      }
+      if (quotes.length === 0) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay cotizaciones registradas.</div>'; return; }
       quotes.sort((a, b) => new Date(b.date) - new Date(a.date));
-
       const stColor = { 'Activa':'var(--green)', 'Cancelada':'var(--red)', 'En Pausa':'var(--amber)', 'Esperando Autorización':'var(--blue)' };
-
       qList.innerHTML = quotes.map(q => `
         <div class="quot-card">
           <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
             <strong style="font-size:14px;">Cotización ${q.id}</strong>
             <span style="font-size:11px; font-weight:800; color:${stColor[q.status]||'var(--subtext)'};">${q.status}</span>
           </div>
-          <div style="font-size:12px; color:var(--subtext); margin-bottom:8px;">
-            ${q.date} &nbsp;|&nbsp; ${fmt(q.total||0)}
-          </div>
+          <div style="font-size:12px; color:var(--subtext); margin-bottom:8px;">${q.date} &nbsp;|&nbsp; ${fmt(q.total||0)}</div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="window.open('cotizacion.html?viewId=${q.id}','_blank')">Imprimir PDF</button>
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reviseQuote('${q.id}')">Realizar Cambio</button>
@@ -534,7 +507,7 @@
       d.quotations.filter(q => q.projectId === projId && q.id !== qId && q.status === 'En Pausa').forEach(q => q.status = 'Cancelada');
       d.quotations[idx].status = 'Activa';
       const pi = d.projects.findIndex(p => p.id === projId);
-      if (pi > -1) { d.projects[pi].totalValue = d.quotations[idx].total || 0; }
+      if (pi > -1) { d.projects[pi].valorTotal = d.quotations[idx].total || 0; }
       window.DB.save(d);
       document.getElementById('f-val').value = d.quotations[idx].total || 0;
       renderQuotes();
@@ -546,55 +519,58 @@
       if (idx > -1) { d.quotations[idx].status = 'Cancelada'; window.DB.save(d); renderQuotes(); }
     }
 
-    // ── Timeline (horas reales) ───────────────────────
+    // ── Timeline de horas reales ──────────────────────
     function renderTimeline() {
       const d = window.DB.get();
       const tlList = document.getElementById('tl-list');
-      if (!projData?.code) { tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>'; return; }
+      const codigo = projData?.codigo || projData?.code;
+      if (!codigo) { tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>'; return; }
 
-      let logs = [];
-      (d.attendance || []).filter(a => !a._init).forEach(att => {
-        if (!att.workers || !Array.isArray(att.workers)) return;
-        let workersInProj = [], totalHrsDay = 0;
-        att.workers.forEach(w => {
-          if (!w.projects || !Array.isArray(w.projects)) return;
-          const pLogs = w.projects.filter(p => p.p === projData.code);
-          if (pLogs.length === 0) return;
-          const h = pLogs.reduce((s, pl) => s + parseFloat(pl.t || 0), 0);
-          const descs = pLogs.map(pl => pl.desc).filter(Boolean).join(', ');
-          totalHrsDay += h;
-          const wName = ((d.contacts || []).find(wk => wk.id === w.wId) || {}).name || w.wId;
-          workersInProj.push(`${wName} (${h}h)${descs ? ': ' + descs : ''}`);
-        });
-        if (workersInProj.length > 0) logs.push({ date: att.date, totalHrsDay, details: workersInProj.join('<br>') });
+      // Agrupar registros de asistencia por fecha para este proyecto
+      const byDate = {};
+      (d.attendance || []).filter(a => !a._init && (a.estado || a.status) && (a.estado || a.status) !== 'falta').forEach(att => {
+        const fecha = att.fecha || att.date;
+        if (!fecha) return;
+        const proyectos = att.proyectos || att.projects || [];
+        const enProyecto = proyectos.filter(p => p.p === codigo);
+        if (enProyecto.length === 0) return;
+
+        const horas  = enProyecto.reduce((s, p) => s + (parseFloat(p.horas || p.t) || 0), 0);
+        const descs  = enProyecto.map(p => p.descripcion || p.desc).filter(Boolean).join(', ');
+        const wId    = att.trabajadorId || att.workerId;
+        const wName  = ((d.contacts || []).find(c => c.id === wId) || {}).nombre
+                    || ((d.contacts || []).find(c => c.id === wId) || {}).name
+                    || wId || '?';
+
+        if (!byDate[fecha]) byDate[fecha] = { totalHrs: 0, workers: [] };
+        byDate[fecha].totalHrs += horas;
+        byDate[fecha].workers.push(`${wName} (${horas.toFixed(1)}h)${descs ? ': ' + descs : ''}`);
       });
 
-      logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const logs = Object.entries(byDate).sort((a, b) => new Date(b[0]) - new Date(a[0]));
 
       if (logs.length === 0) {
         tlList.innerHTML = '<div style="font-size:12px; color:var(--subtext); margin-top:8px;">No hay registros de horas para este proyecto todavía.</div>';
         return;
       }
-      tlList.innerHTML = logs.map(l => `
+      tlList.innerHTML = logs.map(([fecha, data]) => `
         <div class="tl-item">
           <div class="tl-dot"></div>
           <div class="tl-content">
-            <div class="tl-date">${l.date} — ${l.totalHrsDay.toFixed(1)} hrs</div>
-            <div class="tl-text">${l.details}</div>
+            <div class="tl-date">${fecha} — ${data.totalHrs.toFixed(1)} hrs</div>
+            <div class="tl-text">${data.workers.join('<br>')}</div>
           </div>
         </div>
       `).join('');
     }
 
-    // ── Payments ──────────────────────────────────────
+    // ── Pagos recibidos ───────────────────────────────
     function renderPayments(d) {
       if (!projId) return;
       const movs = (d.accounting_movements || []).filter(m => m.projectId === projId && m.type === 'Ingreso');
       movs.sort((a, b) => new Date(b.date) - new Date(a.date));
-
       let totalConfirmed = 0;
       let html = '';
-
       if (movs.length === 0) {
         html = '<div style="font-size:12px; color:var(--subtext);">No hay pagos registrados.</div>';
       } else {
@@ -609,63 +585,54 @@
           `;
         });
       }
-
       document.getElementById('p-pagos-list').innerHTML = html;
       document.getElementById('p-total-cobrado').textContent = fmt(totalConfirmed);
-
       const val   = parseFloat(document.getElementById('f-val').value) || 0;
       const saldo = val - totalConfirmed;
       const saldoEl = document.getElementById('v-saldo');
       saldoEl.textContent = fmt(Math.max(0, saldo));
       saldoEl.style.color = saldo <= 0 ? 'var(--green)' : 'var(--red)';
-
-      if (projData && projData.payments !== totalConfirmed) {
-        projData.payments = totalConfirmed;
-      }
+      if (projData && projData.pagos !== totalConfirmed) projData.pagos = totalConfirmed;
     }
 
-    // ── Archive ───────────────────────────────────────
+    // ── Archivar ──────────────────────────────────────
     function archiveProject() {
       if (!projId) return;
-      if (!confirm('¿Archivar este proyecto? Dejará de aparecer en la lista principal. Puedes verlo en "Archivados".')) return;
-      const d = window.DB.get();
+      if (!confirm('¿Archivar este proyecto? Dejará de aparecer en la lista principal.')) return;
+      const d  = window.DB.get();
       const pi = d.projects.findIndex(p => p.id === projId);
-      if (pi > -1) {
-        d.projects[pi].archived = true;
-        window.DB.save(d);
-        window.location.href = 'proyectos.html';
-      }
+      if (pi > -1) { d.projects[pi].archivado = true; window.DB.save(d); window.location.href = 'proyectos.html'; }
     }
 
-    // ── Save ──────────────────────────────────────────
+    // ── Guardar ───────────────────────────────────────
     function saveData() {
-      const code = document.getElementById('f-code').value.trim();
-      const name = document.getElementById('f-name').value.trim();
-      if (!code || !name) { alert('El código y el nombre son obligatorios.'); return; }
+      const codigo = document.getElementById('f-code').value.trim();
+      const nombre = document.getElementById('f-name').value.trim();
+      if (!codigo || !nombre) { alert('El código y el nombre son obligatorios.'); return; }
 
-      projData.code      = code;
-      projData.name      = name;
-      projData.contactId = document.getElementById('f-contact').value;
-      projData.status    = document.getElementById('f-status').value;
-      projData.startDate = document.getElementById('f-start').value;
-      projData.endDate   = document.getElementById('f-end').value;
-      projData.driveLink = document.getElementById('f-drive').value.trim();
-      projData.progress  = parseInt(document.getElementById('f-progress').value) || 0;
-      projData.totalValue = parseFloat(document.getElementById('f-val').value) || 0;
-      projData.estimatedWoodPt          = parseFloat(document.getElementById('f-wood-est').value) || 0;
-      projData.estimatedOtherMatCost    = parseFloat(document.getElementById('f-other-mat-est').value) || 0;
-      projData.estimatedHoursByCategory = getHoursCategoryValues();
-      projData.estimatedHours = Object.values(projData.estimatedHoursByCategory).reduce((s, v) => s + v, 0);
+      projData.codigo      = codigo;
+      projData.nombre      = nombre;
+      projData.contactoId  = document.getElementById('f-contact').value;
+      projData.estado      = document.getElementById('f-status').value;
+      projData.fechaInicio = document.getElementById('f-start').value;
+      projData.fechaFin    = document.getElementById('f-end').value;
+      projData.enlaceDrive = document.getElementById('f-drive').value.trim();
+      projData.avance      = parseInt(document.getElementById('f-progress').value) || 0;
+      projData.valorTotal  = parseFloat(document.getElementById('f-val').value) || 0;
+      projData.maderaPt           = parseFloat(document.getElementById('f-wood-est').value) || 0;
+      projData.costoMateriales    = parseFloat(document.getElementById('f-other-mat-est').value) || 0;
+      projData.horasPorCategoria  = getHoursCategoryValues();
+      projData.horasEstimadas     = Object.values(projData.horasPorCategoria).reduce((s, v) => s + v, 0);
 
       if (projId) {
         window.DB.updateProject(projData);
-        document.getElementById('h-title').textContent = `${projData.code} — ${projData.name}`;
+        document.getElementById('h-title').textContent = `${projData.codigo} — ${projData.nombre}`;
         alert('Proyecto guardado.');
       } else {
         projData.id = crypto.randomUUID();
         projId      = projData.id;
         window.DB.addProject(projData);
-        document.getElementById('h-title').textContent = `${projData.code} — ${projData.name}`;
+        document.getElementById('h-title').textContent = `${projData.codigo} — ${projData.nombre}`;
         window.history.replaceState(null, '', `?id=${projId}`);
         document.getElementById('btn-archive').style.display = 'inline-flex';
         alert('Proyecto creado.');
@@ -685,62 +652,64 @@
 
       const d = window.DB.get();
 
-      // Populate contact select
       const sel = document.getElementById('f-contact');
       sel.innerHTML = '<option value="">— Sin contacto —</option>' +
         (d.contacts || []).filter(c => !c._init).map(c =>
-          `<option value="${c.id}">${c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`
+          `<option value="${c.id}">${c.nombre || c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`
         ).join('');
       if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
 
-      if (projId) {
-        projData = (d.projects || []).find(p => p.id === projId) || null;
-      }
+      if (projId) projData = (d.projects || []).find(p => p.id === projId) || null;
 
       if (!projData) {
-        // New project
-        const max = (d.projects || []).filter(p => !p._init && p.code).reduce((m, p) => {
-          const n = parseInt(p.code.replace(/\D/g, ''), 10);
+        // Nuevo proyecto
+        const max = (d.projects || []).filter(p => !p._init && (p.codigo || p.code)).reduce((m, p) => {
+          const raw = p.codigo || p.code || '';
+          const n = parseInt(raw.replace(/\D/g, ''), 10);
           return (!isNaN(n) && n > m) ? n : m;
         }, 0);
         projData = {
-          code: String(max + 1).padStart(4, '0'),
-          name: '', status: 'Planificación',
-          startDate: new Date().toISOString().slice(0, 10),
-          progress: 0, milestones: [],
-          estimatedHours: 0, estimatedHoursByCategory: {},
-          estimatedWoodPt: 0, estimatedOtherMatCost: 0,
-          totalValue: 0, payments: 0
+          codigo: String(max + 1).padStart(4, '0'),
+          nombre: '', estado: 'Planificación',
+          fechaInicio: new Date().toISOString().slice(0, 10),
+          avance: 0, hitos: [],
+          horasEstimadas: 0, horasPorCategoria: {},
+          maderaPt: 0, costoMateriales: 0,
+          valorTotal: 0, pagos: 0
         };
         document.getElementById('h-title').textContent = 'Nuevo Proyecto';
       } else {
-        document.getElementById('h-title').textContent = `${projData.code} — ${projData.name}`;
+        const codigo = projData.codigo || projData.code || '';
+        const nombre = projData.nombre || projData.name || '';
+        document.getElementById('h-title').textContent = `${codigo} — ${nombre}`;
         document.getElementById('btn-archive').style.display = 'inline-flex';
+        // Normalizar campos legacy → español si vienen del servidor con nombres viejos
+        if (!projData.hitos)            projData.hitos           = projData.milestones || [];
+        if (!projData.horasPorCategoria) projData.horasPorCategoria = projData.estimatedHoursByCategory || {};
       }
 
-      // Ensure default values
-      projData.milestones              = projData.milestones              || [];
-      projData.estimatedHoursByCategory = projData.estimatedHoursByCategory || {};
-      projData.estimatedHours          = projData.estimatedHours          || 0;
-      projData.estimatedWoodPt         = projData.estimatedWoodPt         || 0;
-      projData.estimatedOtherMatCost   = projData.estimatedOtherMatCost   || 0;
-      projData.totalValue              = projData.totalValue              || 0;
-      projData.payments                = projData.payments                || 0;
-      projData.progress                = projData.progress                || 0;
+      // Valores por defecto
+      projData.hitos           = projData.hitos           || [];
+      projData.horasPorCategoria= projData.horasPorCategoria|| {};
+      projData.horasEstimadas  = projData.horasEstimadas  || projData.estimatedHours || 0;
+      projData.maderaPt        = projData.maderaPt        || projData.estimatedWoodPt || 0;
+      projData.costoMateriales = projData.costoMateriales || projData.estimatedOtherMatCost || 0;
+      projData.valorTotal      = projData.valorTotal      || projData.totalValue || 0;
+      projData.pagos           = projData.pagos           || projData.payments || 0;
+      projData.avance          = projData.avance          ?? projData.progress ?? 0;
 
-      // Populate form fields
-      document.getElementById('f-code').value    = projData.code      || '';
-      document.getElementById('f-name').value    = projData.name      || '';
-      document.getElementById('f-contact').value = projData.contactId || '';
-      document.getElementById('f-status').value  = projData.status    || 'Planificación';
-      document.getElementById('f-start').value   = projData.startDate || '';
-      document.getElementById('f-end').value     = projData.endDate   || '';
-      document.getElementById('f-drive').value   = projData.driveLink || '';
-      document.getElementById('f-progress').value = projData.progress;
-      document.getElementById('p-val').textContent = projData.progress + '%';
-      document.getElementById('f-val').value      = projData.totalValue || '';
-      document.getElementById('f-wood-est').value = projData.estimatedWoodPt || '';
-      document.getElementById('f-other-mat-est').value = projData.estimatedOtherMatCost || '';
+      document.getElementById('f-code').value    = projData.codigo      || projData.code      || '';
+      document.getElementById('f-name').value    = projData.nombre      || projData.name      || '';
+      document.getElementById('f-contact').value = projData.contactoId  || projData.contactId || '';
+      document.getElementById('f-status').value  = projData.estado      || projData.status    || 'Planificación';
+      document.getElementById('f-start').value   = projData.fechaInicio || projData.startDate || '';
+      document.getElementById('f-end').value     = projData.fechaFin    || projData.endDate   || '';
+      document.getElementById('f-drive').value   = projData.enlaceDrive || projData.driveLink || '';
+      document.getElementById('f-progress').value = projData.avance;
+      document.getElementById('p-val').textContent = projData.avance + '%';
+      document.getElementById('f-val').value      = projData.valorTotal   || '';
+      document.getElementById('f-wood-est').value = projData.maderaPt     || '';
+      document.getElementById('f-other-mat-est').value = projData.costoMateriales || '';
 
       detectDriveLink();
       renderMilestones();

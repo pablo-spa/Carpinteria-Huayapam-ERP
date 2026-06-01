@@ -232,24 +232,27 @@ window.DB = {
     const d = getDB();
     if(!record.id) record.id = crypto.randomUUID();
     
-    // Save to attendance_logs
+    // Save to attendance_logs — usar nombres en español, mantener alias inglés para compatibilidad con reloj checador
     if (!d.attendance_logs) d.attendance_logs = [];
     const attLog = {
-       id: record.id,
-       workerId: record.workerId,
-       fecha: record.date || record.fecha,
-       status: record.status, 
-       entrada: record.entrada || '',
-       salida: record.salida || '',
-       horas_x1: record.hours || 0,
-       horas_x15: record.horas_x15 || 0,
-       horas_x2: record.horas_x2 || 0,
-       retardoMin: record.retardoMin || 0,
-       notas: record.notas || ''
+       id:           record.id,
+       trabajadorId: record.trabajadorId || record.workerId,
+       workerId:     record.trabajadorId || record.workerId, // alias para reloj checador
+       fecha:        record.fecha || record.date,
+       estado:       record.estado || record.status,
+       status:       record.estado || record.status,         // alias legacy
+       entrada:      record.entrada || '',
+       salida:       record.salida  || '',
+       horasNormal:  record.horasNormal  != null ? record.horasNormal  : (record.hours    || 0),
+       horasExtra:   record.horasExtra   != null ? record.horasExtra   : (record.horas_x15 || 0),
+       horasDoble:   record.horasDoble   != null ? record.horasDoble   : (record.horas_x2  || 0),
+       horasTotales: record.horasTotales != null ? record.horasTotales : (record.hours     || 0),
+       retardoMin:   record.retardoMin   || 0,
+       notas:        record.notas        || ''
     };
-    
+
     // Update or insert
-    const aIdx = d.attendance_logs.findIndex(x => x.workerId === attLog.workerId && x.fecha === attLog.fecha && x.tipo !== 'entrada' && x.tipo !== 'salida');
+    const aIdx = d.attendance_logs.findIndex(x => (x.trabajadorId || x.workerId) === attLog.trabajadorId && x.fecha === attLog.fecha && x.tipo !== 'entrada' && x.tipo !== 'salida');
     if (aIdx >= 0) d.attendance_logs[aIdx] = { ...d.attendance_logs[aIdx], ...attLog };
     else d.attendance_logs.push(attLog);
     
@@ -264,17 +267,19 @@ window.DB = {
     }
     
     // Generate production_logs
-    if (record.projects && Array.isArray(record.projects)) {
+    const proyectosArr = record.proyectos || record.projects;
+    if (proyectosArr && Array.isArray(proyectosArr)) {
         if (!d.production_logs) d.production_logs = [];
-        record.projects.forEach(p => {
+        proyectosArr.forEach(p => {
              if (!p.p) return;
              const pLog = {
-                 id: crypto.randomUUID(),
-                 workerId: record.workerId,
-                 proyectoId: p.p,
-                 fecha: record.date || record.fecha,
-                 piezaDescripcion: p.pieza || '',
-                 horasTrabajadas: record.hours ? record.hours / record.projects.length : 0 // evenly distribute if not specified
+                 id:              crypto.randomUUID(),
+                 trabajadorId:    record.trabajadorId || record.workerId,
+                 proyectoId:      p.p,
+                 fecha:           record.fecha || record.date,
+                 actividad:       p.actividad || '',
+                 descripcion:     p.descripcion || p.pieza || '',
+                 horasTrabajadas: parseFloat(p.horas) || (record.horasTotales ? record.horasTotales / proyectosArr.length : 0)
              };
              d.production_logs.push(pLog);
              if(window.parent && window.parent.setDocumentInFirebase) {

@@ -518,7 +518,7 @@ function processRealCheckins(off) {
         // Prefer production record (has real hours) over checador
         const prod = prodRecs.find(c => c.workerId === w.id && c.date === dateStr && !c._init && c.status);
         if (prod) {
-          const st = (prod.status || '').toLowerCase();
+          const st = (( prod.estado || prod.status) || '').toLowerCase();
           if (st === 'falta') {
             S[w.id].dias[i] = { st: 'falta', hrs: 0 };
           } else if (st === 'vacaciones') {
@@ -538,9 +538,10 @@ function processRealCheckins(off) {
           if (isFalta) {
             S[w.id].dias[i] = { st: 'falta', hrs: 0 };
           } else {
-            const hrs = chk[0].horas_x1 != null
-              ? (parseFloat(chk[0].horas_x1)||0) + (parseFloat(chk[0].horas_x15)||0)*1.5 + (parseFloat(chk[0].horas_x2)||0)*2
-              : 9;
+            const hrs = chk[0].horasTotales != null ? chk[0].horasTotales
+              : chk[0].horas_x1 != null
+                ? (parseFloat(chk[0].horas_x1)||0) + (parseFloat(chk[0].horas_x15)||0)*1.5 + (parseFloat(chk[0].horas_x2)||0)*2
+                : 9;
             S[w.id].dias[i] = { st: 'trabajo', hrs };
           }
         }
