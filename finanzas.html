@@ -146,7 +146,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('index.html','Inicio')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer; transition:0.15s;">←</button>
     Movimientos
   </div>
-  <button class="btn btn-dark" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Nuevo Movimiento</button>
+  <div style="display:flex; gap:8px;">
+    <button class="btn btn-outline" style="background:var(--base);" onclick="showViaticosReport()">📊 Reporte Viáticos</button>
+    <button class="btn btn-dark" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Nuevo Movimiento</button>
+  </div>
 </div>
 
 <div class="main">
@@ -453,7 +456,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   function saveInlineContact() {
     const name = document.getElementById('mc-name').value.trim();
     const phone = document.getElementById('mc-phone').value.trim();
-    if(!name) return alert('Nombre obligatorio');
+    if(!name) { toast('Nombre obligatorio', 'warn'); return; }
 
     const nc = {
       id: crypto.randomUUID(),
@@ -485,12 +488,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       // In many systems balance is only confirmed.
       if(m.status === 'confirmado' || m.status === 'confirmed') {
         if(m.type === 'Ingreso') {
-          if (bal[m.account] !== undefined) { bal[m.account] += m.amount; bal.ALL += m.amount; }
+          if (bal[m.account] === undefined) bal[m.account] = 0;
+          bal[m.account] += m.amount; bal.ALL += m.amount;
         } else if (m.type === 'Gasto') {
-          if (bal[m.account] !== undefined) { bal[m.account] -= m.amount; bal.ALL -= m.amount; }
+          if (bal[m.account] === undefined) bal[m.account] = 0;
+          bal[m.account] -= m.amount; bal.ALL -= m.amount;
         } else if (m.type === 'Transferencia') {
-          if (bal[m.account] !== undefined) bal[m.account] -= m.amount; 
-          if(bal[m.destAccount] !== undefined) bal[m.destAccount] += m.amount;
+          if (bal[m.account] === undefined) bal[m.account] = 0;
+          if (bal[m.destAccount] === undefined) bal[m.destAccount] = 0;
+          bal[m.account] -= m.amount; 
+          bal[m.destAccount] += m.amount;
         }
       }
     });
@@ -799,15 +806,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     if(type === 'Transferencia') {
       m.destAccount = document.getElementById('f-dest').value;
-      if(m.account === m.destAccount) return alert('Origen y destino deben ser distintas.');
+      if(m.account === m.destAccount) { toast('Origen y destino deben ser distintas.', 'warn'); return; }
     } else {
       m.method = document.getElementById('f-method').value;
       m.entity = document.getElementById('f-entity').value.trim();
     }
 
-    if(isNaN(m.amount) || m.amount <= 0) return alert('El monto es inválido.');
-    if(!m.date) return alert('Debes elegir una fecha.');
-    if(isConfirm && m.type !== 'Transferencia' && !m.concept) return alert('Concepto es requerido para confirmar.');
+    if(isNaN(m.amount) || m.amount <= 0) { toast('El monto es inválido.', 'warn'); return; }
+    if(!m.date) { toast('Debes elegir una fecha.', 'warn'); return; }
+    if(isConfirm && m.type !== 'Transferencia' && !m.concept) { toast('Concepto es requerido para confirmar.', 'warn'); return; }
 
     if(isConfirm && m.type === 'Ingreso' && m.projectId) {
       const p = STATE_PROJECTS.find(x => x.id === m.projectId);
@@ -830,7 +837,40 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     renderList();
   }
 
+  function showViaticosReport() {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const monthStr = prompt("Ingresa el mes para el reporte de viáticos (YYYY-MM):", currentMonth);
+    if (!monthStr) return;
+
+    // Filtrar los movimientos que están confirmados y tienen que ver con viáticos de ese mes
+    const movs = DBm.filter(m => 
+      (m.status === 'confirmado' || m.status === 'confirmed') && 
+      (m.category === 'Viáticos e Instalación' || (m.concept && m.concept.toLowerCase().includes('viático'))) && 
+      (m.date && m.date.startsWith(monthStr))
+    );
+    
+    let outSum = 0;
+    let inSum = 0;
+    
+    movs.forEach(m => {
+      if (m.type === 'Gasto') outSum += m.amount; // Anticipos y reembolsos faltantes
+      if (m.type === 'Ingreso') inSum += m.amount; // Devoluciones
+    });
+    
+    const neto = outSum - inSum;
+    
+    alert(`📊 REPORTE DE VIÁTICOS - ${monthStr}\n\nSalidas (Anticipos entregados y Reembolsos): ${fmt(outSum)}\nEntradas (Devoluciones sobrantes a caja): ${fmt(inSum)}\n\nGASTO NETO DEL MES: ${fmt(neto)}`);
+  }
+
   initData();
+
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 </script>
 </body>
 </html>

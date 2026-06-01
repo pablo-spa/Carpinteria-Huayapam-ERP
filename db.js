@@ -123,7 +123,6 @@ window.DB = {
           return true;
       });
   },
-  reset: () => { console.log("Reset is disabled."); },
   addColumn: (collection, columnName, defaultValue = "") => {
     const d = getDB();
     if (!d[collection]) return;

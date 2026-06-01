@@ -464,7 +464,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   async function saveContact() {
     const id = document.getElementById('p-id').value;
     const name = document.getElementById('p-name').value.trim();
-    if (!name) { alert('El nombre es obligatorio'); return; }
+    if (!name) { toast('El nombre es obligatorio', 'warn'); return; }
 
     const customFields = [];
     document.querySelectorAll('#cf-container .cf-row').forEach(row => {
@@ -568,7 +568,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         updated = cLocal;
       }
 
-      if (!updated) { alert('No se encontró el contacto en el sistema.'); return; }
+      if (!updated) { toast('No se encontró el contacto en el sistema.', 'warn'); return; }
 
       // 2. Persist to Firestore
       const docId = updated.id || updated._id || id;
@@ -587,7 +587,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     } catch(e) {
       console.error('Error en toggleBaja:', e);
-      alert('Error al guardar: ' + e.message);
+      toast('Error al guardar: ' + e.message, 'warn');
     }
   }
 
@@ -679,6 +679,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   }
 
   init();
+
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 </script>
 </body>
 </html>

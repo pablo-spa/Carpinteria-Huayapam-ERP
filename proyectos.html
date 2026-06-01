@@ -499,7 +499,7 @@ body {
   function saveInlineContact() {
     const nombre = document.getElementById('mc-name').value.trim();
     const phone  = document.getElementById('mc-phone').value.trim();
-    if (!nombre) return alert('Nombre obligatorio.');
+    if (!nombre) { toast('Nombre obligatorio.', 'warn'); return; }
     const id = crypto.randomUUID();
     const d  = window.DB.get();
     d.contacts.push({ id, name: nombre, nombre, phone, tipo: 'cliente', activo: true, email: '', address: '' });
@@ -515,7 +515,7 @@ body {
     const nombre   = document.getElementById('m-name').value.trim();
     const piecesStr = document.getElementById('m-pieces').value;
 
-    if (!codigo || !nombre) return alert('Código y Nombre son obligatorios.');
+    if (!codigo || !nombre) { toast('Código y Nombre son obligatorios.', 'warn'); return; }
 
     const d = window.DB.get();
     const existing = id ? d.projects.find(x => x.id === id) : null;
@@ -555,6 +555,14 @@ body {
     renderList();
   }
   init();
+
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 </script>
 </body>
 </html>

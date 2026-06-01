@@ -368,12 +368,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       item.stock = parseFloat(document.getElementById('m-stock').value);
     }
 
-    // Save
-    if(window.DB.addOrUpdateInventory) {
-       window.DB.addOrUpdateInventory(item);
-    } else if (window.DB.updateInventoryItem) {
-       window.DB.updateInventoryItem(item);
-    }
+    window.DB.addOrUpdateInventory(item);
     closeModal();
     // Re-fetch to reflect
     STATE_INVENTORY = await window.DB.query("inventory");

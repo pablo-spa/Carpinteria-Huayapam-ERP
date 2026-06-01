@@ -145,7 +145,7 @@ async function save() {
     }
   });
 
-  if (!items.length) { alert('Agrega al menos un material con cantidad.'); return; }
+  if (!items.length) { toast('Agrega al menos un material con cantidad.', 'warn'); return; }
 
   const now = new Date();
   const salida = {
@@ -172,12 +172,22 @@ async function save() {
     }
   }
 
-  alert('Salida registrada y stock actualizado.');
-  if (window.parent && window.parent.openModule) window.parent.openModule('almacen_hub.html', 'Portal Almacén');
-  else window.history.back();
+  toast('✓ Salida registrada y stock actualizado.');
+  setTimeout(() => {
+    if (window.parent && window.parent.openModule) window.parent.openModule('almacen_hub.html', 'Portal Almacén');
+    else window.history.back();
+  }, 800);
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 </script>
 </body>
 </html>

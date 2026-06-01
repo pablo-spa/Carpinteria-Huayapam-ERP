@@ -676,7 +676,7 @@
       const g = document.getElementById('f-given-name').value.trim();
       const p = document.getElementById('f-paterno').value.trim();
       const nameStr = document.getElementById('f-name').value.trim();
-      if(!g || !p) return alert('Nombre(s) y Apellido Paterno son obligatorios');
+      if(!g || !p) { toast('Nombre(s) y Apellido Paterno son obligatorios', 'warn'); return; }
       
       const d = window.DB.get();
       const id = document.getElementById('f-id').value;
@@ -750,6 +750,14 @@
        await renderList();
     }
     document.addEventListener('DOMContentLoaded', init);
+
+  function toast(msg, type='ok') {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
   </script>
 </body>
 </html>
