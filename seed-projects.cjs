@@ -8,7 +8,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 
 const KEY = "/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json";
 initializeApp({ credential: cert(require(KEY)), projectId: 'gen-lang-client-0827035586' });
-const db = getFirestore('ai-studio-a12c0386-3408-4b58-a08e-36e79f61305b');
+const db = getFirestore('carpinteria-huayapam-erp');
 
 const PROJECTS = [
   "ALEJANDRA SPRIELLA",
