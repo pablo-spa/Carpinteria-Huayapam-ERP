@@ -171,8 +171,6 @@ tbody tr { cursor: pointer; transition: background .1s; }
 <!-- Tabs -->
 <div class="tabs-bar">
   <div class="tab active" data-tab="todos" onclick="setTab('todos',this)">Todos</div>
-  <div class="tab" data-tab="g1" onclick="setTab('g1',this)">Grupo 1</div>
-  <div class="tab" data-tab="g2" onclick="setTab('g2',this)">Grupo 2</div>
   <div class="tab" data-tab="neg" onclick="setTab('neg',this)">Balance negativo</div>
   <div class="tab" data-tab="prox" onclick="setTab('prox',this)">Vence en 30 días</div>
 </div>
@@ -346,9 +344,7 @@ function render() {
   let lista = trabajadores.map(w => ({ ...w, ...datosWorker(w) }));
 
   // Filtros por tab
-  if (tabActual === 'g1') lista = lista.filter(w => (w.grupoVacaciones || 1) === 1);
-  else if (tabActual === 'g2') lista = lista.filter(w => (w.grupoVacaciones || 1) === 2);
-  else if (tabActual === 'neg') lista = lista.filter(w => w.balance < 0);
+  if (tabActual === 'neg') lista = lista.filter(w => w.balance < 0);
   else if (tabActual === 'prox') lista = lista.filter(w => w.proxPeriodo && diasHasta(w.proxPeriodo) <= 30);
 
   // Ordenamiento
