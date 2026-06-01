@@ -369,6 +369,15 @@
         <span style="font-size:14px; color:var(--subtext); font-weight:500;">Cargando datos…</span>
       </div>
     </div>
+    
+    <!-- Pantalla de Error de Firebase -->
+    <div id="firebase-error-overlay" style="display:none; position:absolute; inset:0; background:rgba(var(--base-rgb,239,241,245),0.95); backdrop-filter:blur(8px); z-index:9999; flex-direction:column; align-items:center; justify-content:center; gap:16px; font-family:inherit; text-align:center; padding:24px;">
+      <div style="font-size:48px;">⚠️</div>
+      <h2 style="margin:0; color:var(--text);">Error de Conexión a Base de Datos</h2>
+      <p id="firebase-error-msg" style="color:var(--subtext); max-width:400px; line-height:1.5;">No se pudo cargar la información. Es posible que se haya agotado la cuota de lecturas diarias o no tengas internet.</p>
+      <button class="btn-back" onclick="window.location.reload()" style="padding:10px 20px; background:var(--blue); color:#fff; border-color:var(--blue);">Reintentar Conexión</button>
+    </div>
+
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
   </main>
@@ -831,10 +840,21 @@
               .then(snap => { loadedCount++; return snap; })
               .catch(e => {
                 console.error(`[DB] ❌ Error cargando "${col}": ${e.code} — ${e.message}`);
-                return { docs: [] };
+                // Solo bloqueamos si es cuota agotada (resource-exhausted)
+                if (e.code === 'resource-exhausted') return null;
+                return { docs: [] }; // Permiso denegado u otro error → colección vacía
               })
           )
         );
+
+        // Solo mostrar error bloqueante si la cuota está agotada
+        if (snaps.includes(null)) {
+            document.getElementById('db-loading-overlay').style.display = 'none';
+            document.getElementById('firebase-error-overlay').style.display = 'flex';
+            document.getElementById('firebase-error-msg').textContent = "Se agotó la cuota de lecturas diarias de Firebase. El sistema volverá a funcionar mañana (~2am hora de México).";
+            return;
+        }
+        
         console.log(`[DB] Cargadas ${loadedCount}/${collectionsToLoad.length} colecciones`);
         collectionsToLoad.forEach((col, i) => {
           state[col] = snaps[i].docs.map(d => ({ _id: d.id, ...d.data() }));
