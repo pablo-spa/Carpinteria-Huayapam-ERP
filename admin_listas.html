@@ -111,6 +111,65 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   const DEFAULT_WORKER_ROLES = ['Jefe de Planta','Maestro A','Maestro B','Oficial A','Oficial B','Chalán','Barniz','Pulido','Empaque','Chofer','Almacén','Compras','Administración','Contador','Mantenimiento','Limpieza','Aprendiz'];
 
+  // Código auto-generado del nombre: iniciales si hay varias palabras, o primeras 3 letras
+  function autoCode(name) {
+    const words = name.trim().split(/\s+/);
+    if (words.length >= 2) return words.map(w => w[0]).join('').toUpperCase().substring(0, 4);
+    return name.replace(/\s/g, '').substring(0, 3).toUpperCase();
+  }
+
+  const DEFAULT_PIECE_TYPES = [
+    // Closets y Armarios
+    { id:'pt-closet',    code:'CLO', name:'Closet' },
+    { id:'pt-vestidor',  code:'VES', name:'Vestidor' },
+    { id:'pt-armario',   code:'ARM', name:'Armario' },
+    // Puertas
+    { id:'pt-pta-int',   code:'PTI', name:'Puerta Interior' },
+    { id:'pt-pta-ext',   code:'PTE', name:'Puerta Exterior' },
+    { id:'pt-pta-cls',   code:'PTC', name:'Puerta de Closet' },
+    { id:'pt-pta-cor',   code:'PCR', name:'Puerta Corrediza' },
+    { id:'pt-pta-plg',   code:'PPL', name:'Puerta Plegable' },
+    { id:'pt-pta-srv',   code:'PSV', name:'Puerta de Servicio' },
+    // Ventanas
+    { id:'pt-ven-fij',   code:'VNF', name:'Ventana Fija' },
+    { id:'pt-ven-aba',   code:'VNA', name:'Ventana Abatible' },
+    { id:'pt-ven-cor',   code:'VNC', name:'Ventana Corrediza' },
+    { id:'pt-ven-plg',   code:'VNP', name:'Ventana Plegable' },
+    { id:'pt-ven-pro',   code:'VNR', name:'Ventana Proyectante' },
+    // Cocina
+    { id:'pt-coc-int',   code:'CCI', name:'Cocina Integral' },
+    { id:'pt-alacena',   code:'ALC', name:'Alacena' },
+    { id:'pt-barra',     code:'BAR', name:'Barra de Cocina' },
+    { id:'pt-isla',      code:'ISL', name:'Isla de Cocina' },
+    // Dormitorio
+    { id:'pt-cama',      code:'CAM', name:'Cama' },
+    { id:'pt-cabecera',  code:'CAB', name:'Cabecera' },
+    { id:'pt-cam-cab',   code:'CCA', name:'Cama con Cabecera' },
+    { id:'pt-cuna',      code:'CUN', name:'Cuna' },
+    { id:'pt-litera',    code:'LIT', name:'Litera' },
+    { id:'pt-buro',      code:'BUR', name:'Buró' },
+    { id:'pt-tocador',   code:'TCD', name:'Tocador' },
+    // Sala / Comedor
+    { id:'pt-mesa-com',  code:'MCM', name:'Mesa de Comedor' },
+    { id:'pt-mesa-cen',  code:'MCN', name:'Mesa de Centro' },
+    { id:'pt-mesa-aux',  code:'MAX', name:'Mesa Auxiliar' },
+    { id:'pt-librero',   code:'LBR', name:'Librero' },
+    { id:'pt-mueble-tv', code:'MTV', name:'Mueble de TV' },
+    { id:'pt-aparador',  code:'APR', name:'Aparador' },
+    // Oficina
+    { id:'pt-escritorio',code:'ESC', name:'Escritorio' },
+    { id:'pt-archivero', code:'ARH', name:'Archivero' },
+    // Baño
+    { id:'pt-mueble-ban',code:'MBN', name:'Mueble de Baño' },
+    // Exterior / Otros
+    { id:'pt-deck',      code:'DCK', name:'Deck / Terraza' },
+    { id:'pt-escalera',  code:'ECA', name:'Escalera' },
+    { id:'pt-panel',     code:'PNL', name:'Panel Decorativo' },
+    { id:'pt-duela',     code:'DUE', name:'Duela (Piso)' },
+    { id:'pt-tarima',    code:'TAR', name:'Tarima / Plataforma' },
+    { id:'pt-otro',      code:'OTR', name:'Otro' },
+  ];
+
   const LISTS = [
     {
       section: 'Recursos Humanos',
@@ -196,6 +255,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
           });
         } else if (def.type === 'piece') {
           STATE[def.key] = raw.filter(x => x.id && !x._init && x.name);
+          if (!STATE[def.key].length) {
+            STATE[def.key] = DEFAULT_PIECE_TYPES.map(p => ({...p}));
+            for (const p of DEFAULT_PIECE_TYPES) {
+              if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('piece_types', p.id, p);
+            }
+            if (window.parent?.DB_STATE) window.parent.DB_STATE['piece_types'] = DEFAULT_PIECE_TYPES.map(p => ({...p}));
+          }
         } else {
           STATE[def.key] = raw;
         }
@@ -252,8 +318,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
     } else if (currentDef.type === 'piece') {
       bar.innerHTML = `
-        <input type="text" id="new-code" placeholder="Código (ej. PTA)" style="max-width:90px;" onkeydown="if(event.key==='Enter') addItem()">
-        <input type="text" id="new-val" placeholder="Nombre (ej. Puerta)" onkeydown="if(event.key==='Enter') addItem()">
+        <input type="text" id="new-val" placeholder="Nombre del mueble o pieza…" onkeydown="if(event.key==='Enter') addItem()">
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
     }
   }
@@ -290,8 +355,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     } else if (currentDef.type === 'piece') {
       container.innerHTML = items.map((item, i) => `
         <div class="item-row">
-          <input class="item-inp" value="${escHtml(item.code||'')}" placeholder="Código" onchange="updateItem(${i}, this.value, 'code')" style="max-width:80px; font-family:monospace; font-weight:700;">
-          <input class="item-inp" value="${escHtml(item.name||'')}" placeholder="Nombre" onchange="updateItem(${i}, this.value, 'name')">
+          <input class="item-inp" value="${escHtml(item.name||'')}" placeholder="Nombre" onchange="updateItem(${i}, this.value, 'name')" onblur="updateItem(${i}, this.value, 'name')">
           <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
         </div>`).join('');
     }
@@ -312,14 +376,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       STATE[currentDef.key].push({ id, name: val, type });
       await saveItem({ id, name: val, type });
     } else if (currentDef.type === 'piece') {
-      const code = (document.getElementById('new-code')?.value || val.substring(0,3)).trim().toUpperCase();
+      const code = autoCode(val);
       const id = 'pt-' + Date.now().toString(36);
       STATE[currentDef.key].push({ id, code, name: val });
       await saveItem({ id, code, name: val });
     }
 
     document.getElementById('new-val').value = '';
-    if (document.getElementById('new-code')) document.getElementById('new-code').value = '';
     renderItems();
     renderSidebar();
   }
@@ -333,6 +396,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       await saveList();
     } else if (field) {
       STATE[currentDef.key][idx][field] = newVal;
+      if (currentDef.type === 'piece' && field === 'name') STATE[currentDef.key][idx].code = autoCode(newVal);
       await saveItem(STATE[currentDef.key][idx]);
     }
   }

@@ -648,9 +648,12 @@ async function loadOptions() {
   const inventoryDb = await window.DB.query("inventory");
   const dbPieceTypes = await window.DB.query("piece_types");
   
-  const validPieceTypes = dbPieceTypes.filter(pt => pt.code && pt.name && !pt._init);
+  const validPieceTypes = dbPieceTypes.filter(pt => pt.name && !pt._init);
   if (validPieceTypes.length > 0) {
-      PIECE_TYPES = validPieceTypes.map(pt => [pt.code, pt.name]);
+    PIECE_TYPES = validPieceTypes.map(pt => {
+      const code = pt.code || pt.name.replace(/\s/g,'').substring(0,3).toUpperCase();
+      return [code, pt.name];
+    });
   }
   
   if (inventoryDb && inventoryDb.length > 0) {
