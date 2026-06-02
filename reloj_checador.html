@@ -153,8 +153,9 @@
     const logs = await window.DB.query("attendance_logs", { workerId: worker.id, fecha: todayStr });
     const db   = window.DB.get();
 
-    // Leer settings con defaults inteligentes
-    const cfg = db.settings || {};
+    // DB_STATE.settings puede ser array [{_id:'main',...}] o ya un objeto plano
+    const rawCfg = db.settings;
+    const cfg = Array.isArray(rawCfg) ? (rawCfg.find(x=>x._id==='main')||rawCfg[0]||{}) : (rawCfg||{});
     const horaEntrada       = cfg.horaEntrada        || '08:00';
     const minutosRetardo    = cfg.minutosRetardo      ?? 15;
     const minutosFalta      = cfg.minutosFalta        ?? 60;

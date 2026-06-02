@@ -184,26 +184,41 @@
   <div id="toast" style="position:fixed; bottom:20px; right:20px; background:#10b981; padding:10px 20px; border-radius:5px; display:none; color:white; font-weight: 500; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">✓ Cambios Guardados Correctamente</div>
 
 <script>
+  // DB_STATE.settings viene de Firestore como array [{_id:'main',...campos}].
+  // Después de un save en sesión puede ser un objeto plano. Esta función normaliza ambos casos.
+  function unwrapSettings(raw) {
+    if (!raw) return {};
+    if (Array.isArray(raw)) {
+      const doc = raw.find(x => x._id === 'main') || raw[0];
+      if (!doc) return {};
+      const { _id, ...fields } = doc;
+      return fields;
+    }
+    const { _id, ...fields } = raw;
+    return fields;
+  }
+
   function loadSettings() {
     const d = window.DB.get();
-    const s = d.settings || {};
-    document.getElementById('horaEntrada').value        = s.horaEntrada        || '08:00';
-    document.getElementById('minutosRetardo').value     = s.minutosRetardo     ?? 15;
-    document.getElementById('minutosFalta').value       = s.minutosFalta       ?? 60;
-    document.getElementById('horaSalida').value         = s.horaSalida         || '17:30';
-    document.getElementById('toleranciaSalidaMin').value= s.toleranciaSalidaMin ?? 15;
-    document.getElementById('tiempoDescansoMin').value  = s.tiempoDescansoMin  ?? 30;
-    document.getElementById('penalizacionFalta').value  = s.penalizacionFalta  ?? 100;
-    document.getElementById('penalizacionRetardo').value= s.penalizacionRetardo || '3 retardos = 1 falta';
-    document.getElementById('diasAvisoFalta').value     = s.diasAvisoFalta     ?? 24;
+    const s = unwrapSettings(d.settings);
+    document.getElementById('horaEntrada').value         = s.horaEntrada         || '08:00';
+    document.getElementById('minutosRetardo').value      = s.minutosRetardo      ?? 15;
+    document.getElementById('minutosFalta').value        = s.minutosFalta        ?? 60;
+    document.getElementById('horaSalida').value          = s.horaSalida          || '17:30';
+    document.getElementById('toleranciaSalidaMin').value = s.toleranciaSalidaMin ?? 15;
+    document.getElementById('tiempoDescansoMin').value   = s.tiempoDescansoMin   ?? 30;
+    document.getElementById('penalizacionFalta').value   = s.penalizacionFalta   ?? 100;
+    document.getElementById('penalizacionRetardo').value = s.penalizacionRetardo || '3 retardos = 1 falta';
+    document.getElementById('diasAvisoFalta').value      = s.diasAvisoFalta      ?? 24;
   }
 
   async function saveSettings() {
     const btn = document.querySelector('button[onclick="saveSettings()"]');
     if (btn) btn.disabled = true;
     try {
-      // Obtener settings existentes para no perder campos no mostrados en el form
-      const existing = window.parent?.DB_STATE?.settings || window.DB.get().settings || {};
+      // Extraer settings existentes (sin _id, sin la estructura de array de Firestore)
+      const rawExisting = window.parent?.DB_STATE?.settings || window.DB.get().settings;
+      const existing = unwrapSettings(rawExisting);
       const s = {
         ...existing,
         horaEntrada:         document.getElementById('horaEntrada').value         || '08:00',
