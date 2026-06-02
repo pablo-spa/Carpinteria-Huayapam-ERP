@@ -277,6 +277,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       <div id="pay-weeks"></div>
     </div>
 
+    <!-- Vacaciones -->
+    <div class="card">
+      <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>🏖️ Vacaciones</span>
+        <button class="btn btn-dark" style="font-size:11px;padding:4px 10px;" onclick="abrirResetVacaciones()">Definir días restantes</button>
+      </div>
+      <div class="stats-grid" id="vac-stats" style="margin-top:8px;">
+        <div class="stat-cell"><div class="lbl">Años de servicio</div><div class="val" id="vac-anos">—</div></div>
+        <div class="stat-cell"><div class="lbl">Días con derecho</div><div class="val val-green" id="vac-derecho">—</div></div>
+        <div class="stat-cell"><div class="lbl">Tomados (desde reset)</div><div class="val val-amber" id="vac-tomados">—</div></div>
+        <div class="stat-cell"><div class="lbl">Restantes</div><div class="val" id="vac-restantes">—</div></div>
+      </div>
+      <div id="vac-reset-info" style="margin-top:10px; font-size:11px; color:var(--subtext);"></div>
+    </div>
+
     <!-- Préstamos -->
     <div class="card">
       <div class="card-title">
@@ -512,6 +527,7 @@ function saveWorkerInfo() {
   if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('contacts', w.id, w);
   workerData = w;
   renderInfo();
+  renderVacaciones();
   cancelEditWorker();
   toast('✓ Datos guardados');
 }
@@ -920,6 +936,7 @@ async function init() {
   PRESTAMOS_TRABAJADOR = await window.DB.query('worker_loans', { workerId }) || [];
 
   renderInfo();
+  renderVacaciones();
   renderCalendar();
   renderPayWeeks();
   render_prestamos();
@@ -978,6 +995,104 @@ function render_prestamos() {
       ${pagosHtml ? `<div class="loan-pagos" style="margin-top:6px;">${pagosHtml}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ── Vacaciones ────────────────────────────────────────────────
+
+function diasVacacionesLFT(fechaIngreso) {
+  if (!fechaIngreso) return 0;
+  const hoy    = new Date();
+  const inicio = new Date(fechaIngreso);
+  const años   = Math.floor((hoy - inicio) / (365.25 * 24 * 60 * 60 * 1000));
+  if (años < 1)   return 0;
+  if (años === 1)  return 12;
+  if (años === 2)  return 14;
+  if (años === 3)  return 16;
+  if (años === 4)  return 18;
+  if (años === 5)  return 20;
+  if (años <= 10)  return 22;
+  if (años <= 15)  return 24;
+  if (años <= 20)  return 26;
+  if (años <= 25)  return 28;
+  return 30;
+}
+
+function renderVacaciones() {
+  const w = workerData;
+  if (!w) return;
+
+  const fechaIngreso = w.fechaIngreso || w.startDate || w.ingreso || '';
+  if (!fechaIngreso) {
+    document.getElementById('vac-anos').textContent     = '—';
+    document.getElementById('vac-derecho').textContent  = '—';
+    document.getElementById('vac-tomados').textContent  = '—';
+    document.getElementById('vac-restantes').textContent= '—';
+    document.getElementById('vac-reset-info').textContent = 'Sin fecha de ingreso registrada.';
+    return;
+  }
+
+  const hoy    = new Date();
+  const inicio = new Date(fechaIngreso);
+  const años   = Math.floor((hoy - inicio) / (365.25 * 24 * 60 * 60 * 1000));
+  const derecho = diasVacacionesLFT(fechaIngreso);
+
+  // Días tomados: contar registros de asistencia con estado='vacaciones' desde el reset
+  const reset = w.vacacionesReset; // { fecha: 'YYYY-MM-DD', diasRestantes: N }
+  const db = window.DB.get();
+  const att = (db.attendance || []).filter(a =>
+    (a.trabajadorId || a.workerId) === workerId &&
+    a.estado === 'vacaciones' &&
+    (!reset || (a.fecha || a.date) >= reset.fecha)
+  );
+  const tomados = att.length;
+  const baseReset = reset ? reset.diasRestantes : derecho;
+  const restantes = baseReset - tomados;
+
+  document.getElementById('vac-anos').textContent     = años + (años === 1 ? ' año' : ' años');
+  document.getElementById('vac-derecho').textContent  = derecho + ' días';
+  document.getElementById('vac-tomados').textContent  = tomados + ' días';
+  document.getElementById('vac-restantes').textContent= restantes + ' días';
+  document.getElementById('vac-restantes').style.color =
+    restantes <= 0 ? 'var(--red)' : restantes <= 3 ? 'var(--amber)' : 'var(--green)';
+
+  const infoEl = document.getElementById('vac-reset-info');
+  if (reset) {
+    infoEl.textContent = `Último reset: ${reset.fecha} (${reset.diasRestantes} días disponibles en esa fecha).`;
+  } else {
+    infoEl.textContent = `Sin reset definido. Los días tomados se cuentan desde el inicio.`;
+  }
+}
+
+function abrirResetVacaciones() {
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById('vr-fecha').value = today;
+  const derecho = diasVacacionesLFT(workerData?.fechaIngreso || workerData?.startDate || '');
+  document.getElementById('vr-dias').value = derecho;
+  document.getElementById('modal-vac-reset').classList.add('open');
+}
+
+function cerrarResetVacaciones() {
+  document.getElementById('modal-vac-reset').classList.remove('open');
+}
+
+function guardarResetVacaciones() {
+  const dias  = parseInt(document.getElementById('vr-dias').value);
+  const fecha = document.getElementById('vr-fecha').value;
+  if (isNaN(dias) || dias < 0) { alert('Ingresa un número válido de días.'); return; }
+  if (!fecha) { alert('Selecciona una fecha de corte.'); return; }
+
+  const db  = window.DB.get();
+  const idx = (db.contacts || []).findIndex(c => c.id === workerId);
+  if (idx < 0) return;
+  db.contacts[idx].vacacionesReset = { fecha, diasRestantes: dias };
+  workerData = db.contacts[idx];
+  window.DB.save(db);
+  if (window.parent?.setDocumentInFirebase)
+    window.parent.setDocumentInFirebase('contacts', workerData.id, workerData);
+
+  cerrarResetVacaciones();
+  renderVacaciones();
+  toast('✓ Días de vacaciones actualizados');
 }
 
 function abrir_modal_prestamo() {
@@ -1055,6 +1170,25 @@ init();
     <div class="modal-btns">
       <button class="btn btn-dark" onclick="cerrar_modal_prestamo()">Cancelar</button>
       <button class="btn btn-amber" onclick="guardar_prestamo()">Guardar préstamo</button>
+    </div>
+  </div>
+</div>
+<!-- Modal Reset Vacaciones -->
+<div class="modal-overlay" id="modal-vac-reset" onclick="if(event.target===this)cerrarResetVacaciones()">
+  <div class="modal">
+    <div class="modal-title">Definir días restantes de vacaciones</div>
+    <p style="font-size:13px;color:var(--subtext);margin-bottom:12px;">Establece cuántos días de vacaciones quedan disponibles a partir de hoy. Los días que se marquen como vacaciones en el calendario a partir de esta fecha se irán descontando.</p>
+    <div class="modal-field">
+      <label>Días restantes disponibles</label>
+      <input type="number" id="vr-dias" min="0" step="1" placeholder="Ej: 10">
+    </div>
+    <div class="modal-field" style="margin-top:8px;">
+      <label>Fecha de corte</label>
+      <input type="date" id="vr-fecha">
+    </div>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn btn-dark" onclick="cerrarResetVacaciones()">Cancelar</button>
+      <button class="btn btn-blue" onclick="guardarResetVacaciones()">Guardar</button>
     </div>
   </div>
 </div>

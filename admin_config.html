@@ -107,28 +107,33 @@
 
     <!-- TARJETA: Vacaciones -->
     <div class="card">
-      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 1.5rem;">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 0.5rem;">
         <span style="font-size: 1.5rem;">🏖️</span>
-        <h2 class="text-xl font-semibold">Política de Vacaciones</h2>
+        <h2 class="text-xl font-semibold">Vacaciones — Tabla LFT</h2>
       </div>
-      
-      <div class="form-group">
-        <label for="diasVacacionesBase">Días de Vacaciones Base (1er año)</label>
-        <input type="number" id="diasVacacionesBase" min="0" placeholder="Ej. 6">
-        <p class="text-sm mt-1" style="color:var(--subtext)">Días otorgados al cumplir el primer año en la empresa.</p>
-      </div>
-      
-      <div class="form-group">
-        <label for="incrementoAnual">Incremento Anual (Días)</label>
-        <input type="number" id="incrementoAnual" min="0" placeholder="Ej. 2">
-        <p class="text-sm mt-1" style="color:var(--subtext)">Días adicionales por cada año posterior.</p>
-      </div>
-      
-      <div class="form-group">
-        <label for="topeVacaciones">Tope Máximo de Días</label>
-        <input type="number" id="topeVacaciones" min="0" placeholder="Ej. 20">
-        <p class="text-sm mt-1" style="color:var(--subtext)">Número máximo de días de vacaciones acumulables.</p>
-      </div>
+      <p class="text-sm" style="color:var(--subtext); margin-bottom:1rem;">Conforme al Artículo 76 de la Ley Federal del Trabajo (reforma 2023). El sistema la aplica automáticamente según la fecha de ingreso de cada trabajador.</p>
+
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:var(--surface0);">
+            <th style="padding:8px 12px; text-align:left; font-weight:700; border-radius:6px 0 0 6px;">Años de servicio</th>
+            <th style="padding:8px 12px; text-align:center; font-weight:700;">Días de vacaciones</th>
+            <th style="padding:8px 12px; text-align:center; font-weight:700; border-radius:0 6px 6px 0;">Prima vacacional (25%)</th>
+          </tr>
+        </thead>
+        <tbody id="lft-table-body">
+          <tr><td style="padding:6px 12px;">1 año</td><td style="text-align:center;font-weight:700;">12 días</td><td style="text-align:center;color:var(--subtext);">3 días</td></tr>
+          <tr style="background:var(--surface0);"><td style="padding:6px 12px;">2 años</td><td style="text-align:center;font-weight:700;">14 días</td><td style="text-align:center;color:var(--subtext);">3.5 días</td></tr>
+          <tr><td style="padding:6px 12px;">3 años</td><td style="text-align:center;font-weight:700;">16 días</td><td style="text-align:center;color:var(--subtext);">4 días</td></tr>
+          <tr style="background:var(--surface0);"><td style="padding:6px 12px;">4 años</td><td style="text-align:center;font-weight:700;">18 días</td><td style="text-align:center;color:var(--subtext);">4.5 días</td></tr>
+          <tr><td style="padding:6px 12px;">5 años</td><td style="text-align:center;font-weight:700;">20 días</td><td style="text-align:center;color:var(--subtext);">5 días</td></tr>
+          <tr style="background:var(--surface0);"><td style="padding:6px 12px;">6 – 10 años</td><td style="text-align:center;font-weight:700;">22 días</td><td style="text-align:center;color:var(--subtext);">5.5 días</td></tr>
+          <tr><td style="padding:6px 12px;">11 – 15 años</td><td style="text-align:center;font-weight:700;">24 días</td><td style="text-align:center;color:var(--subtext);">6 días</td></tr>
+          <tr style="background:var(--surface0);"><td style="padding:6px 12px;">16 – 20 años</td><td style="text-align:center;font-weight:700;">26 días</td><td style="text-align:center;color:var(--subtext);">6.5 días</td></tr>
+          <tr><td style="padding:6px 12px;">21 – 25 años</td><td style="text-align:center;font-weight:700;">28 días</td><td style="text-align:center;color:var(--subtext);">7 días</td></tr>
+          <tr style="background:var(--surface0);"><td style="padding:6px 12px;">26 años o más</td><td style="text-align:center;font-weight:700;">30 días</td><td style="text-align:center;color:var(--subtext);">7.5 días</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- TARJETA: Faltas y Permisos -->
