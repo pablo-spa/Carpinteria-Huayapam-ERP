@@ -638,11 +638,14 @@ function _renderWorkerChips() {
 }
 
 function _updateFaRecibe() {
-  // Usa todos los trabajadores activos (no solo los del viaje)
-  const db = window.DB.get();
-  const all = (db.contacts||[]).filter(c => c.tipo === 'trabajador' && c.activo !== false);
-  document.getElementById('fa-recibe').innerHTML = '<option value="">— Seleccionar —</option>' +
-    all.map(w => `<option value="${w.name||w.givenName}">${w.name||w.givenName}</option>`).join('');
+  // Solo muestra trabajadores asignados a este viaje
+  const db   = window.DB.get();
+  const wids = currentViaje?.worker_ids || [];
+  const all  = (db.contacts||[]).filter(c => c.tipo === 'trabajador' && wids.includes(c.id));
+  const opts = all.length
+    ? all.map(w => `<option value="${w.name||w.givenName}">${w.name||w.givenName}</option>`).join('')
+    : '<option value="" disabled>— Asigna personal al viaje primero —</option>';
+  document.getElementById('fa-recibe').innerHTML = '<option value="">— Seleccionar —</option>' + opts;
 }
 
 // Alias mantenido por compatibilidad
