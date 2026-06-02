@@ -506,19 +506,88 @@ function processRealCheckins(off) {
 
   if (window.DB) {
     const db = window.DB.get();
-    // Production records (from produccion_diaria): attendance collection with 'date' field
-    const prodRecs   = db.attendance       || [];
-    // Checador records: attendance_logs with 'fecha' field
-    const checRecs   = db.attendance_logs  || [];
+    const prodRecs = db.attendance      || [];
+    const checRecs = db.attendance_logs || [];
+
+    // Leer settings para calcular horas estimadas cuando solo hay check-in
+    const rawCfg = db.settings;
+    const cfg = Array.isArray(rawCfg) ? (rawCfg.find(x=>x._id==='main')||rawCfg[0]||{}) : (rawCfg||{});
+    const horaSalidaOficial  = cfg.horaSalida      || '17:30';
+    const descansoMin        = cfg.tiempoDescansoMin ?? 30;
+
+    // Minutos desde medianoche para la hora oficial de salida
+    const [hSalO, mSalO] = horaSalidaOficial.split(':').map(Number);
+    const minsSalidaOficial = hSalO * 60 + mSalO;
 
     WORKERS.forEach(w => {
       dates.forEach((dateStr, i) => {
-        // Prefer production record (has real hours) over checador
+        // 1. Registro de producción manual (tiene prioridad si fue editado manualmente)
         const prod = prodRecs.find(c =>
           (c.workerId === w.id || c.trabajadorId === w.id) &&
           (c.date === dateStr  || c.fecha === dateStr) &&
           !c._init && (c.estado || c.status)
         );
+        if (prod && prod.editado_manualmente) {
+          const st = ((prod.estado || prod.status) || '').toLowerCase();
+          if (st === 'falta') {
+            S[w.id].dias[i] = { st: 'falta', hrs: 0 };
+          } else if (st === 'vacaciones' || st === 'vac') {
+            S[w.id].dias[i] = { st: 'vac', hrs: 0 };
+          } else {
+            const hrs = parseFloat(prod.horasTotales ?? prod.horasNormal ?? prod.hours ?? 9) || 9;
+            S[w.id].dias[i] = { st: st || 'trabajo', hrs };
+          }
+          return;
+        }
+
+        // 2. Registro del reloj checador (attendance_logs)
+        const chk = checRecs.filter(c =>
+          (c.workerId === w.id || c.trabajadorId === w.id) &&
+          c.fecha === dateStr && (c.tipo === 'entrada' || !c.tipo)
+        );
+        if (chk.length > 0) {
+          const log = chk[0];
+          const statusRaw = (log.status || log.estado || '').toLowerCase();
+          if (statusRaw === 'falta') {
+            S[w.id].dias[i] = { st: 'falta', hrs: 0, fromReloj: true };
+            return;
+          }
+
+          const tieneEntrada = !!log.hora_entrada;
+          const tieneSalida  = !!log.hora_salida;
+
+          let hrs = 0;
+          let confirmed = false;
+          let horaEnt = log.hora_entrada_efectiva || log.hora_entrada || '';
+          let horaSal = '';
+
+          if (tieneSalida) {
+            // Salida registrada → usar horas calculadas por el reloj
+            hrs = parseFloat(log.horasTotales ?? log.horasNormal ?? 0) || 0;
+            horaSal = log.hora_salida_efectiva || log.hora_salida || '';
+            confirmed = true;
+          } else if (tieneEntrada) {
+            // Solo entrada → estimar horas hasta la hora oficial de salida
+            const [hEE, mEE] = (horaEnt.substring(0,5)||'08:00').split(':').map(Number);
+            const minsEntrada = hEE * 60 + mEE;
+            hrs = Math.max(0, (minsSalidaOficial - minsEntrada - descansoMin)) / 60;
+            horaSal = horaSalidaOficial; // estimada
+            confirmed = false;
+          }
+
+          S[w.id].dias[i] = {
+            st: statusRaw === 'retardo' ? 'retardo' : 'trabajo',
+            hrs:        Math.round(hrs * 100) / 100,
+            horaEnt:    horaEnt.substring(0,5),
+            horaSal:    horaSal.substring(0,5),
+            retardoMin: log.retardoMin || 0,
+            confirmed,
+            fromReloj:  true,
+          };
+          return;
+        }
+
+        // 3. Registro de producción sin edición manual (fallback)
         if (prod) {
           const st = ((prod.estado || prod.status) || '').toLowerCase();
           if (st === 'falta') {
@@ -526,25 +595,8 @@ function processRealCheckins(off) {
           } else if (st === 'vacaciones' || st === 'vac') {
             S[w.id].dias[i] = { st: 'vac', hrs: 0 };
           } else {
-            const hrs = prod.horasTotales != null ? prod.horasTotales
-                      : (prod.horasNormal != null ? prod.horasNormal
-                      : (prod.hours != null ? prod.hours : 9));
-            S[w.id].dias[i] = { st: st || 'trabajo', hrs: parseFloat(hrs) || 9 };
-          }
-          return;
-        }
-        // Fallback: checador log
-        const chk = checRecs.filter(c => (c.workerId === w.id || c.trabajadorId === w.id) && c.fecha === dateStr && (c.tipo === 'entrada' || !c.tipo));
-        if (chk.length > 0) {
-          const isFalta = chk.some(c => (c.status||'').toLowerCase().includes('falta'));
-          if (isFalta) {
-            S[w.id].dias[i] = { st: 'falta', hrs: 0 };
-          } else {
-            const hrs = chk[0].horasTotales != null ? chk[0].horasTotales
-              : chk[0].horas_x1 != null
-                ? (parseFloat(chk[0].horas_x1)||0) + (parseFloat(chk[0].horas_x15)||0)*1.5 + (parseFloat(chk[0].horas_x2)||0)*2
-                : 9;
-            S[w.id].dias[i] = { st: 'trabajo', hrs };
+            const hrs = parseFloat(prod.horasTotales ?? prod.horasNormal ?? prod.hours ?? 9) || 9;
+            S[w.id].dias[i] = { st: st || 'trabajo', hrs };
           }
         }
       });
@@ -646,7 +698,7 @@ function buildCard(w){
         <div class="sec-lbl" style="padding-top:0;margin-bottom:8px;">📅 Asistencia de la semana</div>
         <table class="dias-tbl">
           <thead><tr>
-            <th>Día</th><th>Estado</th><th style="text-align:center">Horas</th><th></th>
+            <th>Día</th><th>Estado</th><th style="text-align:center">Horario / Horas</th><th></th>
           </tr></thead>
           <tbody id="dias-${w.id}"></tbody>
         </table>
@@ -722,11 +774,12 @@ function renderDias(id){
     const d=s.dias[i];
     const dt=dates[i];
     const isWend=(i>=5);
-    const onT=d.st==='trabajo'?'on-t':'';
+    const esTrabajoORetardo = d.st==='trabajo' || d.st==='retardo';
+    const onT=esTrabajoORetardo?'on-t':'';
     const onF=d.st==='falta'?'on-f':'';
     const onV=d.st==='vac'?'on-v':'';
     const onL=d.st==='libre'?'on-l':'';
-    const showHrs=(d.st==='trabajo');
+    const showHrs=esTrabajoORetardo;
     const hrs=+d.hrs||0;
     const wrapCls=isWend?'class="dia-weekend"':'';
 
@@ -753,7 +806,32 @@ function renderDias(id){
         <td></td>
       </tr>`;
     } else {
-      const hExtra=(d.st==='trabajo'&&hrs>9)?`+${(hrs-9).toFixed(1)}h*`:'';
+      const hExtra = (d.st==='trabajo' && hrs>9) ? `+${(hrs-9).toFixed(1)}h*` : '';
+
+      // Celda de horario: si viene del reloj muestra entrada→salida; si no, input de horas
+      let horarioCel = '';
+      if (showHrs) {
+        if (d.fromReloj && d.horaEnt) {
+          const confirmIcon = d.confirmed
+            ? `<span style="color:var(--green-text);font-size:10px;font-weight:700;">✓ Confirmado</span>`
+            : `<span style="color:var(--amber-text);font-size:10px;font-weight:700;">⏳ Sal. estimada</span>`;
+          const retStr = d.retardoMin > 0
+            ? `<span style="color:var(--amber-text);font-size:10px;"> (+${d.retardoMin}m)</span>` : '';
+          horarioCel = `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;">
+                ${d.horaEnt}${retStr} → ${d.horaSal || '—'}
+              </div>
+              <div style="font-size:11px;color:var(--muted);">${hrs.toFixed(1)} h &nbsp;${confirmIcon}</div>
+            </div>`;
+        } else {
+          horarioCel = `<input type="number" class="hrs-input" value="${hrs||9}" min="0" max="24" step="0.5"
+            oninput="S['${id}'].dias[${i}].hrs=+this.value||0;refreshCard('${id}');saveJornadaNomina('${id}',${i})" onclick="this.select()">`;
+        }
+      } else {
+        horarioCel = `<span style="color:var(--hint);font-size:18px;font-weight:800;">—</span>`;
+      }
+
       html+=`<tr>
         <td>
           <div class="dia-name">${DIAS_N[i]}</div>
@@ -766,12 +844,7 @@ function renderDias(id){
             <button class="dsbtn ${onV}" title="Vac. pag." onclick="setDia('${id}',${i},'vac')">☀</button>
           </div>
         </td>
-        <td style="text-align:center">
-          ${showHrs
-            ?`<input type="number" class="hrs-input" value="${hrs||9}" min="0" max="24" step="0.5"
-                oninput="S['${id}'].dias[${i}].hrs=+this.value||0;refreshCard('${id}');saveJornadaNomina('${id}',${i})" onclick="this.select()">`
-            :`<span style="color:var(--hint);font-size:18px;font-weight:800;">—</span>`}
-        </td>
+        <td style="text-align:center">${horarioCel}</td>
         <td><div class="dia-extra">${hExtra}</div></td>
       </tr>`;
     }
@@ -807,12 +880,17 @@ function saveJornadaNomina(workerId, diaIdx) {
 }
 
 function setDia(id,i,st){
-  S[id].dias[i].st=st;
-  if(st==='trabajo'){
-    if(!S[id].dias[i].hrs) S[id].dias[i].hrs=9;
-  } else {
-    S[id].dias[i].hrs=0;
-  }
+  const prev = S[id].dias[i];
+  S[id].dias[i] = {
+    st,
+    hrs:       st === 'trabajo' ? (prev.hrs || 9) : 0,
+    // Conservar datos del reloj si solo cambia el estado (ej. marcar retardo como trabajo)
+    horaEnt:   prev.horaEnt   || '',
+    horaSal:   prev.horaSal   || '',
+    retardoMin:prev.retardoMin || 0,
+    confirmed: prev.confirmed || false,
+    fromReloj: prev.fromReloj || false,
+  };
   renderDias(id);
   refreshCard(id);
   saveJornadaNomina(id,i);
