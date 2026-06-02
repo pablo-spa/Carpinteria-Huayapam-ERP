@@ -84,25 +84,41 @@
         <span style="font-size: 1.5rem;">⏰</span>
         <h2 class="text-xl font-semibold">Reglas de Asistencia</h2>
       </div>
-      
+
       <div class="form-group">
         <label for="horaEntrada">Hora oficial de Entrada</label>
         <input type="time" id="horaEntrada">
-        <p class="text-sm mt-1" style="color:var(--subtext)">La hora esperada a la que deben llegar los trabajadores.</p>
+        <p class="text-sm mt-1" style="color:var(--subtext)">El conteo de horas para nómina empieza desde esta hora. Los trabajadores pueden checar antes pero las horas solo cuentan desde aquí.</p>
       </div>
 
       <div class="form-group">
         <label for="minutosRetardo">Tolerancia para Retardo (minutos)</label>
-        <div style="position:relative;">
-          <input type="number" id="minutosRetardo" min="0">
-        </div>
-        <p class="text-sm mt-1" style="color:var(--subtext)">Tiempo máximo de gracia antes de marcar como Retardo.</p>
+        <input type="number" id="minutosRetardo" min="0">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Si llega dentro de este margen después de la hora de entrada, se toma como si hubiera llegado a tiempo (hora efectiva = hora oficial).</p>
       </div>
 
       <div class="form-group">
         <label for="minutosFalta">Límite para Falta (minutos)</label>
         <input type="number" id="minutosFalta" min="0">
-        <p class="text-sm mt-1" style="color:var(--subtext)">Tiempo después del cual se considera como Falta Automática.</p>
+        <p class="text-sm mt-1" style="color:var(--subtext)">Tiempo después del cual se considera Falta Automática.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="horaSalida">Hora oficial de Salida (entre semana)</label>
+        <input type="time" id="horaSalida">
+        <p class="text-sm mt-1" style="color:var(--subtext)">El reloj anota la hora exacta, pero si el trabajador sale dentro del margen de tolerancia, la asistencia registra esta hora oficial.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="toleranciaSalidaMin">Tolerancia al salir (minutos)</label>
+        <input type="number" id="toleranciaSalidaMin" min="0">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Margen después de la hora de salida que se considera turno normal. Si se excede, el tiempo extra cuenta como horas extras.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="tiempoDescansoMin">Descanso automático por día (minutos)</label>
+        <input type="number" id="tiempoDescansoMin" min="0">
+        <p class="text-sm mt-1" style="color:var(--subtext)">Se descuenta automáticamente de las horas trabajadas para la comida. Se puede ajustar manualmente al registrar asistencia.</p>
       </div>
     </div>
 
@@ -170,37 +186,32 @@
 <script>
   function loadSettings() {
     const d = window.DB.get();
-    const s = d.settings || { 
-      horaEntrada: '09:00', minutosRetardo: 15, minutosFalta: 60,
-      diasVacacionesBase: 6, incrementoAnual: 2, topeVacaciones: 20,
-      penalizacionFalta: 100, penalizacionRetardo: '3 retardos = 1 falta', diasAvisoFalta: 24
-    };
-    document.getElementById('horaEntrada').value = s.horaEntrada || '09:00';
-    document.getElementById('minutosRetardo').value = s.minutosRetardo || 15;
-    document.getElementById('minutosFalta').value = s.minutosFalta || 60;
-    
-    document.getElementById('diasVacacionesBase').value = s.diasVacacionesBase || 6;
-    document.getElementById('incrementoAnual').value = s.incrementoAnual || 2;
-    document.getElementById('topeVacaciones').value = s.topeVacaciones || 20;
-
-    document.getElementById('penalizacionFalta').value = s.penalizacionFalta || 100;
-    document.getElementById('penalizacionRetardo').value = s.penalizacionRetardo || '3 retardos = 1 falta';
-    document.getElementById('diasAvisoFalta').value = s.diasAvisoFalta || 24;
+    const s = d.settings || {};
+    document.getElementById('horaEntrada').value        = s.horaEntrada        || '08:00';
+    document.getElementById('minutosRetardo').value     = s.minutosRetardo     ?? 15;
+    document.getElementById('minutosFalta').value       = s.minutosFalta       ?? 60;
+    document.getElementById('horaSalida').value         = s.horaSalida         || '17:30';
+    document.getElementById('toleranciaSalidaMin').value= s.toleranciaSalidaMin ?? 15;
+    document.getElementById('tiempoDescansoMin').value  = s.tiempoDescansoMin  ?? 30;
+    document.getElementById('penalizacionFalta').value  = s.penalizacionFalta  ?? 100;
+    document.getElementById('penalizacionRetardo').value= s.penalizacionRetardo || '3 retardos = 1 falta';
+    document.getElementById('diasAvisoFalta').value     = s.diasAvisoFalta     ?? 24;
   }
 
   function saveSettings() {
+    const d = window.DB.get();
+    const existing = d.settings || {};
     const s = {
-      horaEntrada: document.getElementById('horaEntrada').value || '09:00',
-      minutosRetardo: parseInt(document.getElementById('minutosRetardo').value) || 15,
-      minutosFalta: parseInt(document.getElementById('minutosFalta').value) || 60,
-      
-      diasVacacionesBase: parseInt(document.getElementById('diasVacacionesBase').value) || 6,
-      incrementoAnual: parseInt(document.getElementById('incrementoAnual').value) || 2,
-      topeVacaciones: parseInt(document.getElementById('topeVacaciones').value) || 20,
-
-      penalizacionFalta: parseInt(document.getElementById('penalizacionFalta').value) || 100,
+      ...existing,   // preservar campos no editados (ej. vacaciones)
+      horaEntrada:         document.getElementById('horaEntrada').value         || '08:00',
+      minutosRetardo:      parseInt(document.getElementById('minutosRetardo').value)      || 15,
+      minutosFalta:        parseInt(document.getElementById('minutosFalta').value)        || 60,
+      horaSalida:          document.getElementById('horaSalida').value          || '17:30',
+      toleranciaSalidaMin: parseInt(document.getElementById('toleranciaSalidaMin').value) ?? 15,
+      tiempoDescansoMin:   parseInt(document.getElementById('tiempoDescansoMin').value)   ?? 30,
+      penalizacionFalta:   parseInt(document.getElementById('penalizacionFalta').value)   || 100,
       penalizacionRetardo: document.getElementById('penalizacionRetardo').value || '',
-      diasAvisoFalta: parseInt(document.getElementById('diasAvisoFalta').value) || 24
+      diasAvisoFalta:      parseInt(document.getElementById('diasAvisoFalta').value)      || 24,
     };
     window.DB.saveSettings(s);
     const toast = document.getElementById('toast');

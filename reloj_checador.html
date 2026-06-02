@@ -144,86 +144,145 @@
 
   async function processScan(code) {
     const worker = WORKERS_CACHE.find(w => w.scanCode === code || w.id === code || w.personalId === code);
-    
-    if (!worker) {
-      showStatus('error', 'CÓDIGO NO RECONOCIDO', 'Empleado no encontrado', '');
-      return;
-    }
+    if (!worker) { showStatus('error', 'CÓDIGO NO RECONOCIDO', 'Empleado no encontrado', ''); return; }
 
-    const now = new Date();
+    const now      = new Date();
     const todayStr = now.toISOString().split('T')[0];
-    const timeStr = now.toLocaleTimeString('es-MX', { hour12: false });
-    
-    // Check if entry exists today
-    const logs = await window.DB.query("attendance_logs", { workerId: worker.id, fecha: todayStr });
-    const db = window.DB.get();
+    const timeStr  = now.toLocaleTimeString('es-MX', { hour12: false }); // HH:MM:SS exacto
 
-    // Regla: si ya existe doc de hoy para ese worker -> actualizar hora_salida. Si no existe -> crear con hora_entrada.
-    if (logs.length > 0) {
-        // existe: actualizar salida
-        const log = logs[0];
-        if (log.hora_salida) {
-            showStatus('warning', 'SALIDA YA REGISTRADA', worker.name, worker.role, 'Ya has registrado tu salida para este turno');
-            return;
-        }
-        
-        // Update the record
-        const updatedLog = { ...log, hora_salida: timeStr, tipo: 'salida' };
-        if (window.parent && window.parent.setDocumentInFirebase) {
-            window.parent.setDocumentInFirebase('attendance_logs', log.id, updatedLog);
-        }
-        if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.attendance_logs) {
-            const idx = window.parent.DB_STATE.attendance_logs.findIndex(l => l.id === log.id);
-            if (idx !== -1) window.parent.DB_STATE.attendance_logs[idx] = updatedLog;
-        }
-        showStatus('success', 'SALIDA REGISTRADA', worker.name, worker.role, 'Registro de salida completo');
+    const logs = await window.DB.query("attendance_logs", { workerId: worker.id, fecha: todayStr });
+    const db   = window.DB.get();
+
+    // Leer settings con defaults inteligentes
+    const cfg = db.settings || {};
+    const horaEntrada       = cfg.horaEntrada        || '08:00';
+    const minutosRetardo    = cfg.minutosRetardo      ?? 15;
+    const minutosFalta      = cfg.minutosFalta        ?? 60;
+    const horaSalida        = cfg.horaSalida          || '17:30';
+    const tolSalidaMin      = cfg.toleranciaSalidaMin ?? 15;  // gracia después de salida
+    const tolAntesSalida    = 5;                              // gracia antes de salida
+    const descansoMin       = cfg.tiempoDescansoMin   ?? 30;  // descuento comida
+
+    // ── SALIDA ─────────────────────────────────────────────────────────
+    const pendingEntry = logs.find(l => !l.hora_salida);
+    if (logs.length > 0 && pendingEntry) {
+      const log = pendingEntry;
+
+      // Tiempo actual en minutos del día
+      const exitMins         = now.getHours() * 60 + now.getMinutes();
+      const [hSal, mSal]     = horaSalida.split(':').map(Number);
+      const officialExitMins = hSal * 60 + mSal;
+      const diffFromExit     = exitMins - officialExitMins;
+
+      // Hora de entrada efectiva guardada en el registro de entrada
+      const entradaEfectiva    = log.hora_entrada_efectiva || log.hora_entrada || horaEntrada;
+      const [hEE, mEE]         = entradaEfectiva.substring(0, 5).split(':').map(Number);
+      const entradaEfectivaMins = hEE * 60 + mEE;
+
+      let horasNormal = 0, horasExtra = 0, salidaEfectiva = '';
+
+      if (diffFromExit > tolSalidaMin) {
+        // Salida tarde → hay tiempo extra desde la hora oficial de salida
+        salidaEfectiva = timeStr.substring(0, 5);
+        horasExtra     = diffFromExit / 60;
+        horasNormal    = Math.max(0, (officialExitMins - entradaEfectivaMins - descansoMin)) / 60;
+      } else if (diffFromExit >= -tolAntesSalida) {
+        // Dentro del margen (hasta 5 min antes o 15 min después) → turno normal
+        salidaEfectiva = horaSalida;
+        horasNormal    = Math.max(0, (officialExitMins - entradaEfectivaMins - descansoMin)) / 60;
+      } else {
+        // Salió antes del margen → se cuentan las horas reales (jornada incompleta)
+        salidaEfectiva = timeStr.substring(0, 5);
+        horasNormal    = Math.max(0, (exitMins - entradaEfectivaMins - descansoMin)) / 60;
+      }
+
+      horasNormal = Math.round(horasNormal * 100) / 100;
+      horasExtra  = Math.round(horasExtra  * 100) / 100;
+
+      const updatedLog = {
+        ...log,
+        hora_salida:          timeStr,          // hora exacta registrada
+        hora_salida_efectiva: salidaEfectiva,   // hora para nómina
+        tipo:                 'salida',
+        estado:               log.status || 'trabajo',
+        horasNormal,
+        horasExtra,
+        horasDoble:           0,
+        horasTotales:         horasNormal + horasExtra,
+        retardoMin:           log.retardoMin || 0,
+        descansoMin,
+      };
+
+      if (window.parent?.setDocumentInFirebase)
+        window.parent.setDocumentInFirebase('attendance_logs', log.id, updatedLog);
+      if (window.parent?.DB_STATE?.attendance_logs) {
+        const idx = window.parent.DB_STATE.attendance_logs.findIndex(l => l.id === log.id);
+        if (idx !== -1) window.parent.DB_STATE.attendance_logs[idx] = updatedLog;
+      }
+
+      const hrsLabel = horasExtra > 0
+        ? `${horasNormal.toFixed(1)}h normales + ${horasExtra.toFixed(1)}h extra`
+        : `${horasNormal.toFixed(1)} hrs trabajadas`;
+      showStatus('success', 'SALIDA REGISTRADA', worker.name || worker.givenName, worker.role, hrsLabel);
+
+    } else if (logs.length > 0) {
+      // Ya existe entrada Y salida → ya terminó su turno
+      showStatus('warning', 'TURNO COMPLETO', worker.name || worker.givenName, worker.role, 'Ya registraste entrada y salida hoy');
+
     } else {
-        // no existe: crear entrada
-        const settings = db.settings || { horaEntrada: '09:00', minutosRetardo: 15, minutosFalta: 60 };
-        const [hE, mE] = settings.horaEntrada.split(':').map(Number);
-        
-        const officialStartTime = new Date();
-        officialStartTime.setHours(hE, mE, 0, 0);
-        
-        const diffMs = now - officialStartTime;
-        const diffMins = Math.floor(diffMs / 60000);
-        
-        let statusTxt = 'trabajo';  // We use the status that produccion_diaria naturally likes
-        let statusClass = 'success';
-        let retardoMin = 0;
-        
-        if (diffMins <= settings.minutosRetardo) {
-          statusTxt = 'trabajo';
-          statusClass = 'success';
-        } else if (diffMins > settings.minutosRetardo && diffMins <= settings.minutosFalta) {
-          statusTxt = 'retardo'; // it works with lower case "retardo" logic in produccion_diaria
-          statusClass = 'warning';
-          retardoMin = diffMins;
-        } else {
-          statusTxt = 'falta'; // This indicates they shouldn't even work maybe? Keep working anyway but record that it's extremely late
-          statusClass = 'error';
-        }
-        
-        const newCheckin = {
-           id: crypto.randomUUID(),
-           workerId: worker.id,
-           fecha: todayStr,
-           hora_entrada: timeStr,
-           tipo: 'entrada',
-           registrado_por: 'reloj',
-           status: statusTxt,
-           retardoMin: retardoMin
-        };
-        
-        if (window.parent && window.parent.setDocumentInFirebase) {
-            window.parent.setDocumentInFirebase('attendance_logs', newCheckin.id, newCheckin);
-        }
-        if (window.parent && window.parent.DB_STATE) {
-            if (!window.parent.DB_STATE.attendance_logs) window.parent.DB_STATE.attendance_logs = [];
-            window.parent.DB_STATE.attendance_logs.push(newCheckin);
-        }
-        
-        showStatus(statusClass, 'ENTRADA REGISTRADA', worker.name, worker.role, statusTxt === 'trabajo' ? 'A tiempo' : (statusTxt === 'retardo' ? 'Retardo' : 'Llegada muy tarde'));
+      // ── ENTRADA ──────────────────────────────────────────────────────
+      const [hE, mE]       = horaEntrada.split(':').map(Number);
+      const oficialStartMs = new Date().setHours(hE, mE, 0, 0);
+      const diffMins       = Math.floor((now - oficialStartMs) / 60000);
+
+      let statusTxt = 'trabajo', statusClass = 'success', retardoMin = 0;
+      let entradaEfectiva = horaEntrada; // por defecto: hora oficial
+      let detalle = '';
+
+      if (diffMins <= 0) {
+        // Llegó antes del inicio → hora efectiva = hora oficial (no se adelanta el conteo)
+        statusTxt = 'trabajo'; statusClass = 'success';
+        entradaEfectiva = horaEntrada;
+        detalle = `${Math.abs(diffMins)} min antes del inicio`;
+      } else if (diffMins <= minutosRetardo) {
+        // Dentro de tolerancia → hora efectiva = hora oficial
+        statusTxt = 'trabajo'; statusClass = 'success';
+        entradaEfectiva = horaEntrada;
+        detalle = 'A tiempo';
+      } else if (diffMins <= minutosFalta) {
+        // Retardo → hora efectiva = hora real (se pierde el tiempo llegado tarde)
+        statusTxt = 'retardo'; statusClass = 'warning';
+        retardoMin = diffMins;
+        entradaEfectiva = timeStr.substring(0, 5);
+        detalle = `Retardo de ${diffMins} min`;
+      } else {
+        // Falta automática
+        statusTxt = 'falta'; statusClass = 'error';
+        retardoMin = diffMins;
+        entradaEfectiva = timeStr.substring(0, 5);
+        detalle = `Muy tarde (${diffMins} min)`;
+      }
+
+      const newCheckin = {
+        id:                      crypto.randomUUID(),
+        workerId:                worker.id,
+        fecha:                   todayStr,
+        hora_entrada:            timeStr,        // hora exacta del scan
+        hora_entrada_efectiva:   entradaEfectiva, // hora para cálculo de nómina
+        tipo:                    'entrada',
+        registrado_por:          'reloj',
+        status:                  statusTxt,
+        retardoMin,
+      };
+
+      if (window.parent?.setDocumentInFirebase)
+        window.parent.setDocumentInFirebase('attendance_logs', newCheckin.id, newCheckin);
+      if (window.parent?.DB_STATE) {
+        if (!window.parent.DB_STATE.attendance_logs) window.parent.DB_STATE.attendance_logs = [];
+        window.parent.DB_STATE.attendance_logs.push(newCheckin);
+      }
+
+      showStatus(statusClass, 'ENTRADA REGISTRADA', worker.name || worker.givenName, worker.role, detalle);
     }
   }
 
