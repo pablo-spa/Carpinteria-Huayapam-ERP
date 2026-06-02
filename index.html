@@ -418,9 +418,12 @@
     {
       id: 'cat-compras', title: 'Compras y Almacén',
       items: [
-        { id: 'nav-almacen-hub', html: `<span class="icon">📦</span> Portal Almacén`, file: 'almacen_hub.html', label: 'Portal Almacén' },
-        { id: 'nav-compras-panel', html: `<span class="icon">🧾</span> Panel de Compras`, file: 'rq_compras.html', label: 'Panel de Compras' },
-        { id: 'nav-historial', html: `<span class="icon">📚</span> Historial de Compras`, file: 'historial_compras.html', label: 'Historial de Compras' },
+        { id: 'nav-inventario',     html: `<span class="icon">📦</span> Inventario`,        file: 'almacen_inventario.html', label: 'Inventario General' },
+        { id: 'nav-salidas',        html: `<span class="icon">📤</span> Salidas`,            file: 'almacen_salidas.html',    label: 'Registro de Salidas' },
+        { id: 'nav-madera',         html: `<span class="icon">🌲</span> Almacén de Madera`, file: 'control_madera.html',      label: 'Almacén de Madera' },
+        { id: 'nav-ingreso-madera', html: `<span class="icon">📷</span> Escanear Madera`,   file: 'ingreso_madera.html',      label: 'Escanear Madera' },
+        { id: 'nav-compras-panel',  html: `<span class="icon">🧾</span> Panel de Compras`,  file: 'rq_compras.html',          label: 'Panel de Compras' },
+        { id: 'nav-historial',      html: `<span class="icon">📚</span> Historial Compras`, file: 'historial_compras.html',   label: 'Historial de Compras' },
       ]
     },
     {
@@ -476,12 +479,13 @@
       try {
         let loadedData = JSON.parse(saved);
         
-        // Remove nav-madera from loaded layout if present
+        // Quitar items obsoletos del menú guardado
+        const obsoletos = new Set(['nav-almacen-hub', 'nav-madera-old']);
         loadedData = loadedData.map(cat => ({
-            ...cat,
-            items: cat.items.filter(item => item.id !== 'nav-madera')
+          ...cat,
+          items: cat.items.filter(item => !obsoletos.has(item.id))
         }));
-        
+
         menuLayout = loadedData;
         
         // Merge any new default items that are missing from the saved layout
@@ -665,10 +669,11 @@
     'nomina_semanal.html':    'nav-nomina',
     'rh_trabajadores.html':   'nav-trabajadores',
     'cotizacion.html':        'nav-cotizacion',
-    'almacen_hub.html':       'nav-almacen-hub',
-    'rq_compras.html':        'nav-compras-panel',
-    'control_madera.html':    'nav-madera',
-    'ingreso_madera.html':    'nav-ingreso-madera',
+    'almacen_inventario.html': 'nav-inventario',
+    'almacen_salidas.html':    'nav-salidas',
+    'rq_compras.html':         'nav-compras-panel',
+    'control_madera.html':     'nav-madera',
+    'ingreso_madera.html':     'nav-ingreso-madera',
     'contactos.html':         'nav-contactos',
     'admin_db.html':          'nav-db',
     'admin_config.html':      'nav-config',
