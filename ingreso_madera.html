@@ -165,10 +165,26 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     ]);
     const d = window.DB.get();
     const getList = key => { const raw = d[key]||[]; return raw[0]?.list || raw.filter(x=>typeof x==='string'); };
-    document.getElementById('ctx-format').innerHTML = getList('wood_formats').map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-species').innerHTML = getList('wood_types').map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-quality').innerHTML = getList('wood_quality').map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-loc').innerHTML = getList('wood_locations').map(x => `<option value="${x}">${x}</option>`).join('');
+
+    // Sembrar defaults si alguna lista está vacía
+    const DEFAULTS = {
+      wood_formats:   ['Tabla', 'Tablón', 'Tabloncillo', 'Duela', 'Viga', 'Cuartón', 'Triplay', 'MDF'],
+      wood_types:     ['Pino', 'Cedro', 'Parota', 'Encino', 'Mezquite', 'Fresno', 'Caoba', 'Nogal', 'Hule'],
+      wood_quality:   ['Extra', 'Primera', 'Segunda', 'Tercera'],
+      wood_locations: ['Bodega Principal', 'Área de Trabajo', 'Área de Secado', 'Exterior'],
+    };
+    for (const [key, vals] of Object.entries(DEFAULTS)) {
+      if (!getList(key).length) {
+        if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase(key, 'main', { list: vals });
+        if (window.parent?.DB_STATE) window.parent.DB_STATE[key] = [{ _id: 'main', list: vals }];
+      }
+    }
+    const getList2 = key => { const raw = window.parent?.DB_STATE?.[key]||d[key]||[]; return raw[0]?.list || raw.filter(x=>typeof x==='string'); };
+
+    document.getElementById('ctx-format').innerHTML = getList2('wood_formats').map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-species').innerHTML = getList2('wood_types').map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-quality').innerHTML = getList2('wood_quality').map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-loc').innerHTML = getList2('wood_locations').map(x => `<option value="${x}">${x}</option>`).join('');
     document.getElementById('ctx-date').value = new Date().toISOString().split('T')[0];
   });
 
