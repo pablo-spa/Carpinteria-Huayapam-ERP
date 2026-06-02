@@ -144,6 +144,24 @@
     font-weight: 700;
   }
 
+  /* Botón estrella / quitar favorito */
+  .nav-item .item-action {
+    display: none;
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--subtext);
+    padding: 2px 5px;
+    border-radius: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .nav-item:hover .item-action { display: inline-flex; }
+  .nav-item .item-action.fav-on { color: #df8e1d; display: inline-flex; }
+  .nav-item .item-action:hover { background: var(--surface0); }
+
   .user-profile {
     margin-top: auto;
     padding: 16px 20px;
@@ -385,6 +403,8 @@
 
 <script>
   let dragSrcEl = null;
+  let dragSrcSection = null; // 'fav' | cIdx number
+  let favorites = [];        // ordered array of item IDs starred by the user
 
   const defaultMenuLayout = [
     {
@@ -476,187 +496,241 @@
     'wiki.html': 'dashboard', /* Acceso general heredado del dashboard */
   };
 
+  // Mapa id→item completo construido desde defaultMenuLayout (fuente de verdad de items)
+  const allItemsMap = {};
+  defaultMenuLayout.forEach(cat => cat.items.forEach(item => { allItemsMap[item.id] = item; }));
+
   function loadMenu() {
+    // 1. Cargar orden de secciones guardado (sin cat-favoritos — lo manejamos aparte)
     const saved = localStorage.getItem('erp_menu_layout');
+    const obsoletos = new Set(['nav-almacen-hub', 'nav-madera-old']);
+
     if (saved) {
       try {
         let loadedData = JSON.parse(saved);
-        
-        // Quitar items obsoletos del menú guardado
-        const obsoletos = new Set(['nav-almacen-hub', 'nav-madera-old']);
-        loadedData = loadedData.map(cat => ({
-          ...cat,
-          items: cat.items.filter(item => !obsoletos.has(item.id))
-        }));
-
+        // Quitar obsoletos y la sección de favoritos (ya no se guarda ahí)
+        loadedData = loadedData
+          .filter(cat => cat.id !== 'cat-favoritos')
+          .map(cat => ({ ...cat, items: cat.items.filter(item => !obsoletos.has(item.id)) }));
         menuLayout = loadedData;
-        
-        // Merge any new default items that are missing from the saved layout
-        const existingIds = new Set();
-        menuLayout.forEach(cat => cat.items.forEach(item => existingIds.add(item.id)));
-        
-        let missingFound = false;
-        defaultMenuLayout.forEach(dCat => {
-          dCat.items.forEach(dItem => {
-            if (!existingIds.has(dItem.id)) {
-              let targetCat = menuLayout.find(c => c.id === dCat.id);
-              if (!targetCat && menuLayout.length > 0) targetCat = menuLayout[0];
-              if (targetCat) {
-                targetCat.items.push(dItem);
-                missingFound = true;
-              }
-            }
-          });
-        });
-        
-        if (missingFound) saveMenu();
-        
       } catch(e) {
-        menuLayout = JSON.parse(JSON.stringify(defaultMenuLayout));
+        menuLayout = JSON.parse(JSON.stringify(defaultMenuLayout.filter(c => c.id !== 'cat-favoritos')));
       }
     } else {
-      menuLayout = JSON.parse(JSON.stringify(defaultMenuLayout));
+      menuLayout = JSON.parse(JSON.stringify(defaultMenuLayout.filter(c => c.id !== 'cat-favoritos')));
     }
+
+    // 2. Asegurar que ningún item nuevo del default falte en el layout guardado
+    const existingIds = new Set(menuLayout.flatMap(c => c.items.map(i => i.id)));
+    let changed = false;
+    defaultMenuLayout.filter(c => c.id !== 'cat-favoritos').forEach(dCat => {
+      dCat.items.forEach(dItem => {
+        if (!existingIds.has(dItem.id)) {
+          let target = menuLayout.find(c => c.id === dCat.id);
+          if (!target) { target = menuLayout[0]; }
+          if (target) { target.items.push(dItem); changed = true; }
+        }
+      });
+    });
+
+    // 3. Cargar favoritos (lista ordenada de IDs)
+    try {
+      favorites = JSON.parse(localStorage.getItem('erp_favorites') || '[]');
+      // Migrar items que estaban en cat-favoritos del formato antiguo
+      if (saved) {
+        const old = JSON.parse(saved);
+        const oldFav = old.find(c => c.id === 'cat-favoritos');
+        if (oldFav && oldFav.items.length) {
+          oldFav.items.forEach(it => { if (!favorites.includes(it.id)) favorites.push(it.id); });
+          saveFavorites();
+        }
+      }
+    } catch(e) { favorites = []; }
+
+    // Limpiar favoritos que ya no existen
+    favorites = favorites.filter(id => allItemsMap[id]);
+
+    if (changed) saveMenu();
     renderMenu();
   }
 
   function saveMenu() {
     localStorage.setItem('erp_menu_layout', JSON.stringify(menuLayout));
   }
+  function saveFavorites() {
+    localStorage.setItem('erp_favorites', JSON.stringify(favorites));
+  }
+
+  function toggleFavorite(id) {
+    const idx = favorites.indexOf(id);
+    if (idx === -1) favorites.push(id);
+    else favorites.splice(idx, 1);
+    saveFavorites();
+    renderMenu();
+  }
 
   function renderMenu() {
     const container = document.getElementById('sidebar-content');
     container.innerHTML = '';
-    
+    const favSet = new Set(favorites);
+    const currentFile = document.getElementById('main-frame').getAttribute('data-loaded');
+
+    // ── Sección Favoritos ──────────────────────────────────────────────
+    if (favorites.length > 0) {
+      const cDiv = document.createElement('div');
+      cDiv.className = 'category';
+      cDiv.innerHTML = '<div class="category-title">⭐ Favoritos</div>';
+      const list = document.createElement('div');
+      list.className = 'nav-list';
+      list.setAttribute('data-section', 'fav');
+      list.addEventListener('dragover', e => { e.preventDefault(); return false; });
+      list.addEventListener('drop', handleDropIntoList);
+
+      favorites.forEach((id, iIdx) => {
+        const item = allItemsMap[id];
+        if (!item) return;
+        const iDiv = document.createElement('div');
+        iDiv.className = 'nav-item' + (item.file === currentFile ? ' active' : '');
+        iDiv.innerHTML = item.html;
+        iDiv.draggable = true;
+        iDiv.setAttribute('data-section', 'fav');
+        iDiv.setAttribute('data-iidx', iIdx);
+        iDiv.setAttribute('data-file', item.file);
+        iDiv.onclick = () => openModule(item.file, item.label);
+
+        // Botón quitar de favoritos
+        const rmBtn = document.createElement('button');
+        rmBtn.className = 'item-action fav-on';
+        rmBtn.title = 'Quitar de Favoritos';
+        rmBtn.textContent = '★';
+        rmBtn.onclick = e => { e.stopPropagation(); toggleFavorite(id); };
+        iDiv.appendChild(rmBtn);
+
+        iDiv.addEventListener('dragstart', handleDragStart);
+        iDiv.addEventListener('dragenter', e => { iDiv.classList.add('over'); });
+        iDiv.addEventListener('dragover',  e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; });
+        iDiv.addEventListener('dragleave', e => { iDiv.classList.remove('over'); });
+        iDiv.addEventListener('drop',      handleDrop);
+        iDiv.addEventListener('dragend',   handleDragEnd);
+        list.appendChild(iDiv);
+      });
+      cDiv.appendChild(list);
+      container.appendChild(cDiv);
+    }
+
+    // ── Secciones normales ─────────────────────────────────────────────
     menuLayout.forEach((cat, cIdx) => {
       const cDiv = document.createElement('div');
       cDiv.className = 'category';
       cDiv.innerHTML = `<div class="category-title">${cat.title}</div>`;
-      
       const list = document.createElement('div');
       list.className = 'nav-list';
+      list.setAttribute('data-section', 'cat');
       list.setAttribute('data-cidx', cIdx);
-      
-      // Allow dropping into empty categories
-      list.addEventListener('dragover', handleDragOverList);
-      list.addEventListener('drop', handleDropList);
-      
+      list.addEventListener('dragover', e => { e.preventDefault(); return false; });
+      list.addEventListener('drop', handleDropIntoList);
+
       cat.items.forEach((item, iIdx) => {
         const iDiv = document.createElement('div');
-        iDiv.className = 'nav-item';
+        iDiv.className = 'nav-item' + (item.file === currentFile ? ' active' : '');
         iDiv.id = item.id;
         iDiv.innerHTML = item.html;
         iDiv.draggable = true;
+        iDiv.setAttribute('data-section', 'cat');
         iDiv.setAttribute('data-cidx', cIdx);
         iDiv.setAttribute('data-iidx', iIdx);
-        
+        iDiv.setAttribute('data-file', item.file);
         iDiv.onclick = () => openModule(item.file, item.label);
-        
-        // Drag events
-        iDiv.addEventListener('dragstart', handleDragStart);
-        iDiv.addEventListener('dragenter', handleDragEnter);
-        iDiv.addEventListener('dragover', handleDragOver);
-        iDiv.addEventListener('dragleave', handleDragLeave);
-        iDiv.addEventListener('drop', handleDrop);
-        iDiv.addEventListener('dragend', handleDragEnd);
 
+        // Botón estrella — agregar/quitar favorito (no mueve el item de su sección)
+        const starBtn = document.createElement('button');
+        starBtn.className = 'item-action' + (favSet.has(item.id) ? ' fav-on' : '');
+        starBtn.title = favSet.has(item.id) ? 'Quitar de Favoritos' : 'Agregar a Favoritos';
+        starBtn.textContent = '★';
+        starBtn.onclick = e => { e.stopPropagation(); toggleFavorite(item.id); };
+        iDiv.appendChild(starBtn);
+
+        iDiv.addEventListener('dragstart', handleDragStart);
+        iDiv.addEventListener('dragenter', e => { iDiv.classList.add('over'); });
+        iDiv.addEventListener('dragover',  e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; });
+        iDiv.addEventListener('dragleave', e => { iDiv.classList.remove('over'); });
+        iDiv.addEventListener('drop',      handleDrop);
+        iDiv.addEventListener('dragend',   handleDragEnd);
         list.appendChild(iDiv);
       });
-      
-      if(cat.items.length === 0) {
-        const empty = document.createElement('div');
-        empty.style.padding = '10px 16px';
-        empty.style.fontSize = '12px';
-        empty.style.color = 'var(--surface1)';
-        empty.textContent = '(Arrastra aquí)';
-        list.appendChild(empty);
-      }
 
       cDiv.appendChild(list);
       container.appendChild(cDiv);
     });
-    
-    // Highlight currently active module
-    const currentFile = document.getElementById('main-frame').getAttribute('data-loaded');
-    if(currentFile) {
-      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      const activeObj = menuLayout.flatMap(c => c.items).find(i => i.file === currentFile);
-      if(activeObj) {
-        const actEl = document.getElementById(activeObj.id);
-        if(actEl) actEl.classList.add('active');
-      }
-    }
   }
 
   function handleDragStart(e) {
-    this.style.opacity = '0.4';
     dragSrcEl = this;
+    this.style.opacity = '0.4';
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify({
-      cIdx: parseInt(this.getAttribute('data-cidx')),
-      iIdx: parseInt(this.getAttribute('data-iidx'))
+      section: this.getAttribute('data-section'),
+      cIdx:    parseInt(this.getAttribute('data-cidx') ?? '-1'),
+      iIdx:    parseInt(this.getAttribute('data-iidx')),
     }));
   }
 
-  function handleDragOver(e) {
-    if (e.preventDefault) {
-      e.preventDefault(); 
-    }
-    e.dataTransfer.dropEffect = 'move';
-    return false;
-  }
-  
-  function handleDragOverList(e) {
-    if (e.preventDefault) e.preventDefault();
-    return false;
-  }
-
-  function handleDragEnter(e) {
-    this.classList.add('over');
-  }
-
-  function handleDragLeave(e) {
-    this.classList.remove('over');
-  }
-
   function handleDrop(e) {
-    if (e.stopPropagation) e.stopPropagation();
-    
-    if (dragSrcEl != this) {
-      const srcData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    e.stopPropagation();
+    if (!dragSrcEl || dragSrcEl === this) return false;
+    const srcData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const destSection = this.getAttribute('data-section');
+    const destIidx    = parseInt(this.getAttribute('data-iidx'));
+
+    if (srcData.section === 'fav' && destSection === 'fav') {
+      // Reordenar dentro de favoritos
+      const [id] = favorites.splice(srcData.iIdx, 1);
+      let di = destIidx;
+      favorites.splice(di, 0, id);
+      saveFavorites();
+      renderMenu();
+
+    } else if (srcData.section === 'cat' && destSection === 'cat') {
       const destCidx = parseInt(this.getAttribute('data-cidx'));
-      const destIidx = parseInt(this.getAttribute('data-iidx'));
-      
-      // remove from source
-      const item = menuLayout[srcData.cIdx].items.splice(srcData.iIdx, 1)[0];
-      // insert at destination
-      menuLayout[destCidx].items.splice(destIidx, 0, item);
-      
+      // Solo permitir reordenar dentro de la MISMA sección
+      if (srcData.cIdx !== destCidx) return false;
+      let di = destIidx;
+      // Ajustar índice: si el src estaba antes del dest, al sacarlo el dest se adelanta
+      const [item] = menuLayout[srcData.cIdx].items.splice(srcData.iIdx, 1);
+      if (srcData.iIdx < di) di--;
+      menuLayout[destCidx].items.splice(di, 0, item);
       saveMenu();
       renderMenu();
     }
     return false;
   }
-  
-  function handleDropList(e) {
-    if (e.stopPropagation) e.stopPropagation();
-    // Drop into empty list
-    const destCidx = parseInt(this.getAttribute('data-cidx'));
-    if(menuLayout[destCidx].items.length === 0) {
-        const srcData = JSON.parse(e.dataTransfer.getData('text/plain'));
-        const item = menuLayout[srcData.cIdx].items.splice(srcData.iIdx, 1)[0];
-        menuLayout[destCidx].items.push(item);
-        saveMenu();
-        renderMenu();
+
+  // Drop en el fondo de una lista (zona vacía entre items)
+  function handleDropIntoList(e) {
+    e.stopPropagation();
+    if (!dragSrcEl) return false;
+    const srcData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const destSection = this.getAttribute('data-section');
+    const destCidx    = parseInt(this.getAttribute('data-cidx') ?? '-1');
+
+    if (srcData.section === 'fav' && destSection === 'fav') {
+      // Mover al final de favoritos (ya está en favoritos, solo reorden)
+      const [id] = favorites.splice(srcData.iIdx, 1);
+      favorites.push(id);
+      saveFavorites(); renderMenu();
+    } else if (srcData.section === 'cat' && destSection === 'cat' && srcData.cIdx === destCidx) {
+      // Mover al final de la misma sección
+      const [item] = menuLayout[srcData.cIdx].items.splice(srcData.iIdx, 1);
+      menuLayout[destCidx].items.push(item);
+      saveMenu(); renderMenu();
     }
     return false;
   }
 
   function handleDragEnd(e) {
-    this.style.opacity = '1';
-    document.querySelectorAll('.nav-item').forEach(function (item) {
-      item.classList.remove('over');
-    });
+    if (dragSrcEl) dragSrcEl.style.opacity = '1';
+    dragSrcEl = null;
+    document.querySelectorAll('.nav-item.over').forEach(el => el.classList.remove('over'));
   }
 
   document.addEventListener('DOMContentLoaded', loadMenu);
@@ -751,11 +825,16 @@
       frame.setAttribute('data-loaded', file);
     }
 
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    const navIdId = MODULES[navHistory[0].file];
+    // Highlight active: busca por id (secciones normales) Y por data-file (favoritos)
+    const activeFile = navHistory[0].file;
+    document.querySelectorAll('.nav-item').forEach(el => {
+      const elFile = el.getAttribute('data-file');
+      el.classList.toggle('active', !!elFile && elFile === activeFile);
+    });
+    const navIdId = MODULES[activeFile];
     if (navIdId) {
       const el = document.getElementById(navIdId);
-      if(el) el.classList.add('active');
+      if (el) el.classList.add('active');
     }
     
     // Check permissions
