@@ -249,18 +249,16 @@
         statusTxt = 'trabajo'; statusClass = 'success';
         entradaEfectiva = horaEntrada;
         detalle = 'A tiempo';
-      } else if (diffMins <= minutosFalta) {
-        // Retardo → hora efectiva = hora real (se pierde el tiempo llegado tarde)
+      } else {
+        // Llegó tarde (más allá de la tolerancia) → siempre se registra como retardo.
+        // La falta solo se genera si NO llegan en todo el día (eso lo maneja nómina/RH).
+        // Si llegó muy tarde (> minutosFalta) se marca alerta_rh para revisión.
         statusTxt = 'retardo'; statusClass = 'warning';
         retardoMin = diffMins;
         entradaEfectiva = timeStr.substring(0, 5);
-        detalle = `Retardo de ${diffMins} min`;
-      } else {
-        // Falta automática
-        statusTxt = 'falta'; statusClass = 'error';
-        retardoMin = diffMins;
-        entradaEfectiva = timeStr.substring(0, 5);
-        detalle = `Muy tarde (${diffMins} min)`;
+        detalle = diffMins > minutosFalta
+          ? `Retardo muy largo: ${diffMins} min — revisar con RH`
+          : `Retardo de ${diffMins} min`;
       }
 
       const newCheckin = {
@@ -273,6 +271,7 @@
         registrado_por:          'reloj',
         status:                  statusTxt,
         retardoMin,
+        alerta_rh:               retardoMin > minutosFalta, // bandera para revisión de RH
       };
 
       if (window.parent?.setDocumentInFirebase)
