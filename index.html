@@ -900,7 +900,9 @@
         };
         window.setDocumentInFirebase = async (col, docId, data) => {
             try {
-                await setDoc(doc(db, col, docId), data);
+                // JSON round-trip convierte objetos cross-realm (de iframes) a objetos planos del realm padre
+                const plainData = JSON.parse(JSON.stringify(data));
+                await setDoc(doc(db, col, docId), plainData);
             } catch(e) {
                 console.error(`[Firestore] Error writing ${col}/${docId}:`, e.message);
                 throw e;
