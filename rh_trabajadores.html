@@ -185,7 +185,14 @@
 
   <div class="header">
     <h1><span>👷‍♂️</span> Directorio de Trabajadores</h1>
-    <div style="display:flex; gap:8px; align-items:center;">
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <select id="sort-by" onchange="renderList()" style="font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer;">
+        <option value="name">Ordenar: Nombre</option>
+        <option value="paterno">Ordenar: Apellido</option>
+        <option value="ingreso">Ordenar: Fecha ingreso</option>
+        <option value="salario">Ordenar: Sueldo</option>
+        <option value="id">Ordenar: ID Personal</option>
+      </select>
       <label style="font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; cursor:pointer;">
         <input type="checkbox" id="show-inactive" onchange="renderList()" style="accent-color:var(--primary);">
         Mostrar bajas
@@ -356,7 +363,18 @@
     async function renderList() {
       const showInactive = document.getElementById('show-inactive')?.checked;
       const allWorkers = await window.DB.query("contacts", { tipo: "trabajador" });
-      const workers = showInactive ? allWorkers : allWorkers.filter(w => w.activo !== false);
+      let workers = showInactive ? allWorkers : allWorkers.filter(w => w.activo !== false);
+
+      // Ordenar
+      const sortBy = document.getElementById('sort-by')?.value || 'name';
+      workers = [...workers].sort((a, b) => {
+        if (sortBy === 'name')    return (a.givenName||'').localeCompare(b.givenName||'');
+        if (sortBy === 'paterno') return (a.paterno||a.name||'').localeCompare(b.paterno||b.name||'');
+        if (sortBy === 'ingreso') return (a.fechaIngreso||a.startDate||'').localeCompare(b.fechaIngreso||b.startDate||'');
+        if (sortBy === 'salario') return (b.baseSalary||b.salarioBase||0) - (a.baseSalary||a.salarioBase||0);
+        if (sortBy === 'id')      return (a.personalId||a.scanCode||'').localeCompare(b.personalId||b.scanCode||'');
+        return 0;
+      });
       const d = window.DB.get(); // to optionally save
       let dbUpdated = false;
       
