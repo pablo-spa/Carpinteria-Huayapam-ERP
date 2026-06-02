@@ -934,7 +934,13 @@ async function init() {
   const actDoc = (db.actividades_trabajo||[]).find(r=>r._id==='main'||r.list);
   ACTIVIDADES  = actDoc?.list || [];
 
-  PRESTAMOS_TRABAJADOR = await window.DB.query('worker_loans', { workerId }) || [];
+  // Cargar asistencia y préstamos en paralelo (attendance no está en carga inicial)
+  const [, , prestamos] = await Promise.all([
+    window.DB.query('attendance'),
+    window.DB.query('attendance_logs'),
+    window.DB.query('worker_loans', { workerId })
+  ]);
+  PRESTAMOS_TRABAJADOR = prestamos || [];
 
   renderInfo();
   renderVacaciones();
