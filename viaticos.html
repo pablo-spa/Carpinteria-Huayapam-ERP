@@ -371,17 +371,18 @@ function formatDateDMM(str) {
 
 async function init() {
   await window.DB.query('viajes'); // ensure DB loaded
-  const db = window.DB.get();
 
-  // Load viatico categories from DB
-  const rawCats = db.viatico_categories || [];
-  const cats = rawCats[0]?.list || rawCats.filter(x => typeof x === 'string');
-  if (cats.length) {
-    document.getElementById('fg-cat').innerHTML =
-      cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    // Also rebuild CAT_LABELS from DB
-    cats.forEach(c => { CAT_LABELS[c] = c; });
+  // Load viatico categories (lazy-load the collection)
+  const rawCatData = await window.DB.query('viatico_categories');
+  const cats = rawCatData[0]?.list || rawCatData.filter(x => typeof x === 'string');
+  const DEFAULT_CATS = ['Transporte', 'Comidas', 'Alojamiento', 'Gastos Extra'];
+  const finalCats = cats.length ? cats : DEFAULT_CATS;
+  if (!cats.length && window.parent?.setDocumentInFirebase) {
+    window.parent.setDocumentInFirebase('viatico_categories', 'main', { list: DEFAULT_CATS });
+    if (window.parent?.DB_STATE) window.parent.DB_STATE['viatico_categories'] = [{ _id: 'main', list: DEFAULT_CATS }];
   }
+  document.getElementById('fg-cat').innerHTML = finalCats.map(c => `<option value="${c}">${c}</option>`).join('');
+  finalCats.forEach(c => { CAT_LABELS[c] = c; });
 
   // Poblar select de trabajadores (dropdown simple)
   const contacts = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
@@ -390,7 +391,7 @@ async function init() {
   contacts.sort((a,b) => (a.name||a.givenName||'').localeCompare(b.name||b.givenName||''));
   contacts.forEach(w => {
     const opt = document.createElement('option');
-    opt.value = w.id;
+    opt.value = w.id || w._id;
     opt.textContent = w.name || [w.givenName, w.paterno].filter(Boolean).join(' ') || '-';
     sel.appendChild(opt);
   });
@@ -450,7 +451,7 @@ function calcViajeStats(db, vid) {
 function getWorkerNames(db, ids) {
   if(!ids || !ids.length) return 'Ninguno';
   const all = [...(db.contacts||[]), ...(db.workers||[])];
-  const w = all.filter(wk => ids.includes(wk.id));
+  const w = all.filter(wk => ids.includes(wk.id || wk._id));
   return w.map(wk => String(wk.nombre || wk.name || wk.givenName || wk.id || '').split(' ').slice(0,2).join(' ')).join(', ') || 'Desconocido';
 }
 
@@ -619,7 +620,7 @@ function _saveViajeWorkers() {
 
 function _renderWorkerChips() {
   const db = window.DB.get();
-  const all = db.contacts || [];
+  const all = [...(db.contacts||[]), ...(db.workers||[])];
   const wids = currentViaje.worker_ids || [];
   const cont = document.getElementById('d-workers-chips');
   const isCerrado = currentViaje.estado === 'cerrado';
@@ -628,8 +629,8 @@ function _renderWorkerChips() {
     return;
   }
   cont.innerHTML = wids.map(wid => {
-    const w = all.find(c => c.id === wid);
-    const name = w ? (w.givenName || w.name || wid) : wid;
+    const w = all.find(c => (c.id || c._id) === wid);
+    const name = w ? (w.name || [w.givenName, w.paterno].filter(Boolean).join(' ') || wid) : wid;
     return `<div style="display:flex;align-items:center;gap:6px;background:var(--mantle);border:1px solid var(--crust);padding:5px 12px;border-radius:20px;font-size:13px;font-weight:600;">
       ${name}
       ${!isCerrado ? `<button onclick="quitarTrabajadorViaje('${wid}')" style="background:none;border:none;cursor:pointer;color:var(--subtext);font-size:18px;line-height:1;padding:0 0 0 4px;">×</button>` : ''}
@@ -641,9 +642,20 @@ function _updateFaRecibe() {
   // Solo muestra trabajadores asignados a este viaje
   const db   = window.DB.get();
   const wids = currentViaje?.worker_ids || [];
-  const all  = (db.contacts||[]).filter(c => c.tipo === 'trabajador' && wids.includes(c.id));
+  // Busca en contacts y workers por id o _id (robusto ante variaciones de campo)
+  const allPeople = [...(db.contacts||[]), ...(db.workers||[])];
+  const seen = new Set();
+  const all  = allPeople.filter(c => {
+    const id = c.id || c._id;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return wids.includes(id);
+  });
   const opts = all.length
-    ? all.map(w => `<option value="${w.name||w.givenName}">${w.name||w.givenName}</option>`).join('')
+    ? all.map(w => {
+        const name = w.name || [w.givenName, w.paterno].filter(Boolean).join(' ') || w.id || w._id;
+        return `<option value="${name}">${name}</option>`;
+      }).join('')
     : '<option value="" disabled>— Asigna personal al viaje primero —</option>';
   document.getElementById('fa-recibe').innerHTML = '<option value="">— Seleccionar —</option>' + opts;
 }
