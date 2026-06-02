@@ -293,15 +293,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       <div id="vac-reset-info" style="margin-top:10px; font-size:11px; color:var(--subtext);"></div>
     </div>
 
-    <!-- Préstamos -->
-    <div class="card">
-      <div class="card-title">
-        💳 Préstamos
-        <button class="btn btn-amber" style="font-size:11px;padding:4px 10px;" onclick="abrir_modal_prestamo()">+ Nuevo</button>
-      </div>
-      <div id="loans-list"><div style="font-size:12px;color:var(--subtext);">Sin préstamos registrados.</div></div>
-    </div>
-
   </div>
 
   <!-- ══ Columna derecha: Calendario ══ -->
@@ -387,6 +378,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         <button class="btn btn-green" onclick="dpGuardar()" style="flex:1;">✓ Guardar día</button>
         <button class="btn btn-red" id="dp-btn-borrar" onclick="dpBorrar()" style="display:none;">Borrar registro</button>
       </div>
+    </div>
+
+    <!-- Préstamos — debajo del calendario -->
+    <div class="card">
+      <div class="card-title">
+        💳 Préstamos
+        <button class="btn btn-amber" style="font-size:11px;padding:4px 10px;" onclick="abrir_modal_prestamo()">+ Nuevo</button>
+      </div>
+      <div id="loans-list"><div style="font-size:12px;color:var(--subtext);">Sin préstamos registrados.</div></div>
     </div>
 
   </div>
@@ -965,37 +965,64 @@ function render_prestamos() {
   const cont = document.getElementById('loans-list');
   if (!cont) return;
   if (!PRESTAMOS_TRABAJADOR.length) {
-    cont.innerHTML = '<div style="font-size:12px;color:var(--subtext);">Sin préstamos registrados.</div>';
+    cont.innerHTML = '<div style="font-size:12px;color:var(--subtext);padding:8px 0;">Sin préstamos registrados.</div>';
     return;
   }
   const activos = PRESTAMOS_TRABAJADOR.filter(p => p.estado !== 'pagado');
   const pagados = PRESTAMOS_TRABAJADOR.filter(p => p.estado === 'pagado');
+
   cont.innerHTML = [...activos, ...pagados].map(p => {
     const cuota  = p.cuota_semanal || Math.ceil((p.monto_total||0) / (p.semanas_plan||1));
     const pagado = (p.monto_total||0) - (p.saldo||0);
     const pct    = p.monto_total > 0 ? Math.min(100, (pagado / p.monto_total) * 100).toFixed(0) : 0;
-    const semRes = p.semanas_restantes || p.semanas_plan || 0;
-    const pagosHtml = (p.pagos || []).slice(-6).reverse().map(pg =>
-      `<div class="loan-pago-row">
-        <span>${pg.fecha}</span>
-        <span style="font-weight:700;color:var(--${pg.monto>0?'green':'subtext'}-text);">${pg.monto>0?'$'+pg.monto.toLocaleString('es-MX'):'—'}</span>
-      </div>`
-    ).join('');
-    return `<div class="loan-item">
+    const semRes = p.semanas_restantes ?? p.semanas_plan ?? 0;
+    const liquidado = p.estado === 'pagado';
+
+    // Todos los pagos ordenados por fecha desc
+    const pagos = [...(p.pagos || [])].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+    const pagosHtml = pagos.length ? `
+      <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--crust);">
+            <th style="text-align:left;padding:4px 6px;color:var(--subtext);font-weight:700;text-transform:uppercase;font-size:10px;">Fecha</th>
+            <th style="text-align:right;padding:4px 6px;color:var(--subtext);font-weight:700;text-transform:uppercase;font-size:10px;">Monto</th>
+            <th style="text-align:right;padding:4px 6px;color:var(--subtext);font-weight:700;text-transform:uppercase;font-size:10px;">Saldo tras pago</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pagos.map((pg, i) => {
+            // Calcular saldo acumulado desde el final
+            const saldoTras = pagos.slice(i).reduce((acc, x) => acc - (x.monto||0), p.monto_total||0);
+            return `<tr style="border-bottom:1px solid var(--crust);">
+              <td style="padding:5px 6px;">${pg.fecha || '—'}</td>
+              <td style="padding:5px 6px;text-align:right;font-weight:700;color:var(--green-text);">$${(pg.monto||0).toLocaleString('es-MX')}</td>
+              <td style="padding:5px 6px;text-align:right;color:var(--subtext);">$${Math.max(0,saldoTras).toLocaleString('es-MX')}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>` : '<div style="font-size:11px;color:var(--subtext);margin-top:6px;">Sin pagos registrados aún.</div>';
+
+    return `<div class="loan-item" style="margin-bottom:16px;">
       <div class="loan-hdr">
         <div style="flex:1;min-width:0;">
           <div class="loan-desc">${p.descripcion || 'Préstamo'}</div>
           <div class="loan-meta">$${(p.monto_total||0).toLocaleString('es-MX')} total · $${cuota.toLocaleString('es-MX')}/sem · ${semRes} sem restantes</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:16px;font-weight:800;color:var(--${p.estado==='pagado'?'green':'amber'}-text);">$${(p.saldo||0).toLocaleString('es-MX')}</div>
-          <div class="loan-meta">${p.estado==='pagado'?'✓ Liquidado':'pendiente'}</div>
+          <div style="font-size:18px;font-weight:800;color:var(--${liquidado?'green':'amber'}-text);">$${(p.saldo||0).toLocaleString('es-MX')}</div>
+          <div class="loan-meta">${liquidado ? '✓ Liquidado' : 'saldo pendiente'}</div>
         </div>
       </div>
-      <div class="loan-progress"><div class="loan-progress-fill" style="width:${pct}%"></div></div>
-      ${pagosHtml ? `<div class="loan-pagos" style="margin-top:6px;">${pagosHtml}</div>` : ''}
+      <div class="loan-progress" style="margin:8px 0 4px;">
+        <div class="loan-progress-fill" style="width:${pct}%;background:var(--${liquidado?'green':'amber});"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--subtext);margin-bottom:2px;">
+        <span>$${pagado.toLocaleString('es-MX')} pagado</span>
+        <span>${pct}%</span>
+      </div>
+      ${pagosHtml}
     </div>`;
-  }).join('');
+  }).join('<hr style="border:none;border-top:1px solid var(--crust);margin:4px 0 16px;">');
 }
 
 // ── Vacaciones ────────────────────────────────────────────────
