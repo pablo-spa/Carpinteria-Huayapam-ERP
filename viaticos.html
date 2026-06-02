@@ -213,40 +213,45 @@ td { color: var(--text); }
 
     <div class="card" id="card-workers">
       <h3 class="card-title">Personal Asignado al Viaje</h3>
-      <div class="form-group" style="margin-bottom:0;">
-        <select id="d-workers-select" class="form-control" multiple size="4" onchange="updateViajeWorkers()"></select>
-        <div style="font-size:11px;color:var(--subtext);margin-top:6px;">Mantén Ctrl/Cmd para seleccionar varios. Los cambios se guardan automáticamente.</div>
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <select id="d-workers-select" class="form-control" style="flex:1;">
+          <option value="">— Seleccionar trabajador —</option>
+        </select>
+        <button class="btn btn-blue" onclick="agregarTrabajadorViaje()">+ Agregar</button>
+      </div>
+      <div id="d-workers-chips" style="display:flex; flex-wrap:wrap; gap:8px;">
+        <span style="font-size:12px;color:var(--subtext);">Sin personal asignado.</span>
       </div>
     </div>
 
     <div class="card">
       <h3 class="card-title">Anticipos Entregados</h3>
       
-      <div id="form-anticipo" class="inline-add">
-        <div class="form-group">
+      <div id="form-anticipo" style="display:grid; grid-template-columns:130px 110px 120px 1fr 1fr 110px; gap:8px; padding:12px; background:var(--base); border-radius:8px; border:1px dashed var(--surface0); margin-bottom:16px; align-items:end;">
+        <div class="form-group" style="margin:0;">
           <label>Fecha</label>
           <input type="date" id="fa-fecha" class="form-control">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin:0;">
           <label>Monto</label>
           <input type="number" id="fa-monto" class="form-control" placeholder="0.00" step="0.01">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin:0;">
           <label>Forma</label>
           <select id="fa-forma" class="form-control">
             <option value="efectivo">Efectivo</option>
             <option value="transferencia">Transferencia</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Recibió (Trabajador)</label>
+        <div class="form-group" style="margin:0;">
+          <label>Recibió</label>
           <select id="fa-recibe" class="form-control"></select>
         </div>
-        <div class="form-group">
-          <label>Entregó (Admin/Contador)</label>
+        <div class="form-group" style="margin:0;">
+          <label>Entregó</label>
           <select id="fa-por" class="form-control"></select>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin:0;">
           <button class="btn btn-blue" style="width:100%; height:42px;" onclick="addAnticipo()">+ Agregar</button>
         </div>
       </div>
@@ -269,34 +274,31 @@ td { color: var(--text); }
     <div class="card">
       <h3 class="card-title">Gastos Registrados</h3>
       
-      <div id="form-gasto" class="inline-add">
-        <div class="form-group">
+      <div id="form-gasto" style="display:grid; grid-template-columns:130px 1fr 110px 110px; gap:8px; padding:12px; background:var(--base); border-radius:8px; border:1px dashed var(--surface0); margin-bottom:16px; align-items:end;">
+        <div class="form-group" style="margin:0;">
           <label>Fecha</label>
           <input type="date" id="fg-fecha" class="form-control">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin:0;">
           <label>Categoría</label>
           <select id="fg-cat" class="form-control">
             <option value="">— Categoría —</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin:0;">
           <label>Monto</label>
           <input type="number" id="fg-monto" class="form-control" placeholder="0.00" step="0.01">
         </div>
-        <div class="form-group" style="grid-column: span 2;">
+        <div class="form-group" style="margin:0;">
+          <button class="btn btn-blue" style="width:100%; height:42px;" onclick="addGasto()">+ Agregar</button>
+        </div>
+        <div class="form-group" style="margin:0; grid-column:1/-1;">
           <label>Descripción / Ticket</label>
           <input type="text" id="fg-desc" class="form-control" placeholder="Ej. Comida restaurante X">
         </div>
-        <div class="form-group" style="grid-column: span 2;">
-          <label>Enlace al Comprobante (Drive / URL)</label>
-          <input type="text" id="fg-url" class="form-control" placeholder="https://...">
-        </div>
-        <div class="form-group" style="display:flex; align-items:center; padding-bottom: 10px;">
-          <label class="chk-label"><input type="checkbox" id="fg-just" checked> Justificado con Nota/Factura</label>
-        </div>
-        <div class="form-group">
-          <button class="btn btn-blue" style="width:100%; height:42px;" onclick="addGasto()">+ Agregar</button>
+        <div class="form-group" style="margin:0; grid-column:1/-1; display:flex; gap:16px; align-items:center;">
+          <label class="chk-label" style="white-space:nowrap;"><input type="checkbox" id="fg-just" checked> Justificado con Nota/Factura</label>
+          <input type="text" id="fg-url" class="form-control" placeholder="Enlace comprobante (Drive / URL)..." style="flex:1;">
         </div>
       </div>
 
@@ -379,14 +381,15 @@ async function init() {
     cats.forEach(c => { CAT_LABELS[c] = c; });
   }
 
-  // Init workers select
+  // Poblar select de trabajadores (dropdown simple)
   const contacts = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
   const sel = document.getElementById('d-workers-select');
-  sel.innerHTML = '';
+  sel.innerHTML = '<option value="">— Seleccionar trabajador —</option>';
+  contacts.sort((a,b) => (a.givenName||a.name||'').localeCompare(b.givenName||b.name||''));
   contacts.forEach(w => {
     const opt = document.createElement('option');
     opt.value = w.id;
-    opt.textContent = w.name || w.givenName || '-';
+    opt.textContent = w.givenName || w.name || '-';
     sel.appendChild(opt);
   });
 
@@ -575,40 +578,73 @@ function openDetalle(id) {
   document.getElementById('btn-cerrar-viaje').style.display = isCerrado ? 'none' : 'inline-flex';
   document.getElementById('btn-reabrir-viaje').style.display = isCerrado ? 'inline-flex' : 'none';
 
-  const wSel = document.getElementById('d-workers-select');
-  Array.from(wSel.options).forEach(opt => opt.selected = (currentViaje.worker_ids||[]).includes(opt.value));
-  wSel.disabled = isCerrado;
-
-  // Populate Recibió select specifically with workers from this trip
-  const allWorkers = (db.contacts||[]).filter(c => c.tipo === 'trabajador' || c.tipo === 'worker');
-  const tripWorkers = allWorkers.filter(w => (currentViaje.worker_ids||[]).includes(w.id));
-  document.getElementById('fa-recibe').innerHTML = '<option value="">— Seleccionar —</option>' +
-     tripWorkers.map(w => `<option value="${w.name || w.nombre || w.givenName}">${w.name || w.nombre || w.givenName}</option>`).join('');
+  document.getElementById('d-workers-select').disabled = isCerrado;
+  _renderWorkerChips();
+  _updateFaRecibe();
 
   renderDetalles();
   showView('detail');
 }
 
-function updateViajeWorkers() {
-  if(!currentViaje) return;
+function agregarTrabajadorViaje() {
+  if (!currentViaje) return;
   const sel = document.getElementById('d-workers-select');
-  const wids = Array.from(sel.selectedOptions).map(o => o.value);
-  currentViaje.worker_ids = wids;
-  
+  const wid = sel.value;
+  if (!wid) return;
+  currentViaje.worker_ids = [...new Set([...(currentViaje.worker_ids || []), wid])];
+  _saveViajeWorkers();
+  sel.value = '';
+}
+
+function quitarTrabajadorViaje(wid) {
+  if (!currentViaje) return;
+  currentViaje.worker_ids = (currentViaje.worker_ids || []).filter(id => id !== wid);
+  _saveViajeWorkers();
+}
+
+function _saveViajeWorkers() {
   const db = window.DB.get();
   const idx = (db.viajes||[]).findIndex(v => v.id === currentViaje.id);
   if (idx > -1) {
-    db.viajes[idx].worker_ids = wids;
+    db.viajes[idx].worker_ids = currentViaje.worker_ids;
     window.DB.save(db);
-    if (window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', currentViaje.id, db.viajes[idx]);
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', currentViaje.id, db.viajes[idx]);
   }
-  
-  document.getElementById('d-workers').textContent = `Personal: ${getWorkerNames(db, wids)}`;
-  
-  const allWorkers = (db.contacts||[]).filter(c => c.tipo === 'trabajador' || c.tipo === 'worker');
-  const tripWorkers = allWorkers.filter(w => wids.includes(w.id));
-  document.getElementById('fa-recibe').innerHTML = '<option value="">— Seleccionar —</option>' + tripWorkers.map(w => `<option value="${w.name || w.nombre || w.givenName}">${w.name || w.nombre || w.givenName}</option>`).join('');
+  document.getElementById('d-workers').textContent = `Personal: ${getWorkerNames(db, currentViaje.worker_ids)}`;
+  _renderWorkerChips();
+  _updateFaRecibe();
 }
+
+function _renderWorkerChips() {
+  const db = window.DB.get();
+  const all = db.contacts || [];
+  const wids = currentViaje.worker_ids || [];
+  const cont = document.getElementById('d-workers-chips');
+  const isCerrado = currentViaje.estado === 'cerrado';
+  if (!wids.length) {
+    cont.innerHTML = '<span style="font-size:12px;color:var(--subtext);">Sin personal asignado.</span>';
+    return;
+  }
+  cont.innerHTML = wids.map(wid => {
+    const w = all.find(c => c.id === wid);
+    const name = w ? (w.givenName || w.name || wid) : wid;
+    return `<div style="display:flex;align-items:center;gap:6px;background:var(--mantle);border:1px solid var(--crust);padding:5px 12px;border-radius:20px;font-size:13px;font-weight:600;">
+      ${name}
+      ${!isCerrado ? `<button onclick="quitarTrabajadorViaje('${wid}')" style="background:none;border:none;cursor:pointer;color:var(--subtext);font-size:18px;line-height:1;padding:0 0 0 4px;">×</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function _updateFaRecibe() {
+  // Usa todos los trabajadores activos (no solo los del viaje)
+  const db = window.DB.get();
+  const all = (db.contacts||[]).filter(c => c.tipo === 'trabajador' && c.activo !== false);
+  document.getElementById('fa-recibe').innerHTML = '<option value="">— Seleccionar —</option>' +
+    all.map(w => `<option value="${w.name||w.givenName}">${w.name||w.givenName}</option>`).join('');
+}
+
+// Alias mantenido por compatibilidad
+function updateViajeWorkers() { _saveViajeWorkers(); }
 
 function renderDetalles() {
   const db = window.DB.get();
