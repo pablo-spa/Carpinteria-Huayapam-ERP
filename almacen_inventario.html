@@ -147,7 +147,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Ubicación</label>
-        <input type="text" id="m-loc" class="modal-input">
+        <select id="m-loc" class="modal-input"></select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Unidad</label>
@@ -215,11 +215,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   let STATE_WORKERS = [];
   
   async function init() {
-     STATE_INVENTORY = await window.DB.query("inventory");
-     STATE_WORKERS = await window.DB.query("contacts", { tipo: "trabajador", activo: true });
-     // fallback workers if empty
+     [STATE_INVENTORY, STATE_WORKERS] = await Promise.all([
+       window.DB.query("inventory"),
+       window.DB.query("contacts", { tipo: "trabajador", activo: true }),
+       window.DB.query("inventory_locations"),
+     ]);
      if(!STATE_WORKERS || STATE_WORKERS.length === 0) STATE_WORKERS = window.DB.get().workers || [];
-     
      initSelects();
      renderTable();
   }
@@ -242,6 +243,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     // Modal selects
     document.getElementById('m-cat').innerHTML  = cats.map(c => `<option value="${c}">${c}</option>`).join('');
     document.getElementById('m-unit').innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
+    const rawLocs = d.inventory_locations || [];
+    const locs = rawLocs[0]?.list || rawLocs.filter(x => typeof x === 'string');
+    document.getElementById('m-loc').innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
     
     // Workers Select
     document.getElementById('m-assigned').innerHTML = '<option value="">-- Sin asignar --</option>' + STATE_WORKERS.map(w => `<option value="${w.id}">${w.name || w.givenName}</option>`).join('');
