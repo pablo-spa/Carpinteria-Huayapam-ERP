@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<link rel="stylesheet" href="global.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gestión de Viáticos — Carpintería Huayapam</title>
@@ -75,8 +76,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 /* Forms */
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-.form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 14px; font-family: inherit; }
+.form-control { width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; line-height: 1.2; box-sizing: border-box; }
 .form-control:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-bg); }
+textarea.form-control { height: auto; padding: 9px 10px; }
 .form-row { display: flex; gap: 16px; flex-wrap: wrap; }
 .form-row > * { flex: 1; min-width: 200px; }
 
@@ -385,11 +387,11 @@ async function init() {
   const contacts = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
   const sel = document.getElementById('d-workers-select');
   sel.innerHTML = '<option value="">— Seleccionar trabajador —</option>';
-  contacts.sort((a,b) => (a.givenName||a.name||'').localeCompare(b.givenName||b.name||''));
+  contacts.sort((a,b) => (a.name||a.givenName||'').localeCompare(b.name||b.givenName||''));
   contacts.forEach(w => {
     const opt = document.createElement('option');
     opt.value = w.id;
-    opt.textContent = w.givenName || w.name || '-';
+    opt.textContent = w.name || [w.givenName, w.paterno].filter(Boolean).join(' ') || '-';
     sel.appendChild(opt);
   });
 

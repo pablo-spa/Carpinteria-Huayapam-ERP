@@ -84,3 +84,40 @@ body {
 .toast.warn { background: var(--amber); color: #111; }
 @keyframes toast-in { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes toast-out { to { transform: translateX(120%); opacity: 0; margin-top: -50px; } }
+
+/* ── Inputs uniformes — fix altura browser ── */
+/* date, time, number, text, select y textarea tienen alturas distintas por defecto.
+   Forzamos la misma altura y padding en todos para que queden consistentes. */
+input, select, textarea {
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  height: 38px;
+  line-height: 1.2;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--mantle);
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+textarea { height: auto; padding: 9px 10px; resize: vertical; }
+select { padding-right: 28px; appearance: auto; }
+
+/* date específico: quitar padding extra que el navegador agrega */
+input[type="date"],
+input[type="time"],
+input[type="number"] {
+  padding: 0 8px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  margin: 0;
+  opacity: 0.6;
+  cursor: pointer;
+}
