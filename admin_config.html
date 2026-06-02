@@ -198,25 +198,41 @@
     document.getElementById('diasAvisoFalta').value     = s.diasAvisoFalta     ?? 24;
   }
 
-  function saveSettings() {
-    const d = window.DB.get();
-    const existing = d.settings || {};
-    const s = {
-      ...existing,   // preservar campos no editados (ej. vacaciones)
-      horaEntrada:         document.getElementById('horaEntrada').value         || '08:00',
-      minutosRetardo:      parseInt(document.getElementById('minutosRetardo').value)      || 15,
-      minutosFalta:        parseInt(document.getElementById('minutosFalta').value)        || 60,
-      horaSalida:          document.getElementById('horaSalida').value          || '17:30',
-      toleranciaSalidaMin: parseInt(document.getElementById('toleranciaSalidaMin').value) ?? 15,
-      tiempoDescansoMin:   parseInt(document.getElementById('tiempoDescansoMin').value)   ?? 30,
-      penalizacionFalta:   parseInt(document.getElementById('penalizacionFalta').value)   || 100,
-      penalizacionRetardo: document.getElementById('penalizacionRetardo').value || '',
-      diasAvisoFalta:      parseInt(document.getElementById('diasAvisoFalta').value)      || 24,
-    };
-    window.DB.saveSettings(s);
-    const toast = document.getElementById('toast');
-    toast.style.display = 'block';
-    setTimeout(() => toast.style.display='none', 3000);
+  async function saveSettings() {
+    const btn = document.querySelector('button[onclick="saveSettings()"]');
+    if (btn) btn.disabled = true;
+    try {
+      // Obtener settings existentes para no perder campos no mostrados en el form
+      const existing = window.parent?.DB_STATE?.settings || window.DB.get().settings || {};
+      const s = {
+        ...existing,
+        horaEntrada:         document.getElementById('horaEntrada').value         || '08:00',
+        minutosRetardo:      parseInt(document.getElementById('minutosRetardo').value)      || 15,
+        minutosFalta:        parseInt(document.getElementById('minutosFalta').value)        || 60,
+        horaSalida:          document.getElementById('horaSalida').value          || '17:30',
+        toleranciaSalidaMin: parseInt(document.getElementById('toleranciaSalidaMin').value) || 15,
+        tiempoDescansoMin:   parseInt(document.getElementById('tiempoDescansoMin').value)   || 30,
+        penalizacionFalta:   parseInt(document.getElementById('penalizacionFalta').value)   || 100,
+        penalizacionRetardo: document.getElementById('penalizacionRetardo').value || '',
+        diasAvisoFalta:      parseInt(document.getElementById('diasAvisoFalta').value)      || 24,
+      };
+
+      // Escribir a Firestore
+      if (window.parent?.setDocumentInFirebase) {
+        await window.parent.setDocumentInFirebase('settings', 'main', s);
+      }
+      // Actualizar DB_STATE en el padre
+      if (window.parent?.DB_STATE) window.parent.DB_STATE.settings = s;
+
+      const toast = document.getElementById('toast');
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 3000);
+    } catch (err) {
+      alert('Error al guardar: ' + err.message);
+      console.error(err);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   async function init() {
