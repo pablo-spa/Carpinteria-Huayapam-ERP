@@ -48,10 +48,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .btn-amber  { background: var(--amber); color: #fff; }
 
 /* ── Layout ── */
-.main { max-width: 1400px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
+.main { max-width: 1400px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
 @media (max-width: 960px) { .main { grid-template-columns: 1fr; } }
-.cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-.cards-grid .card-full { grid-column: 1 / -1; }
 
 /* ── Cards ── */
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; }
@@ -115,8 +113,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 4px; }
 
 .cal-cell {
-  border-radius: 7px; padding: 5px 4px; cursor: pointer;
-  border: 1.5px solid var(--crust); min-height: 56px;
+  border-radius: 7px; padding: 6px 5px; cursor: pointer;
+  border: 1.5px solid var(--crust); min-height: 76px;
   display: flex; flex-direction: column; transition: border-color .1s;
   position: relative; overflow: hidden;
 }
@@ -224,11 +222,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
 <div class="main">
 
-  <!-- ══ Columna izquierda: grid de tarjetas ══ -->
-  <div class="cards-grid">
+  <!-- ══ Columna izquierda ══ -->
+  <div style="display:flex; flex-direction:column; gap:12px;">
 
-    <!-- Info + edición inline — ancho completo -->
-    <div class="card card-full">
+    <!-- Info + edición inline -->
+    <div class="card">
       <div class="card-title">
         Información
         <span id="edit-toggle-lbl" style="font-size:12px; font-weight:600; color:var(--blue); cursor:pointer;" onclick="toggleEditWorker()">Editar</span>
@@ -273,10 +271,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       </div>
     </div>
 
-    <!-- Semanas recientes — ancho completo -->
-    <div class="card card-full">
+    <!-- Semanas recientes -->
+    <div class="card">
       <div class="card-title">Últimas semanas</div>
-      <div id="pay-weeks"></div>
+      <div id="pay-weeks" style="max-height:180px; overflow-y:auto;"></div>
     </div>
 
     <!-- Vacaciones -->
@@ -294,8 +292,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       <div id="vac-reset-info" style="margin-top:10px; font-size:11px; color:var(--subtext);"></div>
     </div>
 
-    <!-- Préstamos — ancho completo -->
-    <div class="card card-full">
+    <!-- Préstamos -->
+    <div class="card">
       <div class="card-title">
         💳 Préstamos
         <button class="btn btn-amber" style="font-size:11px;padding:4px 10px;" onclick="abrir_modal_prestamo()">+ Nuevo</button>
