@@ -5,10 +5,15 @@
 window.toast = function(msg, type = 'ok') {
     if (window.parent && typeof window.parent.showToast === 'function') {
         window.parent.showToast(msg, type || 'ok');
-    } else {
-        console.log(`[TOAST] ${type ? type.toUpperCase() : 'OK'}: ${msg}`);
-        alert(msg); // Fallback por si lo corres fuera del iframe
+        return;
     }
+    // DOM toast fallback
+    const colors = { ok: 'var(--green, #40a02b)', error: 'var(--red, #d20f39)', warn: 'var(--amber, #df8e1d)' };
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${colors[type]||colors.ok};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);max-width:340px;`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
 };
 
 window.showConfirm = function(title, msg, btnText, btnClass, onConfirm) {

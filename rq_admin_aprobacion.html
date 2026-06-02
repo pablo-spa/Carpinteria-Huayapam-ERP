@@ -30,9 +30,15 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .card-title { font-size: 15px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 12px; }
 .card-meta { font-size: 12px; color: var(--subtext); margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap; }
 .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); white-space: nowrap; }
-.badge-pending { background: rgba(223,142,29,0.15); color: var(--amber); }
-.badge-quoted  { background: rgba(30,102,245,0.15); color: var(--blue); }
-.badge-authorized { background: rgba(64,160,43,0.15); color: var(--green); }
+.badge-pending    { background: rgba(223,142,29,0.15); color: var(--amber); }
+.badge-quoted     { background: rgba(30,102,245,0.15); color: var(--blue); }
+.badge-confirmed  { background: rgba(30,102,245,0.15); color: var(--blue); }
+.badge-authorized { background: rgba(64,160,43,0.15);  color: var(--green); }
+.status-flow { display:flex; align-items:center; gap:3px; flex-wrap:wrap; margin:8px 0 4px; }
+.sf-step { font-size:10px; font-weight:700; padding:2px 7px; border-radius:99px; background:var(--surface0); color:var(--subtext); white-space:nowrap; }
+.sf-done  { background:rgba(64,160,43,0.15); color:var(--green); opacity:.7; }
+.sf-active{ background:rgba(30,102,245,0.15); color:var(--blue); }
+.sf-sep { font-size:9px; color:var(--subtext); margin:0 1px; }
 .col-hdr { display: grid; grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr; gap: 8px; font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; padding: 6px 0; border-bottom: 1px solid var(--crust); margin-bottom: 4px; }
 .item-row { display: grid; grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; }
 .item-subtext { color: var(--subtext); font-size: 11px; }
@@ -55,9 +61,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 </head>
 <body>
 <div class="hdr">
-  <div>
-    <h2>Autorizar Pedidos</h2>
-    <div class="hdr-sub" id="hdr-count">Cargando…</div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <div>
+      <h2>Autorizar Pedidos</h2>
+      <div class="hdr-sub" id="hdr-count">Cargando…</div>
+    </div>
   </div>
   <button class="btn btn-green" onclick="openNewOrder()" style="padding:8px 14px; font-size:13px;">+ Nuevo Pedido Autorizado</button>
 </div>
@@ -161,15 +170,24 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     render();
   }
 
+  function statusFlow(cur) {
+    const steps = [['Pedido','Solicitado'],['Confirmado','Confirmado'],['Autorizado','Autorizado'],['Comprado','Comprado'],['Recibido','Recibido']];
+    const ci = steps.findIndex(([s]) => s === cur);
+    return '<div class="status-flow">' + steps.map(([,lbl], i) =>
+      (i > 0 ? '<span class="sf-sep">›</span>' : '') +
+      `<span class="sf-step ${i < ci ? 'sf-done' : i === ci ? 'sf-active' : ''}">${lbl}</span>`
+    ).join('') + '</div>';
+  }
+
   function render() {
     const list = document.getElementById('orders-list');
     const d = window.DB.get();
 
     let filtered = currentTab === 'pending'
-      ? ALL_ORDERS.filter(o => o.status === 'Cotizado' || o.status === 'Pedido' || o.status === 'Solicitado')
+      ? ALL_ORDERS.filter(o => o.status === 'Confirmado')
       : ALL_ORDERS;
 
-    const pending = ALL_ORDERS.filter(o => o.status === 'Cotizado' || o.status === 'Pedido' || o.status === 'Solicitado');
+    const pending = ALL_ORDERS.filter(o => o.status === 'Confirmado');
     document.getElementById('hdr-count').textContent =
       pending.length ? `${pending.length} pedido(s) esperando autorización` : 'Sin pedidos pendientes';
 
@@ -188,21 +206,21 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       const projLabel = proj ? `${proj.code} – ${proj.name}` : (o.project || 'Sin proyecto');
 
       const statusMap = {
-        'Pedido':     ['badge-pending', 'Solicitado'],
-        'Solicitado': ['badge-pending', 'Solicitado'],
-        'Cotizado':   ['badge-quoted',  'Cotizado por Compras'],
-        'Autorizado': ['badge-authorized', 'Autorizado'],
-        'Comprado':   ['badge-authorized', 'Comprado'],
-        'Recibido':   ['badge-authorized', 'Recibido'],
-        'Cancelado':  ['',              'Cancelado'],
+        'Pedido':      ['badge-pending',    'Solicitado'],
+        'Solicitado':  ['badge-pending',    'Solicitado'],
+        'Confirmado':  ['badge-confirmed',  'Confirmado'],
+        'Autorizado':  ['badge-authorized', 'Autorizado'],
+        'Comprado':    ['badge-authorized', 'Comprado'],
+        'Recibido':    ['badge-authorized', 'Recibido'],
+        'Cancelado':   ['',                 'Cancelado'],
       };
       const [badgeClass, badgeLabel] = statusMap[o.status] || ['', o.status || 'Sin estado'];
 
       const items = o.items || [];
       const allPriced = items.every(i => parseFloat(i.price) > 0);
       const total = items.reduce((s, i) => s + (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0), 0);
-      const canApprove = allPriced && (o.status === 'Cotizado' || o.status === 'Pedido' || o.status === 'Solicitado');
-      const isPending  = o.status === 'Cotizado' || o.status === 'Pedido' || o.status === 'Solicitado';
+      const canApprove = allPriced && o.status === 'Confirmado';
+      const isPending  = o.status === 'Confirmado';
 
       return `
         <div class="card" id="card-${o.id}">
@@ -217,6 +235,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             ${o.provider ? `<span>🏪 ${o.provider}</span>` : ''}
             ${o.notes ? `<span>📝 ${o.notes}</span>` : ''}
           </div>
+          ${statusFlow(o.status)}
           <div class="col-hdr">
             <div>Concepto</div><div>Proveedor</div><div style="text-align:right">Cant.</div>
             <div style="text-align:right">P. Unit.</div><div style="text-align:right">Subtotal</div>

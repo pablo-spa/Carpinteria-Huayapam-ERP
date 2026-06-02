@@ -46,14 +46,22 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .empty { text-align: center; padding: 60px 20px; color: var(--subtext); }
 .empty-icon  { font-size: 48px; margin-bottom: 12px; }
 .empty-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.status-flow { display:flex; align-items:center; gap:3px; flex-wrap:wrap; margin:8px 0 4px; }
+.sf-step { font-size:10px; font-weight:700; padding:2px 7px; border-radius:99px; background:var(--surface0); color:var(--subtext); white-space:nowrap; }
+.sf-done  { background:rgba(64,160,43,0.15); color:var(--green); opacity:.7; }
+.sf-active{ background:rgba(30,102,245,0.15); color:var(--blue); }
+.sf-sep { font-size:9px; color:var(--subtext); margin:0 1px; }
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <div>
-    <h2>Confirmar Pedidos</h2>
-    <div class="hdr-sub" id="hdr-count">Cargando…</div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <div>
+      <h2>Confirmar Pedidos</h2>
+      <div class="hdr-sub" id="hdr-count">Cargando…</div>
+    </div>
   </div>
 </div>
 
@@ -102,7 +110,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           <div class="empty-icon">${currentTab === 'pending' ? '✅' : '📭'}</div>
           <div class="empty-title">${currentTab === 'pending' ? 'Sin pedidos pendientes' : 'Sin pedidos registrados'}</div>
           <div style="font-size:14px;">${currentTab === 'pending'
-            ? 'Los pedidos creados en Portal Almacén aparecerán aquí.'
+            ? 'Los pedidos creados en Hoja de Pedido aparecerán aquí.'
             : 'Aún no hay pedidos en el sistema.'}</div>
         </div>`;
       return;
@@ -134,6 +142,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             ${o.date      ? `<span>📅 ${o.date}</span>`      : ''}
             ${o.notes     ? `<span>📝 ${o.notes}</span>`     : ''}
           </div>
+          ${statusFlow(o.status)}
           ${items.map(i => `
             <div class="item-row">
               <span>${i.qty} × ${i.name || i.code || '—'}</span>
@@ -146,6 +155,15 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           </div>` : ''}
         </div>`;
     }).join('');
+  }
+
+  function statusFlow(cur) {
+    const steps = [['Pedido','Solicitado'],['Confirmado','Confirmado'],['Autorizado','Autorizado'],['Comprado','Comprado'],['Recibido','Recibido']];
+    const ci = steps.findIndex(([s]) => s === cur);
+    return '<div class="status-flow">' + steps.map(([,lbl], i) =>
+      (i > 0 ? '<span class="sf-sep">›</span>' : '') +
+      `<span class="sf-step ${i < ci ? 'sf-done' : i === ci ? 'sf-active' : ''}">${lbl}</span>`
+    ).join('') + '</div>';
   }
 
   async function act(id, newStatus) {

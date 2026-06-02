@@ -77,25 +77,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
 /* Table Wrapper for mobile */
 .table-wrap { width: 100%; margin-top: 12px; overflow-x: auto; }
-.mat-cols { display: grid; grid-template-columns: minmax(140px, 3fr) 60px 50px 80px 32px; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--crust); min-width: 480px; }
-.mat-row { display: grid; grid-template-columns: minmax(140px, 3fr) 60px 50px 80px 32px; gap: 8px; align-items: center; margin-top: 8px; min-width: 480px; }
-select.mat-name, input.mat-qty { padding: 8px 6px; border: 1px solid var(--surface0); border-radius: 6px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; box-sizing:border-box; min-height:40px; }
-select.mat-name:focus, input.mat-qty:focus { outline: none; border-color: var(--blue); }
+.mat-cols { display: grid; grid-template-columns: minmax(140px, 3fr) 60px 55px 72px 80px 32px; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--crust); min-width: 540px; }
+.mat-row  { display: grid; grid-template-columns: minmax(140px, 3fr) 60px 55px 72px 80px 32px; gap: 8px; align-items: center; margin-top: 8px; min-width: 540px; }
+select.mat-name, input.mat-qty, input.mat-price { padding: 8px 6px; border: 1px solid var(--surface0); border-radius: 6px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; box-sizing:border-box; min-height:38px; }
+select.mat-name:focus, input.mat-qty:focus, input.mat-price:focus { outline: none; border-color: var(--blue); }
+input.mat-price { text-align: right; font-size: 12px; }
 .mat-col-hdr { font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; }
 .mat-unit { font-size: 11px; color: var(--subtext); overflow: hidden; text-overflow: ellipsis; }
-.mat-subtotal { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; }
+.mat-subtotal { font-size: 13px; font-weight: 700; color: var(--text); text-align: right; }
 .mat-del { background: var(--base); border: 1px solid var(--surface0); border-radius: 6px; color: var(--subtext); font-size: 16px; cursor: pointer; line-height: 1; height: 34px; width: 32px; display: flex; align-items: center; justify-content: center; }
 .mat-del:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
 .add-mat-btn { display: inline-block; width: 100%; margin-top: 12px; padding: 10px; border: 1px dashed var(--surface1); border-radius: 6px; background: transparent; color: var(--subtext); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
 .add-mat-btn:hover { background: var(--surface0); color: var(--text); border-color: var(--surface1); }
-
-/* Hours */
-.hrs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 12px; }
-.hr-item { background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
-.hr-item label { font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
-.hr-rate { font-size: 9px; color: var(--surface1); font-weight: 500; }
-input.hr-val { width: 100%; padding: 6px; border: 1px solid var(--crust); border-radius: 4px; background: var(--mantle); color: var(--text); font-size: 14px; font-weight: 700; text-align: right; font-family: inherit; box-sizing:border-box; min-height:36px; }
-input.hr-val:focus { outline: none; border-color: var(--blue); }
 
 /* Empty */
 .empty { text-align: center; padding: 48px 24px; color: var(--subtext); background: var(--mantle); border: 1px dashed var(--surface1); border-radius: var(--radius-lg); margin-top: 16px; }
@@ -104,8 +97,8 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
 .empty-s { font-size: 14px; }
 
 /* Piece card */
-.piece { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden; }
-.piece-hdr { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; transition: background .15s; }
+.piece { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); margin-bottom: 16px; }
+.piece-hdr { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; transition: background .15s; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 .piece-hdr:hover { background: var(--surface0); }
 .p-badge { font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--text); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
 .p-name { font-size: 14px; font-weight: 700; flex: 1; color: var(--text); }
@@ -151,7 +144,7 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
 .print-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; color: #000; } /* white bg for print preview */
 .print-ai-bar { padding: 16px; background: var(--mantle); border-top: 1px solid var(--crust); display: flex; flex-direction: column; gap: 12px; }
 
-.print-preview-content { max-width: 700px; margin: 0 auto; font-family: 'Inter', sans-serif; font-size: 11px; }
+.print-preview-content { max-width: 700px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 11px; }
 .print-piece { border-bottom: 1px solid #eee; padding: 12px 0; }
 .print-piece-hdr { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px; }
 .print-piece-desc { color: #555; white-space: pre-wrap; font-size: 12px; }
@@ -169,6 +162,17 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
   .print-body, .print-body * { visibility: visible; }
   .print-body { position: absolute; left: 0; top: 0; width: 100%; background: white !important; }
 }
+
+/* Quick-create modals */
+.qmodal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; align-items:center; justify-content:center; }
+.qmodal-overlay.open { display:flex; }
+.qmodal { background:var(--base); border:1px solid var(--crust); border-radius:14px; padding:24px; width:100%; max-width:400px; box-shadow:0 8px 32px rgba(0,0,0,.2); }
+.qmodal h3 { font-size:16px; font-weight:800; color:var(--text); margin-bottom:18px; }
+.qmodal label { display:block; font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase; margin-bottom:4px; margin-top:14px; }
+.qmodal label:first-of-type { margin-top:0; }
+.qmodal input, .qmodal select { width:100%; padding:9px 12px; border:1px solid var(--surface0); border-radius:8px; background:var(--mantle); color:var(--text); font-size:14px; font-family:inherit; box-sizing:border-box; }
+.qmodal input:focus, .qmodal select:focus { outline:none; border-color:var(--blue); }
+.qmodal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
 </style>
 </head>
 <body>
@@ -182,7 +186,7 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
     <button class="btn btn-green" onclick="saveQuoteToProject()" style="padding:6px 14px; font-size:12px;">Aprobar ↗</button>
   </div>
   <div class="hdr-row2">
-    <select class="hdr-select" id="clientInput" data-searchable onchange="S.client=this.options[this.selectedIndex].text; renderFooter()" style="flex:1;"></select>
+    <select class="hdr-select" id="clientInput" data-searchable style="flex:1;"></select>
     <select class="hdr-select" id="projectInput" data-searchable style="flex:1;"></select>
   </div>
 </div>
@@ -211,21 +215,25 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
     <!-- Configuración Global -->
     <div style="background: var(--mantle); padding: 16px; border: 1px solid var(--crust); border-radius: 12px;">
       <div style="font-size: 13px; font-weight: 700; color: var(--text); border-bottom: 1px solid var(--crust); padding-bottom: 8px; margin-bottom: 12px;">Ajustes Globales (Márgenes y Extras)</div>
-      <div style="display: flex; gap: 24px;">
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center;">
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext);">
           <span>Gastos Extra (%)</span>
-          <input type="number" class="inline-cfg global-margin-sync" data-key="extras" value="7" onchange="syncMargins(this)" style="width: 60px;">
+          <input type="number" class="inline-cfg global-margin-sync" data-key="extras" value="7" onchange="syncMargins(this)" style="width: 54px;">
         </div>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext);">
           <span>Utilidad (%)</span>
-          <input type="number" class="inline-cfg global-margin-sync" data-key="margin" value="20" onchange="syncMargins(this)" style="width: 60px;">
+          <input type="number" class="inline-cfg global-margin-sync" data-key="margin" value="20" onchange="syncMargins(this)" style="width: 54px;">
         </div>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext);">
           <span>Margen de Error (%)</span>
-          <input type="number" class="inline-cfg global-margin-sync" data-key="error" value="7" onchange="syncMargins(this)" style="width: 60px;">
+          <input type="number" class="inline-cfg global-margin-sync" data-key="error" value="7" onchange="syncMargins(this)" style="width: 54px;">
         </div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); border-left: 1px solid var(--crust); padding-left: 24px;">
-          <input type="checkbox" id="cfg-tax" checked onchange="updateCfg()" style="width:16px; height:16px; accent-color:var(--primary);">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); border-left: 1px solid var(--crust); padding-left: 20px;">
+          <span>Overhead ($/hr)</span>
+          <input type="number" class="inline-cfg" id="cfg-overhead" value="0" min="0" step="1" onchange="syncOverhead(this.value)" style="width: 64px;" placeholder="0">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); border-left: 1px solid var(--crust); padding-left: 20px;">
+          <input type="checkbox" id="cfg-tax" checked onchange="updateCfg()" style="width:16px; height:16px; accent-color:var(--blue);">
           <label for="cfg-tax" style="cursor:pointer; color:var(--text);">Cobrar IVA (16%)</label>
         </div>
       </div>
@@ -241,7 +249,7 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
       <div class="ft-label">Márgenes y Fórmula Global</div>
       <div class="ft-formula-row"><span>Materiales netos + Herramienta (8%)</span><span id="f-sub1">—</span></div>
       <div class="ft-formula-row"><span>Mano de obra indirecta</span><span id="f-labor">—</span></div>
-      <div class="ft-formula-row"><span>Overhead Taller ($37.3/hr)</span><span id="f-overhead">—</span></div>
+      <div class="ft-formula-row"><span id="f-overhead-label">Overhead Taller ($0/hr)</span><span id="f-overhead">—</span></div>
       <div class="ft-formula-row"><span>Márgenes (Ext+Util+Err)</span><span id="f-margins">—</span></div>
       <div class="ft-formula-row" id="row-fee" style="display:none;">
         <span>Comisión sin IVA (3%)</span>
@@ -256,6 +264,45 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
       <div class="ft-label">Total Cotización</div>
       <div class="ft-total-val" id="ft-total">$0</div>
       <div class="ft-total-sub" id="ft-sub">Sin piezas</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nuevo Cliente -->
+<div class="qmodal-overlay" id="modal-cliente">
+  <div class="qmodal">
+    <h3>Nuevo Cliente</h3>
+    <label>Nombre *</label>
+    <input type="text" id="nc-nombre" placeholder="Ej: Juan Martínez">
+    <label>Teléfono</label>
+    <input type="tel" id="nc-tel" placeholder="Ej: 951 123 4567">
+    <label>Correo</label>
+    <input type="email" id="nc-email" placeholder="correo@ejemplo.com">
+    <div class="qmodal-actions">
+      <button class="btn" onclick="closeNewClientModal()">Cancelar</button>
+      <button class="btn btn-blue" onclick="saveNewClient()">Guardar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nuevo Proyecto -->
+<div class="qmodal-overlay" id="modal-proyecto">
+  <div class="qmodal">
+    <h3>Nuevo Proyecto</h3>
+    <label>Código *</label>
+    <input type="text" id="np-code" placeholder="Ej: PROY-045" style="text-transform:uppercase;">
+    <label>Nombre del Proyecto *</label>
+    <input type="text" id="np-nombre" placeholder="Ej: Cocina integral Martínez">
+    <label>Cliente</label>
+    <select id="np-cliente"></select>
+    <label>Estado</label>
+    <select id="np-estado">
+      <option value="Planificación">Planificación</option>
+      <option value="En Producción">En Producción</option>
+    </select>
+    <div class="qmodal-actions">
+      <button class="btn" onclick="closeNewProjectModal()">Cancelar</button>
+      <button class="btn btn-blue" onclick="saveNewProject()">Guardar Proyecto</button>
     </div>
   </div>
 </div>
@@ -276,10 +323,9 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
       </div>
     </div>
     <div class="print-ai-bar">
-      <div style="font-size:12px; font-weight:700; color:var(--text);">✨ Asistente IA (Condiciones)</div>
+      <div style="font-size:12px; font-weight:700; color:var(--text);">Agregar texto adicional (condiciones, notas de pago, etc.)</div>
       <div style="display:flex; gap:8px;">
-        <input type="text" class="ai-input" id="ai-print-prompt" placeholder="Ej: Pago 60/40, entrega en 4 semanas..." style="flex:1;">
-        <button class="btn btn-blue" onclick="simulatePrintAI()">Generar Condiciones</button>
+        <textarea class="ai-input" id="ai-print-prompt" placeholder="Ej: • Anticipo del 50% para iniciar. • Entrega en 4 semanas." style="flex:1; resize:vertical; min-height:64px; line-height:1.5;" oninput="simulatePrintAI()"></textarea>
       </div>
     </div>
   </div>
@@ -290,15 +336,43 @@ input.hr-val:focus { outline: none; border-color: var(--blue); }
 <script>
 let RATES = { maestroA:105, maestroB:98, oficialA:84, aprendiz:60, barniz:90, pulido:58, empaque:65, chofer:70 };
 const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Oficial A', aprendiz:'Aprendiz', barniz:'Barniz', pulido:'Pulido', empaque:'Empaque', chofer:'Chofer' };
-let OVERHEAD = 37.3, TOOL = 0.08;
+let OVERHEAD = 0, TOOL = 0.08;
 
 let EXTRAS = 0.07, MARGIN = 0.20, ERROR = 0.07, TAX = 0.16, COMMISSION = 0;
 
-let PIECE_TYPES = [];
+// Fallback: se sobreescribe con Firestore si hay datos ahí
+let PIECE_TYPES = [
+  ['CLO','Closet'],['VES','Vestidor'],['ARM','Armario'],
+  ['PTI','Puerta Interior'],['PTE','Puerta Exterior'],['PTC','Puerta de Closet'],
+  ['PCR','Puerta Corrediza'],['PPL','Puerta Plegable'],['PSV','Puerta de Servicio'],
+  ['VNF','Ventana Fija'],['VNA','Ventana Abatible'],['VNC','Ventana Corrediza'],['VNP','Ventana Plegable'],['VNR','Ventana Proyectante'],
+  ['CCI','Cocina Integral'],['ALC','Alacena'],['BAR','Barra de Cocina'],['ISL','Isla de Cocina'],
+  ['CAM','Cama'],['CAB','Cabecera'],['CCA','Cama con Cabecera'],['CUN','Cuna'],['LIT','Litera'],['BUR','Buró'],['TCD','Tocador'],
+  ['MCM','Mesa de Comedor'],['MCN','Mesa de Centro'],['MAX','Mesa Auxiliar'],
+  ['LBR','Librero'],['MTV','Mueble de TV'],['APR','Aparador'],
+  ['ESC','Escritorio'],['ARH','Archivero'],
+  ['MBN','Mueble de Baño'],
+  ['DCK','Deck / Terraza'],['ECA','Escalera'],['PNL','Panel Decorativo'],['DUE','Duela (Piso)'],['TAR','Tarima / Plataforma'],
+  ['OTR','Otro'],
+];
 
 let MATS = [];
 
 const S = { client:'', project:'', clientContactId: null, projectId: null, pieces:[], typeCounts:{}, nextId:1 };
+
+function syncOverhead(val) {
+  OVERHEAD = parseFloat(val) || 0;
+  const lbl = document.getElementById('f-overhead-label');
+  if (lbl) lbl.textContent = `Overhead Taller ($${OVERHEAD}/hr)`;
+  S.pieces.forEach(p => updatePiece(p.id));
+  renderFooter();
+}
+
+function hrsToRows(hrs) {
+  return Object.entries(hrs || {})
+    .filter(([, v]) => v > 0)
+    .map(([role, hrs]) => ({ role, hrs }));
+}
 
 function updateCfg() {
   const isChecked = document.getElementById('cfg-tax').checked;
@@ -333,7 +407,7 @@ function simulateAI() {
         { n: 'Bisagra clip 110°', u: 'pieza', p: 38, qty: 4 },
         { n: 'Jalador acero inox', u: 'pieza', p: 45, qty: 1 },
       ],
-      hrs: { maestroA: 8, oficialA: 4, barniz: 3, pulido: 2, chofer: 1 },
+      hrRows: [{ role:'maestroA', hrs:8 }, { role:'oficialA', hrs:4 }, { role:'barniz', hrs:3 }, { role:'pulido', hrs:2 }, { role:'chofer', hrs:1 }],
       open: true,
     });
     
@@ -348,9 +422,9 @@ function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX', {minimumFra
 function calc(piece) {
   const matTotal = piece.mats.reduce((s,m) => s + (m.qty||0)*m.p, 0);
   const sub1 = matTotal * (1+TOOL);
-  const hrs = piece.hrs;
-  const totalHrs = Object.keys(RATES).reduce((s,k) => s+(hrs[k]||0), 0);
-  const labor = Object.keys(RATES).reduce((s,k) => s+(hrs[k]||0)*RATES[k], 0);
+  const hrRows = piece.hrRows || [];
+  const totalHrs = hrRows.reduce((s,r) => s+(r.hrs||0), 0);
+  const labor = hrRows.reduce((s,r) => s+(r.hrs||0)*(RATES[r.role]||0), 0);
   const oh = totalHrs * OVERHEAD;
   const sub3 = sub1 + labor + oh;
   const ex = sub3*EXTRAS, mg = sub3*MARGIN, er = sub3*ERROR;
@@ -371,7 +445,7 @@ function addPiece() {
     id: S.nextId++,
     code: code + S.typeCounts[code],
     name, mats: [],
-    hrs: { maestroA:0, maestroB:0, oficialA:0, aprendiz:0, barniz:0, pulido:0, empaque:0, chofer:0 },
+    hrRows: [],
     open: true,
   };
   S.pieces.push(piece);
@@ -420,10 +494,39 @@ function delMat(id, i) {
   render();
 }
 
-function setHr(id, k, v) {
+function addHrRow(id) {
   const p = S.pieces.find(p => p.id === id);
   if (!p) return;
-  p.hrs[k] = parseFloat(v)||0;
+  if (!p.hrRows) p.hrRows = [];
+  p.hrRows.push({ role: 'maestroA', hrs: 1 });
+  render();
+}
+
+function delHrRow(id, i) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.hrRows.splice(i, 1);
+  render();
+}
+
+function setHrRole(id, i, role) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.hrRows[i].role = role;
+  updatePiece(id);
+}
+
+function setHrHrs(id, i, v) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.hrRows[i].hrs = parseFloat(v)||0;
+  updatePiece(id);
+}
+
+function setMatPrice(id, i, v) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.mats[i].p = parseFloat(v)||0;
   updatePiece(id);
 }
 
@@ -439,6 +542,10 @@ function updatePiece(id) {
     const st = document.getElementById('mst-'+id+'-'+i);
     if (st) st.textContent = fmt((p.mats[i].qty||0)*p.mats[i].p);
   }
+  for (let i=0; i<(p.hrRows||[]).length; i++) {
+    const st = document.getElementById('hrst-'+id+'-'+i);
+    if (st) st.textContent = fmt((p.hrRows[i].hrs||0)*(RATES[p.hrRows[i].role]||0));
+  }
   renderFooter();
 }
 
@@ -447,7 +554,7 @@ function brHtml(c) {
   return `
     <div class="br-row"><span>Materiales (${fmt(c.matTotal)}) + herramienta 8%</span><span>${fmt(c.sub1)}</span></div>
     <div class="br-row"><span>Mano de obra (${c.totalHrs.toFixed(1)} hrs)</span><span>${fmt(c.labor)}</span></div>
-    <div class="br-row"><span>Overhead (${c.totalHrs.toFixed(1)} hrs × $37.3)</span><span>${fmt(c.oh)}</span></div>
+    <div class="br-row"><span>Overhead (${c.totalHrs.toFixed(1)} hrs × $${OVERHEAD}/hr)</span><span>${fmt(c.oh)}</span></div>
     <div class="br-row sep"><span>Subtotal base</span><span>${fmt(c.sub3)}</span></div>
     <div class="br-row">
       <span>Márgenes (Ext ${Math.round(EXTRAS*100)}% + Util ${Math.round(MARGIN*100)}% + Err ${Math.round(ERROR*100)}%)</span>
@@ -477,19 +584,26 @@ function renderPiece(piece) {
   const c = calc(piece);
   const matRows = piece.mats.map((m,i) => `
     <div class="mat-row">
-      <select class="mat-name" onchange="setMatName(${piece.id},${i},this.value)">
+      <select class="mat-name" data-searchable onchange="setMatName(${piece.id},${i},this.value)">
         ${MATS.map(mt=>`<option value="${mt.n}"${mt.n===m.n?' selected':''}>${mt.n}</option>`).join('')}
       </select>
       <input class="mat-qty" type="number" value="${m.qty}" min="0" step="0.25" onchange="setMatQty(${piece.id},${i},this.value)">
       <span class="mat-unit">${m.u}</span>
+      <input class="mat-price" type="number" value="${m.p}" min="0" step="0.01" onchange="setMatPrice(${piece.id},${i},this.value)" title="Precio por unidad">
       <span class="mat-subtotal" id="mst-${piece.id}-${i}">${fmt((m.qty||0)*m.p)}</span>
       <button class="mat-del" onclick="delMat(${piece.id},${i})">×</button>
     </div>`).join('');
 
-  const hrInputs = Object.keys(RATES).map(k=>`
-    <div class="hr-item">
-      <label>${RATE_LABELS[k]}<br><span class="hr-rate">$${RATES[k]}/hr</span></label>
-      <input class="hr-val" type="number" value="${piece.hrs[k]||''}" min="0" step="0.5" placeholder="0" oninput="setHr(${piece.id},'${k}',this.value)">
+  const hrRows = (piece.hrRows||[]).map((r,i) => `
+    <div class="mat-row">
+      <select class="mat-name" onchange="setHrRole(${piece.id},${i},this.value)">
+        ${Object.keys(RATES).map(k=>`<option value="${k}"${k===r.role?' selected':''}>${RATE_LABELS[k]}</option>`).join('')}
+      </select>
+      <input class="mat-qty" type="number" value="${r.hrs||''}" min="0" step="0.5" placeholder="0" oninput="setHrHrs(${piece.id},${i},this.value)">
+      <span class="mat-unit">hrs</span>
+      <span class="mat-unit" style="font-weight:700;color:var(--text);">$${RATES[r.role]||0}</span>
+      <span class="mat-subtotal" id="hrst-${piece.id}-${i}">${fmt((r.hrs||0)*(RATES[r.role]||0))}</span>
+      <button class="mat-del" onclick="delHrRow(${piece.id},${i})">×</button>
     </div>`).join('');
 
   return `
@@ -506,17 +620,29 @@ function renderPiece(piece) {
         <div class="table-wrap">
           <div class="mat-cols">
             <span class="mat-col-hdr">Material</span>
-            <span class="mat-col-hdr">Cantidad</span>
+            <span class="mat-col-hdr">Cant.</span>
             <span class="mat-col-hdr">Unidad</span>
-            <span class="mat-col-hdr" style="text-align:right;">Subtotal</span>
+            <span class="mat-col-hdr" style="text-align:right;">$/u</span>
+            <span class="mat-col-hdr" style="text-align:right;">Total</span>
             <span></span>
           </div>
           ${matRows}
-          <button class="add-mat-btn" onclick="addMat(${piece.id})">+ Agregar material extra</button>
+          <button class="add-mat-btn" onclick="addMat(${piece.id})">+ Agregar material</button>
         </div>
 
-        <div class="sub-hdr">Mano de Obra (Horas)</div>
-        <div class="hrs-grid">${hrInputs}</div>
+        <div class="sub-hdr" style="margin-top:24px;">Mano de Obra</div>
+        <div class="table-wrap">
+          <div class="mat-cols">
+            <span class="mat-col-hdr">Trabajador</span>
+            <span class="mat-col-hdr">Horas</span>
+            <span></span>
+            <span class="mat-col-hdr">$/hr</span>
+            <span class="mat-col-hdr" style="text-align:right;">Total</span>
+            <span></span>
+          </div>
+          ${hrRows}
+          <button class="add-mat-btn" onclick="addHrRow(${piece.id})">+ Agregar trabajador</button>
+        </div>
 
         <div class="breakdown" id="br-${piece.id}">${brHtml(c)}</div>
 
@@ -533,6 +659,7 @@ function render() {
     container.innerHTML = `<div class="empty"><div class="empty-ico">📋</div><div class="empty-t">Sin piezas todavía</div><div class="empty-s">Usa la IA o selecciona debajo un tipo de pieza manual.</div></div>`;
   } else {
     container.innerHTML = S.pieces.map(renderPiece).join('');
+    SearchableSelect.initAll(container);
   }
   renderFooter();
 }
@@ -551,6 +678,8 @@ function renderFooter() {
     return { sub1:acc.sub1+c.sub1, labor:acc.labor+c.labor, oh:acc.oh+c.oh, margins:acc.margins+c.ex+c.mg+c.er, tax:acc.tax+c.tax, fee:acc.fee+c.fee, final:acc.final+c.final };
   }, {sub1:0,labor:0,oh:0,margins:0,tax:0,fee:0,final:0});
 
+  const lbl = document.getElementById('f-overhead-label');
+  if (lbl) lbl.textContent = `Overhead Taller ($${OVERHEAD}/hr)`;
   document.getElementById('f-sub1').textContent = fmt(tot.sub1);
   document.getElementById('f-labor').textContent = fmt(tot.labor);
   document.getElementById('f-overhead').textContent = fmt(tot.oh);
@@ -571,48 +700,107 @@ function renderFooter() {
     S.pieces.length + (S.pieces.length===1?' pieza':' piezas') + (S.client && S.client !== '— Seleccionar Cliente —' ? ' · '+S.client : '');
 }
 
-let currentPrintConds = "• Las piezas se entregan e instalan en el domicilio del cliente.\n• La vigencia de esta cotización es de 15 días.\n• El tiempo estimado de entrega se cuenta a partir de la recepción del anticipo.\n• La madera puede presentar variaciones naturales de veta y color.";
+let currentPrintConds = "";
 
 function showPrintPreview(isClient) {
   document.getElementById('print-modal').style.display = 'flex';
-  document.getElementById('print-title').textContent = isClient ? 'Vista Previa - Para Cliente' : 'Vista Previa - Para Taller';
-  
-  const content = document.getElementById('print-preview-content');
-  let html = `<h2 style="margin:0 0 4px 0;">Cotización de Mobiliario</h2>`;
-  html += `<div style="color:#555; margin-bottom:24px;">Cliente: ${S.client || 'Sin especificar'}</div>`;
+  document.getElementById('print-title').textContent = isClient ? 'Vista Previa — Para Cliente' : 'Vista Previa — Para Taller';
+
+  const today = new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
+  const clientName = S.client && S.client !== '— Seleccionar Cliente —' ? S.client : '—';
+  const projName = (() => {
+    const pSel = document.getElementById('projectInput');
+    const opt = pSel.options[pSel.selectedIndex];
+    return opt && opt.value ? opt.textContent : '—';
+  })();
 
   let grandTotal = 0;
+  let piecesHtml = '';
 
   S.pieces.forEach((p, i) => {
     const c = calc(p);
     grandTotal += c.final;
-    const matsDetail = !isClient && p.mats.length
-      ? p.mats.map(m => `  • ${m.qty} ${m.u} ${m.n} — ${fmt(m.qty*m.p)}`).join('\n')
-      : '';
-    html += `<div class="print-piece">
-      <div class="print-piece-hdr">
-        <span>${i + 1}. [${(p.codigo||p.code)}] ${(p.nombre||p.name) || ''}</span>
-        <span>${isClient ? fmt(c.final) : fmt(c.final)+' (costo base: '+fmt(c.sub3)+')'}</span>
-      </div>
-      ${matsDetail ? `<div class="print-piece-desc">${matsDetail}</div>` : ''}
-    </div>`;
+
+    if (isClient) {
+      piecesHtml += `<tr>
+        <td style="padding:10px 8px; border-bottom:1px solid #eee;">${i+1}. <strong>${p.nombre||p.name}</strong></td>
+        <td style="padding:10px 8px; border-bottom:1px solid #eee; text-align:right; white-space:nowrap; font-weight:700;">${fmt(c.final)}</td>
+      </tr>`;
+    } else {
+      const matsDetail = p.mats.map(m =>
+        `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:10px;color:#555;">
+          <span>${m.qty} ${m.u} — ${m.n}</span><span>${fmt((m.qty||0)*m.p)}</span>
+        </div>`).join('');
+      const laborDetail = (p.hrRows||[]).map(r =>
+        `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:10px;color:#555;">
+          <span>${RATE_LABELS[r.role]||r.role} — ${r.hrs} hrs × $${RATES[r.role]||0}/hr</span><span>${fmt((r.hrs||0)*(RATES[r.role]||0))}</span>
+        </div>`).join('');
+      piecesHtml += `<tr style="vertical-align:top;">
+        <td style="padding:10px 8px; border-bottom:1px solid #eee;">
+          <div style="font-weight:700;font-size:12px;margin-bottom:6px;">${i+1}. [${p.code}] ${p.nombre||p.name}</div>
+          ${matsDetail}${laborDetail}
+        </td>
+        <td style="padding:10px 8px; border-bottom:1px solid #eee; text-align:right; white-space:nowrap; font-size:11px;">
+          <div>Base: ${fmt(c.sub3)}</div>
+          <div style="font-weight:700;">Venta: ${fmt(c.final)}</div>
+        </td>
+      </tr>`;
+    }
   });
 
-  if (isClient) {
-    html += `<div class="print-totals">
-      <div class="print-totals-col">
-        <div class="print-totals-row"><span>Subtotal:</span><span>${fmt(grandTotal)}</span></div>
-        <div class="print-totals-row print-grand"><span>Total:</span><span>${fmt(grandTotal)}</span></div>
+  const logoSrc = 'images/320%20X%20132%20HUAYAPAM%20MINIMAL.png';
+
+  let html = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #333;">
+      <img src="${logoSrc}" style="height:44px; width:auto;" alt="Carpintería Huayapam">
+      <div style="text-align:right;">
+        <div style="font-size:18px; font-weight:800; letter-spacing:-0.01em;">COTIZACIÓN</div>
+        <div style="font-size:11px; color:#666; margin-top:2px;">${today}</div>
+        ${isClient ? '' : `<div style="font-size:10px; color:#aaa; margin-top:2px; text-transform:uppercase; letter-spacing:.06em;">Copia Interna — Taller</div>`}
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; padding:12px 16px; background:#f8f8f8; border-radius:8px; font-size:11px;">
+      <div><span style="color:#888; font-weight:700; text-transform:uppercase; font-size:10px;">Cliente</span><br><span style="font-size:13px; font-weight:700;">${clientName}</span></div>
+      <div><span style="color:#888; font-weight:700; text-transform:uppercase; font-size:10px;">Proyecto</span><br><span style="font-size:12px; font-weight:600;">${projName}</span></div>
+    </div>
+
+    <table style="width:100%; border-collapse:collapse; font-size:12px;">
+      <thead>
+        <tr style="background:#f0f0f0;">
+          <th style="text-align:left; padding:8px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">${isClient ? 'Descripción' : 'Pieza / Materiales y Mano de Obra'}</th>
+          <th style="text-align:right; padding:8px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">${isClient ? 'Precio' : 'Costo / Venta'}</th>
+        </tr>
+      </thead>
+      <tbody>${piecesHtml}</tbody>
+    </table>
+
+    <div style="display:flex; justify-content:flex-end; margin-top:16px; padding-top:12px; border-top:2px solid #333;">
+      <div style="text-align:right; min-width:200px;">
+        ${!isClient ? `<div style="display:flex;justify-content:space-between;gap:32px;font-size:11px;color:#666;margin-bottom:4px;"><span>Subtotal (materiales+labor):</span><span>${fmt(S.pieces.reduce((s,p)=>s+calc(p).sub3,0))}</span></div>` : ''}
+        <div style="display:flex; justify-content:space-between; gap:32px; font-size:14px; font-weight:800; padding-top:8px; border-top:1px solid #ccc;">
+          <span>TOTAL:</span><span>${fmt(grandTotal)}</span>
+        </div>
+        <div style="font-size:10px; color:#888; margin-top:4px;">${TAX>0 ? 'IVA incluido (16%)' : 'Precios sin IVA'}</div>
       </div>
     </div>`;
-    
-    html += `<div class="print-cond-box">
-      <div class="print-cond-title">Condiciones Generales y de Pago</div>
-      <div class="print-cond-text" id="print-cond-live">${currentPrintConds}</div>
-    </div>`;
+
+  if (isClient) {
+    html += `
+    <div style="margin-top:28px; padding-top:20px; border-top:1px solid #ddd;">
+      <p style="font-size:12px; line-height:1.7; color:#333;">
+        Estimado/a <strong>${clientName}</strong>,<br><br>
+        En Carpintería Huayapam queremos agradecerle sinceramente por habernos elegido para ser parte de su proyecto.
+        Para nosotros es un honor trabajar con usted y estamos completamente a sus órdenes para cualquier
+        aclaración, ajuste o información adicional que requiera sobre esta cotización.<br><br>
+        Quedamos en espera de sus comentarios.
+      </p>
+    </div>
+    <div id="print-cond-live" style="margin-top:16px; font-size:11px; color:#333; white-space:pre-wrap; line-height:1.6;">${currentPrintConds}</div>`;
   }
 
-  content.innerHTML = html;
+  document.getElementById('print-preview-content').innerHTML = html;
+  document.getElementById('ai-print-prompt').value = currentPrintConds;
 }
 
 function closePrintPreview() {
@@ -621,21 +809,10 @@ function closePrintPreview() {
 
 function simulatePrintAI() {
   const input = document.getElementById('ai-print-prompt');
-  const val = input.value.trim();
-  if(!val) { input.focus(); return; }
-  
-  input.value = "Generando...";
-  input.disabled = true;
-  
-  setTimeout(() => {
-    currentPrintConds = `• Condiciones basadas en: "${val}"\n• El anticipo requerido es del 60% para iniciar producción.\n• El segundo pago del 20% se realiza a mitad de obra.\n• El saldo restante (20%) contra entrega.\n• Precios ${document.getElementById('cfg-tax').checked ? 'incluyen IVA (16%)' : 'no incluyen IVA'}.`;
-    
-    const condBox = document.getElementById('print-cond-live');
-    if(condBox) condBox.textContent = currentPrintConds;
-    
-    input.value = "";
-    input.disabled = false;
-  }, 1000);
+  const val = input.value;
+  currentPrintConds = val;
+  const condBox = document.getElementById('print-cond-live');
+  if (condBox) condBox.textContent = currentPrintConds;
 }
 
 // Global DB Load
@@ -650,10 +827,14 @@ async function loadOptions() {
   
   const validPieceTypes = dbPieceTypes.filter(pt => pt.name && !pt._init);
   if (validPieceTypes.length > 0) {
-    PIECE_TYPES = validPieceTypes.map(pt => {
+    // Mezcla: Firestore primero, luego añade los defaults que no estén ya
+    const fromDB = validPieceTypes.map(pt => {
       const code = pt.code || pt.name.replace(/\s/g,'').substring(0,3).toUpperCase();
       return [code, pt.name];
     });
+    const dbNames = new Set(fromDB.map(([,n]) => n.toLowerCase()));
+    const extra = PIECE_TYPES.filter(([,n]) => !dbNames.has(n.toLowerCase()));
+    PIECE_TYPES = [...fromDB, ...extra];
   }
   
   if (inventoryDb && inventoryDb.length > 0) {
@@ -661,13 +842,26 @@ async function loadOptions() {
   }
 
   const cSel = document.getElementById('clientInput');
-  cSel.innerHTML = '<option value="">— Seleccionar Cliente —</option>' + filteredClients.map(c => `<option value="${c.id}">${c.name || c.givenName}</option>`).join('');
-  
+  cSel.innerHTML = '<option value="">— Seleccionar Cliente —</option>' +
+    '<option value="__new__">＋ Crear nuevo cliente</option>' +
+    filteredClients.map(c => `<option value="${c.id}">${c.name || c.givenName}</option>`).join('');
+  cSel.addEventListener('change', function() {
+    if (this.value === '__new__') {
+      this.value = '';
+      if (this._ssRefresh) this._ssRefresh();
+      openNewClientModal();
+      return;
+    }
+    S.client = this.options[this.selectedIndex]?.text || '';
+    renderFooter();
+  });
+
   const pSel = document.getElementById('projectInput');
   const activeStatuses = ['Planificación', 'En Producción'];
   const activeProjsFiltered = activeProjs.filter(p => (p.codigo||p.code) && (p.nombre||p.name) && activeStatuses.includes((p.estado||p.status)));
   const otherProjs = activeProjs.filter(p => (p.codigo||p.code) && (p.nombre||p.name) && !activeStatuses.includes((p.estado||p.status)));
-  let projHtml = '<option value="">— Seleccionar Proyecto —</option>';
+  let projHtml = '<option value="">— Seleccionar Proyecto —</option>' +
+    '<option value="__new__">＋ Crear nuevo proyecto</option>';
   if (activeProjsFiltered.length) {
     projHtml += `<optgroup label="Proyectos Activos">${activeProjsFiltered.map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('')}</optgroup>`;
   }
@@ -675,6 +869,13 @@ async function loadOptions() {
     projHtml += `<optgroup label="Otros Proyectos">${otherProjs.map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('')}</optgroup>`;
   }
   pSel.innerHTML = projHtml;
+  pSel.addEventListener('change', function() {
+    if (this.value === '__new__') {
+      this.value = '';
+      if (this._ssRefresh) this._ssRefresh();
+      openNewProjectModal();
+    }
+  });
 
   SearchableSelect.init(cSel);
   SearchableSelect.init(pSel);
@@ -696,7 +897,7 @@ function saveQuoteToProject() {
   if(!S.pieces || S.pieces.length === 0) { toast('No hay piezas cotizadas.', 'warn'); return; }
   
   const tot = S.pieces.reduce((acc,p) => acc + calc(p).final, 0);
-  const hrs = S.pieces.reduce((acc,p) => { let t=0; Object.values(p.hrs||{}).forEach(v => t += v); return acc + t; }, 0);
+  const hrs = S.pieces.reduce((acc,p) => acc + (p.hrRows||[]).reduce((s,r) => s+(r.hrs||0), 0), 0);
   const mPt = S.pieces.reduce((acc,p) => { let pt=0; (p.mats||[]).forEach(m => { if(m.u==='pt' || m.u==='pza' || m.u.includes('TAB')) pt += (m.qty||0)*2 }); return acc + pt; }, 0);
 
   const statusStr = Q_state.baseQuoteId ? 'Esperando Autorización' : 'Esperando Autorización'; // Changed to Esperando Autorización generally to match the new behavior.
@@ -772,8 +973,10 @@ function processURLParams() {
     
     if(loadQ.pieces) {
       S.pieces = JSON.parse(JSON.stringify(loadQ.pieces));
-      // In view mode, we might want to also disable all piece edits.
-      S.pieces.forEach(p => p.open = false); // collapse all
+      S.pieces.forEach(p => {
+        p.open = false;
+        if (!p.hrRows) p.hrRows = hrsToRows(p.hrs || {});
+      });
     }
     
     if(loadQ.clientId) document.getElementById('clientInput').value = loadQ.clientId;
@@ -790,6 +993,137 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ── Nuevo Cliente ──────────────────────────────────────────────
+function openNewClientModal() {
+  document.getElementById('nc-nombre').value = '';
+  document.getElementById('nc-tel').value = '';
+  document.getElementById('nc-email').value = '';
+  document.getElementById('modal-cliente').classList.add('open');
+  setTimeout(() => document.getElementById('nc-nombre').focus(), 50);
+}
+function closeNewClientModal() {
+  document.getElementById('modal-cliente').classList.remove('open');
+}
+async function saveNewClient() {
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  if (!nombre) { document.getElementById('nc-nombre').focus(); return; }
+
+  const contact = {
+    id: crypto.randomUUID(),
+    name: nombre,
+    phone: document.getElementById('nc-tel').value.trim(),
+    email: document.getElementById('nc-email').value.trim(),
+    tipo: 'cliente',
+  };
+  window.DB.addContact(contact);
+
+  // Agregar al select y seleccionarlo
+  const cSel = document.getElementById('clientInput');
+  const opt = document.createElement('option');
+  opt.value = contact.id;
+  opt.textContent = nombre;
+  cSel.appendChild(opt);
+  cSel.value = contact.id;
+  S.client = nombre;
+  if (cSel._ssRefresh) cSel._ssRefresh();
+  renderFooter();
+
+  // También llenar select de cliente en modal proyecto
+  const npCli = document.getElementById('np-cliente');
+  const opt2 = document.createElement('option');
+  opt2.value = contact.id;
+  opt2.textContent = nombre;
+  npCli.appendChild(opt2);
+
+  closeNewClientModal();
+  toast('✓ Cliente "' + nombre + '" creado.');
+}
+
+// ── Nuevo Proyecto ─────────────────────────────────────────────
+function openNewProjectModal() {
+  document.getElementById('np-code').value = '';
+  document.getElementById('np-nombre').value = '';
+  document.getElementById('np-estado').value = 'Planificación';
+
+  // Llenar select de clientes con los que hay en clientInput
+  const npCli = document.getElementById('np-cliente');
+  const cSel = document.getElementById('clientInput');
+  npCli.innerHTML = '<option value="">— Sin cliente —</option>';
+  Array.from(cSel.options).forEach(o => {
+    if (!o.value) return;
+    const opt = document.createElement('option');
+    opt.value = o.value;
+    opt.textContent = o.textContent;
+    npCli.appendChild(opt);
+  });
+  // Pre-seleccionar cliente si ya hay uno elegido
+  if (cSel.value) npCli.value = cSel.value;
+
+  document.getElementById('modal-proyecto').classList.add('open');
+  setTimeout(() => document.getElementById('np-code').focus(), 50);
+}
+function closeNewProjectModal() {
+  document.getElementById('modal-proyecto').classList.remove('open');
+}
+async function saveNewProject() {
+  const codigo = document.getElementById('np-code').value.trim().toUpperCase();
+  const nombre = document.getElementById('np-nombre').value.trim();
+  if (!codigo || !nombre) {
+    if (!codigo) document.getElementById('np-code').focus();
+    else document.getElementById('np-nombre').focus();
+    return;
+  }
+
+  const contactoId = document.getElementById('np-cliente').value;
+  const project = {
+    id: crypto.randomUUID(),
+    codigo,
+    nombre,
+    estado: document.getElementById('np-estado').value,
+    contactoId: contactoId || null,
+    fechaInicio: new Date().toISOString().slice(0, 10),
+    fechaFin: '',
+    piezas: [],
+    horasEstimadas: 0,
+    horasPorCategoria: {},
+    maderaPt: 0,
+    costoMateriales: 0,
+    valorTotal: 0,
+    pagos: 0,
+    avance: 0,
+    hitos: [],
+  };
+  window.DB.addProject(project);
+
+  // Agregar al select de proyectos y seleccionarlo
+  const pSel = document.getElementById('projectInput');
+  // Buscar o crear optgroup "Proyectos Activos"
+  let grp = pSel.querySelector('optgroup[label="Proyectos Activos"]');
+  if (!grp) {
+    grp = document.createElement('optgroup');
+    grp.label = 'Proyectos Activos';
+    pSel.insertBefore(grp, pSel.options[1] || null);
+  }
+  const opt = document.createElement('option');
+  opt.value = project.id;
+  opt.textContent = codigo + ' – ' + nombre;
+  grp.appendChild(opt);
+  pSel.value = project.id;
+  if (pSel._ssRefresh) pSel._ssRefresh();
+
+  // Si el proyecto tiene cliente y no hay cliente seleccionado, seleccionarlo
+  if (contactoId && !document.getElementById('clientInput').value) {
+    document.getElementById('clientInput').value = contactoId;
+    const contactName = document.getElementById('np-cliente').options[document.getElementById('np-cliente').selectedIndex]?.textContent;
+    if (contactName) { S.client = contactName; renderFooter(); }
+    const ci2 = document.getElementById('clientInput');
+    if (ci2._ssRefresh) ci2._ssRefresh();
+  }
+
+  closeNewProjectModal();
+  toast('✓ Proyecto "' + codigo + '" creado.');
+}
 
 function toast(msg, type='ok') {
   const el = document.createElement('div');

@@ -87,7 +87,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <div class="header">
   <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
+    <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
     <div class="header-title">Almacén de Madera</div>
   </div>
   <div class="header-actions">
@@ -143,48 +143,49 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <script src="db.js"></script>
 <script>
   let inited = false;
+  let STATE_LISTS = { formats: [], types: [], quality: [] };
+
   function initFilters(wood) {
     if(inited) return;
-    const species = new Set();
-    const lotes = new Set();
-    const qualities = new Set();
-    
-    wood.forEach(w => {
-      if(w.species) species.add(w.species);
-      if(w.lote) lotes.add(w.lote);
-      if(w.quality) qualities.add(w.quality);
-    });
-    
-    const d = window.DB.get();
-    const getList = key => { const raw = d[key]||[]; return raw[0]?.list || raw.filter(x=>typeof x==='string'); };
-    document.getElementById('filt-format').innerHTML = '<option value="all">Tipos de Pieza</option>' +
-       getList('wood_formats').map(f => `<option value="${f}">${f}</option>`).join('');
-
-    document.getElementById('filt-species').innerHTML = '<option value="all">Todas las Especies</option>' + 
-      Array.from(species).map(s => `<option value="${s}">${s}</option>`).join('');
-      
-    document.getElementById('filt-lote').innerHTML = '<option value="all">Todos los Lotes</option>' + 
-      Array.from(lotes).map(s => `<option value="${s}">${s}</option>`).join('');
-      
-    document.getElementById('filt-quality').innerHTML = '<option value="all">Todas las Calidades</option>' + 
-      Array.from(qualities).map(s => `<option value="${s}">${s}</option>`).join('');
-      
     inited = true;
+
+    const lotes = new Set();
+    wood.forEach(w => { if(w.lote) lotes.add(w.lote); });
+
+    const extractList = raw => (Array.isArray(raw) && raw.length && raw[0]?.list) ? raw[0].list : (Array.isArray(raw) ? raw.filter(x => typeof x === 'string') : []);
+
+    // Fall back to data-derived values if Firestore list is empty
+    const formats  = extractList(STATE_LISTS.formats);
+    const types    = extractList(STATE_LISTS.types).length  ? extractList(STATE_LISTS.types)   : [...new Set(wood.map(w => w.species).filter(Boolean))].sort();
+    const quality  = extractList(STATE_LISTS.quality).length ? extractList(STATE_LISTS.quality) : [...new Set(wood.map(w => w.quality).filter(Boolean))].sort();
+
+    document.getElementById('filt-format').innerHTML = '<option value="all">Tipos de Pieza</option>' +
+      formats.map(f => `<option value="${f}">${f}</option>`).join('');
+
+    document.getElementById('filt-species').innerHTML = '<option value="all">Todas las Especies</option>' +
+      types.map(s => `<option value="${s}">${s}</option>`).join('');
+
+    document.getElementById('filt-lote').innerHTML = '<option value="all">Todos los Lotes</option>' +
+      Array.from(lotes).sort().map(s => `<option value="${s}">${s}</option>`).join('');
+
+    document.getElementById('filt-quality').innerHTML = '<option value="all">Todas las Calidades</option>' +
+      quality.map(s => `<option value="${s}">${s}</option>`).join('');
   }
 
   let STATE_WOOD = [];
-  
+
   async function init() {
-     const [inv, legacyWood] = await Promise.all([
-       window.DB.query("inventory", { category: "madera" }),
-       window.DB.query("wood"),
-       window.DB.query("wood_formats"),
-       window.DB.query("wood_types"),
-       window.DB.query("wood_quality"),
-       window.DB.query("wood_locations"),
-     ]);
-     STATE_WOOD = inv && inv.length > 0 ? inv : legacyWood;
-     renderWood();
+    const [inv, legacyWood, woodFormats, woodTypes, woodQuality] = await Promise.all([
+      window.DB.query("inventory", { category: "madera" }),
+      window.DB.query("wood"),
+      window.DB.query("wood_formats"),
+      window.DB.query("wood_types"),
+      window.DB.query("wood_quality"),
+      window.DB.query("wood_locations"),
+    ]);
+    STATE_WOOD = inv && inv.length > 0 ? inv : legacyWood;
+    STATE_LISTS = { formats: woodFormats || [], types: woodTypes || [], quality: woodQuality || [] };
+    renderWood();
   }
   
   document.addEventListener('DOMContentLoaded', init);
