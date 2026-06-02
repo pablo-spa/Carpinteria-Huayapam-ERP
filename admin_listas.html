@@ -109,6 +109,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   // type: 'obj-list'   → stored as single doc {list:[{id,name,type,...}, ...]}
   // type: 'collection' → each item is its own Firestore document
 
+  const DEFAULT_WORKER_ROLES = ['Jefe de Planta','Maestro A','Maestro B','Oficial A','Oficial B','Chalán','Barniz','Pulido','Empaque','Chofer','Almacén','Compras','Administración','Contador','Mantenimiento','Limpieza','Aprendiz'];
+
   const LISTS = [
     {
       section: 'Recursos Humanos',
@@ -122,6 +124,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       items: [
         { key: 'expense_categories', col: 'expense_categories', type: 'expense',
           name: 'Categorías de Gastos / Ingresos', desc: 'Clasificación para movimientos financieros' },
+        { key: 'bank_accounts', col: 'bank_accounts', type: 'list',
+          name: 'Cuentas Bancarias', desc: 'Cuentas usadas en movimientos y compras (ej. CHU, CAJA, SMTP)' },
+        { key: 'viatico_categories', col: 'viatico_categories', type: 'list',
+          name: 'Categorías de Viáticos', desc: 'Tipos de gasto en viajes (Transporte, Comidas, Alojamiento…)' },
       ]
     },
     {
@@ -143,14 +149,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       ]
     },
     {
-      section: 'Finanzas y Viáticos',
+      section: 'Almacén de Madera',
       items: [
-        { key: 'bank_accounts', col: 'bank_accounts', type: 'list',
-          name: 'Cuentas Bancarias', desc: 'Cuentas usadas en movimientos y compras (ej. CHU, CAJA, SMTP)' },
-        { key: 'payment_methods', col: 'payment_methods', type: 'list',
-          name: 'Métodos de Pago', desc: 'Formas de pago aceptadas (ej. Transferencia, Efectivo, Cheque)' },
-        { key: 'viatico_categories', col: 'viatico_categories', type: 'list',
-          name: 'Categorías de Viáticos', desc: 'Tipos de gasto en viajes (Comida, Transporte, Hotel…)' },
+        { key: 'wood_types',     col: 'wood_types',     type: 'list', name: 'Especies de Madera',   desc: 'Pino, Cedro, Parota, Encino…' },
+        { key: 'wood_formats',   col: 'wood_formats',   type: 'list', name: 'Formatos de Madera',   desc: 'Tabla, Tablón, Duela, Viga…' },
+        { key: 'wood_quality',   col: 'wood_quality',   type: 'list', name: 'Calidades de Madera',  desc: 'Primera, Segunda, Extra…' },
+        { key: 'wood_locations', col: 'wood_locations', type: 'list', name: 'Ubicaciones en Bodega', desc: 'Área Principal, Bodega, Exterior…' },
       ]
     },
   ];
@@ -170,8 +174,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         const raw = d[def.key] || [];
         if (def.type === 'list') {
           STATE[def.key] = raw[0]?.list || raw.filter(x => typeof x === 'string');
+          // Sembrar defaults si la colección está vacía
+          if (!STATE[def.key].length && def.key === 'worker_roles') {
+            STATE[def.key] = [...DEFAULT_WORKER_ROLES];
+            if (window.parent?.setDocumentInFirebase)
+              window.parent.setDocumentInFirebase('worker_roles', 'main', { list: DEFAULT_WORKER_ROLES });
+            if (window.parent?.DB_STATE)
+              window.parent.DB_STATE['worker_roles'] = [{ _id: 'main', list: DEFAULT_WORKER_ROLES }];
+          }
         } else if (def.type === 'expense') {
-          STATE[def.key] = raw.filter(x => x.id && !x._init);
+          // Deduplicar por nombre (puede haber duplicados en Firestore)
+          const seen = new Set();
+          STATE[def.key] = raw.filter(x => {
+            if (!x.id || x._init) return false;
+            const k = (x.name || '').toLowerCase().trim();
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          });
         } else if (def.type === 'piece') {
           STATE[def.key] = raw.filter(x => x.id && !x._init && x.name);
         } else {

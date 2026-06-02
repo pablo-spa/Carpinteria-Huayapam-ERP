@@ -156,8 +156,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     });
     
     const d = window.DB.get();
+    const getList = key => { const raw = d[key]||[]; return raw[0]?.list || raw.filter(x=>typeof x==='string'); };
     document.getElementById('filt-format').innerHTML = '<option value="all">Tipos de Pieza</option>' +
-       (d.wood_formats || []).map(f => `<option value="${f}">${f}</option>`).join('');
+       getList('wood_formats').map(f => `<option value="${f}">${f}</option>`).join('');
 
     document.getElementById('filt-species').innerHTML = '<option value="all">Todas las Especies</option>' + 
       Array.from(species).map(s => `<option value="${s}">${s}</option>`).join('');
@@ -174,9 +175,14 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   let STATE_WOOD = [];
   
   async function init() {
-     const inv = await window.DB.query("inventory", { category: "madera" });
-     // To handle legacy wood arrays seamlessly during transition:
-     const legacyWood = await window.DB.query("wood");
+     const [inv, legacyWood] = await Promise.all([
+       window.DB.query("inventory", { category: "madera" }),
+       window.DB.query("wood"),
+       window.DB.query("wood_formats"),
+       window.DB.query("wood_types"),
+       window.DB.query("wood_quality"),
+       window.DB.query("wood_locations"),
+     ]);
      STATE_WOOD = inv && inv.length > 0 ? inv : legacyWood;
      renderWood();
   }

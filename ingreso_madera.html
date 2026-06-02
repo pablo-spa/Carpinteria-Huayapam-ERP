@@ -156,11 +156,19 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
 
   document.addEventListener("DOMContentLoaded", async () => {
     await window.DB.query('inventory'); // wait for DB_STATE_LOADED
+    // Cargar catálogos de madera (lazy-load)
+    await Promise.all([
+      window.DB.query('wood_formats'),
+      window.DB.query('wood_types'),
+      window.DB.query('wood_quality'),
+      window.DB.query('wood_locations'),
+    ]);
     const d = window.DB.get();
-    document.getElementById('ctx-format').innerHTML = (d.wood_formats || []).map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-species').innerHTML = (d.wood_types || []).map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-quality').innerHTML = (d.wood_quality || []).map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-loc').innerHTML = (d.wood_locations || []).map(x => `<option value="${x}">${x}</option>`).join('');
+    const getList = key => { const raw = d[key]||[]; return raw[0]?.list || raw.filter(x=>typeof x==='string'); };
+    document.getElementById('ctx-format').innerHTML = getList('wood_formats').map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-species').innerHTML = getList('wood_types').map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-quality').innerHTML = getList('wood_quality').map(x => `<option value="${x}">${x}</option>`).join('');
+    document.getElementById('ctx-loc').innerHTML = getList('wood_locations').map(x => `<option value="${x}">${x}</option>`).join('');
     document.getElementById('ctx-date').value = new Date().toISOString().split('T')[0];
   });
 
