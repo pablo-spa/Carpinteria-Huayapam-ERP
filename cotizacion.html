@@ -1192,9 +1192,15 @@ function saveQuoteToProject() {
   }
 
   window.DB.addQuote(quote);
-  
+
   toast('✓ Cotización guardada exitosamente.');
-  setTimeout(() => { window.location.href = 'proyecto_detalle.html?id=' + pId; }, 800);
+  setTimeout(() => {
+    if (window.parent?.openModule) {
+      window.parent.openModule('proyecto_detalle.html?id=' + pId, 'Detalle del Proyecto');
+    } else {
+      window.location.href = 'proyecto_detalle.html?id=' + pId;
+    }
+  }, 800);
 }
 
 function processURLParams() {

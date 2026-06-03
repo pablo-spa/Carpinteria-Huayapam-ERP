@@ -703,6 +703,7 @@
       else if (!params.get('new')) { goBack(); return; }
 
       await window.DB.query('projects');
+      await window.DB.query('quotations'); // cargar cotizaciones bajo demanda
 
       const d = window.DB.get();
 

@@ -470,6 +470,11 @@ window.DB = {
     if (!d.quotations) d.quotations = [];
     d.quotations.push(quote);
     if(window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase("quotations", quote.id, quote);
+    // Sincronizar directamente en DB_STATE (quotations no está en carga inicial; saveDB la ignora si no existe)
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.quotations) window.parent.DB_STATE.quotations = [];
+      window.parent.DB_STATE.quotations.push(quote);
+    }
     saveDB(d);
   },
   updateQuote: (quote) => {
@@ -479,6 +484,12 @@ window.DB = {
     if (idx !== -1) {
       d.quotations[idx] = quote;
       if(window.parent && window.parent.setDocumentInFirebase && quote.id) window.parent.setDocumentInFirebase("quotations", quote.id, quote);
+      // Sincronizar directamente en DB_STATE
+      if (window.parent?.DB_STATE?.quotations) {
+        const li = window.parent.DB_STATE.quotations.findIndex(q => q.id === quote.id);
+        if (li >= 0) window.parent.DB_STATE.quotations[li] = quote;
+        else window.parent.DB_STATE.quotations.push(quote);
+      }
       saveDB(d);
     }
   }
