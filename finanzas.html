@@ -404,24 +404,39 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       STATE_PROJECTS.map(p => `<option value="${p.id}">${(p.codigo||p.code)} - ${(p.nombre||p.name)}</option>`).join('');
     SearchableSelect.init(pSel);
       
+    // Contar movimientos por categoría (sobre el historial completo)
+    const catCounts = {};
+    (_allMovements || []).forEach(m => {
+      if (m.category) catCounts[m.category] = (catCounts[m.category]||0) + 1;
+    });
+
     // Populate expense categories
     let ingHtml = '<optgroup label="Ingresos">';
     let gasHtml = '<optgroup label="Gastos">';
     let transHtml = '<optgroup label="Transferencias">';
+    let ingHtmlInput = '<optgroup label="Ingresos">';
+    let gasHtmlInput = '<optgroup label="Gastos">';
+    let transHtmlInput = '<optgroup label="Transferencias">';
+
     STATE_CATEGORIES.forEach(c => {
-      const type = c.type;
-      const nm = c.name;
-      const opt = `<option value="${nm}">${nm}</option>`;
-      if (type === 'ingreso') ingHtml += opt;
-      else if (type === 'gasto') gasHtml += opt;
-      else if (type === 'transferencia') transHtml += opt;
+      const nm   = c.name;
+      const cnt  = catCounts[nm] || 0;
+      const optFilter = `<option value="${nm}">${nm}${cnt ? ' (' + cnt + ')' : ''}</option>`;
+      const optInput  = `<option value="${nm}">${nm}</option>`;
+      if (c.type === 'ingreso')       { ingHtml += optFilter;   ingHtmlInput += optInput; }
+      else if (c.type === 'gasto')    { gasHtml += optFilter;   gasHtmlInput += optInput; }
+      else if (c.type === 'transferencia') { transHtml += optFilter; transHtmlInput += optInput; }
     });
-    ingHtml += '</optgroup>';
-    gasHtml += '</optgroup>';
-    transHtml += '</optgroup>';
-    
-    document.getElementById('f-cat').innerHTML = '<option value="">Todas las categorías</option><option value="pending">⚠️ Solo pendientes categorizar</option>' + ingHtml + gasHtml + transHtml;
-    document.getElementById('f-cat-input').innerHTML = '<option value="">-- Sin categorizar (Pendiente) --</option>' + ingHtml + gasHtml + transHtml;
+    ingHtml += '</optgroup>';  gasHtml += '</optgroup>';  transHtml += '</optgroup>';
+    ingHtmlInput += '</optgroup>'; gasHtmlInput += '</optgroup>'; transHtmlInput += '</optgroup>';
+
+    const sinCat = (_allMovements||[]).filter(m => !m.category || m.category === '' || m.category === 'pending').length;
+    document.getElementById('f-cat').innerHTML =
+      `<option value="">Todas las categorías</option>` +
+      `<option value="pending">⚠️ Pendientes de categorizar${sinCat ? ' (' + sinCat + ')' : ''}</option>` +
+      ingHtml + gasHtml + transHtml;
+    document.getElementById('f-cat-input').innerHTML =
+      '<option value="">-- Sin categorizar (Pendiente) --</option>' + ingHtmlInput + gasHtmlInput + transHtmlInput;
 
     // Cargar saldos reales desde account_balances
     const rawBal = await window.DB.query('account_balances');
