@@ -117,6 +117,18 @@ input.mat-price { text-align: right; font-size: 12px; }
 .br-empty { font-size: 12px; color: var(--subtext); text-align: center; padding: 8px 0; }
 .br-configs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
+/* Imagen por pieza */
+.piece-img-section { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+.piece-thumb { width: 100px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid var(--crust); cursor: pointer; flex-shrink: 0; }
+.piece-img-actions { display: flex; flex-direction: column; gap: 6px; }
+.piece-img-label { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border: 1px dashed var(--surface1); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--subtext); transition: all .15s; white-space: nowrap; }
+.piece-img-label:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+.piece-img-rm { background: none; border: 1px solid var(--crust); border-radius: 6px; color: var(--subtext); font-size: 12px; font-weight: 600; cursor: pointer; padding: 5px 10px; transition: all .15s; }
+.piece-img-rm:hover { color: var(--red); border-color: var(--red); background: var(--red-bg); }
+
+/* Pieza: thumbnail en el header si tiene imagen */
+.p-thumb { width: 28px; height: 28px; object-fit: cover; border-radius: 5px; border: 1px solid var(--surface0); flex-shrink: 0; }
+
 /* Piece footer */
 .piece-foot { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--crust); }
 
@@ -435,6 +447,33 @@ function calc(piece) {
   return { matTotal, sub1, labor, totalHrs, oh, sub3, ex, mg, er, total, tax, fee, final };
 }
 
+function setImage(id, input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 700;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const p = S.pieces.find(p => p.id === id);
+      if (p) { p.imagen = canvas.toDataURL('image/jpeg', 0.78); render(); }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage(id) {
+  const p = S.pieces.find(p => p.id === id);
+  if (p) { delete p.imagen; render(); }
+}
+
 function addPiece() {
   const sel = document.getElementById('typeSelect');
   const val = sel.value;
@@ -614,16 +653,30 @@ function renderPiece(piece) {
       <button class="mat-del" onclick="delHrRow(${piece.id},${i})">×</button>
     </div>`).join('');
 
+  const imgSection = `
+    <div class="piece-img-section">
+      ${piece.imagen ? `
+        <img src="${piece.imagen}" class="piece-thumb" onclick="document.getElementById('img-${piece.id}').click()" title="Haz clic para cambiar">
+        <div class="piece-img-actions">
+          <label for="img-${piece.id}" class="piece-img-label">🔄 Cambiar imagen</label>
+          <button class="piece-img-rm" onclick="removeImage(${piece.id})">✕ Quitar</button>
+        </div>` : `
+        <label for="img-${piece.id}" class="piece-img-label">📷 Agregar imagen de referencia</label>`}
+      <input type="file" id="img-${piece.id}" accept="image/*" style="display:none" onchange="setImage(${piece.id}, this)">
+    </div>`;
+
   return `
     <div class="piece" id="piece-${piece.id}">
       <div class="piece-hdr" onclick="togglePiece(${piece.id})">
         <span class="p-badge">${piece.code}</span>
+        ${piece.imagen ? `<img src="${piece.imagen}" class="p-thumb" alt="">` : ''}
         <span class="p-name">${piece.name}</span>
         <span class="p-price" id="pp-${piece.id}">${c.final>0?fmt(c.final):'—'}</span>
         <span class="p-arrow ${piece.open?'open':''}">▼</span>
       </div>
       ${piece.open ? `
       <div class="piece-body">
+        ${imgSection}
         <div class="sub-hdr">Lista de Materiales</div>
         <div class="table-wrap">
           <div class="mat-cols">
@@ -729,9 +782,14 @@ function showPrintPreview(isClient) {
     const c = calc(p);
     grandTotal += c.final;
 
+    const imgHtml = p.imagen ? `<img src="${p.imagen}" style="max-height:120px;max-width:180px;object-fit:cover;border-radius:6px;margin-top:6px;border:1px solid #ddd;" alt="">` : '';
+
     if (isClient) {
-      piecesHtml += `<tr>
-        <td style="padding:10px 8px; border-bottom:1px solid #eee;">${i+1}. <strong>${p.nombre||p.name}</strong></td>
+      piecesHtml += `<tr style="vertical-align:top;">
+        <td style="padding:10px 8px; border-bottom:1px solid #eee;">
+          ${i+1}. <strong>${p.nombre||p.name}</strong>
+          ${imgHtml ? `<div>${imgHtml}</div>` : ''}
+        </td>
         <td style="padding:10px 8px; border-bottom:1px solid #eee; text-align:right; white-space:nowrap; font-weight:700;">${fmt(c.final)}</td>
       </tr>`;
     } else {
@@ -745,8 +803,13 @@ function showPrintPreview(isClient) {
         </div>`).join('');
       piecesHtml += `<tr style="vertical-align:top;">
         <td style="padding:10px 8px; border-bottom:1px solid #eee;">
-          <div style="font-weight:700;font-size:12px;margin-bottom:6px;">${i+1}. [${p.code}] ${p.nombre||p.name}</div>
-          ${matsDetail}${laborDetail}
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            ${p.imagen ? `<img src="${p.imagen}" style="width:60px;height:60px;object-fit:cover;border-radius:5px;border:1px solid #ddd;flex-shrink:0;" alt="">` : ''}
+            <div>
+              <div style="font-weight:700;font-size:12px;margin-bottom:6px;">${i+1}. [${p.code}] ${p.nombre||p.name}</div>
+              ${matsDetail}${laborDetail}
+            </div>
+          </div>
         </td>
         <td style="padding:10px 8px; border-bottom:1px solid #eee; text-align:right; white-space:nowrap; font-size:11px;">
           <div>Base: ${fmt(c.sub3)}</div>
