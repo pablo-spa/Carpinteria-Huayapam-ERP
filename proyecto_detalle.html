@@ -408,35 +408,36 @@
       if (!projId) { alert('Guarda el proyecto primero.'); return; }
 
       const allQuotes = (d.quotations || []).filter(q => q.projectId === projId && q.status !== 'Cancelada');
-      if (allQuotes.length === 0) { alert('No hay cotización activa para este proyecto.'); return; }
+      if (allQuotes.length === 0) { alert('No hay cotización para este proyecto.'); return; }
 
-      // Preferir cotización Activa; si no hay, usar la más reciente
-      const activa = allQuotes.find(q => q.status === 'Activa');
-      const q = activa || allQuotes.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      // Usar todas las activas; si no hay activas, usar todas las no canceladas
+      const activas = allQuotes.filter(q => q.status === 'Activa');
+      const toUse   = activas.length > 0 ? activas : allQuotes;
 
       const hours = {};
       RATE_KEYS.forEach(k => hours[k] = 0);
       const woodByMat = {};
       let woodTotal = 0, otherCost = 0;
 
-      (q.pieces || []).forEach(piece => {
-        const qty = piece.qty || 1; // multiplicar por cantidad de la pieza
-        // Horas — soporta hrRows (nuevo) y hrs object (legacy)
-        if (piece.hrRows && Array.isArray(piece.hrRows)) {
-          piece.hrRows.forEach(r => { if (RATE_KEYS.includes(r.role)) hours[r.role] += parseFloat(r.hrs || 0) * qty; });
-        } else {
-          RATE_KEYS.forEach(k => { hours[k] += parseFloat(piece.hrs?.[k] || 0) * qty; });
-        }
-        // Materiales
-        (piece.mats || []).forEach(m => {
-          const matQty = (parseFloat(m.qty) || 0) * qty;
-          if ((m.u || '').toLowerCase() === 'pt') {
-            const matName = m.n || 'Madera';
-            woodByMat[matName] = (woodByMat[matName] || 0) + matQty;
-            woodTotal += matQty;
+      // Sumar todas las cotizaciones seleccionadas
+      toUse.forEach(q => {
+        (q.pieces || []).forEach(piece => {
+          const qty = piece.qty || 1;
+          if (piece.hrRows && Array.isArray(piece.hrRows)) {
+            piece.hrRows.forEach(r => { if (RATE_KEYS.includes(r.role)) hours[r.role] += parseFloat(r.hrs || 0) * qty; });
           } else {
-            otherCost += matQty * (parseFloat(m.p) || 0);
+            RATE_KEYS.forEach(k => { hours[k] += parseFloat(piece.hrs?.[k] || 0) * qty; });
           }
+          (piece.mats || []).forEach(m => {
+            const matQty = (parseFloat(m.qty) || 0) * qty;
+            if ((m.u || '').toLowerCase() === 'pt') {
+              const matName = m.n || 'Madera';
+              woodByMat[matName] = (woodByMat[matName] || 0) + matQty;
+              woodTotal += matQty;
+            } else {
+              otherCost += matQty * (parseFloat(m.p) || 0);
+            }
+          });
         });
       });
 
@@ -450,9 +451,9 @@
       document.getElementById('f-other-mat-est').value = otherCost.toFixed(2);
       updateMatDiff();
 
-      const label = q.folio || q.id.slice(0, 8);
+      const labels = toUse.map(q => q.folio || q.date).join(', ');
       const note = document.getElementById('quote-source-note');
-      note.textContent = `Calculado desde cotización ${label} — ${q.date}${q.status !== 'Activa' ? ` (estado: ${q.status})` : ''}`;
+      note.textContent = `Calculado de ${toUse.length} cotización${toUse.length > 1 ? 'es' : ''}: ${labels}`;
       note.style.display = 'block';
     }
 
@@ -508,10 +509,24 @@
       if (!projId) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>'; return; }
       const quotes = (d.quotations || []).filter(q => q.projectId === projId);
       if (quotes.length === 0) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay cotizaciones registradas.</div>'; return; }
-      quotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+      quotes.sort((a, b) => new Date(a.date) - new Date(b.date)); // ascendente para numerar
+
+      // Asignar folio retroactivo a cotizaciones antiguas sin folio
+      quotes.forEach((q, i) => {
+        if (!q.folio) {
+          q.folio = `${q.date}-${String(i + 1).padStart(3, '0')}`;
+          if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('quotations', q.id, q);
+          if (window.parent?.DB_STATE?.quotations) {
+            const li = window.parent.DB_STATE.quotations.findIndex(x => x.id === q.id);
+            if (li >= 0) window.parent.DB_STATE.quotations[li].folio = q.folio;
+          }
+        }
+      });
+
+      quotes.sort((a, b) => new Date(b.date) - new Date(a.date)); // descendente para mostrar
 
       qList.innerHTML = quotes.map(q => {
-        const label = q.folio || q.id.slice(0, 8);
+        const label = q.folio;
         const statusOpts = QUOTE_STATUSES.map(s =>
           `<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`
         ).join('');
