@@ -765,110 +765,253 @@ let currentPrintConds = "";
 
 function showPrintPreview(isClient) {
   document.getElementById('print-modal').style.display = 'flex';
-  document.getElementById('print-title').textContent = isClient ? 'Vista Previa — Para Cliente' : 'Vista Previa — Para Taller';
+  document.getElementById('print-title').textContent = isClient ? 'Vista Previa — Para Cliente' : 'Vista Previa — Taller (Orden de Trabajo)';
 
   const today = new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
   const clientName = S.client && S.client !== '— Seleccionar Cliente —' ? S.client : '—';
   const projName = (() => {
     const pSel = document.getElementById('projectInput');
-    const opt = pSel.options[pSel.selectedIndex];
+    const opt  = pSel.options[pSel.selectedIndex];
     return opt && opt.value ? opt.textContent : '—';
   })();
-
-  let grandTotal = 0;
-  let piecesHtml = '';
-
-  S.pieces.forEach((p, i) => {
-    const c = calc(p);
-    grandTotal += c.final;
-
-    const imgHtml = p.imagen ? `<img src="${p.imagen}" style="max-height:120px;max-width:180px;object-fit:cover;border-radius:6px;margin-top:6px;border:1px solid #ddd;" alt="">` : '';
-
-    if (isClient) {
-      piecesHtml += `<tr style="vertical-align:top;">
-        <td style="padding:10px 8px; border-bottom:1px solid #eee;">
-          ${i+1}. <strong>${p.nombre||p.name}</strong>
-          ${imgHtml ? `<div>${imgHtml}</div>` : ''}
-        </td>
-        <td style="padding:10px 8px; border-bottom:1px solid #eee; text-align:right; white-space:nowrap; font-weight:700;">${fmt(c.final)}</td>
-      </tr>`;
-    } else {
-      const matsDetail = p.mats.map(m =>
-        `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:10px;color:#555;">
-          <span>${m.qty} ${m.u} — ${m.n}</span><span>${fmt((m.qty||0)*m.p)}</span>
-        </div>`).join('');
-      const laborDetail = (p.hrRows||[]).map(r =>
-        `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:10px;color:#555;">
-          <span>${RATE_LABELS[r.role]||r.role} — ${r.hrs} hrs × $${RATES[r.role]||0}/hr</span><span>${fmt((r.hrs||0)*(RATES[r.role]||0))}</span>
-        </div>`).join('');
-      piecesHtml += `<tr style="vertical-align:top;">
-        <td style="padding:10px 8px; border-bottom:1px solid #eee;">
-          <div style="display:flex;gap:10px;align-items:flex-start;">
-            ${p.imagen ? `<img src="${p.imagen}" style="width:60px;height:60px;object-fit:cover;border-radius:5px;border:1px solid #ddd;flex-shrink:0;" alt="">` : ''}
-            <div>
-              <div style="font-weight:700;font-size:12px;margin-bottom:6px;">${i+1}. [${p.code}] ${p.nombre||p.name}</div>
-              ${matsDetail}${laborDetail}
-            </div>
-          </div>
-        </td>
-        <td style="padding:10px 8px; border-bottom:1px solid #eee; text-align:right; white-space:nowrap; font-size:11px;">
-          <div>Base: ${fmt(c.sub3)}</div>
-          <div style="font-weight:700;">Venta: ${fmt(c.final)}</div>
-        </td>
-      </tr>`;
-    }
-  });
-
   const logoSrc = 'images/320%20X%20132%20HUAYAPAM%20MINIMAL.png';
+  const grandTotal = S.pieces.reduce((s, p) => s + calc(p).final, 0);
 
-  let html = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #333;">
-      <img src="${logoSrc}" style="height:44px; width:auto;" alt="Carpintería Huayapam">
-      <div style="text-align:right;">
-        <div style="font-size:18px; font-weight:800; letter-spacing:-0.01em;">COTIZACIÓN</div>
-        <div style="font-size:11px; color:#666; margin-top:2px;">${today}</div>
-        ${isClient ? '' : `<div style="font-size:10px; color:#aaa; margin-top:2px; text-transform:uppercase; letter-spacing:.06em;">Copia Interna — Taller</div>`}
-      </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; padding:12px 16px; background:#f8f8f8; border-radius:8px; font-size:11px;">
-      <div><span style="color:#888; font-weight:700; text-transform:uppercase; font-size:10px;">Cliente</span><br><span style="font-size:13px; font-weight:700;">${clientName}</span></div>
-      <div><span style="color:#888; font-weight:700; text-transform:uppercase; font-size:10px;">Proyecto</span><br><span style="font-size:12px; font-weight:600;">${projName}</span></div>
-    </div>
-
-    <table style="width:100%; border-collapse:collapse; font-size:12px;">
-      <thead>
-        <tr style="background:#f0f0f0;">
-          <th style="text-align:left; padding:8px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">${isClient ? 'Descripción' : 'Pieza / Materiales y Mano de Obra'}</th>
-          <th style="text-align:right; padding:8px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">${isClient ? 'Precio' : 'Costo / Venta'}</th>
-        </tr>
-      </thead>
-      <tbody>${piecesHtml}</tbody>
-    </table>
-
-    <div style="display:flex; justify-content:flex-end; margin-top:16px; padding-top:12px; border-top:2px solid #333;">
-      <div style="text-align:right; min-width:200px;">
-        ${!isClient ? `<div style="display:flex;justify-content:space-between;gap:32px;font-size:11px;color:#666;margin-bottom:4px;"><span>Subtotal (materiales+labor):</span><span>${fmt(S.pieces.reduce((s,p)=>s+calc(p).sub3,0))}</span></div>` : ''}
-        <div style="display:flex; justify-content:space-between; gap:32px; font-size:14px; font-weight:800; padding-top:8px; border-top:1px solid #ccc;">
-          <span>TOTAL:</span><span>${fmt(grandTotal)}</span>
-        </div>
-        <div style="font-size:10px; color:#888; margin-top:4px;">${TAX>0 ? 'IVA incluido (16%)' : 'Precios sin IVA'}</div>
-      </div>
+  /* ── CSS compartido para tablas del documento ── */
+  const tblCss = `width:100%;border-collapse:collapse;font-size:11px;`;
+  const thCss  = `padding:6px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:#222;color:#fff;text-align:left;`;
+  const thRCss = `padding:6px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:#222;color:#fff;text-align:right;`;
+  const tdCss  = `padding:6px 8px;border-bottom:1px solid #e0e0e0;vertical-align:top;`;
+  const tdRCss = `padding:6px 8px;border-bottom:1px solid #e0e0e0;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;`;
+  const secHdr = (icon, title) => `
+    <div style="display:flex;align-items:center;gap:8px;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #222;">
+      <span style="font-size:13px;">${icon}</span>
+      <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;">${title}</span>
     </div>`;
 
+  /* ══ CLIENTE PDF ══════════════════════════════════════════════════════ */
   if (isClient) {
-    html += `
-    <div style="margin-top:28px; padding-top:20px; border-top:1px solid #ddd;">
-      <p style="font-size:12px; line-height:1.7; color:#333;">
-        Estimado/a <strong>${clientName}</strong>,<br><br>
-        En Carpintería Huayapam queremos agradecerle sinceramente por habernos elegido para ser parte de su proyecto.
-        Para nosotros es un honor trabajar con usted y estamos completamente a sus órdenes para cualquier
-        aclaración, ajuste o información adicional que requiera sobre esta cotización.<br><br>
-        Quedamos en espera de sus comentarios.
-      </p>
-    </div>
-    <div id="print-cond-live" style="margin-top:16px; font-size:11px; color:#333; white-space:pre-wrap; line-height:1.6;">${currentPrintConds}</div>`;
+    let rows = '';
+    S.pieces.forEach((p, i) => {
+      const c = calc(p);
+      const img = p.imagen ? `<div style="margin-top:6px;"><img src="${p.imagen}" style="max-height:110px;max-width:160px;object-fit:cover;border-radius:5px;border:1px solid #ddd;" alt=""></div>` : '';
+      rows += `<tr>
+        <td style="${tdCss}">${i+1}. <strong>${p.nombre||p.name}</strong>${img}</td>
+        <td style="${tdRCss}font-weight:700;">${fmt(c.final)}</td>
+      </tr>`;
+    });
+
+    const html = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #222;">
+        <img src="${logoSrc}" style="height:40px;" alt="Carpintería Huayapam">
+        <div style="text-align:right;">
+          <div style="font-size:17px;font-weight:800;">COTIZACIÓN</div>
+          <div style="font-size:10px;color:#666;margin-top:2px;">${today}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;padding:10px 14px;background:#f5f5f5;border-radius:6px;">
+        <div><div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Cliente</div><div style="font-size:13px;font-weight:700;margin-top:3px;">${clientName}</div></div>
+        <div><div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Proyecto</div><div style="font-size:11px;font-weight:600;margin-top:3px;">${projName}</div></div>
+      </div>
+      <table style="${tblCss}">
+        <thead><tr><th style="${thCss}">Descripción</th><th style="${thRCss}">Precio</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="display:flex;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:2px solid #222;">
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:800;">TOTAL: ${fmt(grandTotal)}</div>
+          <div style="font-size:9px;color:#888;margin-top:3px;">${TAX>0?'IVA incluido (16%)':'Precios sin IVA'}</div>
+        </div>
+      </div>
+      <div style="margin-top:24px;padding-top:16px;border-top:1px solid #ddd;">
+        <p style="font-size:11px;line-height:1.8;color:#333;">
+          Estimado/a <strong>${clientName}</strong>,<br><br>
+          En Carpintería Huayapam queremos agradecerle sinceramente por habernos elegido para ser parte de su proyecto.
+          Para nosotros es un honor trabajar con usted y estamos completamente a sus órdenes para cualquier
+          aclaración, ajuste o información adicional que requiera.<br><br>
+          Quedamos en espera de sus comentarios.
+        </p>
+      </div>
+      <div id="print-cond-live" style="margin-top:14px;font-size:11px;color:#333;white-space:pre-wrap;line-height:1.6;">${currentPrintConds}</div>`;
+
+    document.getElementById('print-preview-content').innerHTML = html;
+    document.getElementById('ai-print-prompt').value = currentPrintConds;
+    return;
   }
+
+  /* ══ TALLER PDF — ORDEN DE TRABAJO ══════════════════════════════════ */
+
+  /* — Agregar horas por rol — */
+  const horasAgg = {}; // role → { label, rate, hrs, total }
+  S.pieces.forEach(p => {
+    (p.hrRows||[]).forEach(r => {
+      if (!r.role || !r.hrs) return;
+      if (!horasAgg[r.role]) horasAgg[r.role] = { label: RATE_LABELS[r.role]||r.role, rate: RATES[r.role]||0, hrs: 0, subtotal: 0 };
+      horasAgg[r.role].hrs      += r.hrs || 0;
+      horasAgg[r.role].subtotal += (r.hrs||0) * (RATES[r.role]||0);
+    });
+  });
+  const totalHrs = Object.values(horasAgg).reduce((s, v) => s + v.hrs, 0);
+  const totalMO  = Object.values(horasAgg).reduce((s, v) => s + v.subtotal, 0);
+  const totalMats= S.pieces.reduce((s, p) => s + p.mats.reduce((ss, m) => ss + (m.qty||0)*m.p, 0), 0);
+
+  const moRows = Object.entries(horasAgg)
+    .sort((a, b) => b[1].hrs - a[1].hrs)
+    .map(([, v]) => `<tr>
+      <td style="${tdCss}">${v.label}</td>
+      <td style="${tdRCss}font-weight:700;">${v.hrs.toFixed(1)}</td>
+    </tr>`).join('');
+
+  /* — Agregar materiales (BOM) — */
+  const bomAgg = {}; // "name|unit" → { name, unit, qty, unitPrice, total }
+  S.pieces.forEach(p => {
+    p.mats.forEach(m => {
+      const k = (m.n||'') + '|' + (m.u||'');
+      if (!bomAgg[k]) bomAgg[k] = { name: m.n||'', unit: m.u||'', qty: 0, unitPrice: m.p||0, total: 0 };
+      bomAgg[k].qty   += m.qty || 0;
+      bomAgg[k].total += (m.qty||0) * (m.p||0);
+      bomAgg[k].unitPrice = m.p || 0;
+    });
+  });
+  const bomRows = Object.values(bomAgg)
+    .sort((a, b) => b.total - a.total)
+    .map(v => `<tr>
+      <td style="${tdCss}font-weight:600;">${v.name}</td>
+      <td style="${tdCss}color:#555;">${v.unit}</td>
+      <td style="${tdRCss}font-weight:700;">${v.qty % 1 === 0 ? v.qty : v.qty.toFixed(2)}</td>
+      <td style="${tdCss}"></td>
+    </tr>`).join('');
+
+  /* — Detalle por pieza — */
+  const pieceCards = S.pieces.map((p, i) => {
+    const c = calc(p);
+    const mRows = p.mats.map(m => `<tr>
+      <td style="${tdCss}">${m.n||'—'}</td>
+      <td style="${tdCss}color:#555;">${m.u||''}</td>
+      <td style="${tdRCss}font-weight:600;">${(m.qty||0) % 1 === 0 ? m.qty : (m.qty||0).toFixed(2)}</td>
+      <td style="${tdCss}"></td>
+    </tr>`).join('');
+
+    const hRows = (p.hrRows||[]).map(r => `<tr>
+      <td style="${tdCss}">${RATE_LABELS[r.role]||r.role}</td>
+      <td style="${tdRCss}font-weight:600;">${(r.hrs||0).toFixed(1)} hrs</td>
+      <td style="${tdCss}"></td>
+    </tr>`).join('');
+
+    const imgHtml = p.imagen
+      ? `<img src="${p.imagen}" style="width:90px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #ddd;flex-shrink:0;" alt="">`
+      : '';
+
+    return `
+      <div style="margin-top:18px;border:1px solid #ccc;border-radius:6px;overflow:hidden;page-break-inside:avoid;">
+        <div style="display:flex;align-items:center;gap:10px;background:#222;color:#fff;padding:8px 12px;">
+          ${imgHtml}
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:13px;">${i+1}. ${p.nombre||p.name}</div>
+            <div style="font-size:10px;color:#bbb;margin-top:2px;">${p.code}</div>
+          </div>
+        </div>
+        ${p.mats.length ? `
+        <div style="padding:0 0 0 0;">
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;padding:5px 10px;background:#f0f0f0;color:#555;border-bottom:1px solid #ddd;">Materiales</div>
+          <table style="${tblCss}">
+            <thead><tr>
+              <th style="${thCss}background:#555;">Material</th>
+              <th style="${thCss}background:#555;">Unidad</th>
+              <th style="${thRCss}background:#555;">Cant.</th>
+              <th style="${thCss}background:#555;">Notas</th>
+            </tr></thead>
+            <tbody>${mRows}</tbody>
+          </table>
+        </div>` : ''}
+        ${(p.hrRows||[]).length ? `
+        <div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;padding:5px 10px;background:#f0f0f0;color:#555;border-bottom:1px solid #ddd;border-top:1px solid #ddd;">Mano de Obra</div>
+          <table style="${tblCss}">
+            <thead><tr>
+              <th style="${thCss}background:#555;">Tipo de Carpintero</th>
+              <th style="${thRCss}background:#555;">Horas</th>
+              <th style="${thCss}background:#555;">Asignar a</th>
+            </tr></thead>
+            <tbody>${hRows}</tbody>
+          </table>
+        </div>` : ''}
+      </div>`;
+  }).join('');
+
+  const html = `
+    <!-- ENCABEZADO -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:3px solid #222;">
+      <img src="${logoSrc}" style="height:38px;" alt="Carpintería Huayapam">
+      <div style="text-align:right;">
+        <div style="font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;">Orden de Trabajo</div>
+        <div style="font-size:9px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.06em;">Uso Interno — Taller</div>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;margin-bottom:16px;border:1px solid #ccc;border-radius:5px;overflow:hidden;font-size:11px;">
+      <div style="padding:8px 10px;border-right:1px solid #eee;">
+        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Cliente</div>
+        <div style="font-weight:700;margin-top:3px;">${clientName}</div>
+      </div>
+      <div style="padding:8px 10px;border-right:1px solid #eee;">
+        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Proyecto</div>
+        <div style="font-weight:600;margin-top:3px;">${projName}</div>
+      </div>
+      <div style="padding:8px 10px;border-right:1px solid #eee;">
+        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Fecha</div>
+        <div style="font-weight:600;margin-top:3px;">${today}</div>
+      </div>
+      <div style="padding:8px 10px;background:#f8f8f8;">
+        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Piezas</div>
+        <div style="font-weight:800;font-size:14px;margin-top:3px;">${S.pieces.length} pieza${S.pieces.length!==1?'s':''}</div>
+      </div>
+    </div>
+
+    <!-- MANO DE OBRA RESUMEN -->
+    ${secHdr('👷', 'Resumen de Mano de Obra')}
+    <table style="${tblCss}">
+      <thead><tr>
+        <th style="${thCss}">Tipo de Carpintero</th>
+        <th style="${thRCss}">Horas Total</th>
+      </tr></thead>
+      <tbody>
+        ${moRows}
+        <tr style="background:#f8f8f8;">
+          <td style="${tdCss}font-weight:800;border-top:2px solid #222;">TOTAL</td>
+          <td style="${tdRCss}font-weight:800;border-top:2px solid #222;">${totalHrs.toFixed(1)} hrs</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- BOM MATERIALES -->
+    ${secHdr('📦', 'Lista de Materiales (BOM)')}
+    <table style="${tblCss}">
+      <thead><tr>
+        <th style="${thCss}">Material</th>
+        <th style="${thCss}">Unidad</th>
+        <th style="${thRCss}">Cantidad Total</th>
+        <th style="${thCss}">Notas / Verificado</th>
+      </tr></thead>
+      <tbody>${bomRows}</tbody>
+    </table>
+
+    <!-- DETALLE POR PIEZA -->
+    ${secHdr('🔨', `Detalle por Pieza (${S.pieces.length} pieza${S.pieces.length!==1?'s':''})`)}
+    ${pieceCards}
+
+    <!-- FIRMA -->
+    <div style="margin-top:28px;padding-top:16px;border-top:2px solid #222;display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+      <div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#888;margin-bottom:36px;">Autoriza / Jefe de Producción</div>
+        <div style="border-top:1px solid #444;padding-top:4px;font-size:9px;color:#888;">Firma y fecha</div>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#888;margin-bottom:36px;">Recibe / Carpintero Responsable</div>
+        <div style="border-top:1px solid #444;padding-top:4px;font-size:9px;color:#888;">Firma y fecha</div>
+      </div>
+    </div>`;
 
   document.getElementById('print-preview-content').innerHTML = html;
   document.getElementById('ai-print-prompt').value = currentPrintConds;
