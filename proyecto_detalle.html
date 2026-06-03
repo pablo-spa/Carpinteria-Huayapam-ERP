@@ -407,8 +407,9 @@
       const d = window.DB.get();
       if (!projId) { alert('Guarda el proyecto primero.'); return; }
 
-      const quotes = (d.quotations || []).filter(q => q.projectId === projId && q.status === 'Activa');
-      if (quotes.length === 0) { alert('No hay cotización activa para este proyecto.'); return; }
+      // Acepta cualquier cotización del proyecto (Esperando Autorización, Activa, etc.)
+      const quotes = (d.quotations || []).filter(q => q.projectId === projId && q.status !== 'En Pausa');
+      if (quotes.length === 0) { alert('No hay cotización para este proyecto.'); return; }
 
       const q = quotes[0];
       const hours = {};
@@ -417,7 +418,12 @@
       let woodTotal = 0, otherCost = 0;
 
       (q.pieces || []).forEach(piece => {
-        RATE_KEYS.forEach(k => { hours[k] += parseFloat(piece.hrs?.[k] || 0); });
+        // Soporta formato nuevo (hrRows array) y legacy (hrs object)
+        if (piece.hrRows && Array.isArray(piece.hrRows)) {
+          piece.hrRows.forEach(r => { if (RATE_KEYS.includes(r.role)) hours[r.role] += parseFloat(r.hrs || 0); });
+        } else {
+          RATE_KEYS.forEach(k => { hours[k] += parseFloat(piece.hrs?.[k] || 0); });
+        }
         (piece.mats || []).forEach(m => {
           if ((m.u || '').toLowerCase() === 'pt') {
             const matName = m.n || 'Madera';
@@ -675,7 +681,7 @@
       if (projId) {
         window.DB.updateProject(projData);
         document.getElementById('h-title').textContent = `${projData.codigo} — ${projData.nombre}`;
-        alert('Proyecto guardado.');
+        toast('✓ Proyecto guardado.');
       } else {
         projData.id = crypto.randomUUID();
         projId      = projData.id;
@@ -683,7 +689,7 @@
         document.getElementById('h-title').textContent = `${projData.codigo} — ${projData.nombre}`;
         window.history.replaceState(null, '', `?id=${projId}`);
         document.getElementById('btn-archive').style.display = 'inline-flex';
-        alert('Proyecto creado.');
+        toast('✓ Proyecto creado.');
       }
 
       renderTimeline();
@@ -767,6 +773,15 @@
       renderPayments(d);
       renderActualMaterials(d);
       renderViaticos(d);
+    }
+
+    function toast(msg, type='ok') {
+      const el = document.createElement('div');
+      const bg = type === 'warn' ? 'var(--amber)' : type === 'error' ? 'var(--red)' : 'var(--green)';
+      el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
     }
 
     init();
