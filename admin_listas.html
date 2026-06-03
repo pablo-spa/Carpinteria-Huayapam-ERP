@@ -214,6 +214,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     {
       section: 'Almacén de Madera',
       items: [
+        { key: 'wood_price_catalog', col: 'wood_price_catalog', type: 'woodcat',
+          name: 'Precios Estándar de Madera', desc: 'Catálogo de tipos de madera con precio estimado por unidad — usado en cotizaciones' },
         { key: 'wood_types',     col: 'wood_types',     type: 'list', name: 'Especies de Madera',   desc: 'Pino, Cedro, Parota, Encino…' },
         { key: 'wood_formats',   col: 'wood_formats',   type: 'list', name: 'Formatos de Madera',   desc: 'Tabla, Tablón, Duela, Viga…' },
         { key: 'wood_quality',   col: 'wood_quality',   type: 'list', name: 'Calidades de Madera',  desc: 'Primera, Segunda, Extra…' },
@@ -272,6 +274,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
             }
             if (window.parent?.DB_STATE) window.parent.DB_STATE['piece_types'] = DEFAULT_PIECE_TYPES.map(p => ({...p}));
           }
+        } else if (def.type === 'woodcat') {
+          STATE[def.key] = raw.filter(x => x.id && !x._init && x.nombre)
+            .sort((a, b) => (a.nombre||'').localeCompare(b.nombre||''));
         } else {
           STATE[def.key] = raw;
         }
@@ -344,6 +349,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       bar.innerHTML = `
         <input type="text" id="new-val" placeholder="Nombre del mueble o pieza…" onkeydown="if(event.key==='Enter') addItem()">
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    } else if (currentDef.type === 'woodcat') {
+      bar.innerHTML = `
+        <input type="text" id="new-val" placeholder="Tipo de madera (ej: Pino Primera)…" style="flex:2;" onkeydown="if(event.key==='Enter') addItem()">
+        <select id="new-unit" style="width:90px;">
+          <option value="pt">pt</option>
+          <option value="lámina">lámina</option>
+          <option value="m²">m²</option>
+          <option value="pieza">pieza</option>
+        </select>
+        <input type="number" id="new-price" placeholder="$ Precio est." min="0" step="1" style="width:110px; text-align:right;">
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
     }
   }
 
@@ -414,6 +430,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
           <input class="item-inp" value="${escHtml(item.name||'')}" placeholder="Nombre" onchange="updateItem(${i}, this.value, 'name')" onblur="updateItem(${i}, this.value, 'name')">
           <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
         </div>`).join('');
+    } else if (currentDef.type === 'woodcat') {
+      container.innerHTML = `
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+          <span style="flex:2;">Tipo de Madera</span>
+          <span style="width:80px;text-align:center;">Unidad</span>
+          <span style="width:100px;text-align:right;">$ Precio Est.</span>
+          <span style="width:32px;"></span>
+        </div>` +
+        items.map((item, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.nombre||'')}" placeholder="Nombre" style="flex:2;"
+            onchange="updateItem(${i}, this.value, 'nombre')" onblur="updateItem(${i}, this.value, 'nombre')">
+          <select class="item-sel" style="width:80px;" onchange="updateItem(${i}, this.value, 'unidad')">
+            ${['pt','lámina','m²','pieza'].map(u=>`<option value="${u}"${item.unidad===u?' selected':''}>${u}</option>`).join('')}
+          </select>
+          <input class="item-inp" value="${item.precioEst||0}" type="number" min="0" step="1"
+            style="width:100px;text-align:right;font-weight:700;"
+            onchange="updateItem(${i}, this.value, 'precioEst')" onblur="updateItem(${i}, this.value, 'precioEst')">
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
     }
   }
 
@@ -445,6 +481,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       const id = 'pt-' + Date.now().toString(36);
       STATE[currentDef.key].push({ id, code, name: val });
       await saveItem({ id, code, name: val });
+    } else if (currentDef.type === 'woodcat') {
+      const unidad    = document.getElementById('new-unit')?.value || 'pt';
+      const precioEst = parseFloat(document.getElementById('new-price')?.value) || 0;
+      const id = 'wc-' + Date.now().toString(36);
+      const entry = { id, nombre: val, unidad, precioEst, notas: '' };
+      STATE[currentDef.key].push(entry);
+      await saveItem(entry);
+      const priceEl = document.getElementById('new-price');
+      if (priceEl) priceEl.value = '';
     }
 
     document.getElementById('new-val').value = '';
@@ -463,7 +508,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       STATE[currentDef.key][idx][field] = newVal;
       await saveCatList();
     } else if (field) {
-      STATE[currentDef.key][idx][field] = newVal;
+      if (currentDef.type === 'woodcat' && field === 'precioEst') {
+        STATE[currentDef.key][idx][field] = parseFloat(newVal) || 0;
+      } else {
+        STATE[currentDef.key][idx][field] = newVal;
+      }
       if (currentDef.type === 'piece' && field === 'name') STATE[currentDef.key][idx].code = autoCode(newVal);
       await saveItem(STATE[currentDef.key][idx]);
     }
@@ -472,7 +521,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   async function deleteItem(idx) {
     const items = STATE[currentDef.key];
     const item  = items[idx];
-    const label = typeof item === 'string' ? item : (item.name || item.id);
+    const label = typeof item === 'string' ? item : (item.nombre || item.name || item.id);
     if (!confirm(`¿Eliminar "${label}"?`)) return;
 
     if (currentDef.type === 'list') {

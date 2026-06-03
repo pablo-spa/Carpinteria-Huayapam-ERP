@@ -264,7 +264,9 @@ input.mat-price { text-align: right; font-size: 12px; }
   <div class="footer-inner">
     <div>
       <div class="ft-label">Márgenes y Fórmula Global</div>
-      <div class="ft-formula-row"><span>Materiales netos + Herramienta (8%)</span><span id="f-sub1">—</span></div>
+      <div class="ft-formula-row"><span>Materiales</span><span id="f-mats">—</span></div>
+      <div class="ft-formula-row"><span style="color:var(--amber);">Madera cotizada</span><span id="f-wood">—</span></div>
+      <div class="ft-formula-row"><span>Insumos + herramienta (8%)</span><span id="f-sub1">—</span></div>
       <div class="ft-formula-row"><span>Mano de obra indirecta</span><span id="f-labor">—</span></div>
       <div class="ft-formula-row"><span id="f-overhead-label">Overhead Taller ($0/hr)</span><span id="f-overhead">—</span></div>
       <div class="ft-formula-row"><span>Márgenes (Ext+Util+Err)</span><span id="f-margins">—</span></div>
@@ -354,6 +356,7 @@ input.mat-price { text-align: right; font-size: 12px; }
 let RATES = { maestroA:105, maestroB:98, oficialA:84, aprendiz:60, barniz:90, pulido:58, empaque:65, chofer:70 };
 const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Oficial A', aprendiz:'Aprendiz', barniz:'Barniz', pulido:'Pulido', empaque:'Empaque', chofer:'Chofer' };
 let OVERHEAD = 0, TOOL = 0.08;
+let WOOD_CATALOG = []; // { id, nombre, unidad, precioEst, notas }
 
 let EXTRAS = 0.07, MARGIN = 0.20, ERROR = 0.07, TAX = 0.16, COMMISSION = 0;
 
@@ -437,8 +440,9 @@ function simulateAI() {
 function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
 function calc(piece) {
-  const matTotal = piece.mats.reduce((s,m) => s + (m.qty||0)*m.p, 0);
-  const sub1 = matTotal * (1+TOOL);
+  const matTotal  = (piece.mats||[]).reduce((s,m) => s + (m.qty||0)*m.p, 0);
+  const woodTotal = (piece.woodRows||[]).reduce((s,w) => s + (w.qty||0)*(w.precio||0), 0);
+  const sub1 = (matTotal + woodTotal) * (1+TOOL); // materiales + madera + herramienta 8%
   const hrRows = piece.hrRows || [];
   const totalHrs = hrRows.reduce((s,r) => s+(r.hrs||0), 0);
   const labor = hrRows.reduce((s,r) => s+(r.hrs||0)*(RATES[r.role]||0), 0);
@@ -449,7 +453,7 @@ function calc(piece) {
   const tax = total * TAX;
   const fee = total * COMMISSION;
   const final = Math.round((total+Math.round(tax)+fee)/50)*50;
-  return { matTotal, sub1, labor, totalHrs, oh, sub3, ex, mg, er, total, tax, fee, final };
+  return { matTotal, woodTotal, sub1, labor, totalHrs, oh, sub3, ex, mg, er, total, tax, fee, final };
 }
 
 function setImage(id, input) {
@@ -482,7 +486,50 @@ function removeImage(id) {
 function setDesc(id, val) {
   const p = S.pieces.find(p => p.id === id);
   if (p) p.descripcion = val;
-  // No re-render para no perder el foco del textarea
+}
+
+// ── Madera ──────────────────────────────────────────────────────────────────
+function addWoodRow(id) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  if (!p.woodRows) p.woodRows = [];
+  const cat = WOOD_CATALOG[0] || { id: '', nombre: '', unidad: 'pt', precioEst: 0 };
+  p.woodRows.push({ catalog_id: cat.id, nombre: cat.nombre, unidad: cat.unidad, qty: 1, precio: cat.precioEst||0 });
+  render();
+}
+
+function delWoodRow(id, i) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.woodRows.splice(i, 1);
+  render();
+}
+
+function setWoodType(id, i, catId) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  const cat = WOOD_CATALOG.find(c => c.id === catId);
+  if (cat) {
+    p.woodRows[i].catalog_id = cat.id;
+    p.woodRows[i].nombre     = cat.nombre;
+    p.woodRows[i].unidad     = cat.unidad;
+    p.woodRows[i].precio     = cat.precioEst || p.woodRows[i].precio || 0;
+  }
+  updatePiece(id);
+}
+
+function setWoodQty(id, i, v) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.woodRows[i].qty = parseFloat(v)||0;
+  updatePiece(id);
+}
+
+function setWoodPrice(id, i, v) {
+  const p = S.pieces.find(p => p.id === id);
+  if (!p) return;
+  p.woodRows[i].precio = parseFloat(v)||0;
+  updatePiece(id);
 }
 
 function addPiece() {
@@ -497,13 +544,14 @@ function addPiece() {
 
   S.typeCounts[code] = (S.typeCounts[code]||0) + 1;
   const piece = {
-    id:   S.nextId++,
-    code: code + S.typeCounts[code],
-    name: customName || typeName,
+    id:       S.nextId++,
+    code:     code + S.typeCounts[code],
+    name:     customName || typeName,
     qty,
-    mats:    [],
-    hrRows:  [],
-    open:    true,
+    mats:     [],
+    woodRows: [],
+    hrRows:   [],
+    open:     true,
   };
   S.pieces.push(piece);
   sel.value      = '';
@@ -616,6 +664,13 @@ function updatePiece(id) {
     if (unitEl) unitEl.textContent = m.u || '';
     if (prEl && document.activeElement !== prEl) prEl.value = m.p || 0;
   }
+  for (let i=0; i<(p.woodRows||[]).length; i++) {
+    const w = p.woodRows[i];
+    const st    = document.getElementById('woodst-'   + id + '-' + i);
+    const prEl  = document.getElementById('woodprice-'+ id + '-' + i);
+    if (st)   st.textContent = fmt((w.qty||0) * (w.precio||0));
+    if (prEl && document.activeElement !== prEl) prEl.value = w.precio || 0;
+  }
   for (let i=0; i<(p.hrRows||[]).length; i++) {
     const r = p.hrRows[i];
     const st     = document.getElementById('hrst-'  + id + '-' + i);
@@ -627,9 +682,14 @@ function updatePiece(id) {
 }
 
 function brHtml(c) {
-  if (c.final === 0) return '<div class="br-empty">Agrega materiales u horas para calcular</div>';
+  if (c.final === 0) return '<div class="br-empty">Agrega materiales, madera u horas para calcular</div>';
+  const woodLine = c.woodTotal > 0
+    ? `<div class="br-row"><span style="color:var(--amber);">Madera cotizada: ${fmt(c.woodTotal)}</span></div>` : '';
+  const matLine = c.matTotal > 0
+    ? `<div class="br-row"><span>Materiales: ${fmt(c.matTotal)}</span></div>` : '';
   return `
-    <div class="br-row"><span>Materiales (${fmt(c.matTotal)}) + herramienta 8%</span><span>${fmt(c.sub1)}</span></div>
+    ${matLine}${woodLine}
+    <div class="br-row"><span>Insumos + herramienta 8%</span><span>${fmt(c.sub1)}</span></div>
     <div class="br-row"><span>Mano de obra (${c.totalHrs.toFixed(1)} hrs)</span><span>${fmt(c.labor)}</span></div>
     <div class="br-row"><span>Overhead (${c.totalHrs.toFixed(1)} hrs × $${OVERHEAD}/hr)</span><span>${fmt(c.oh)}</span></div>
     <div class="br-row sep"><span>Subtotal base</span><span>${fmt(c.sub3)}</span></div>
@@ -739,6 +799,31 @@ function renderPiece(piece) {
           <button class="add-mat-btn" onclick="addMat(${piece.id})">+ Agregar material</button>
         </div>
 
+        <div class="sub-hdr" style="margin-top:24px;">Madera</div>
+        <div class="table-wrap">
+          <div class="mat-cols">
+            <span class="mat-col-hdr">Tipo de Madera</span>
+            <span class="mat-col-hdr">Cant.</span>
+            <span class="mat-col-hdr">Unidad</span>
+            <span class="mat-col-hdr" style="text-align:right;">$/u</span>
+            <span class="mat-col-hdr" style="text-align:right;">Total</span>
+            <span></span>
+          </div>
+          ${(piece.woodRows||[]).map((w,i) => `
+            <div class="mat-row">
+              <select class="mat-name" onchange="setWoodType(${piece.id},${i},this.value)">
+                ${WOOD_CATALOG.map(c=>`<option value="${c.id}"${c.id===w.catalog_id?' selected':''}>${c.nombre}</option>`).join('')}
+                ${!WOOD_CATALOG.find(c=>c.id===w.catalog_id) && w.nombre ? `<option value="${w.catalog_id||''}" selected>${w.nombre}</option>` : ''}
+              </select>
+              <input class="mat-qty" type="number" value="${w.qty||1}" min="0" step="0.5" onchange="setWoodQty(${piece.id},${i},this.value)">
+              <span class="mat-unit">${w.unidad||'pt'}</span>
+              <input class="mat-price" id="woodprice-${piece.id}-${i}" type="number" value="${w.precio||0}" min="0" step="1" onchange="setWoodPrice(${piece.id},${i},this.value)" title="Precio por unidad">
+              <span class="mat-subtotal" id="woodst-${piece.id}-${i}">${fmt((w.qty||0)*(w.precio||0))}</span>
+              <button class="mat-del" onclick="delWoodRow(${piece.id},${i})">×</button>
+            </div>`).join('')}
+          <button class="add-mat-btn" onclick="addWoodRow(${piece.id})">+ Agregar madera</button>
+        </div>
+
         <div class="sub-hdr" style="margin-top:24px;">Mano de Obra</div>
         <div class="table-wrap">
           <div class="mat-cols">
@@ -785,11 +870,25 @@ function renderFooter() {
   const tot = S.pieces.reduce((acc,p) => {
     const c = calc(p);
     const q = p.qty || 1;
-    return { sub1:acc.sub1+c.sub1*q, labor:acc.labor+c.labor*q, oh:acc.oh+c.oh*q, margins:acc.margins+(c.ex+c.mg+c.er)*q, tax:acc.tax+c.tax*q, fee:acc.fee+c.fee*q, final:acc.final+c.final*q };
-  }, {sub1:0,labor:0,oh:0,margins:0,tax:0,fee:0,final:0});
+    return {
+      matTotal: acc.matTotal + c.matTotal*q,
+      woodTotal:acc.woodTotal+ c.woodTotal*q,
+      sub1:  acc.sub1  + c.sub1*q,
+      labor: acc.labor + c.labor*q,
+      oh:    acc.oh    + c.oh*q,
+      margins: acc.margins + (c.ex+c.mg+c.er)*q,
+      tax: acc.tax + c.tax*q,
+      fee: acc.fee + c.fee*q,
+      final: acc.final + c.final*q
+    };
+  }, {matTotal:0,woodTotal:0,sub1:0,labor:0,oh:0,margins:0,tax:0,fee:0,final:0});
 
   const lbl = document.getElementById('f-overhead-label');
   if (lbl) lbl.textContent = `Overhead Taller ($${OVERHEAD}/hr)`;
+  const elMats = document.getElementById('f-mats');
+  const elWood = document.getElementById('f-wood');
+  if (elMats) elMats.textContent = fmt(tot.matTotal);
+  if (elWood) elWood.textContent = fmt(tot.woodTotal);
   document.getElementById('f-sub1').textContent = fmt(tot.sub1);
   document.getElementById('f-labor').textContent = fmt(tot.labor);
   document.getElementById('f-overhead').textContent = fmt(tot.oh);
@@ -926,6 +1025,7 @@ function showPrintPreview(isClient) {
 
   /* — Agregar materiales (BOM × qty de cada pieza) — */
   const bomAgg = {};
+  const woodBomAgg = {};
   S.pieces.forEach(p => {
     const q = p.qty || 1;
     p.mats.forEach(m => {
@@ -933,7 +1033,20 @@ function showPrintPreview(isClient) {
       if (!bomAgg[k]) bomAgg[k] = { name: m.n||'', unit: m.u||'', qty: 0 };
       bomAgg[k].qty += (m.qty || 0) * q;
     });
+    (p.woodRows||[]).forEach(w => {
+      const k = (w.nombre||'') + '|' + (w.unidad||'');
+      if (!woodBomAgg[k]) woodBomAgg[k] = { name: w.nombre||'', unit: w.unidad||'pt', qty: 0 };
+      woodBomAgg[k].qty += (w.qty || 0) * q;
+    });
   });
+  const woodBomRows = Object.values(woodBomAgg)
+    .sort((a,b) => a.name.localeCompare(b.name))
+    .map(v => `<tr>
+      <td style="${tdW}font-weight:700;color:#444;">${v.name}</td>
+      <td style="${tdW}">${v.unit}</td>
+      <td style="${tdWR}font-weight:700;">${v.qty % 1 === 0 ? v.qty : v.qty.toFixed(2)}</td>
+      <td style="${tdW}"></td>
+    </tr>`).join('');
   const bomRows = Object.values(bomAgg)
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(v => `<tr>
@@ -949,6 +1062,13 @@ function showPrintPreview(isClient) {
       <td style="${tdW}">${m.n||'—'}</td>
       <td style="${tdW}color:#444;">${m.u||''}</td>
       <td style="${tdWR}font-weight:600;">${(m.qty||0) % 1 === 0 ? m.qty : (m.qty||0).toFixed(2)}</td>
+      <td style="${tdW}"></td>
+    </tr>`).join('');
+
+    const wdRows = (p.woodRows||[]).map(w => `<tr>
+      <td style="${tdW}">${w.nombre||'—'}</td>
+      <td style="${tdW}color:#444;">${w.unidad||'pt'}</td>
+      <td style="${tdWR}font-weight:600;">${(w.qty||0) % 1 === 0 ? w.qty : (w.qty||0).toFixed(2)}</td>
       <td style="${tdW}"></td>
     </tr>`).join('');
 
@@ -974,6 +1094,20 @@ function showPrintPreview(isClient) {
           ${imgHtml}
           ${!p.descripcion && !p.imagen ? `<span style="font-size:10px;color:#aaa;">Sin descripción ni imagen</span>` : ''}
         </div>
+        ${(p.woodRows||[]).length ? `
+        <!-- Madera -->
+        <div style="padding:0;">
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;padding:4px 12px;border-bottom:1px solid #ddd;color:#444;letter-spacing:.05em;">Madera</div>
+          <table style="${tblCss}">
+            <thead><tr>
+              <th style="${thW}">Tipo de Madera</th>
+              <th style="${thW}">Unidad</th>
+              <th style="${thWR}">Cant.</th>
+              <th style="${thW}">Notas</th>
+            </tr></thead>
+            <tbody>${wdRows}</tbody>
+          </table>
+        </div>` : ''}
         ${p.mats.length ? `
         <!-- Materiales -->
         <div style="padding:0;">
@@ -1028,8 +1162,22 @@ function showPrintPreview(isClient) {
     ${secT(`Detalle por Pieza`)}
     ${pieceCards}
 
+    ${Object.keys(woodBomAgg).length ? `
+    <!-- BOM MADERA -->
+    ${secT('Madera — Totales')}
+    <table style="${tblCss}">
+      <thead><tr>
+        <th style="${thW}">Tipo de Madera</th>
+        <th style="${thW}">Unidad</th>
+        <th style="${thWR}">Cantidad Total</th>
+        <th style="${thW}">Notas / Verificado</th>
+      </tr></thead>
+      <tbody>${woodBomRows}</tbody>
+    </table>` : ''}
+
     <!-- BOM MATERIALES -->
-    ${secT('Lista de Materiales — Totales')}
+    ${Object.keys(bomAgg).length ? `
+    ${secT('Materiales — Totales')}
     <table style="${tblCss}">
       <thead><tr>
         <th style="${thW}">Material</th>
@@ -1038,7 +1186,7 @@ function showPrintPreview(isClient) {
         <th style="${thW}">Notas / Verificado</th>
       </tr></thead>
       <tbody>${bomRows}</tbody>
-    </table>
+    </table>` : ''}
 
     <!-- MANO DE OBRA RESUMEN -->
     ${secT('Resumen de Mano de Obra')}
@@ -1095,6 +1243,11 @@ async function loadOptions() {
   const activeProjs = await window.DB.query("projects");
   const inventoryDb = await window.DB.query("inventory");
   const dbPieceTypes = await window.DB.query("piece_types");
+  const woodCatDb   = await window.DB.query("wood_price_catalog");
+  if (woodCatDb && woodCatDb.length > 0) {
+    WOOD_CATALOG = woodCatDb.filter(w => w.nombre && !w._init)
+      .sort((a, b) => (a.nombre||'').localeCompare(b.nombre||''));
+  }
   
   const validPieceTypes = dbPieceTypes.filter(pt => pt.name && !pt._init);
   if (validPieceTypes.length > 0) {
@@ -1259,7 +1412,8 @@ function processURLParams() {
       S.pieces = JSON.parse(JSON.stringify(loadQ.pieces));
       S.pieces.forEach(p => {
         p.open = false;
-        if (!p.hrRows) p.hrRows = hrsToRows(p.hrs || {});
+        if (!p.hrRows)   p.hrRows   = hrsToRows(p.hrs || {});
+        if (!p.woodRows) p.woodRows = [];
       });
     }
     
