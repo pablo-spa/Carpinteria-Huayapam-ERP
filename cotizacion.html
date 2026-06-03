@@ -539,12 +539,20 @@ function updatePiece(id) {
   const brEl = document.getElementById('br-'+id);
   if (brEl) brEl.innerHTML = brHtml(c);
   for (let i=0; i<p.mats.length; i++) {
-    const st = document.getElementById('mst-'+id+'-'+i);
-    if (st) st.textContent = fmt((p.mats[i].qty||0)*p.mats[i].p);
+    const m = p.mats[i];
+    const st    = document.getElementById('mst-'  + id + '-' + i);
+    const unitEl= document.getElementById('munit-'+ id + '-' + i);
+    const prEl  = document.getElementById('mprice-'+ id + '-' + i);
+    if (st)     st.textContent = fmt((m.qty||0) * m.p);
+    if (unitEl) unitEl.textContent = m.u || '';
+    if (prEl && document.activeElement !== prEl) prEl.value = m.p || 0;
   }
   for (let i=0; i<(p.hrRows||[]).length; i++) {
-    const st = document.getElementById('hrst-'+id+'-'+i);
-    if (st) st.textContent = fmt((p.hrRows[i].hrs||0)*(RATES[p.hrRows[i].role]||0));
+    const r = p.hrRows[i];
+    const st     = document.getElementById('hrst-'  + id + '-' + i);
+    const rateEl = document.getElementById('hrrate-'+ id + '-' + i);
+    if (st)     st.textContent = fmt((r.hrs||0) * (RATES[r.role]||0));
+    if (rateEl) rateEl.textContent = '$' + (RATES[r.role] || 0);
   }
   renderFooter();
 }
@@ -588,8 +596,8 @@ function renderPiece(piece) {
         ${MATS.map(mt=>`<option value="${mt.n}"${mt.n===m.n?' selected':''}>${mt.n}</option>`).join('')}
       </select>
       <input class="mat-qty" type="number" value="${m.qty}" min="0" step="0.25" onchange="setMatQty(${piece.id},${i},this.value)">
-      <span class="mat-unit">${m.u}</span>
-      <input class="mat-price" type="number" value="${m.p}" min="0" step="0.01" onchange="setMatPrice(${piece.id},${i},this.value)" title="Precio por unidad">
+      <span class="mat-unit" id="munit-${piece.id}-${i}">${m.u}</span>
+      <input class="mat-price" id="mprice-${piece.id}-${i}" type="number" value="${m.p}" min="0" step="0.01" onchange="setMatPrice(${piece.id},${i},this.value)" title="Precio por unidad">
       <span class="mat-subtotal" id="mst-${piece.id}-${i}">${fmt((m.qty||0)*m.p)}</span>
       <button class="mat-del" onclick="delMat(${piece.id},${i})">×</button>
     </div>`).join('');
@@ -601,7 +609,7 @@ function renderPiece(piece) {
       </select>
       <input class="mat-qty" type="number" value="${r.hrs||''}" min="0" step="0.5" placeholder="0" oninput="setHrHrs(${piece.id},${i},this.value)">
       <span class="mat-unit">hrs</span>
-      <span class="mat-unit" style="font-weight:700;color:var(--text);">$${RATES[r.role]||0}</span>
+      <span class="mat-unit" id="hrrate-${piece.id}-${i}" style="font-weight:700;color:var(--text);">$${RATES[r.role]||0}</span>
       <span class="mat-subtotal" id="hrst-${piece.id}-${i}">${fmt((r.hrs||0)*(RATES[r.role]||0))}</span>
       <button class="mat-del" onclick="delHrRow(${piece.id},${i})">×</button>
     </div>`).join('');

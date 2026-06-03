@@ -236,12 +236,16 @@ const SearchableSelect = (() => {
       select.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    function open() {
-      if (trigger.disabled) return;
+    function reposition() {
       const rect = trigger.getBoundingClientRect();
       dropdown.style.top   = (rect.bottom + 4) + 'px';
       dropdown.style.left  = rect.left + 'px';
       dropdown.style.width = rect.width + 'px';
+    }
+
+    function open() {
+      if (trigger.disabled) return;
+      reposition();
       renderList('');
       searchInput.value = '';
       dropdown.classList.add('open');
@@ -254,6 +258,11 @@ const SearchableSelect = (() => {
       arrow.textContent = '▼';
       focusedIdx = -1;
     }
+
+    // Mantener dropdown alineado al hacer scroll (position:fixed no sigue al elemento)
+    document.addEventListener('scroll', () => {
+      if (dropdown.classList.contains('open')) reposition();
+    }, { passive: true, capture: true });
 
     function moveFocus(delta) {
       const items = list.querySelectorAll('.ss-opt');
