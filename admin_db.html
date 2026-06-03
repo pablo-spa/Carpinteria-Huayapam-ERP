@@ -87,35 +87,46 @@
   });
   
   const db = window.parent.db;
-  const state = window.parent.DB_STATE || {};
+  // Usa referencia directa a DB_STATE (no snapshot) para ver datos actualizados
+  function getState() { return window.parent.DB_STATE || {}; }
   let currentTable = null;
+
+  const KNOWN_COLLECTIONS = ['contacts', 'inventory', 'projects', 'quotations', 'orders', 'purchase_orders', 'accounting_movements', 'settings', 'workers', 'users', 'attendance', 'attendance_logs', 'worker_loans', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'wood', 'expense_categories', 'production_logs', 'systemEvents', 'piece_types', 'concept_categories', 'concept_units', 'inventory_brands', 'inventory_locations', 'bank_accounts', 'wood_types', 'wood_formats', 'wood_quality', 'wood_locations', 'actividades_trabajo', 'worker_roles', 'viatico_categories', 'account_balances'];
 
   function renderTables() {
     const list = document.getElementById('table-list');
-    const collectionsToLoad = ['workers', 'contacts', 'inventory', 'projects', 'project_phases', 'quotations', 'pieces', 'orders', 'production_logs', 'payroll_weeks', 'payroll_lines', 'worker_loans', 'worker_loan_payments', 'attendance', 'expense_categories', 'purchase_orders', 'purchase_order_lines', 'lumber_batches', 'lumber_boards', 'material_requests', 'suppliers', 'project_worker_hours', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'notifications', 'accounting_movements', 'settings', 'systemEvents', 'wood', 'users'];
-    
-    list.innerHTML = collectionsToLoad.map(k => {
-      const arr = state[k] || [];
+    const state = getState();
+    list.innerHTML = KNOWN_COLLECTIONS.map(k => {
+      const arr = state[k];
+      const n = arr === undefined ? '?' : arr.length;
       return `
       <div class="table-item${currentTable===k?' act':''}" onclick="selectTable('${k}')">
         <span>${k}</span>
-        <span class="badge">${arr.length}</span>
+        <span class="badge" style="${arr===undefined?'color:var(--amber)':''}">${n}</span>
       </div>
     `}).join('');
   }
 
-  window.selectTable = function(t) {
+  window.selectTable = async function(t) {
     currentTable = t;
+
+    // Cargar si aún no está en DB_STATE
+    const state = getState();
+    if (state[t] === undefined && window.parent.cargar_coleccion) {
+      document.getElementById('t-count').textContent = 'Cargando…';
+      await window.parent.cargar_coleccion(t);
+    }
+
     renderTables();
     document.getElementById('no-sel').style.display = 'none';
     document.getElementById('sel-view').style.display = 'flex';
-    
+
     document.getElementById('t-name').textContent = t;
-    const records = state[t] || [];
+    const records = getState()[t] || [];
     document.getElementById('t-count').textContent = `${records.length} registros`;
 
     const cols = new Set();
-    records.forEach(r => {
+    (records || []).forEach(r => {
       if (r !== null && typeof r === 'object') {
         Object.keys(r).forEach(k => cols.add(k));
       } else {
@@ -138,14 +149,14 @@
       if(!confirm("¿Estás seguro de ELIMINAR TODOS los registros de: " + currentTable + "? Esto es irreversible.")) return;
 
       try {
-          const records = state[currentTable] || [];
+          const records = getState()[currentTable] || [];
           for (const raw of records) {
               const id = raw.id || raw._id;
               if (id) {
                   await deleteDoc(doc(db, currentTable, id));
               }
           }
-          state[currentTable] = [];
+          if (window.parent.DB_STATE) window.parent.DB_STATE[currentTable] = [];
           toast('✓ Colección vaciada correctamente.');
           renderTables();
           selectTable(currentTable);

@@ -197,14 +197,39 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 16px;
-    padding: 40px;
+    padding: 32px 40px 60px;
+    overflow-y: auto;
   }
-  .welcome-icon { font-size: 48px; margin-bottom: 8px; }
+  .welcome-top { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 32px; }
+  .welcome-icon { font-size: 48px; }
   #welcome h1 { font-size: 24px; color: var(--text); font-weight: 700; margin: 0; }
-  #welcome p  { font-size: 14px; color: var(--subtext); max-width: 440px; text-align: center; line-height: 1.6; margin: 0 0 24px; }
-  
+  #welcome p  { font-size: 14px; color: var(--subtext); max-width: 440px; text-align: center; line-height: 1.6; margin: 0 0 8px; }
+
+  /* Notifications panel */
+  #welcome-alerts {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 640px;
+  }
+  #welcome-alerts-title {
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--subtext); margin-bottom: 2px;
+  }
+  .w-alert {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--mantle); border: 1px solid var(--crust);
+    border-radius: 8px; padding: 10px 14px;
+    cursor: pointer; transition: background .12s;
+  }
+  .w-alert:hover { background: var(--surface0); }
+  .w-alert-icon { font-size: 18px; flex-shrink: 0; }
+  .w-alert-label { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .w-alert-arrow { font-size: 11px; color: var(--subtext); }
+
   .module-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -330,39 +355,49 @@
     
     <!-- Welcome -->
     <div id="welcome">
-      <div class="welcome-icon">🪵</div>
-      <h1>Carpintería Huayapam</h1>
-      <p>Selecciona un módulo en el menú lateral o desde los accesos rápidos para comenzar a trabajar.</p>
-      
+      <div class="welcome-top">
+        <div class="welcome-icon">🪵</div>
+        <h1>Carpintería Huayapam</h1>
+        <p>Selecciona un módulo en el menú lateral o desde los accesos rápidos.</p>
+      </div>
+
+      <!-- Notificaciones por rol (se llenan desde JS) -->
+      <div id="welcome-alerts">
+        <div id="welcome-alerts-title">Pendientes</div>
+      </div>
+
       <div class="module-grid">
         <div class="module-card" onclick="openModule('produccion_diaria.html','Registro del Día')">
           <div class="mc-icon">🔨</div>
-          <div class="mc-text"><strong>Trabajos del Día</strong><span>Registro de asistencia y horas.</span></div>
+          <div class="mc-text"><strong>Trabajos del Día</strong><span>Asistencia, horas y actividades del día.</span></div>
         </div>
         <div class="module-card" onclick="openModule('cotizacion.html','Nueva Cotización')">
           <div class="mc-icon">📋</div>
-          <div class="mc-text"><strong>Cotización</strong><span>Generación de presupuestos con IA.</span></div>
+          <div class="mc-text"><strong>Cotización</strong><span>Presupuestos con desglose de materiales y mano de obra.</span></div>
         </div>
         <div class="module-card" onclick="openModule('finanzas.html','Contabilidad / Movimientos')">
           <div class="mc-icon">💰</div>
-          <div class="mc-text"><strong>Contabilidad</strong><span>Libro mayor y categorización IA.</span></div>
+          <div class="mc-text"><strong>Contabilidad</strong><span>Libro mayor, ingresos, gastos y transferencias.</span></div>
         </div>
         <div class="module-card" onclick="openModule('proyectos.html','Proyectos Activos')">
           <div class="mc-icon">📁</div>
-          <div class="mc-text"><strong>Proyectos</strong><span>Seguimiento y cronogramas.</span></div>
+          <div class="mc-text"><strong>Proyectos</strong><span>Seguimiento de obras y cronogramas.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('contactos.html','Directorio CRM')">
-          <div class="mc-icon">👥</div>
-          <div class="mc-text"><strong>Contactos CRM</strong><span>Directorio de clientes y proveedores.</span></div>
+        <div class="module-card" onclick="openModule('almacen_inventario.html','Inventario General')">
+          <div class="mc-icon">📦</div>
+          <div class="mc-text"><strong>Inventario</strong><span>Control de stock, insumos y herramientas.</span></div>
         </div>
-
         <div class="module-card" onclick="openModule('control_madera.html','Almacén de Madera')">
-          <div class="mc-icon">🌲</div>
-          <div class="mc-text"><strong>Almacén de Madera</strong><span>Inventario por pieza individual.</span></div>
+          <div class="mc-icon">🪵</div>
+          <div class="mc-text"><strong>Almacén de Madera</strong><span>Catálogo de tablas por pieza individual.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('ingreso_madera.html','Escanear Madera')">
-          <div class="mc-icon">📟</div>
-          <div class="mc-text"><strong>Escanear Madera</strong><span>Ingreso de tablas al inventario.</span></div>
+        <div class="module-card" onclick="openModule('rq_compras.html','Compras')">
+          <div class="mc-icon">🛒</div>
+          <div class="mc-text"><strong>Compras</strong><span>Órdenes de compra, proveedores y precios.</span></div>
+        </div>
+        <div class="module-card" onclick="openModule('nomina_semanal.html','Nómina Semanal')">
+          <div class="mc-icon">💵</div>
+          <div class="mc-text"><strong>Nómina</strong><span>Cálculo de pagos semanales al personal.</span></div>
         </div>
       </div>
     </div>
@@ -870,6 +905,68 @@
     document.getElementById('welcome').style.display = 'flex';
     document.getElementById('frame-wrapper').style.display = 'none';
   }
+
+  async function renderWelcomeNotifications() {
+    const role = window.CURRENT_USER_ROLE || 'ninguno';
+    const cont = document.getElementById('welcome-alerts');
+    const title = document.getElementById('welcome-alerts-title');
+    if (!cont) return;
+
+    // Cargar purchase_orders bajo demanda si no está en estado
+    if (window.cargar_coleccion && window.DB_STATE && window.DB_STATE.purchase_orders === undefined) {
+      await window.cargar_coleccion('purchase_orders');
+    }
+
+    const orders = (window.DB_STATE?.purchase_orders || []).filter(o => o.id && !o._init);
+    const alerts = [];
+
+    // Por rol: qué notificaciones son relevantes
+    const esAdmin     = ['programador','admin','gerencia'].includes(role);
+    const esCompras   = ['programador','admin','compras'].includes(role);
+    const esAlmacen   = ['programador','admin','almacen','compras'].includes(role);
+    const esOperacion = ['programador','admin','gerencia','produccion'].includes(role);
+    const esFinanzas  = ['programador','admin','gerencia','contador'].includes(role);
+    const esNomina    = ['programador','admin','contador'].includes(role);
+
+    // Pedidos esperando confirmación de operaciones
+    const nConfirmar = orders.filter(o => o.status === 'Pedido' || o.status === 'Solicitado').length;
+    if (esOperacion && nConfirmar > 0)
+      alerts.push({ icon:'📋', color:'var(--blue)', label: `${nConfirmar} pedido${nConfirmar>1?'s':''} esperando confirmación`, file:'rq_operaciones.html', mod:'Confirmar Pedidos' });
+
+    // Pedidos confirmados esperando autorización de admin
+    const nAutorizar = orders.filter(o => o.status === 'Confirmado').length;
+    if (esAdmin && nAutorizar > 0)
+      alerts.push({ icon:'🛡️', color:'var(--amber)', label: `${nAutorizar} pedido${nAutorizar>1?'s':''} esperando autorización`, file:'rq_admin_aprobacion.html', mod:'Autorizar Pedidos' });
+
+    // Pedidos autorizados listos para comprar
+    const nComprar = orders.filter(o => o.status === 'Autorizado').length;
+    if (esCompras && nComprar > 0)
+      alerts.push({ icon:'🛒', color:'var(--green)', label: `${nComprar} orden${nComprar>1?'es':''} lista${nComprar>1?'s':''} para comprar`, file:'rq_compras.html', mod:'Panel de Compras' });
+
+    // Compras pendientes de recibir en almacén
+    const nRecibir = orders.filter(o => o.status === 'Comprado').length;
+    if (esAlmacen && nRecibir > 0)
+      alerts.push({ icon:'📦', color:'var(--blue)', label: `${nRecibir} compra${nRecibir>1?'s':''} pendiente${nRecibir>1?'s':''} de recibir`, file:'rq_recepcion.html', mod:'Recepción de Material' });
+
+    // Viernes → recordatorio de nómina
+    if (esNomina && new Date().getDay() === 5)
+      alerts.push({ icon:'💵', color:'var(--green)', label: 'Hoy es viernes — calcular nómina semanal', file:'nomina_semanal.html', mod:'Nómina Semanal' });
+
+    if (alerts.length === 0) {
+      cont.style.display = 'none';
+      return;
+    }
+
+    title.textContent = 'Pendientes';
+    cont.style.display = 'flex';
+    const html = alerts.map(a => `
+      <div class="w-alert" style="border-left-color:${a.color};" onclick="openModule('${a.file}','${a.mod}')">
+        <span class="w-alert-icon">${a.icon}</span>
+        <span class="w-alert-label">${a.label}</span>
+        <span class="w-alert-arrow">→</span>
+      </div>`).join('');
+    cont.innerHTML = `<div id="welcome-alerts-title">Pendientes</div>${html}`;
+  }
   </script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
@@ -1049,6 +1146,7 @@
         
         // Render menu after state completes
         loadMenu();
+        renderWelcomeNotifications();
       } else {
         window.CURRENT_USER = null;
         document.getElementById("login-screen").style.display = "flex";
