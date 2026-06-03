@@ -63,7 +63,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    border-radius: var(--radius);
+    transition: background .15s;
   }
+  .sidebar-header:hover { background: var(--surface0); }
   .logo-icon {
     width: 32px; height: 32px;
     background: var(--surface0);
@@ -329,7 +332,7 @@
   </div>
   <!-- SIDEBAR -->
   <aside>
-    <div class="sidebar-header">
+    <div class="sidebar-header" onclick="goHome()" style="cursor:pointer;" title="Ir al inicio">
       <div class="logo-icon">🪵</div>
       <div class="logo-text">
         <strong>Carpintería Huayapam</strong>
