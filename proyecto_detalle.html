@@ -541,8 +541,11 @@
           </div>
           <div style="font-size:12px; color:var(--subtext); margin-bottom:8px;">${q.date} &nbsp;|&nbsp; ${fmt(q.total||0)}</div>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="openPDFQuote('${q.id}')">PDF</button>
-            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reviseQuote('${q.id}')">Revisar / Copiar</button>
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="openPDFQuote('${q.id}')">Ver PDF</button>
+            ${q.status === 'Activa'
+              ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--amber);" onclick="openEditQuote('${q.id}')">Editar (nueva versión)</button>`
+              : `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--blue);" onclick="openEditQuote('${q.id}')">Editar</button>`
+            }
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="deleteQuote('${q.id}', '${label}')">Eliminar</button>
           </div>
         </div>`;
@@ -554,15 +557,15 @@
       else window.location.href = 'cotizacion.html?viewId=' + qId;
     }
 
+    function openEditQuote(qId) {
+      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?editId=' + qId, 'Editar Cotización');
+      else window.location.href = 'cotizacion.html?editId=' + qId;
+    }
+
     function newQuote() {
       if (!projId) { alert('Primero guarda el proyecto.'); return; }
       if (window.parent?.openModule) window.parent.openModule('cotizacion.html?projectId=' + projId, 'Nueva Cotización');
       else window.location.href = 'cotizacion.html?projectId=' + projId;
-    }
-    function reviseQuote(qId) {
-      if (!projId) return;
-      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?projectId=' + projId + '&cloneQuoteId=' + qId, 'Nueva Cotización');
-      else window.location.href = 'cotizacion.html?projectId=' + projId + '&cloneQuoteId=' + qId;
     }
 
     function changeQuoteStatus(qId, newStatus) {
@@ -570,6 +573,16 @@
       const quotes = d.quotations || [];
       const idx = quotes.findIndex(q => q.id === qId);
       if (idx < 0) return;
+
+      // Confirmar activación/aprobación
+      if (newStatus === 'Activa') {
+        const label = quotes[idx].folio || qId.slice(0,8);
+        if (!confirm(`¿Aprobar la cotización "${label}"?\n\nUna vez activa, solo se podrá editar creando una nueva versión.`)) {
+          // Revertir el select visualmente
+          renderQuotes(); return;
+        }
+      }
+
       quotes[idx].status = newStatus;
 
       // Sincronizar en DB_STATE directamente

@@ -188,7 +188,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Marca</label>
-        <select id="m-brand" class="modal-input" onchange="autoGenCode()"></select>
+        <select id="m-brand" class="modal-input" data-searchable onchange="autoGenCode()"></select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Ubicación</label>
@@ -247,6 +247,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   </div>
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
   let currentFilter = 'all';
@@ -426,9 +427,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     // ── Modal selects ────────────────────────────────────────────────
     document.getElementById('m-cat').innerHTML = catNames.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('m-brand').innerHTML =
+    const brandSel = document.getElementById('m-brand');
+    brandSel.innerHTML =
       '<option value="">— Sin marca (000) —</option>' +
       STATE_BRANDS.map(b => `<option value="${b.id}">${b.brandCode} — ${b.name}</option>`).join('');
+    if (brandSel._ssInit) brandSel._ssRefresh(); else SearchableSelect.init(brandSel);
     document.getElementById('m-unit').innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
     document.getElementById('m-loc').innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
     document.getElementById('m-assigned').innerHTML = '<option value="">— Sin asignar —</option>' +

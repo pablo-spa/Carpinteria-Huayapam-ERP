@@ -193,9 +193,10 @@ input.mat-price { text-align: right; font-size: 12px; }
   <div class="hdr-row1">
     <div class="hdr-brand">Nueva Cotización</div>
     <div style="flex:1;"></div>
+    <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
     <button class="btn btn-dark" onclick="showPrintPreview(true)" style="padding:6px 12px; font-size:12px;">🖨 PDF Cliente</button>
     <button class="btn btn-dark" onclick="showPrintPreview(false)" style="padding:6px 12px; font-size:12px;">🖨 PDF Taller</button>
-    <button class="btn btn-green" onclick="saveQuoteToProject()" style="padding:6px 14px; font-size:12px;">Aprobar ↗</button>
+    <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()" style="padding:6px 14px; font-size:12px;">Aprobar ↗</button>
   </div>
   <div class="hdr-row2">
     <select class="hdr-select" id="clientInput" data-searchable style="flex:1;"></select>
@@ -357,6 +358,9 @@ let RATES = { maestroA:105, maestroB:98, oficialA:84, aprendiz:60, barniz:90, pu
 const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Oficial A', aprendiz:'Aprendiz', barniz:'Barniz', pulido:'Pulido', empaque:'Empaque', chofer:'Chofer' };
 let OVERHEAD = 0, TOOL = 0.08;
 let WOOD_CATALOG = []; // { id, nombre, unidad, precioEst, notas }
+
+// Modo de edición: si se abre con ?editId=xxx, editamos la cotización existente
+let EDIT_STATE = { id: null, folio: null, originalStatus: null };
 
 let EXTRAS = 0.07, MARGIN = 0.20, ERROR = 0.07, TAX = 0.16, COMMISSION = 0;
 
@@ -666,10 +670,12 @@ function updatePiece(id) {
   }
   for (let i=0; i<(p.woodRows||[]).length; i++) {
     const w = p.woodRows[i];
-    const st    = document.getElementById('woodst-'   + id + '-' + i);
-    const prEl  = document.getElementById('woodprice-'+ id + '-' + i);
+    const st     = document.getElementById('woodst-'   + id + '-' + i);
+    const prEl   = document.getElementById('woodprice-'+ id + '-' + i);
+    const unitEl = document.getElementById('woodunit-' + id + '-' + i);
     if (st)   st.textContent = fmt((w.qty||0) * (w.precio||0));
-    if (prEl && document.activeElement !== prEl) prEl.value = w.precio || 0;
+    if (prEl  && document.activeElement !== prEl) prEl.value = w.precio || 0;
+    if (unitEl) unitEl.textContent = w.unidad || 'pt';
   }
   for (let i=0; i<(p.hrRows||[]).length; i++) {
     const r = p.hrRows[i];
@@ -816,7 +822,7 @@ function renderPiece(piece) {
                 ${!WOOD_CATALOG.find(c=>c.id===w.catalog_id) && w.nombre ? `<option value="${w.catalog_id||''}" selected>${w.nombre}</option>` : ''}
               </select>
               <input class="mat-qty" type="number" value="${w.qty||1}" min="0" step="0.5" onchange="setWoodQty(${piece.id},${i},this.value)">
-              <span class="mat-unit">${w.unidad||'pt'}</span>
+              <span class="mat-unit" id="woodunit-${piece.id}-${i}">${w.unidad||'pt'}</span>
               <input class="mat-price" id="woodprice-${piece.id}-${i}" type="number" value="${w.precio||0}" min="0" step="1" onchange="setWoodPrice(${piece.id},${i},this.value)" title="Precio por unidad">
               <span class="mat-subtotal" id="woodst-${piece.id}-${i}">${fmt((w.qty||0)*(w.precio||0))}</span>
               <button class="mat-del" onclick="delWoodRow(${piece.id},${i})">×</button>
@@ -1311,104 +1317,143 @@ async function loadOptions() {
   });
 }
 
+function navToProject(pId) {
+  setTimeout(() => {
+    if (window.parent?.openModule) window.parent.openModule('proyecto_detalle.html?id=' + pId, 'Detalle del Proyecto');
+    else window.location.href = 'proyecto_detalle.html?id=' + pId;
+  }, 700);
+}
+
 function saveQuoteToProject() {
-  const d = window.DB.get();
+  const d   = window.DB.get();
   const cId = document.getElementById('clientInput').value;
   const pId = document.getElementById('projectInput').value;
-  
-  if(!cId) { toast('Debes seleccionar un cliente.', 'warn'); return; }
-  if(!pId) { toast('Debes seleccionar un proyecto.', 'warn'); return; }
-  if(!S.pieces || S.pieces.length === 0) { toast('No hay piezas cotizadas.', 'warn'); return; }
-  
-  const tot = S.pieces.reduce((acc,p) => acc + calc(p).final, 0);
-  const hrs = S.pieces.reduce((acc,p) => acc + (p.hrRows||[]).reduce((s,r) => s+(r.hrs||0), 0), 0);
-  const mPt = S.pieces.reduce((acc,p) => { let pt=0; (p.mats||[]).forEach(m => { if(m.u==='pt' || m.u==='pza' || m.u.includes('TAB')) pt += (m.qty||0)*2 }); return acc + pt; }, 0);
 
-  const statusStr = Q_state.baseQuoteId ? 'Esperando Autorización' : 'Esperando Autorización'; // Changed to Esperando Autorización generally to match the new behavior.
+  if (!cId) { toast('Debes seleccionar un cliente.', 'warn'); return; }
+  if (!pId) { toast('Debes seleccionar un proyecto.', 'warn'); return; }
+  if (!S.pieces || S.pieces.length === 0) { toast('No hay piezas cotizadas.', 'warn'); return; }
 
-  // Generar folio legible: YYYY-MM-DD-NNN (NNN = siguiente número para este proyecto)
-  const existingForProj = (window.DB.get().quotations || []).filter(q => q.projectId === pId);
-  const nextNum = String(existingForProj.length + 1).padStart(3, '0');
+  const tot     = S.pieces.reduce((acc, p) => acc + calc(p).final * (p.qty||1), 0);
+  const pieces  = JSON.parse(JSON.stringify(S.pieces));
+  const cfg     = { EXTRAS, MARGIN, ERROR, TAX, COMMISSION };
   const dateStr = new Date().toISOString().slice(0, 10);
-  const folio   = `${dateStr}-${nextNum}`;
 
-  const quote = {
-    id: crypto.randomUUID(),
-    folio,
-    projectId: pId,
-    clientId: cId,
-    date: dateStr,
-    pieces: JSON.parse(JSON.stringify(S.pieces)),
-    total: tot,
-    globalCfg: { EXTRAS, MARGIN, ERROR, TAX, COMMISSION },
-    status: statusStr
-  };
+  // ── Modo edición ──────────────────────────────────────────────────────────
+  if (EDIT_STATE.id) {
+    const existing = (d.quotations||[]).find(q => q.id === EDIT_STATE.id);
+    if (!existing) { toast('No se encontró la cotización original.', 'warn'); return; }
 
-  if(Q_state.baseQuoteId) {
-    const baseIdx = (d.quotations||[]).findIndex(q => q.id === Q_state.baseQuoteId);
-    if(baseIdx > -1) {
-      d.quotations[baseIdx].status = 'En Pausa';
+    if (EDIT_STATE.originalStatus === 'Activa') {
+      // La cotización ya fue aprobada → crear copia y pausar la anterior
+      if (!confirm(`Esta cotización está Activa.\n\nSe creará una nueva versión con los cambios y la actual quedará "En Pausa".\n\n¿Continuar?`)) return;
+      existing.status = 'En Pausa';
+      window.DB.updateQuote(existing);
+      const existingForProj = (d.quotations||[]).filter(q => q.projectId === pId);
+      const folio = `${dateStr}-${String(existingForProj.length + 1).padStart(3,'0')}`;
+      const copy = { id: crypto.randomUUID(), folio, projectId: pId, clientId: cId, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
+      window.DB.addQuote(copy);
+      toast('✓ Nueva versión creada. La anterior quedó En Pausa.');
+    } else {
+      // Actualizar en lugar
+      existing.pieces    = pieces;
+      existing.total     = tot;
+      existing.globalCfg = cfg;
+      existing.clientId  = cId;
+      existing.projectId = pId;
+      window.DB.updateQuote(existing);
+      toast('✓ Cotización actualizada.');
     }
+    navToProject(pId);
+    return;
+  }
+
+  // ── Cotización nueva (o copia de revisión) ────────────────────────────────
+  // Confirmar antes de "Aprobar/Guardar" nueva
+  if (!confirm(`¿Guardar y aprobar la cotización?\n\nEsta acción creará la cotización en estado "Esperando Autorización".`)) return;
+
+  const existingForProj = (d.quotations||[]).filter(q => q.projectId === pId);
+  const folio = `${dateStr}-${String(existingForProj.length + 1).padStart(3,'0')}`;
+
+  const quote = { id: crypto.randomUUID(), folio, projectId: pId, clientId: cId, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
+
+  if (Q_state.baseQuoteId) {
+    const baseIdx = (d.quotations||[]).findIndex(q => q.id === Q_state.baseQuoteId);
+    if (baseIdx > -1) d.quotations[baseIdx].status = 'En Pausa';
   }
 
   window.DB.addQuote(quote);
-
-  toast('✓ Cotización guardada exitosamente.');
-  setTimeout(() => {
-    if (window.parent?.openModule) {
-      window.parent.openModule('proyecto_detalle.html?id=' + pId, 'Detalle del Proyecto');
-    } else {
-      window.location.href = 'proyecto_detalle.html?id=' + pId;
-    }
-  }, 800);
+  toast('✓ Cotización guardada.');
+  navToProject(pId);
 }
 
 function processURLParams() {
-  const params = new URLSearchParams(window.location.search);
-  const pId = params.get('projectId');
+  const params  = new URLSearchParams(window.location.search);
+  const pId     = params.get('projectId');
   const cloneId = params.get('cloneQuoteId');
-  const viewId = params.get('viewId');
-  
+  const viewId  = params.get('viewId');
+  const editId  = params.get('editId');
+
   const d = window.DB.get();
-  
-  if(pId) {
+
+  if (pId) {
     document.getElementById('projectInput').value = pId;
     const proj = d.projects.find(p => p.id === pId);
-    if(proj && proj.contactId) {
-      document.getElementById('clientInput').value = proj.contactId;
+    if (proj && (proj.contactoId || proj.contactId)) {
+      document.getElementById('clientInput').value = proj.contactoId || proj.contactId;
     }
   }
-  
+
   let loadQ = null;
-  if(cloneId) {
+
+  if (editId) {
+    // ── MODO EDICIÓN ────────────────────────────────────────────────────────
+    loadQ = (d.quotations||[]).find(q => q.id === editId);
+    if (loadQ) {
+      EDIT_STATE.id             = editId;
+      EDIT_STATE.folio          = loadQ.folio || editId.slice(0,8);
+      EDIT_STATE.originalStatus = loadQ.status;
+
+      const badge = document.getElementById('hdr-edit-badge');
+      if (badge) { badge.textContent = `Editando ${EDIT_STATE.folio}`; badge.style.display = 'inline-block'; }
+
+      const saveBtn = document.getElementById('btn-save-quote');
+      if (saveBtn) saveBtn.textContent = loadQ.status === 'Activa' ? 'Guardar (nueva versión) ↗' : 'Guardar cambios ↗';
+
+      // Si está Activa, mostrar banner de advertencia
+      if (loadQ.status === 'Activa') {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background:var(--amber-bg);border:1px solid var(--amber);color:var(--amber);padding:8px 16px;font-size:12px;font-weight:700;text-align:center;';
+        banner.textContent = '⚠ Esta cotización está Activa. Si guardas cambios se creará una nueva versión y la actual quedará En Pausa.';
+        document.querySelector('.hdr').insertAdjacentElement('afterend', banner);
+      }
+    }
+  } else if (cloneId) {
+    // ── MODO COPIA ─────────────────────────────────────────────────────────
     loadQ = (d.quotations||[]).find(q => q.id === cloneId);
     Q_state.baseQuoteId = cloneId;
-  } else if(viewId) {
+  } else if (viewId) {
+    // ── MODO SOLO LECTURA ──────────────────────────────────────────────────
     loadQ = (d.quotations||[]).find(q => q.id === viewId);
     Q_state.isViewMode = true;
     document.querySelector('.top-action-bar').style.display = 'none';
-    const hdrBtns = document.querySelectorAll('.hdr .btn');
-    if(hdrBtns.length>2) hdrBtns[2].style.display = 'none'; // hide aprobar
+    document.getElementById('btn-save-quote').style.display = 'none';
     document.getElementById('clientInput').disabled = true;
     document.getElementById('projectInput').disabled = true;
   }
-  
-  if(loadQ) {
-    if(loadQ.globalCfg) {
-       EXTRAS = loadQ.globalCfg.EXTRAS || 0.07;
-       MARGIN = loadQ.globalCfg.MARGIN || 0.20;
-       ERROR = loadQ.globalCfg.ERROR || 0.07;
-       TAX = loadQ.globalCfg.TAX !== undefined ? loadQ.globalCfg.TAX : 0.16;
-       COMMISSION = loadQ.globalCfg.COMMISSION || 0;
-       
-       document.querySelector('[data-key="extras"]').value = EXTRAS*100;
-       document.querySelector('[data-key="margin"]').value = MARGIN*100;
-       document.querySelector('[data-key="error"]').value = ERROR*100;
-       document.getElementById('cfg-tax').checked = TAX > 0;
-       if (document.getElementById('cfg-tax-piece')) document.getElementById('cfg-tax-piece').value = TAX*100;
+
+  if (loadQ) {
+    if (loadQ.globalCfg) {
+      EXTRAS     = loadQ.globalCfg.EXTRAS     || 0.07;
+      MARGIN     = loadQ.globalCfg.MARGIN     || 0.20;
+      ERROR      = loadQ.globalCfg.ERROR      || 0.07;
+      TAX        = loadQ.globalCfg.TAX        !== undefined ? loadQ.globalCfg.TAX : 0.16;
+      COMMISSION = loadQ.globalCfg.COMMISSION || 0;
+      document.querySelector('[data-key="extras"]').value = EXTRAS * 100;
+      document.querySelector('[data-key="margin"]').value = MARGIN * 100;
+      document.querySelector('[data-key="error"]').value  = ERROR  * 100;
+      document.getElementById('cfg-tax').checked = TAX > 0;
     }
-    
-    if(loadQ.pieces) {
+    if (loadQ.pieces) {
       S.pieces = JSON.parse(JSON.stringify(loadQ.pieces));
       S.pieces.forEach(p => {
         p.open = false;
@@ -1416,9 +1461,8 @@ function processURLParams() {
         if (!p.woodRows) p.woodRows = [];
       });
     }
-    
-    if(loadQ.clientId) document.getElementById('clientInput').value = loadQ.clientId;
-    if(loadQ.projectId) document.getElementById('projectInput').value = loadQ.projectId;
+    if (loadQ.clientId)  document.getElementById('clientInput').value  = loadQ.clientId;
+    if (loadQ.projectId) document.getElementById('projectInput').value = loadQ.projectId;
   }
 }
 
