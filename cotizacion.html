@@ -1324,6 +1324,21 @@ function navToProject(pId) {
   }, 700);
 }
 
+function linkClientToProject(d, pId, cId) {
+  if (!pId || !cId) return;
+  const pi = (d.projects||[]).findIndex(p => p.id === pId);
+  if (pi < 0) return;
+  const proj = d.projects[pi];
+  if (!proj.contactoId && !proj.contactId) {
+    proj.contactoId = cId;
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('projects', pId, proj);
+    if (window.parent?.DB_STATE?.projects) {
+      const li = window.parent.DB_STATE.projects.findIndex(p => p.id === pId);
+      if (li >= 0) window.parent.DB_STATE.projects[li].contactoId = cId;
+    }
+  }
+}
+
 function saveQuoteToProject() {
   const d   = window.DB.get();
   const cId = document.getElementById('clientInput').value;
@@ -1344,7 +1359,6 @@ function saveQuoteToProject() {
     if (!existing) { toast('No se encontró la cotización original.', 'warn'); return; }
 
     if (EDIT_STATE.originalStatus === 'Activa') {
-      // La cotización ya fue aprobada → crear copia y pausar la anterior
       if (!confirm(`Esta cotización está Activa.\n\nSe creará una nueva versión con los cambios y la actual quedará "En Pausa".\n\n¿Continuar?`)) return;
       existing.status = 'En Pausa';
       window.DB.updateQuote(existing);
@@ -1352,15 +1366,16 @@ function saveQuoteToProject() {
       const folio = `${dateStr}-${String(existingForProj.length + 1).padStart(3,'0')}`;
       const copy = { id: crypto.randomUUID(), folio, projectId: pId, clientId: cId, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
       window.DB.addQuote(copy);
+      linkClientToProject(d, pId, cId);
       toast('✓ Nueva versión creada. La anterior quedó En Pausa.');
     } else {
-      // Actualizar en lugar
       existing.pieces    = pieces;
       existing.total     = tot;
       existing.globalCfg = cfg;
       existing.clientId  = cId;
       existing.projectId = pId;
       window.DB.updateQuote(existing);
+      linkClientToProject(d, pId, cId);
       toast('✓ Cotización actualizada.');
     }
     navToProject(pId);
@@ -1381,6 +1396,7 @@ function saveQuoteToProject() {
   }
 
   window.DB.addQuote(quote);
+  linkClientToProject(d, pId, cId);
   toast('✓ Cotización guardada.');
   navToProject(pId);
 }
@@ -1394,11 +1410,27 @@ function processURLParams() {
 
   const d = window.DB.get();
 
+  function setSel(id, val) {
+    const el = document.getElementById(id);
+    if (!el || !val) return;
+    el.value = val;
+    if (el._ssSync) el._ssSync();
+  }
+  function setClientFromText(text) {
+    S.client = text || '';
+    renderFooter && renderFooter();
+  }
+
   if (pId) {
-    document.getElementById('projectInput').value = pId;
+    setSel('projectInput', pId);
     const proj = d.projects.find(p => p.id === pId);
-    if (proj && (proj.contactoId || proj.contactId)) {
-      document.getElementById('clientInput').value = proj.contactoId || proj.contactId;
+    if (proj) {
+      const cId = proj.contactoId || proj.contactId;
+      if (cId) {
+        setSel('clientInput', cId);
+        const cSel = document.getElementById('clientInput');
+        setClientFromText(cSel?.options[cSel.selectedIndex]?.text || '');
+      }
     }
   }
 
@@ -1460,8 +1492,12 @@ function processURLParams() {
         if (!p.woodRows) p.woodRows = [];
       });
     }
-    if (loadQ.clientId)  document.getElementById('clientInput').value  = loadQ.clientId;
-    if (loadQ.projectId) document.getElementById('projectInput').value = loadQ.projectId;
+    if (loadQ.clientId)  {
+      setSel('clientInput',  loadQ.clientId);
+      const cSel = document.getElementById('clientInput');
+      setClientFromText(cSel?.options[cSel.selectedIndex]?.text || '');
+    }
+    if (loadQ.projectId) setSel('projectInput', loadQ.projectId);
   }
 }
 
