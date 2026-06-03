@@ -856,97 +856,107 @@ function showPrintPreview(isClient) {
 
   /* ══ TALLER PDF — ORDEN DE TRABAJO ══════════════════════════════════ */
 
+  /* Estilos minimalistas, amigables con impresión (poca tinta) */
+  const secT = title => `
+    <div style="margin:22px 0 8px;padding-bottom:3px;border-bottom:1.5px solid #000;">
+      <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;">${title}</span>
+    </div>`;
+  const thW  = `padding:5px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid #000;text-align:left;background:none;`;
+  const thWR = `padding:5px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid #000;text-align:right;background:none;`;
+  const tdW  = `padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;vertical-align:top;`;
+  const tdWR = `padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;`;
+
   /* — Agregar horas por rol — */
-  const horasAgg = {}; // role → { label, rate, hrs, total }
+  const horasAgg = {};
   S.pieces.forEach(p => {
     (p.hrRows||[]).forEach(r => {
       if (!r.role || !r.hrs) return;
-      if (!horasAgg[r.role]) horasAgg[r.role] = { label: RATE_LABELS[r.role]||r.role, rate: RATES[r.role]||0, hrs: 0, subtotal: 0 };
-      horasAgg[r.role].hrs      += r.hrs || 0;
-      horasAgg[r.role].subtotal += (r.hrs||0) * (RATES[r.role]||0);
+      if (!horasAgg[r.role]) horasAgg[r.role] = { label: RATE_LABELS[r.role]||r.role, hrs: 0 };
+      horasAgg[r.role].hrs += r.hrs || 0;
     });
   });
   const totalHrs = Object.values(horasAgg).reduce((s, v) => s + v.hrs, 0);
-  const totalMO  = Object.values(horasAgg).reduce((s, v) => s + v.subtotal, 0);
-  const totalMats= S.pieces.reduce((s, p) => s + p.mats.reduce((ss, m) => ss + (m.qty||0)*m.p, 0), 0);
 
   const moRows = Object.entries(horasAgg)
     .sort((a, b) => b[1].hrs - a[1].hrs)
     .map(([, v]) => `<tr>
-      <td style="${tdCss}">${v.label}</td>
-      <td style="${tdRCss}font-weight:700;">${v.hrs.toFixed(1)}</td>
+      <td style="${tdW}">${v.label}</td>
+      <td style="${tdWR}font-weight:700;">${v.hrs.toFixed(1)} hrs</td>
+      <td style="${tdW}"></td>
     </tr>`).join('');
 
   /* — Agregar materiales (BOM) — */
-  const bomAgg = {}; // "name|unit" → { name, unit, qty, unitPrice, total }
+  const bomAgg = {};
   S.pieces.forEach(p => {
     p.mats.forEach(m => {
       const k = (m.n||'') + '|' + (m.u||'');
-      if (!bomAgg[k]) bomAgg[k] = { name: m.n||'', unit: m.u||'', qty: 0, unitPrice: m.p||0, total: 0 };
-      bomAgg[k].qty   += m.qty || 0;
-      bomAgg[k].total += (m.qty||0) * (m.p||0);
-      bomAgg[k].unitPrice = m.p || 0;
+      if (!bomAgg[k]) bomAgg[k] = { name: m.n||'', unit: m.u||'', qty: 0 };
+      bomAgg[k].qty += m.qty || 0;
     });
   });
   const bomRows = Object.values(bomAgg)
-    .sort((a, b) => b.total - a.total)
+    .sort((a, b) => a.name.localeCompare(b.name))
     .map(v => `<tr>
-      <td style="${tdCss}font-weight:600;">${v.name}</td>
-      <td style="${tdCss}color:#555;">${v.unit}</td>
-      <td style="${tdRCss}font-weight:700;">${v.qty % 1 === 0 ? v.qty : v.qty.toFixed(2)}</td>
-      <td style="${tdCss}"></td>
+      <td style="${tdW}font-weight:600;">${v.name}</td>
+      <td style="${tdW}color:#444;">${v.unit}</td>
+      <td style="${tdWR}font-weight:700;">${v.qty % 1 === 0 ? v.qty : v.qty.toFixed(2)}</td>
+      <td style="${tdW}"></td>
     </tr>`).join('');
 
   /* — Detalle por pieza — */
   const pieceCards = S.pieces.map((p, i) => {
-    const c = calc(p);
     const mRows = p.mats.map(m => `<tr>
-      <td style="${tdCss}">${m.n||'—'}</td>
-      <td style="${tdCss}color:#555;">${m.u||''}</td>
-      <td style="${tdRCss}font-weight:600;">${(m.qty||0) % 1 === 0 ? m.qty : (m.qty||0).toFixed(2)}</td>
-      <td style="${tdCss}"></td>
+      <td style="${tdW}">${m.n||'—'}</td>
+      <td style="${tdW}color:#444;">${m.u||''}</td>
+      <td style="${tdWR}font-weight:600;">${(m.qty||0) % 1 === 0 ? m.qty : (m.qty||0).toFixed(2)}</td>
+      <td style="${tdW}"></td>
     </tr>`).join('');
 
     const hRows = (p.hrRows||[]).map(r => `<tr>
-      <td style="${tdCss}">${RATE_LABELS[r.role]||r.role}</td>
-      <td style="${tdRCss}font-weight:600;">${(r.hrs||0).toFixed(1)} hrs</td>
-      <td style="${tdCss}"></td>
+      <td style="${tdW}">${RATE_LABELS[r.role]||r.role}</td>
+      <td style="${tdWR}font-weight:600;">${(r.hrs||0).toFixed(1)} hrs</td>
+      <td style="${tdW}"></td>
     </tr>`).join('');
 
     const imgHtml = p.imagen
-      ? `<img src="${p.imagen}" style="width:90px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #ddd;flex-shrink:0;" alt="">`
+      ? `<img src="${p.imagen}" style="max-height:100px;max-width:130px;object-fit:cover;border-radius:4px;border:1px solid #ccc;display:block;margin-bottom:8px;" alt="">`
       : '';
 
     return `
-      <div style="margin-top:18px;border:1px solid #ccc;border-radius:6px;overflow:hidden;page-break-inside:avoid;">
-        <div style="display:flex;align-items:center;gap:10px;background:#222;color:#fff;padding:8px 12px;">
+      <div style="margin-top:20px;border:1px solid #bbb;border-radius:4px;overflow:hidden;page-break-inside:avoid;">
+        <!-- Cabecera de pieza -->
+        <div style="padding:8px 12px;border-bottom:1.5px solid #000;">
+          <div style="font-weight:800;font-size:13px;">${i+1}. ${p.nombre||p.name} <span style="font-weight:400;font-size:10px;color:#555;">[${p.code}]</span></div>
+        </div>
+        <!-- Descripción e imagen -->
+        <div style="padding:10px 12px;border-bottom:1px solid #ddd;">
+          ${p.descripcion ? `<p style="font-size:11px;color:#222;white-space:pre-wrap;line-height:1.6;margin-bottom:${p.imagen?'10px':'0'}">${p.descripcion}</p>` : ''}
           ${imgHtml}
-          <div style="flex:1;">
-            <div style="font-weight:800;font-size:13px;">${i+1}. ${p.nombre||p.name} <span style="font-weight:400;font-size:11px;opacity:.7;">[${p.code}]</span></div>
-            ${p.descripcion ? `<div style="font-size:10px;color:#ccc;margin-top:4px;white-space:pre-wrap;line-height:1.5;">${p.descripcion}</div>` : ''}
-          </div>
+          ${!p.descripcion && !p.imagen ? `<span style="font-size:10px;color:#aaa;">Sin descripción ni imagen</span>` : ''}
         </div>
         ${p.mats.length ? `
-        <div style="padding:0 0 0 0;">
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;padding:5px 10px;background:#f0f0f0;color:#555;border-bottom:1px solid #ddd;">Materiales</div>
+        <!-- Materiales -->
+        <div style="padding:0;">
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;padding:4px 12px;border-bottom:1px solid #ddd;color:#444;letter-spacing:.05em;">Materiales</div>
           <table style="${tblCss}">
             <thead><tr>
-              <th style="${thCss}background:#555;">Material</th>
-              <th style="${thCss}background:#555;">Unidad</th>
-              <th style="${thRCss}background:#555;">Cant.</th>
-              <th style="${thCss}background:#555;">Notas</th>
+              <th style="${thW}">Material</th>
+              <th style="${thW}">Unidad</th>
+              <th style="${thWR}">Cant.</th>
+              <th style="${thW}">Notas</th>
             </tr></thead>
             <tbody>${mRows}</tbody>
           </table>
         </div>` : ''}
         ${(p.hrRows||[]).length ? `
+        <!-- Mano de obra -->
         <div>
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;padding:5px 10px;background:#f0f0f0;color:#555;border-bottom:1px solid #ddd;border-top:1px solid #ddd;">Mano de Obra</div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;padding:4px 12px;border-bottom:1px solid #ddd;border-top:1px solid #ddd;color:#444;letter-spacing:.05em;">Mano de Obra</div>
           <table style="${tblCss}">
             <thead><tr>
-              <th style="${thCss}background:#555;">Tipo de Carpintero</th>
-              <th style="${thRCss}background:#555;">Horas</th>
-              <th style="${thCss}background:#555;">Asignar a</th>
+              <th style="${thW}">Tipo de Carpintero</th>
+              <th style="${thWR}">Horas</th>
+              <th style="${thW}">Asignar a</th>
             </tr></thead>
             <tbody>${hRows}</tbody>
           </table>
@@ -956,75 +966,67 @@ function showPrintPreview(isClient) {
 
   const html = `
     <!-- ENCABEZADO -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:3px solid #222;">
-      <img src="${logoSrc}" style="height:38px;" alt="Carpintería Huayapam">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #000;">
+      <img src="${logoSrc}" style="height:36px;" alt="Carpintería Huayapam">
       <div style="text-align:right;">
-        <div style="font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;">Orden de Trabajo</div>
-        <div style="font-size:9px;color:#888;margin-top:2px;text-transform:uppercase;letter-spacing:.06em;">Uso Interno — Taller</div>
+        <div style="font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;">Orden de Trabajo</div>
+        <div style="font-size:9px;color:#666;margin-top:2px;">Uso Interno — Taller</div>
       </div>
     </div>
 
     <!-- INFO -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;margin-bottom:16px;border:1px solid #ccc;border-radius:5px;overflow:hidden;font-size:11px;">
-      <div style="padding:8px 10px;border-right:1px solid #eee;">
-        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Cliente</div>
-        <div style="font-weight:700;margin-top:3px;">${clientName}</div>
-      </div>
-      <div style="padding:8px 10px;border-right:1px solid #eee;">
-        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Proyecto</div>
-        <div style="font-weight:600;margin-top:3px;">${projName}</div>
-      </div>
-      <div style="padding:8px 10px;border-right:1px solid #eee;">
-        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Fecha</div>
-        <div style="font-weight:600;margin-top:3px;">${today}</div>
-      </div>
-      <div style="padding:8px 10px;background:#f8f8f8;">
-        <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Piezas</div>
-        <div style="font-weight:800;font-size:14px;margin-top:3px;">${S.pieces.length} pieza${S.pieces.length!==1?'s':''}</div>
-      </div>
-    </div>
-
-    <!-- MANO DE OBRA RESUMEN -->
-    ${secHdr('👷', 'Resumen de Mano de Obra')}
-    <table style="${tblCss}">
-      <thead><tr>
-        <th style="${thCss}">Tipo de Carpintero</th>
-        <th style="${thRCss}">Horas Total</th>
-      </tr></thead>
-      <tbody>
-        ${moRows}
-        <tr style="background:#f8f8f8;">
-          <td style="${tdCss}font-weight:800;border-top:2px solid #222;">TOTAL</td>
-          <td style="${tdRCss}font-weight:800;border-top:2px solid #222;">${totalHrs.toFixed(1)} hrs</td>
-        </tr>
-      </tbody>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #bbb;font-size:11px;margin-bottom:4px;">
+      <tr>
+        <td style="padding:6px 10px;border-right:1px solid #ddd;width:25%;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Cliente</span><strong>${clientName}</strong></td>
+        <td style="padding:6px 10px;border-right:1px solid #ddd;width:35%;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Proyecto</span>${projName}</td>
+        <td style="padding:6px 10px;border-right:1px solid #ddd;width:20%;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Fecha</span>${today}</td>
+        <td style="padding:6px 10px;width:20%;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Piezas</span><strong>${S.pieces.length}</strong></td>
+      </tr>
     </table>
 
+    <!-- DETALLE POR PIEZA -->
+    ${secT(`Detalle por Pieza`)}
+    ${pieceCards}
+
     <!-- BOM MATERIALES -->
-    ${secHdr('📦', 'Lista de Materiales (BOM)')}
+    ${secT('Lista de Materiales — Totales')}
     <table style="${tblCss}">
       <thead><tr>
-        <th style="${thCss}">Material</th>
-        <th style="${thCss}">Unidad</th>
-        <th style="${thRCss}">Cantidad Total</th>
-        <th style="${thCss}">Notas / Verificado</th>
+        <th style="${thW}">Material</th>
+        <th style="${thW}">Unidad</th>
+        <th style="${thWR}">Cantidad Total</th>
+        <th style="${thW}">Notas / Verificado</th>
       </tr></thead>
       <tbody>${bomRows}</tbody>
     </table>
 
-    <!-- DETALLE POR PIEZA -->
-    ${secHdr('🔨', `Detalle por Pieza (${S.pieces.length} pieza${S.pieces.length!==1?'s':''})`)}
-    ${pieceCards}
+    <!-- MANO DE OBRA RESUMEN -->
+    ${secT('Resumen de Mano de Obra')}
+    <table style="${tblCss}">
+      <thead><tr>
+        <th style="${thW}">Tipo de Carpintero</th>
+        <th style="${thWR}">Horas Totales</th>
+        <th style="${thW}">Asignado a</th>
+      </tr></thead>
+      <tbody>
+        ${moRows}
+        <tr>
+          <td style="${tdW}font-weight:800;border-top:1.5px solid #000;">Total</td>
+          <td style="${tdWR}font-weight:800;border-top:1.5px solid #000;">${totalHrs.toFixed(1)} hrs</td>
+          <td style="${tdW}border-top:1.5px solid #000;"></td>
+        </tr>
+      </tbody>
+    </table>
 
     <!-- FIRMA -->
-    <div style="margin-top:28px;padding-top:16px;border-top:2px solid #222;display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+    <div style="margin-top:32px;padding-top:14px;border-top:1.5px solid #000;display:grid;grid-template-columns:1fr 1fr;gap:48px;">
       <div>
-        <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#888;margin-bottom:36px;">Autoriza / Jefe de Producción</div>
-        <div style="border-top:1px solid #444;padding-top:4px;font-size:9px;color:#888;">Firma y fecha</div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;margin-bottom:32px;">Autoriza — Jefe de Producción</div>
+        <div style="border-top:1px solid #000;padding-top:4px;font-size:9px;color:#888;">Firma y fecha</div>
       </div>
       <div>
-        <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#888;margin-bottom:36px;">Recibe / Carpintero Responsable</div>
-        <div style="border-top:1px solid #444;padding-top:4px;font-size:9px;color:#888;">Firma y fecha</div>
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;margin-bottom:32px;">Recibe — Carpintero Responsable</div>
+        <div style="border-top:1px solid #000;padding-top:4px;font-size:9px;color:#888;">Firma y fecha</div>
       </div>
     </div>`;
 
