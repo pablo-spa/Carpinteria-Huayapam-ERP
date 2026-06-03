@@ -91,7 +91,8 @@
   function getState() { return window.parent.DB_STATE || {}; }
   let currentTable = null;
 
-  const KNOWN_COLLECTIONS = ['contacts', 'inventory', 'projects', 'quotations', 'orders', 'purchase_orders', 'accounting_movements', 'settings', 'workers', 'users', 'attendance', 'attendance_logs', 'worker_loans', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'wood', 'expense_categories', 'production_logs', 'systemEvents', 'piece_types', 'concept_categories', 'concept_units', 'inventory_brands', 'inventory_locations', 'bank_accounts', 'wood_types', 'wood_formats', 'wood_quality', 'wood_locations', 'actividades_trabajo', 'worker_roles', 'viatico_categories', 'account_balances'];
+  // Colecciones reales en Firestore (suppliers no existe — proveedores están en contacts con tipo='proveedor')
+  const KNOWN_COLLECTIONS = ['contacts', 'inventory', 'projects', 'quotations', 'orders', 'purchase_orders', 'accounting_movements', 'account_balances', 'settings', 'users', 'workers', 'attendance', 'attendance_logs', 'worker_loans', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'wood', 'expense_categories', 'production_logs', 'systemEvents', 'piece_types', 'concept_categories', 'concept_units', 'inventory_brands', 'inventory_locations', 'bank_accounts', 'wood_types', 'wood_formats', 'wood_quality', 'wood_locations', 'actividades_trabajo', 'worker_roles', 'viatico_categories', 'inventory_salidas'];
 
   function renderTables() {
     const list = document.getElementById('table-list');
