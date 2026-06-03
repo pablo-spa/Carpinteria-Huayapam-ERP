@@ -407,30 +407,35 @@
       const d = window.DB.get();
       if (!projId) { alert('Guarda el proyecto primero.'); return; }
 
-      // Acepta cualquier cotización del proyecto (Esperando Autorización, Activa, etc.)
-      const quotes = (d.quotations || []).filter(q => q.projectId === projId && q.status !== 'En Pausa');
-      if (quotes.length === 0) { alert('No hay cotización para este proyecto.'); return; }
+      const allQuotes = (d.quotations || []).filter(q => q.projectId === projId && q.status !== 'Cancelada');
+      if (allQuotes.length === 0) { alert('No hay cotización activa para este proyecto.'); return; }
 
-      const q = quotes[0];
+      // Preferir cotización Activa; si no hay, usar la más reciente
+      const activa = allQuotes.find(q => q.status === 'Activa');
+      const q = activa || allQuotes.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
       const hours = {};
       RATE_KEYS.forEach(k => hours[k] = 0);
       const woodByMat = {};
       let woodTotal = 0, otherCost = 0;
 
       (q.pieces || []).forEach(piece => {
-        // Soporta formato nuevo (hrRows array) y legacy (hrs object)
+        const qty = piece.qty || 1; // multiplicar por cantidad de la pieza
+        // Horas — soporta hrRows (nuevo) y hrs object (legacy)
         if (piece.hrRows && Array.isArray(piece.hrRows)) {
-          piece.hrRows.forEach(r => { if (RATE_KEYS.includes(r.role)) hours[r.role] += parseFloat(r.hrs || 0); });
+          piece.hrRows.forEach(r => { if (RATE_KEYS.includes(r.role)) hours[r.role] += parseFloat(r.hrs || 0) * qty; });
         } else {
-          RATE_KEYS.forEach(k => { hours[k] += parseFloat(piece.hrs?.[k] || 0); });
+          RATE_KEYS.forEach(k => { hours[k] += parseFloat(piece.hrs?.[k] || 0) * qty; });
         }
+        // Materiales
         (piece.mats || []).forEach(m => {
+          const matQty = (parseFloat(m.qty) || 0) * qty;
           if ((m.u || '').toLowerCase() === 'pt') {
             const matName = m.n || 'Madera';
-            woodByMat[matName] = (woodByMat[matName] || 0) + (parseFloat(m.qty) || 0);
-            woodTotal += parseFloat(m.qty) || 0;
+            woodByMat[matName] = (woodByMat[matName] || 0) + matQty;
+            woodTotal += matQty;
           } else {
-            otherCost += (parseFloat(m.qty) || 0) * (parseFloat(m.p) || 0);
+            otherCost += matQty * (parseFloat(m.p) || 0);
           }
         });
       });
@@ -445,8 +450,9 @@
       document.getElementById('f-other-mat-est').value = otherCost.toFixed(2);
       updateMatDiff();
 
+      const label = q.folio || q.id.slice(0, 8);
       const note = document.getElementById('quote-source-note');
-      note.textContent = `Calculado desde cotización ${q.id} — ${q.date}`;
+      note.textContent = `Calculado desde cotización ${label} — ${q.date}${q.status !== 'Activa' ? ` (estado: ${q.status})` : ''}`;
       note.style.display = 'block';
     }
 
@@ -493,6 +499,9 @@
     }
 
     // ── Cotizaciones ──────────────────────────────────
+    const QUOTE_STATUSES = ['Esperando Autorización', 'Activa', 'En Pausa', 'Cancelada'];
+    const ST_COLOR = { 'Activa':'var(--green)', 'Cancelada':'var(--red)', 'En Pausa':'var(--amber)', 'Esperando Autorización':'var(--blue)' };
+
     function renderQuotes() {
       const d = window.DB.get();
       const qList = document.getElementById('quotes-list');
@@ -500,45 +509,92 @@
       const quotes = (d.quotations || []).filter(q => q.projectId === projId);
       if (quotes.length === 0) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay cotizaciones registradas.</div>'; return; }
       quotes.sort((a, b) => new Date(b.date) - new Date(a.date));
-      const stColor = { 'Activa':'var(--green)', 'Cancelada':'var(--red)', 'En Pausa':'var(--amber)', 'Esperando Autorización':'var(--blue)' };
-      qList.innerHTML = quotes.map(q => `
+
+      qList.innerHTML = quotes.map(q => {
+        const label = q.folio || q.id.slice(0, 8);
+        const statusOpts = QUOTE_STATUSES.map(s =>
+          `<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`
+        ).join('');
+        return `
         <div class="quot-card">
-          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-            <strong style="font-size:14px;">Cotización ${q.id}</strong>
-            <span style="font-size:11px; font-weight:800; color:${stColor[q.status]||'var(--subtext)'};">${q.status}</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+            <strong style="font-size:14px;">Cotización ${label}</strong>
+            <select onchange="changeQuoteStatus('${q.id}', this.value)"
+              style="font-size:11px;font-weight:800;color:${ST_COLOR[q.status]||'var(--subtext)'};background:transparent;border:none;cursor:pointer;padding:2px 4px;font-family:inherit;">
+              ${statusOpts}
+            </select>
           </div>
           <div style="font-size:12px; color:var(--subtext); margin-bottom:8px;">${q.date} &nbsp;|&nbsp; ${fmt(q.total||0)}</div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="window.open('cotizacion.html?viewId=${q.id}','_blank')">Imprimir PDF</button>
-            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reviseQuote('${q.id}')">Realizar Cambio</button>
-            ${q.status === 'Esperando Autorización' ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--green);" onclick="acceptQuote('${q.id}')">Aceptar</button>` : ''}
-            ${q.status !== 'Cancelada' ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="cancelQuote('${q.id}')">Cancelar</button>` : ''}
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="openPDFQuote('${q.id}')">PDF</button>
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="reviseQuote('${q.id}')">Revisar / Copiar</button>
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="deleteQuote('${q.id}', '${label}')">Eliminar</button>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
     }
 
-    function newQuote()       { if (!projId) { alert('Primero guarda el proyecto.'); return; } window.location.href = 'cotizacion.html?projectId=' + projId; }
-    function reviseQuote(qId) { if (!projId) return; window.location.href = 'cotizacion.html?projectId=' + projId + '&cloneQuoteId=' + qId; }
+    function openPDFQuote(qId) {
+      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?viewId=' + qId, 'Cotización');
+      else window.location.href = 'cotizacion.html?viewId=' + qId;
+    }
 
-    function acceptQuote(qId) {
+    function newQuote() {
+      if (!projId) { alert('Primero guarda el proyecto.'); return; }
+      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?projectId=' + projId, 'Nueva Cotización');
+      else window.location.href = 'cotizacion.html?projectId=' + projId;
+    }
+    function reviseQuote(qId) {
+      if (!projId) return;
+      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?projectId=' + projId + '&cloneQuoteId=' + qId, 'Nueva Cotización');
+      else window.location.href = 'cotizacion.html?projectId=' + projId + '&cloneQuoteId=' + qId;
+    }
+
+    function changeQuoteStatus(qId, newStatus) {
       const d = window.DB.get();
-      const idx = d.quotations.findIndex(q => q.id === qId);
+      const quotes = d.quotations || [];
+      const idx = quotes.findIndex(q => q.id === qId);
       if (idx < 0) return;
-      d.quotations.filter(q => q.projectId === projId && q.id !== qId && q.status === 'En Pausa').forEach(q => q.status = 'Cancelada');
-      d.quotations[idx].status = 'Activa';
-      const pi = d.projects.findIndex(p => p.id === projId);
-      if (pi > -1) { d.projects[pi].valorTotal = d.quotations[idx].total || 0; }
+      quotes[idx].status = newStatus;
+
+      // Sincronizar en DB_STATE directamente
+      if (window.parent?.DB_STATE?.quotations) {
+        const li = window.parent.DB_STATE.quotations.findIndex(q => q.id === qId);
+        if (li >= 0) window.parent.DB_STATE.quotations[li].status = newStatus;
+      }
+      if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('quotations', qId, quotes[idx]);
       window.DB.save(d);
-      document.getElementById('f-val').value = d.quotations[idx].total || 0;
+
+      syncValorCotizado(d);
       renderQuotes();
     }
 
-    function cancelQuote(qId) {
-      const d = window.DB.get();
-      const idx = d.quotations.findIndex(q => q.id === qId);
-      if (idx > -1) { d.quotations[idx].status = 'Cancelada'; window.DB.save(d); renderQuotes(); }
+    function syncValorCotizado(d) {
+      // Suma total de todas las cotizaciones 'Activa' del proyecto
+      const quotes = (d.quotations || []).filter(q => q.projectId === projId);
+      const activas = quotes.filter(q => q.status === 'Activa');
+      const total = activas.reduce((s, q) => s + (q.total || 0), 0);
+      if (activas.length > 0) {
+        document.getElementById('f-val').value = total;
+        const pi = (d.projects || []).findIndex(p => p.id === projId);
+        if (pi > -1) d.projects[pi].valorTotal = total;
+      }
     }
+
+    async function deleteQuote(qId, label) {
+      if (!confirm(`¿Eliminar la cotización "${label}"?\n\nEsta acción no se puede deshacer.`)) return;
+      // Eliminar de Firestore
+      if (window.parent?.deleteDocumentFromFirebase) await window.parent.deleteDocumentFromFirebase('quotations', qId);
+      // Eliminar de DB_STATE
+      if (window.parent?.DB_STATE?.quotations) {
+        window.parent.DB_STATE.quotations = window.parent.DB_STATE.quotations.filter(q => q.id !== qId);
+      }
+      renderQuotes();
+      toast('Cotización eliminada.');
+    }
+
+    function acceptQuote(qId) { changeQuoteStatus(qId, 'Activa'); }
+    function cancelQuote(qId) { changeQuoteStatus(qId, 'Cancelada'); }
 
     // ── Timeline de horas reales ──────────────────────
     function renderTimeline() {
@@ -774,6 +830,13 @@
       renderPayments(d);
       renderActualMaterials(d);
       renderViaticos(d);
+
+      // Si hay cotizaciones y los campos de horas/materiales están vacíos, calcular automáticamente
+      const hasQuotes = (d.quotations || []).some(q => q.projectId === projId && q.status !== 'Cancelada');
+      const horasVacias = Object.values(projData.horasPorCategoria || {}).every(v => !v);
+      if (hasQuotes && horasVacias && !projData.maderaPt && !projData.costoMateriales) {
+        calcFromQuotation();
+      }
     }
 
     function toast(msg, type='ok') {

@@ -1173,15 +1173,22 @@ function saveQuoteToProject() {
 
   const statusStr = Q_state.baseQuoteId ? 'Esperando Autorización' : 'Esperando Autorización'; // Changed to Esperando Autorización generally to match the new behavior.
 
+  // Generar folio legible: YYYY-MM-DD-NNN (NNN = siguiente número para este proyecto)
+  const existingForProj = (window.DB.get().quotations || []).filter(q => q.projectId === pId);
+  const nextNum = String(existingForProj.length + 1).padStart(3, '0');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const folio   = `${dateStr}-${nextNum}`;
+
   const quote = {
     id: crypto.randomUUID(),
+    folio,
     projectId: pId,
     clientId: cId,
-    date: new Date().toISOString().slice(0,10),
+    date: dateStr,
     pieces: JSON.parse(JSON.stringify(S.pieces)),
     total: tot,
     globalCfg: { EXTRAS, MARGIN, ERROR, TAX, COMMISSION },
-    status: statusStr // could be given options
+    status: statusStr
   };
 
   if(Q_state.baseQuoteId) {
