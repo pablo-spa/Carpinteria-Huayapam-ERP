@@ -196,7 +196,7 @@ input.mat-price { text-align: right; font-size: 12px; }
     <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
     <button class="btn btn-dark" onclick="showPrintPreview(true)" style="padding:6px 12px; font-size:12px;">🖨 PDF Cliente</button>
     <button class="btn btn-dark" onclick="showPrintPreview(false)" style="padding:6px 12px; font-size:12px;">🖨 PDF Taller</button>
-    <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()" style="padding:6px 14px; font-size:12px;">Aprobar ↗</button>
+    <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()" style="padding:6px 14px; font-size:12px;">Guardar cotización ↗</button>
   </div>
   <div class="hdr-row2">
     <select class="hdr-select" id="clientInput" data-searchable style="flex:1;"></select>
@@ -1368,8 +1368,7 @@ function saveQuoteToProject() {
   }
 
   // ── Cotización nueva (o copia de revisión) ────────────────────────────────
-  // Confirmar antes de "Aprobar/Guardar" nueva
-  if (!confirm(`¿Guardar y aprobar la cotización?\n\nEsta acción creará la cotización en estado "Esperando Autorización".`)) return;
+  if (!confirm(`¿Guardar cotización?`)) return;
 
   const existingForProj = (d.quotations||[]).filter(q => q.projectId === pId);
   const folio = `${dateStr}-${String(existingForProj.length + 1).padStart(3,'0')}`;
@@ -1417,7 +1416,7 @@ function processURLParams() {
       if (badge) { badge.textContent = `Editando ${EDIT_STATE.folio}`; badge.style.display = 'inline-block'; }
 
       const saveBtn = document.getElementById('btn-save-quote');
-      if (saveBtn) saveBtn.textContent = loadQ.status === 'Activa' ? 'Guardar (nueva versión) ↗' : 'Guardar cambios ↗';
+      if (saveBtn) saveBtn.textContent = loadQ.status === 'Activa' ? 'Guardar como nueva versión ↗' : 'Guardar cambios ↗';
 
       // Si está Activa, mostrar banner de advertencia
       if (loadQ.status === 'Activa') {
