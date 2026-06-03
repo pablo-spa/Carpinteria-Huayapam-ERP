@@ -474,6 +474,12 @@ function removeImage(id) {
   if (p) { delete p.imagen; render(); }
 }
 
+function setDesc(id, val) {
+  const p = S.pieces.find(p => p.id === id);
+  if (p) p.descripcion = val;
+  // No re-render para no perder el foco del textarea
+}
+
 function addPiece() {
   const sel = document.getElementById('typeSelect');
   const val = sel.value;
@@ -677,6 +683,11 @@ function renderPiece(piece) {
       ${piece.open ? `
       <div class="piece-body">
         ${imgSection}
+        <textarea
+          style="width:100%;resize:vertical;min-height:64px;padding:9px 10px;border:1px solid var(--surface0);border-radius:8px;background:var(--base);color:var(--text);font-family:inherit;font-size:13px;line-height:1.5;margin-bottom:18px;"
+          placeholder="Descripción, dimensiones, acabados, especificaciones…"
+          oninput="setDesc(${piece.id}, this.value)"
+        >${piece.descripcion || ''}</textarea>
         <div class="sub-hdr">Lista de Materiales</div>
         <div class="table-wrap">
           <div class="mat-cols">
@@ -796,7 +807,11 @@ function showPrintPreview(isClient) {
       const c = calc(p);
       const img = p.imagen ? `<div style="margin-top:6px;"><img src="${p.imagen}" style="max-height:110px;max-width:160px;object-fit:cover;border-radius:5px;border:1px solid #ddd;" alt=""></div>` : '';
       rows += `<tr>
-        <td style="${tdCss}">${i+1}. <strong>${p.nombre||p.name}</strong>${img}</td>
+        <td style="${tdCss}">
+          ${i+1}. <strong>${p.nombre||p.name}</strong>
+          ${p.descripcion ? `<div style="font-size:10px;color:#555;margin-top:3px;white-space:pre-wrap;line-height:1.5;">${p.descripcion}</div>` : ''}
+          ${img}
+        </td>
         <td style="${tdRCss}font-weight:700;">${fmt(c.final)}</td>
       </tr>`;
     });
@@ -907,8 +922,8 @@ function showPrintPreview(isClient) {
         <div style="display:flex;align-items:center;gap:10px;background:#222;color:#fff;padding:8px 12px;">
           ${imgHtml}
           <div style="flex:1;">
-            <div style="font-weight:800;font-size:13px;">${i+1}. ${p.nombre||p.name}</div>
-            <div style="font-size:10px;color:#bbb;margin-top:2px;">${p.code}</div>
+            <div style="font-weight:800;font-size:13px;">${i+1}. ${p.nombre||p.name} <span style="font-weight:400;font-size:11px;opacity:.7;">[${p.code}]</span></div>
+            ${p.descripcion ? `<div style="font-size:10px;color:#ccc;margin-top:4px;white-space:pre-wrap;line-height:1.5;">${p.descripcion}</div>` : ''}
           </div>
         </div>
         ${p.mats.length ? `
