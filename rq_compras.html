@@ -104,13 +104,20 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .add-row-btn:hover { border-color: var(--blue); color: var(--blue-text); background: var(--blue-bg); }
 
 .pending-notice { background: var(--amber-bg); border: 1px solid var(--amber); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; font-weight: 600; color: var(--amber-text); margin-top: 10px; }
+.status-flow { display:flex; align-items:center; gap:3px; flex-wrap:wrap; margin:8px 0 4px; }
+.sf-step { font-size:10px; font-weight:700; padding:2px 7px; border-radius:99px; background:var(--surface0); color:var(--subtext); white-space:nowrap; }
+.sf-done  { background:var(--green-bg); color:var(--green-text); opacity:.7; }
+.sf-active{ background:var(--blue-bg);  color:var(--blue-text); }
+.sf-sep { font-size:9px; color:var(--subtext); margin:0 1px; }
+.add-cat-row { display:flex; align-items:center; gap:6px; margin-top:4px; }
+.add-cat-row label { font-size:11px; font-weight:700; color:var(--amber-text); cursor:pointer; }
 </style>
 </head>
 <body>
 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
-    <button onclick="if(window.parent?.openModule) window.parent.openModule('almacen_hub.html','Portal Almacén'); else window.history.back();" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
     <h2>Panel de Compras</h2>
   </div>
   <button class="btn btn-blue" onclick="showNewOrderForm()">+ Nueva Orden</button>
@@ -244,7 +251,7 @@ function addNewItemRow(data = {}) {
       <!-- Concepto -->
       <div class="f-field">
         <label>Concepto</label>
-        <select class="ni-concepto" onchange="handleConceptChange('${rowId}',this)">
+        <select class="ni-concepto" data-searchable onchange="handleConceptChange('${rowId}',this)">
           ${buildConceptOpts(data.code||'')}
         </select>
         <div class="ni-concepto-nuevo" style="display:${showCustomConcept}; margin-top:4px;">
@@ -292,6 +299,7 @@ function addNewItemRow(data = {}) {
     </div>
   `;
   cont.appendChild(div);
+  SearchableSelect.init(div.querySelector('.ni-concepto'));
   updPendingNotice();
 }
 
@@ -301,6 +309,7 @@ function handleConceptChange(rowId, sel) {
   const unitSel  = row.querySelector('.ni-unit');
   if (sel.value === '_new') {
     sel.value = '';
+    if (sel._ssSync) sel._ssSync();
     nuevoDiv.style.display = 'block';
     row.querySelector('.ni-concepto-txt').focus();
   } else if (sel.value) {
@@ -396,7 +405,7 @@ async function submitNewOrder() {
     id:         crypto.randomUUID(),
     folio,
     date:       now.toISOString().slice(0,10),
-    status:     'Pedido',
+    status:     'Autorizado',
     project:    document.getElementById('no-proyecto').value,
     requester:  'Compras',
     notes:      document.getElementById('no-notas').value.trim(),
@@ -419,11 +428,20 @@ async function submitNewOrder() {
   showToast(`✓ Orden ${folio} guardada`);
 }
 
+function statusFlow(cur) {
+  const steps = [['Pedido','Solicitado'],['Confirmado','Confirmado'],['Autorizado','Autorizado'],['Comprado','Comprado'],['Recibido','Recibido']];
+  const ci = steps.findIndex(([s]) => s === cur);
+  return '<div class="status-flow">' + steps.map(([,lbl], i) =>
+    (i > 0 ? '<span class="sf-sep">›</span>' : '') +
+    `<span class="sf-step ${i < ci ? 'sf-done' : i === ci ? 'sf-active' : ''}">${lbl}</span>`
+  ).join('') + '</div>';
+}
+
 // ── Render existing orders ─────────────────────────────────────
 function renderOrders() {
   const db     = window.DB.get();
   const orders = (db.purchase_orders || db.orders || [])
-    .filter(o => o.status === 'Confirmado' || o.status === 'Pedido')
+    .filter(o => o.status === 'Autorizado' || o.manual === true)
     .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
 
   const cont = document.getElementById('orders-list');
@@ -452,10 +470,23 @@ function renderOrders() {
     const itemsHtml = (o.items||[]).map((item, i) => `
       <tr>
         <td>
-          <div style="font-weight:600;">${item.name||item.code||'—'}</div>
-          ${item.conceptoPendiente ? '<div class="new-badge" style="display:inline-flex;">✦ Concepto nuevo</div>' : ''}
+          <input type="text" class="iname" data-order="${o.id}" data-idx="${i}"
+            value="${(item.name||item.code||'').replace(/"/g,'&quot;')}"
+            style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
+          ${item.conceptoPendiente ? `
+            <div class="add-cat-row">
+              <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
+              <label for="cat-${o.id}-${i}">✦ Agregar al catálogo de inventario</label>
+            </div>` : ''}
         </td>
-        <td style="text-align:center;">${item.qty} ${item.unit||''}</td>
+        <td style="white-space:nowrap;">
+          <div style="display:flex;gap:4px;align-items:center;">
+            <span style="font-weight:600;">${item.qty}</span>
+            <select class="iunit" data-order="${o.id}" data-idx="${i}" style="padding:4px 5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;">
+              ${buildUnitOpts(item.unit||'pza')}
+            </select>
+          </div>
+        </td>
         <td>
           ${item.proveedorPendiente
             ? `<div style="font-size:12px; font-weight:600;">${item.proveedorNombre||'—'} <span class="new-badge">✦ Nuevo</span></div>`
@@ -481,10 +512,11 @@ function renderOrders() {
         </div>
         <span class="pill ${pillCls}">${pillTxt}</span>
       </div>
+      ${statusFlow(o.status)}
       ${pendingHtml}
       <table class="items-tbl">
         <thead><tr>
-          <th>Concepto</th><th>Cantidad</th><th style="min-width:140px;">Proveedor</th>
+          <th>Concepto</th><th>Cant./Unidad</th><th style="min-width:140px;">Proveedor</th>
           <th>$ Precio Unit.</th><th>Cuenta</th>
         </tr></thead>
         <tbody>${itemsHtml}</tbody>
@@ -512,6 +544,14 @@ async function guardarPrecios(ordId) {
 function readPricesFromCard(ordId, order) {
   const card = document.getElementById('ord-'+ordId);
   if (!card) return;
+  card.querySelectorAll('.iname').forEach(inp => {
+    const idx = parseInt(inp.dataset.idx);
+    if (order.items[idx] !== undefined) order.items[idx].name = inp.value.trim();
+  });
+  card.querySelectorAll('.iunit').forEach(sel => {
+    const idx = parseInt(sel.dataset.idx);
+    if (order.items[idx] !== undefined) order.items[idx].unit = sel.value;
+  });
   card.querySelectorAll('.iprice').forEach(inp => {
     const idx = parseInt(inp.dataset.idx);
     if (order.items[idx] !== undefined) order.items[idx].price = parseFloat(inp.value)||0;
@@ -520,7 +560,6 @@ function readPricesFromCard(ordId, order) {
     const idx = parseInt(sel.dataset.idx);
     if (order.items[idx] !== undefined) order.items[idx].account = sel.value;
   });
-  // Read supplier selects (for items without pending supplier)
   (order.items||[]).forEach((item, i) => {
     if (!item.proveedorPendiente) {
       const sel = card.querySelector(`.prov-sel-${ordId}-${i}`);
@@ -555,22 +594,26 @@ async function act(ordId, newStatus) {
   const newConcepts  = [];
   const newSuppliers = [];
 
-  (order.items||[]).forEach(item => {
+  (order.items||[]).forEach((item, idx) => {
     if (item.conceptoPendiente) {
-      const newInvItem = {
-        id:       crypto.randomUUID(),
-        code:     'NCON-' + Date.now().toString().slice(-5),
-        name:     item.conceptoPendiente.nombre,
-        nombre:   item.conceptoPendiente.nombre,
-        unit:     item.conceptoPendiente.unidad || item.unit || 'pza',
-        unidad:   item.conceptoPendiente.unidad || item.unit || 'pza',
-        category: 'General',
-        stock:    0, min: 0, cost: item.price || 0
-      };
-      db.inventory.push(newInvItem);
-      if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('inventory', newInvItem.id, newInvItem);
-      item.code             = newInvItem.code;
-      newConcepts.push(newInvItem.name);
+      const checkbox = card.querySelector(`.iadd-cat[data-idx="${idx}"]`);
+      const shouldAdd = !checkbox || checkbox.checked;
+      if (shouldAdd) {
+        const newInvItem = {
+          id:       crypto.randomUUID(),
+          code:     'NCON-' + Date.now().toString().slice(-5),
+          name:     item.name || item.conceptoPendiente.nombre,
+          nombre:   item.name || item.conceptoPendiente.nombre,
+          unit:     item.unit || item.conceptoPendiente.unidad || 'pza',
+          unidad:   item.unit || item.conceptoPendiente.unidad || 'pza',
+          category: 'General',
+          stock:    0, min: 0, cost: item.price || 0
+        };
+        db.inventory.push(newInvItem);
+        if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('inventory', newInvItem.id, newInvItem);
+        item.code = newInvItem.code;
+        newConcepts.push(newInvItem.name);
+      }
       delete item.conceptoPendiente;
     }
 

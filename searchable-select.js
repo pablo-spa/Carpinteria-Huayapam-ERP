@@ -53,7 +53,7 @@ const SearchableSelect = (() => {
         font-size: 10px;
       }
       .ss-dropdown {
-        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+        position: fixed;
         background: var(--base, #eff1f5);
         border: 1px solid var(--surface0, #ccd0da);
         border-radius: 10px;
@@ -61,6 +61,7 @@ const SearchableSelect = (() => {
         z-index: 9999; overflow: hidden;
         display: none; flex-direction: column; max-height: 280px;
       }
+      .ss-opt[data-value="__new__"] { color: var(--blue, #1e66f5); font-weight: 700; }
       .ss-dropdown.open { display: flex; }
       .ss-search-wrap {
         padding: 8px 8px 4px;
@@ -237,6 +238,10 @@ const SearchableSelect = (() => {
 
     function open() {
       if (trigger.disabled) return;
+      const rect = trigger.getBoundingClientRect();
+      dropdown.style.top   = (rect.bottom + 4) + 'px';
+      dropdown.style.left  = rect.left + 'px';
+      dropdown.style.width = rect.width + 'px';
       renderList('');
       searchInput.value = '';
       dropdown.classList.add('open');

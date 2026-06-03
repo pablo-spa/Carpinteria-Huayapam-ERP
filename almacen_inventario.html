@@ -28,97 +28,135 @@
 
 body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
 
-.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.hdr-title { font-size: 18px; font-weight: 800; }
-.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; min-width: 240px; }
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.hdr-title { font-size: 17px; font-weight: 800; }
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; flex: 1; min-width: 180px; max-width: 360px; }
 .search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; margin-left: 8px; }
 
-.filters { display: flex; gap: 8px; overflow-x: auto; padding: 16px 24px; background: var(--base); border-bottom: 1px solid var(--crust); }
-.filters::-webkit-scrollbar { display: none; }
-.f-btn { padding: 6px 14px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; }
+.f-btn { padding: 4px 10px; background: var(--base); border: 1px solid var(--crust); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; transition: all .12s; }
 .f-btn:hover { background: var(--surface0); color: var(--text); }
 .f-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
+.f-btn.act-red { background: var(--red); color: #fff; border-color: var(--red); }
+.f-btn.act-amber { background: var(--amber); color: #fff; border-color: var(--amber); }
+.f-btn-tool { padding: 4px 10px; background: transparent; border: 1px solid var(--surface1); border-radius: 6px; font-size: 11px; font-weight: 700; color: var(--subtext); cursor: pointer; white-space: nowrap; }
+.f-btn-tool:hover { background: var(--surface0); color: var(--text); }
+.f-select { padding: 4px 10px; background: var(--base); border: 1px solid var(--crust); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; max-width: 160px; }
+.f-select:focus { border-color: var(--blue); color: var(--text); }
+.hdr-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
 
-.main { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+.main { padding: 16px 20px; }
+
+.warn-banner { background: var(--amber-bg); border: 1px solid var(--amber); border-radius: 10px; padding: 10px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; color: var(--amber); }
+.warn-banner button { padding: 5px 12px; border: 1px solid var(--amber); border-radius: 6px; background: transparent; color: var(--amber); font-size: 12px; font-weight: 700; cursor: pointer; }
 
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
 .table-wrap { overflow-x: auto; width: 100%; }
-.inv-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-.inv-table th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); }
-.inv-table td { padding: 14px 16px; vertical-align: middle; border-bottom: 1px solid var(--crust); font-size: 13px; font-weight: 500; }
-.inv-table tr:hover { background: var(--surface0); }
+.inv-table { width: 100%; border-collapse: collapse; }
+.inv-table th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
+.inv-table td { padding: 11px 14px; vertical-align: middle; border-bottom: 1px solid var(--crust); font-size: 13px; }
+.inv-table tbody tr:hover { background: var(--surface0); cursor: pointer; }
 .inv-table tr:last-child td { border-bottom: none; }
+.inv-table .col-code { white-space: nowrap; font-family: monospace; font-weight: 700; font-size: 12px; }
+.inv-table .col-name { min-width: 160px; }
+.inv-table .col-cat { white-space: nowrap; }
 
-.pill { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; }
-.pill-ok { background: var(--green-bg); color: var(--green); }
+/* Responsive: hide columns progressively */
+@media (max-width: 1100px) { .col-brand, .col-loc { display: none; } }
+@media (max-width: 850px)  { .col-date, .col-asig  { display: none; } }
+@media (max-width: 600px)  { .col-cost             { display: none; } }
+
+.pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.pill-ok  { background: var(--green-bg); color: var(--green); }
 .pill-low { background: var(--amber-bg); color: var(--amber); }
-.pill-out { background: var(--red-bg); color: var(--red); }
+.pill-out { background: var(--red-bg);   color: var(--red); }
+.cat-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--surface0); color: var(--subtext); white-space: nowrap; }
+.cat-badge.unknown { background: var(--amber-bg); color: var(--amber); }
 
-.modal-input {
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--crust);
-  background: var(--base);
-  color: var(--text);
-  font-family: inherit;
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 13px;
-  height: 40px;
-}
+.modal-input { padding: 9px 10px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-family: inherit; width: 100%; box-sizing: border-box; font-size: 13px; height: 40px; }
 .modal-input:focus { outline: none; border-color: var(--blue); }
-
 .td-hint { color: var(--subtext); font-size: 11px; font-weight: 600; display: block; margin-top: 2px; }
+
+/* Remap modal */
+.remap-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--crust); font-size: 13px; }
+.remap-row:last-child { border-bottom: none; }
+.remap-old { font-weight: 600; color: var(--amber); }
+.remap-arr { color: var(--subtext); font-size: 16px; }
+.remap-sel { padding: 6px 10px; border: 1px solid var(--crust); border-radius: 6px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; }
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="if(window.parent && window.parent.openModule){window.parent.openModule('almacen_hub.html','Portal Almacén')}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
+  <div style="display:flex; align-items:center; gap:16px; flex-shrink:0;">
     <div class="hdr-title">Inventario General</div>
   </div>
-  <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar insumos, códigos..." autofocus></div>
-</div>
-
-<div class="filters">
-  <div style="display:flex; flex-direction:column; gap:4px;">
-    <label style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase;">Filtrar por Categoría</label>
-    <select id="f-cat" style="padding:6px 10px; background:var(--mantle); border:1px solid var(--crust); border-radius:6px; color:var(--text); font-size:13px; font-family:inherit; box-sizing:border-box; height:34px;">
+  <div class="hdr-filters">
+    <select id="cat-select" class="f-select" onchange="setCatFilterSelect(this.value)">
       <option value="all">Todas las categorías</option>
-      <!-- Populated by JS -->
     </select>
-  </div>
-  <div style="display:flex; flex-direction:column; gap:4px; margin-left:16px;">
-    <label style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase;">Estado de Stock</label>
-    <select id="f-stock" style="padding:6px 10px; background:var(--mantle); border:1px solid var(--crust); border-radius:6px; color:var(--text); font-size:13px; font-family:inherit; box-sizing:border-box; height:34px;">
-      <option value="all">Todos</option>
-      <option value="low">Stock Bajo o Cero</option>
-      <option value="ok">Con Stock</option>
-    </select>
+    <button class="f-btn act" data-stock="all"  onclick="setStockFilter('all',this)">Todos</button>
+    <button class="f-btn"     data-stock="low"  onclick="setStockFilter('low',this)">Stock bajo</button>
+    <button class="f-btn"     data-stock="out"  onclick="setStockFilter('out',this)">Sin stock</button>
+    <button class="f-btn-tool" onclick="recodifyAll()" title="Re-codificar CC-MMM-SS">⟳</button>
+    <div class="search-box" style="flex:unset; min-width:160px; max-width:260px;"><span>🔍</span><input type="text" id="srch" placeholder="Buscar..." autofocus></div>
   </div>
 </div>
 
 <div class="main">
+  <div id="warn-remap" style="display:none;" class="warn-banner">
+    <span id="warn-remap-txt"></span>
+    <button onclick="openRemapModal()">Reasignar categorías →</button>
+  </div>
   <div class="card">
     <div class="table-wrap">
       <table class="inv-table">
         <thead>
           <tr>
-            <th>Código</th>
-            <th>Descripción del Artículo</th>
-            <th>Categoría</th>
-            <th>Stock Actual</th>
-            <th>Última Compra</th>
-            <th>Costo Actual</th>
-            <th>Asignado a</th>
-            <th>Ubicación</th>
+            <th class="col-code">Código</th>
+            <th class="col-name">Artículo</th>
+            <th class="col-cat">Categoría</th>
+            <th class="col-brand">Marca</th>
+            <th>Stock</th>
+            <th class="col-date">Últ. Compra</th>
+            <th class="col-cost">Costo</th>
+            <th class="col-asig">Asignado</th>
+            <th class="col-loc">Ubicación</th>
           </tr>
         </thead>
-        <tbody id="inv-body">
-          <!-- Rendered by JS -->
-        </tbody>
+        <tbody id="inv-body"></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal recodificar -->
+<div id="recode-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:var(--mantle); border:1px solid var(--crust); border-radius:14px; width:100%; max-width:480px; padding:24px; max-height:90vh; display:flex; flex-direction:column; gap:0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 style="font-size:16px; font-weight:800;">Asignar Códigos de Categoría</h3>
+      <button onclick="closeRecodeModal()" style="background:none;border:none;color:var(--subtext);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <p style="font-size:12px; color:var(--subtext); margin-bottom:14px;">Asigna un número de 2 dígitos a cada categoría. Esto se usará en los códigos <code style="background:var(--surface0);padding:1px 5px;border-radius:4px;">CC-MMM-SS</code> de todos los productos.</p>
+    <div id="recode-rows" style="overflow-y:auto; flex:1; max-height:360px;"></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px; padding-top:14px; border-top:1px solid var(--crust);">
+      <button onclick="closeRecodeModal()" style="padding:9px 16px; border:1px solid var(--crust); border-radius:6px; background:var(--base); color:var(--text); font-weight:600; cursor:pointer;">Cancelar</button>
+      <button onclick="applyRecode()" style="padding:9px 20px; border:none; border-radius:6px; background:var(--blue); color:#fff; font-weight:700; cursor:pointer;">Recodificar todos</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal reasignar categorías -->
+<div id="remap-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:var(--mantle); border:1px solid var(--crust); border-radius:14px; width:100%; max-width:520px; padding:24px; max-height:90vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:16px; font-weight:800;">Reasignar Categorías</h3>
+      <button onclick="closeRemapModal()" style="background:none;border:none;color:var(--subtext);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <p style="font-size:12px; color:var(--subtext); margin-bottom:16px;">Las siguientes categorías no coinciden con las del catálogo. Selecciona a qué categoría real corresponde cada una y luego aplica.</p>
+    <div id="remap-rows"></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid var(--crust);">
+      <button onclick="closeRemapModal()" style="padding:9px 16px; border:1px solid var(--crust); border-radius:6px; background:var(--base); color:var(--text); font-weight:600; cursor:pointer;">Cancelar</button>
+      <button onclick="applyRemap()" style="padding:9px 20px; border:none; border-radius:6px; background:var(--blue); color:#fff; font-weight:700; cursor:pointer;">Aplicar cambios</button>
     </div>
   </div>
 </div>
@@ -139,11 +177,18 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Código</label>
-        <input type="text" id="m-code" class="modal-input">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="text" id="m-code" class="modal-input" style="font-family:monospace;font-weight:700;flex:1;">
+          <button onclick="autoGenCode()" title="Generar código automático" style="padding:8px 10px;border:1px solid var(--surface0);border-radius:6px;background:var(--base);color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">⟳ Auto</button>
+        </div>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Categoría</label>
-        <select id="m-cat" class="modal-input"></select>
+        <select id="m-cat" class="modal-input" onchange="autoGenCode()"></select>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Marca</label>
+        <select id="m-brand" class="modal-input" onchange="autoGenCode()"></select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Ubicación</label>
@@ -208,94 +253,294 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   let currentStockFilter = 'all';
 
   document.getElementById('srch').addEventListener('input', applyFilters);
-  document.getElementById('f-cat').addEventListener('change', (e) => { currentFilter = e.target.value; applyFilters(); });
-  document.getElementById('f-stock').addEventListener('change', (e) => { currentStockFilter = e.target.value; applyFilters(); });
+
+  function setCatFilterSelect(val) {
+    currentFilter = val;
+    applyFilters();
+  }
+
+  function setStockFilter(val, btn) {
+    currentStockFilter = val;
+    document.querySelectorAll('.f-btn[data-stock]').forEach(b => {
+      b.classList.remove('act','act-red','act-amber');
+    });
+    if (val === 'out') btn.classList.add('act-red');
+    else if (val === 'low') btn.classList.add('act-amber');
+    else btn.classList.add('act');
+    applyFilters();
+  }
 
   let STATE_INVENTORY = [];
-  let STATE_WORKERS = [];
-  
+  let STATE_WORKERS   = [];
+  let STATE_CATS      = []; // [{name, catCode}]
+  let STATE_BRANDS    = []; // [{id, name, brandCode}]
+
   async function init() {
-     [STATE_INVENTORY, STATE_WORKERS] = await Promise.all([
-       window.DB.query("inventory"),
-       window.DB.query("contacts", { tipo: "trabajador", activo: true }),
-       window.DB.query("inventory_locations"),
-     ]);
-     if(!STATE_WORKERS || STATE_WORKERS.length === 0) STATE_WORKERS = window.DB.get().workers || [];
-     initSelects();
-     renderTable();
+    [STATE_INVENTORY, STATE_WORKERS] = await Promise.all([
+      window.DB.query("inventory"),
+      window.DB.query("contacts", { tipo: "trabajador", activo: true }),
+      window.DB.query("inventory_locations"),
+      window.DB.query("concept_categories"),
+      window.DB.query("inventory_brands"),
+    ]);
+    if (!STATE_WORKERS || STATE_WORKERS.length === 0) STATE_WORKERS = window.DB.get().workers || [];
+    initSelects();
+    renderTable();
   }
-  
+
   document.addEventListener('DOMContentLoaded', init);
+
+  // ── Código CC-MMM-SS ──────────────────────────────────────────────────
+  function generateCode(catName, brandId) {
+    const cat   = STATE_CATS.find(c => c.name === catName);
+    const brand = STATE_BRANDS.find(b => b.id === brandId);
+    const cc    = String(cat?.catCode   || '00').padStart(2,'0').slice(0,2);
+    const mmm   = String(brand?.brandCode || '000').padStart(3,'0').slice(0,3);
+    const pfx   = cc + mmm;
+    // Find next sequential for this prefix (strip dashes for comparison)
+    const used = STATE_INVENTORY
+      .filter(i => i.code && i.code.replace(/-/g,'').startsWith(pfx))
+      .map(i => parseInt((i.code.replace(/-/g,'') || '').slice(5, 7)) || 0);
+    const seq = used.length ? Math.max(...used) + 1 : 0;
+    return cc + '-' + mmm + '-' + String(seq).padStart(2,'0');
+  }
+
+  function autoGenCode() {
+    const catName = document.getElementById('m-cat').value;
+    const brandId = document.getElementById('m-brand').value;
+    document.getElementById('m-code').value = generateCode(catName, brandId);
+  }
+
+  function recodifyAll() {
+    // Collect unique categories from inventory items
+    const usedCats = [...new Set(
+      STATE_INVENTORY.filter(i => !i._init && i.name && i.category).map(i => i.category)
+    )].sort();
+
+    // Build the modal rows: each category shows its current catCode (editable) + item count
+    const catCounts = {};
+    STATE_INVENTORY.forEach(i => { if (i.category) catCounts[i.category] = (catCounts[i.category]||0)+1; });
+
+    document.getElementById('recode-rows').innerHTML = usedCats.map((cat, idx) => {
+      const existing = STATE_CATS.find(c => c.name === cat);
+      const code = existing?.catCode || '';
+      const count = catCounts[cat] || 0;
+      return `<div style="display:grid;grid-template-columns:1fr 70px 60px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--crust);">
+        <div>
+          <div style="font-weight:700;font-size:13px;">${cat}</div>
+          <div style="font-size:11px;color:var(--subtext);">${count} producto${count!==1?'s':''}</div>
+        </div>
+        <input type="text" data-cat="${cat}" maxlength="2" placeholder="00"
+          value="${code}"
+          style="padding:7px;text-align:center;font-family:monospace;font-size:16px;font-weight:800;border:1px solid var(--crust);border-radius:6px;background:var(--base);color:var(--text);width:100%;">
+        <span style="font-size:11px;color:var(--subtext);font-weight:700;">CC</span>
+      </div>`;
+    }).join('');
+
+    document.getElementById('recode-overlay').style.display = 'flex';
+  }
+
+  function closeRecodeModal() {
+    document.getElementById('recode-overlay').style.display = 'none';
+  }
+
+  async function applyRecode() {
+    // Read catCodes from modal inputs
+    const inputs = document.querySelectorAll('#recode-rows input[data-cat]');
+    const catCodeMap = {}; // catName → catCode string
+    let missing = false;
+    inputs.forEach(inp => {
+      const code = inp.value.trim().padStart(2,'0').slice(0,2);
+      if (!inp.value.trim()) { missing = true; inp.style.borderColor = 'var(--red)'; }
+      else { inp.style.borderColor = 'var(--crust)'; }
+      catCodeMap[inp.dataset.cat] = code;
+    });
+    if (missing) { alert('Asigna un código de 2 dígitos a todas las categorías antes de continuar.'); return; }
+
+    // Persist catCodes to STATE_CATS and Firestore (concept_categories)
+    const d = window.DB.get();
+    const rawCats = d.concept_categories || [];
+    let catList = (rawCats[0]?.list || rawCats.filter(x => typeof x === 'string' || x?.name))
+      .map(x => typeof x === 'string' ? { name: x, catCode: '' } : {...x});
+
+    Object.entries(catCodeMap).forEach(([name, code]) => {
+      const existing = catList.find(c => c.name === name);
+      if (existing) existing.catCode = code;
+      else catList.push({ name, catCode: code });
+    });
+    STATE_CATS = catList;
+    if (window.parent?.setDocumentInFirebase) {
+      window.parent.setDocumentInFirebase('concept_categories', 'main', { list: catList });
+    }
+    if (window.parent?.DB_STATE) {
+      window.parent.DB_STATE['concept_categories'] = [{ _id: 'main', list: catList }];
+    }
+
+    // Now recodify all inventory items
+    const inventory = (d.inventory || []).filter(i => !i._init && i.name);
+    const counters = {};
+    for (const item of inventory) {
+      const cc  = String(catCodeMap[item.category] || '00').padStart(2,'0').slice(0,2);
+      const brand = STATE_BRANDS.find(b => b.id === item.brandId || b.name === item.brand);
+      const mmm = String(brand?.brandCode || '000').padStart(3,'0').slice(0,3);
+      const pfx = cc + mmm;
+      const seq = counters[pfx] ?? 0;
+      counters[pfx] = seq + 1;
+      item.code = cc + '-' + mmm + '-' + String(seq).padStart(2,'0');
+      if (window.parent?.setDocumentInFirebase) {
+        window.parent.setDocumentInFirebase('inventory', item.id, item);
+      }
+    }
+    window.DB.save(d);
+    STATE_INVENTORY = inventory;
+
+    closeRecodeModal();
+    initSelects();
+    renderTable();
+    alert(`✓ Códigos asignados. ${inventory.length} productos actualizados.`);
+  }
 
   function initSelects() {
     const d = window.DB.get();
 
-    const rawCats  = d.concept_categories || [];
+    // Categories (objects {name, catCode} or legacy strings)
+    const rawCats = d.concept_categories || [];
+    const catList = rawCats[0]?.list || rawCats.filter(x => typeof x === 'string' || x?.name);
+    STATE_CATS = catList.map(x => typeof x === 'string' ? { name: x, catCode: '' } : x);
+    const catNames = STATE_CATS.map(c => c.name);
+
+    // Brands
+    STATE_BRANDS = (d.inventory_brands || []).filter(b => b?.id && b.name);
+
+    // Units & locations
     const rawUnits = d.concept_units || [];
-    const cats  = rawCats[0]?.list  || rawCats.filter(c => typeof c === 'string');
     const units = rawUnits[0]?.list || rawUnits.filter(u => typeof u === 'string');
-
-    // Category filter dropdown
-    document.getElementById('f-cat').innerHTML =
-      '<option value="all">Todas las categorías</option>' +
-      cats.map(c => `<option value="${c}">${c}</option>`).join('');
-
-    // Modal selects
-    document.getElementById('m-cat').innerHTML  = cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('m-unit').innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
     const rawLocs = d.inventory_locations || [];
     const locs = rawLocs[0]?.list || rawLocs.filter(x => typeof x === 'string');
+
+    // ── Category select in header ──────────────────────────────────────
+    const catSel = document.getElementById('cat-select');
+    catSel.innerHTML = '<option value="all">Todas las categorías</option>' +
+      catNames.map(name => `<option value="${name}">${name}</option>`).join('');
+    catSel.value = currentFilter;
+
+    // ── Modal selects ────────────────────────────────────────────────
+    document.getElementById('m-cat').innerHTML = catNames.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('m-brand').innerHTML =
+      '<option value="">— Sin marca (000) —</option>' +
+      STATE_BRANDS.map(b => `<option value="${b.id}">${b.brandCode} — ${b.name}</option>`).join('');
+    document.getElementById('m-unit').innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
     document.getElementById('m-loc').innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
-    
-    // Workers Select
-    document.getElementById('m-assigned').innerHTML = '<option value="">-- Sin asignar --</option>' + STATE_WORKERS.map(w => `<option value="${w.id}">${w.name || w.givenName}</option>`).join('');
+    document.getElementById('m-assigned').innerHTML = '<option value="">— Sin asignar —</option>' +
+      STATE_WORKERS.map(w => `<option value="${w.id}">${w.name || w.givenName}</option>`).join('');
+
+    // ── Detect unknown categories ────────────────────────────────────
+    const catSet = new Set(catNames.map(n => n.toLowerCase().trim()));
+    const unknownCats = [...new Set(
+      STATE_INVENTORY
+        .filter(i => !i._init && i.category && !catSet.has(i.category.toLowerCase().trim()))
+        .map(i => i.category)
+    )];
+    if (unknownCats.length) {
+      const banner = document.getElementById('warn-remap');
+      document.getElementById('warn-remap-txt').textContent =
+        `⚠ ${unknownCats.length} categoría(s) no reconocida(s) en ${STATE_INVENTORY.filter(i => unknownCats.includes(i.category)).length} productos.`;
+      banner.style.display = 'flex';
+      window._unknownCats = unknownCats;
+    }
+  }
+
+  // ── Category remap modal ─────────────────────────────────────────────
+  function openRemapModal() {
+    const catNames = STATE_CATS.map(c => c.name);
+    const opts = catNames.map(n => `<option value="${n}">${n}</option>`).join('');
+    document.getElementById('remap-rows').innerHTML = (window._unknownCats || []).map(old => `
+      <div class="remap-row">
+        <span class="remap-old">"${old}"</span>
+        <span class="remap-arr">→</span>
+        <select class="remap-sel" data-old="${old}">
+          <option value="">— Ignorar —</option>
+          ${opts}
+        </select>
+      </div>`).join('');
+    document.getElementById('remap-overlay').style.display = 'flex';
+  }
+
+  function closeRemapModal() {
+    document.getElementById('remap-overlay').style.display = 'none';
+  }
+
+  async function applyRemap() {
+    const sels = document.querySelectorAll('#remap-rows .remap-sel');
+    const db = window.DB.get();
+    let changed = 0;
+    sels.forEach(sel => {
+      const oldCat = sel.dataset.old;
+      const newCat = sel.value;
+      if (!newCat) return;
+      (db.inventory || []).forEach(item => {
+        if (item.category === oldCat) {
+          item.category = newCat;
+          if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('inventory', item.id, item);
+          changed++;
+        }
+      });
+    });
+    window.DB.save(db);
+    STATE_INVENTORY = (db.inventory || []).filter(i => !i._init);
+    closeRemapModal();
+    document.getElementById('warn-remap').style.display = 'none';
+    window._unknownCats = [];
+    renderTable();
+    alert(`✓ ${changed} producto(s) reasignados.`);
   }
 
   function renderTable() {
     const tbody = document.getElementById('inv-body');
-    const filteredInv = STATE_INVENTORY.filter(i => !i.category || i.category.toLowerCase() !== 'madera');
-    tbody.innerHTML = filteredInv.map((i, idx) => {
-      let pillClass = 'pill-ok';
-      if (i.stock === 0) pillClass = 'pill-out';
-      else if (i.stock <= i.min) pillClass = 'pill-low';
-      
-      const isLow = i.stock <= i.min;
-      const worker = i.assignedTo ? STATE_WORKERS.find(w => w.id === i.assignedTo) : null;
-      let assignedBadge = worker ? `<span class="pill" style="background:var(--surface1); color:var(--text);">${worker.name || worker.givenName}</span>` : '-';
+    const catSet = new Set(STATE_CATS.map(c => c.name.toLowerCase().trim()));
+    const items = STATE_INVENTORY.filter(i => !i._init && i.name && i.category?.toLowerCase() !== 'madera');
 
-      return `
-        <tr style="cursor:pointer;" onclick="openModal('${i.id}')" data-cat="${i.category}" data-low="${isLow}">
-          <td><span style="font-family:monospace;font-weight:700;">${i.code}</span></td>
-          <td><div style="font-weight:700;">${i.name}</div><div class="td-hint">${i.details || ''}</div></td>
-          <td>${i.category}</td>
-          <td><span class="pill ${pillClass}">${i.stock}</span> <span class="td-hint">Mín: ${i.min}</span></td>
-          <td>${i.lastPurchaseDate || '-'}</td>
-          <td>$${(i.cost || 0).toFixed(2)}</td>
-          <td>${assignedBadge}</td>
-          <td>${i.location || '-'}</td>
-        </tr>
-      `;
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:48px;color:var(--subtext);">Sin productos en inventario</td></tr>`;
+      applyFilters(); return;
+    }
+
+    tbody.innerHTML = items.map(i => {
+      const stockNum = parseFloat(i.stock) || 0;
+      const minNum   = parseFloat(i.min)   || 0;
+      const pillClass = stockNum === 0 ? 'pill-out' : stockNum <= minNum ? 'pill-low' : 'pill-ok';
+      const isLow = stockNum <= minNum;
+      const isUnknownCat = i.category && !catSet.has(i.category.toLowerCase().trim());
+      const catBadge = `<span class="cat-badge ${isUnknownCat ? 'unknown' : ''}">${i.category || '—'}</span>`;
+      const worker = i.assignedTo ? STATE_WORKERS.find(w => w.id === i.assignedTo) : null;
+      const assignedTxt = worker ? (worker.name || worker.givenName || '—').split(' ')[0] : '—';
+      const stockOut = stockNum === 0 ? 'out' : isLow ? 'low' : 'ok';
+
+      return `<tr onclick="openModal('${i.id}')"
+          data-cat="${(i.category||'').replace(/"/g,'&quot;')}"
+          data-stock="${stockOut}"
+          data-search="${(i.name+' '+(i.code||'')+' '+(i.category||'')+' '+(i.brand||'')).toLowerCase()}">
+        <td class="col-code">${i.code || '—'}</td>
+        <td class="col-name"><div style="font-weight:700;">${i.name}</div>${i.details ? `<div class="td-hint">${i.details}</div>` : ''}</td>
+        <td class="col-cat">${catBadge}</td>
+        <td class="col-brand" style="font-size:12px;color:var(--subtext);">${i.brand || '—'}</td>
+        <td><span class="pill ${pillClass}">${stockNum}</span><div class="td-hint">Mín: ${minNum}</div></td>
+        <td class="col-date" style="font-size:12px;color:var(--subtext);">${i.lastPurchaseDate || '—'}</td>
+        <td class="col-cost" style="font-weight:600;">$${(i.cost||0).toFixed(2)}</td>
+        <td class="col-asig" style="font-size:12px;">${assignedTxt}</td>
+        <td class="col-loc" style="font-size:12px;color:var(--subtext);">${i.location || '—'}</td>
+      </tr>`;
     }).join('');
     applyFilters();
   }
 
   function applyFilters() {
-    const term = document.getElementById('srch').value.toLowerCase();
-    const rows = document.querySelectorAll('#inv-body tr');
-    
-    rows.forEach(tr => {
-      const textMatch = tr.innerText.toLowerCase().includes(term);
-      let catMatch = true;
-
-      if (currentFilter !== 'all') {
-        catMatch = tr.getAttribute('data-cat') === currentFilter;
-      }
-      
-      let stockMatch = true;
-      if (currentStockFilter === 'low') stockMatch = tr.getAttribute('data-low') === 'true';
-      if (currentStockFilter === 'ok') stockMatch = tr.getAttribute('data-low') !== 'true';
-      
-      tr.style.display = (textMatch && catMatch && stockMatch) ? '' : 'none';
+    const term = document.getElementById('srch').value.toLowerCase().trim();
+    document.querySelectorAll('#inv-body tr').forEach(tr => {
+      const catOk   = currentFilter === 'all' || tr.dataset.cat === currentFilter;
+      const stockOk = currentStockFilter === 'all' || tr.dataset.stock === currentStockFilter;
+      const textOk  = !term || (tr.dataset.search || '').includes(term);
+      tr.style.display = catOk && stockOk && textOk ? '' : 'none';
     });
   }
 
@@ -311,7 +556,21 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     document.getElementById('m-id').value = item.id;
     document.getElementById('m-name').value = item.name;
     document.getElementById('m-code').value = item.code;
-    document.getElementById('m-cat').value = item.category;
+
+    // Categoría: si el valor no está en las opciones, agregar opción temporal
+    const catSel = document.getElementById('m-cat');
+    // Quitar cualquier opción temporal de llamadas anteriores
+    catSel.querySelectorAll('[data-legacy]').forEach(o => o.remove());
+    const catVal = item.category || '';
+    if (catVal && !Array.from(catSel.options).some(o => o.value === catVal)) {
+      const opt = document.createElement('option');
+      opt.value = catVal; opt.textContent = catVal + ' ⚠'; opt.dataset.legacy = '1';
+      opt.style.color = 'var(--amber)';
+      catSel.insertBefore(opt, catSel.firstChild);
+    }
+    catSel.value = catVal;
+
+    document.getElementById('m-brand').value = item.brandId || '';
     document.getElementById('m-loc').value = item.location || '';
     document.getElementById('m-min').value = item.min;
     document.getElementById('m-unit').value = item.unit;
@@ -353,6 +612,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     item.name = document.getElementById('m-name').value;
     item.code = document.getElementById('m-code').value;
     item.category = document.getElementById('m-cat').value;
+    const brandSel = document.getElementById('m-brand');
+    item.brandId = brandSel.value || '';
+    item.brand   = brandSel.value ? (STATE_BRANDS.find(b => b.id === brandSel.value)?.name || '') : '';
     item.location = document.getElementById('m-loc').value;
     item.min = parseFloat(document.getElementById('m-min').value);
     item.unit = document.getElementById('m-unit').value;

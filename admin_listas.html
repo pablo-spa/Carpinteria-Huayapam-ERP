@@ -192,8 +192,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     {
       section: 'Inventario y Compras',
       items: [
-        { key: 'concept_categories',   col: 'concept_categories',   type: 'list',
-          name: 'Categorías de Inventario', desc: 'Tableros, Herrajes, Químicos, Herramienta…' },
+        { key: 'concept_categories',   col: 'concept_categories',   type: 'catlist',
+          name: 'Categorías de Inventario', desc: 'Cada categoría tiene un código de 2 dígitos para el código de producto (ej. Ferretería → 01)' },
+        { key: 'inventory_brands',     col: 'inventory_brands',     type: 'brand',
+          name: 'Marcas de Inventario',     desc: 'Marca de cada producto con código de 3 dígitos (ej. Sika → 001). Sin marca = 000' },
         { key: 'concept_units',        col: 'concept_units',        type: 'list',
           name: 'Unidades de Medida',       desc: 'pza, gln, kg, lt, mt, caja…' },
         { key: 'inventory_locations',  col: 'inventory_locations',  type: 'list',
@@ -243,6 +245,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
             if (window.parent?.DB_STATE)
               window.parent.DB_STATE['worker_roles'] = [{ _id: 'main', list: DEFAULT_WORKER_ROLES }];
           }
+        } else if (def.type === 'catlist') {
+          // Lista de objetos {name, catCode} guardada como doc 'main' {list:[...]}
+          const rawList = raw[0]?.list || raw.filter(x => typeof x === 'string' || x?.name);
+          STATE[def.key] = rawList.map(x =>
+            typeof x === 'string' ? { name: x, catCode: '' } : x
+          );
+        } else if (def.type === 'brand') {
+          STATE[def.key] = raw.filter(x => x.id && !x._init && x.name);
         } else if (def.type === 'expense') {
           // Deduplicar por nombre (puede haber duplicados en Firestore)
           const seen = new Set();
@@ -307,6 +317,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       bar.innerHTML = `
         <input type="text" id="new-val" placeholder="Nuevo valor…" onkeydown="if(event.key==='Enter') addItem()">
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    } else if (currentDef.type === 'catlist') {
+      const nextCode = String(Math.max(0, ...STATE[currentDef.key].map(x => parseInt(x.catCode)||0)) + 1).padStart(2,'0');
+      bar.innerHTML = `
+        <input type="text" id="new-val" placeholder="Nombre de categoría…" style="flex:2;" onkeydown="if(event.key==='Enter') addItem()">
+        <input type="text" id="new-catcode" value="${nextCode}" maxlength="2" placeholder="00"
+          style="width:54px; text-align:center; font-family:monospace; font-weight:700; padding:8px; border:1px solid var(--crust); border-radius:6px; background:var(--base); color:var(--text);">
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    } else if (currentDef.type === 'brand') {
+      const nextBCode = String(Math.max(0, ...STATE[currentDef.key].map(x => parseInt(x.brandCode)||0)) + 1).padStart(3,'0');
+      bar.innerHTML = `
+        <input type="text" id="new-val" placeholder="Nombre de marca…" style="flex:2;" onkeydown="if(event.key==='Enter') addItem()">
+        <input type="text" id="new-brandcode" value="${nextBCode}" maxlength="3" placeholder="001"
+          style="width:60px; text-align:center; font-family:monospace; font-weight:700; padding:8px; border:1px solid var(--crust); border-radius:6px; background:var(--base); color:var(--text);">
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
     } else if (currentDef.type === 'expense') {
       bar.innerHTML = `
         <input type="text" id="new-val" placeholder="Nombre de categoría…" style="flex:2;" onkeydown="if(event.key==='Enter') addItem()">
@@ -337,6 +361,38 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       container.innerHTML = items.map((val, i) => `
         <div class="item-row">
           <input class="item-inp" value="${escHtml(val)}" onchange="updateItem(${i}, this.value)" onblur="updateItem(${i}, this.value)">
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
+    } else if (currentDef.type === 'catlist') {
+      container.innerHTML = `
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+          <span style="flex:1;">Nombre de Categoría</span>
+          <span style="width:60px;text-align:center;">Cód. (2 díg.)</span>
+          <span style="width:32px;"></span>
+        </div>` +
+        items.map((item, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.name||'')}" style="flex:1;"
+            onchange="updateItem(${i}, this.value, 'name')" onblur="updateItem(${i}, this.value, 'name')">
+          <input class="item-inp" value="${escHtml(item.catCode||'')}" maxlength="2" placeholder="00"
+            style="width:60px;text-align:center;font-family:monospace;font-weight:800;font-size:15px;"
+            onchange="updateItem(${i}, this.value, 'catCode')" onblur="updateItem(${i}, this.value, 'catCode')">
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
+    } else if (currentDef.type === 'brand') {
+      container.innerHTML = `
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+          <span style="width:70px;text-align:center;">Cód. (3 díg.)</span>
+          <span style="flex:1;">Nombre de Marca</span>
+          <span style="width:32px;"></span>
+        </div>` +
+        items.map((item, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.brandCode||'')}" maxlength="3" placeholder="001"
+            style="width:70px;text-align:center;font-family:monospace;font-weight:800;font-size:15px;"
+            onchange="updateItem(${i}, this.value, 'brandCode')" onblur="updateItem(${i}, this.value, 'brandCode')">
+          <input class="item-inp" value="${escHtml(item.name||'')}" placeholder="Nombre de marca" style="flex:1;"
+            onchange="updateItem(${i}, this.value, 'name')" onblur="updateItem(${i}, this.value, 'name')">
           <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
         </div>`).join('');
     } else if (currentDef.type === 'expense') {
@@ -370,6 +426,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       if (STATE[currentDef.key].includes(val)) return alert('Ya existe ese valor.');
       STATE[currentDef.key].push(val);
       await saveList();
+    } else if (currentDef.type === 'catlist') {
+      const catCode = String(document.getElementById('new-catcode')?.value || '').padStart(2,'0').slice(0,2);
+      STATE[currentDef.key].push({ name: val, catCode });
+      await saveCatList();
+    } else if (currentDef.type === 'brand') {
+      const brandCode = String(document.getElementById('new-brandcode')?.value || '').padStart(3,'0').slice(0,3);
+      const id = 'brand-' + Date.now().toString(36);
+      STATE[currentDef.key].push({ id, name: val, brandCode });
+      await saveItem({ id, name: val, brandCode });
     } else if (currentDef.type === 'expense') {
       const type = document.getElementById('new-type')?.value || 'gasto';
       const id = 'cat-' + Date.now().toString(36);
@@ -394,6 +459,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     if (currentDef.type === 'list') {
       STATE[currentDef.key][idx] = newVal;
       await saveList();
+    } else if (currentDef.type === 'catlist') {
+      STATE[currentDef.key][idx][field] = newVal;
+      await saveCatList();
     } else if (field) {
       STATE[currentDef.key][idx][field] = newVal;
       if (currentDef.type === 'piece' && field === 'name') STATE[currentDef.key][idx].code = autoCode(newVal);
@@ -410,6 +478,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     if (currentDef.type === 'list') {
       items.splice(idx, 1);
       await saveList();
+    } else if (currentDef.type === 'catlist') {
+      items.splice(idx, 1);
+      await saveCatList();
     } else {
       const removed = items.splice(idx, 1)[0];
       if (window.parent?.deleteDocumentFromFirebase && removed.id) {
@@ -429,12 +500,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   // ── Save helpers ─────────────────────────────────────────────────────
   async function saveList() {
-    // {list:[...]} pattern — save as single doc 'main'
     const list = STATE[currentDef.key];
     if (window.parent?.setDocumentInFirebase) {
       await window.parent.setDocumentInFirebase(currentDef.col, 'main', { list });
     }
-    // Update DB_STATE
+    if (window.parent?.DB_STATE) {
+      window.parent.DB_STATE[currentDef.key] = [{ _id: 'main', list }];
+    }
+    flash();
+  }
+
+  async function saveCatList() {
+    // Igual que saveList pero la lista es de objetos {name, catCode}
+    const list = STATE[currentDef.key];
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase(currentDef.col, 'main', { list });
+    }
     if (window.parent?.DB_STATE) {
       window.parent.DB_STATE[currentDef.key] = [{ _id: 'main', list }];
     }

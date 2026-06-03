@@ -108,8 +108,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   let UNITS = [];
 
   function goBack() {
-    if (window.parent && window.parent.openModule) window.parent.openModule('almacen_hub.html', 'Portal Almacén');
-    else window.history.back();
+    window.history.back();
   }
 
   async function init() {
@@ -183,7 +182,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     tr.innerHTML = `
       <td>
-        <select class="i-sel" onchange="handleConceptChange(this)">
+        <select class="i-sel" data-searchable onchange="handleConceptChange(this)">
           ${buildInvOptions(code)}
         </select>
         <input type="text" class="i-custom" placeholder="Descripción del material"
@@ -196,6 +195,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       <td><button class="rm-btn" onclick="this.closest('tr').remove()">✕</button></td>
     `;
     tbody.appendChild(tr);
+    SearchableSelect.init(tr.querySelector('.i-sel'));
   }
 
   function handleConceptChange(sel) {
@@ -205,6 +205,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     if (sel.value === '_new') {
       sel.value = '';
+      if (sel._ssSync) sel._ssSync();
       customInput.style.display = 'block';
       customInput.focus();
       tr.dataset.custom = '1';
