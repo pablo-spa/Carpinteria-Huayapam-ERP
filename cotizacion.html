@@ -215,13 +215,18 @@ input.mat-price { text-align: right; font-size: 12px; }
     </div>
     
     <!-- Fila Manual -->
-    <div style="display: flex; gap: 16px; align-items: center; background: var(--mantle); padding: 12px; border: 1px solid var(--crust); border-radius: 12px;">
-      <div class="add-manual">
-        <select class="type-sel" id="typeSelect">
-          <option value="">Ingreso manual...</option>
-        </select>
-        <button class="btn btn-dark" onclick="addPiece()" style="padding:6px 12px;">+</button>
+    <div style="display: flex; gap: 8px; align-items: center; background: var(--mantle); padding: 12px; border: 1px solid var(--crust); border-radius: 12px; flex-wrap:wrap;">
+      <select class="type-sel" id="typeSelect" style="flex:2; min-width:160px;">
+        <option value="">Tipo de pieza…</option>
+      </select>
+      <input type="text" id="pieceNameInput" placeholder="Nombre personalizado (ej: Closet cuarto principal)"
+        style="flex:3; min-width:180px; padding:8px 10px; border:1px solid var(--surface0); border-radius:8px; background:var(--base); color:var(--text); font-size:13px; font-family:inherit;">
+      <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--subtext); flex-shrink:0;">
+        <span>Cant.</span>
+        <input type="number" id="pieceQtyInput" value="1" min="1" max="99" step="1"
+          style="width:52px; padding:8px 6px; border:1px solid var(--surface0); border-radius:8px; background:var(--base); color:var(--text); font-size:13px; font-family:inherit; text-align:center;">
       </div>
+      <button class="btn btn-dark" onclick="addPiece()" style="padding:6px 14px; flex-shrink:0;">+ Agregar pieza</button>
     </div>
 
     <!-- Configuración Global -->
@@ -481,21 +486,40 @@ function setDesc(id, val) {
 }
 
 function addPiece() {
-  const sel = document.getElementById('typeSelect');
+  const sel      = document.getElementById('typeSelect');
+  const nameInp  = document.getElementById('pieceNameInput');
+  const qtyInp   = document.getElementById('pieceQtyInput');
   const val = sel.value;
   if (!val) { sel.focus(); return; }
-  const [code, name] = PIECE_TYPES.find(([c]) => c === val);
-  S.typeCounts[code] = (S.typeCounts[code]||0)+1;
+  const [code, typeName] = PIECE_TYPES.find(([c]) => c === val);
+  const customName = (nameInp?.value || '').trim();
+  const qty = Math.max(1, parseInt(qtyInp?.value) || 1);
+
+  S.typeCounts[code] = (S.typeCounts[code]||0) + 1;
   const piece = {
-    id: S.nextId++,
+    id:   S.nextId++,
     code: code + S.typeCounts[code],
-    name, mats: [],
-    hrRows: [],
-    open: true,
+    name: customName || typeName,
+    qty,
+    mats:    [],
+    hrRows:  [],
+    open:    true,
   };
   S.pieces.push(piece);
-  sel.value = '';
+  sel.value      = '';
+  if (nameInp) nameInp.value = '';
+  if (qtyInp)  qtyInp.value  = '1';
   render();
+}
+
+function setPieceName(id, val) {
+  const p = S.pieces.find(p => p.id === id);
+  if (p) p.name = val;
+}
+
+function setPieceQty(id, val) {
+  const p = S.pieces.find(p => p.id === id);
+  if (p) { p.qty = Math.max(1, parseInt(val)||1); updatePiece(id); }
 }
 
 function removePiece(id) {
@@ -676,13 +700,26 @@ function renderPiece(piece) {
       <div class="piece-hdr" onclick="togglePiece(${piece.id})">
         <span class="p-badge">${piece.code}</span>
         ${piece.imagen ? `<img src="${piece.imagen}" class="p-thumb" alt="">` : ''}
-        <span class="p-name">${piece.name}</span>
-        <span class="p-price" id="pp-${piece.id}">${c.final>0?fmt(c.final):'—'}</span>
+        <input class="p-name-input" value="${(piece.name||'').replace(/"/g,'&quot;')}"
+          placeholder="Nombre de la pieza…"
+          onclick="event.stopPropagation()"
+          oninput="setPieceName(${piece.id}, this.value)"
+          style="flex:1; border:none; background:transparent; color:var(--text); font-size:14px; font-weight:700; font-family:inherit; outline:none; min-width:0; padding:0;">
+        ${(piece.qty||1) > 1 ? `<span style="font-size:11px;font-weight:800;background:var(--blue-bg);color:var(--blue);padding:2px 7px;border-radius:5px;white-space:nowrap;">×${piece.qty}</span>` : ''}
+        <span class="p-price" id="pp-${piece.id}">${c.final>0?fmt(c.final*(piece.qty||1)):'—'}</span>
         <span class="p-arrow ${piece.open?'open':''}">▼</span>
       </div>
       ${piece.open ? `
       <div class="piece-body">
         ${imgSection}
+        <div style="display:flex; gap:12px; align-items:center; margin-bottom:14px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--subtext);">
+            <span>Cantidad de piezas</span>
+            <input type="number" min="1" max="99" value="${piece.qty||1}"
+              oninput="setPieceQty(${piece.id}, this.value)"
+              style="width:56px; padding:6px 8px; border:1px solid var(--surface0); border-radius:6px; background:var(--base); color:var(--text); font-size:14px; font-weight:800; font-family:inherit; text-align:center;">
+          </div>
+        </div>
         <textarea
           style="width:100%;resize:vertical;min-height:64px;padding:9px 10px;border:1px solid var(--surface0);border-radius:8px;background:var(--base);color:var(--text);font-family:inherit;font-size:13px;line-height:1.5;margin-bottom:18px;"
           placeholder="Descripción, dimensiones, acabados, especificaciones…"
@@ -747,7 +784,8 @@ function renderFooter() {
   }
   const tot = S.pieces.reduce((acc,p) => {
     const c = calc(p);
-    return { sub1:acc.sub1+c.sub1, labor:acc.labor+c.labor, oh:acc.oh+c.oh, margins:acc.margins+c.ex+c.mg+c.er, tax:acc.tax+c.tax, fee:acc.fee+c.fee, final:acc.final+c.final };
+    const q = p.qty || 1;
+    return { sub1:acc.sub1+c.sub1*q, labor:acc.labor+c.labor*q, oh:acc.oh+c.oh*q, margins:acc.margins+(c.ex+c.mg+c.er)*q, tax:acc.tax+c.tax*q, fee:acc.fee+c.fee*q, final:acc.final+c.final*q };
   }, {sub1:0,labor:0,oh:0,margins:0,tax:0,fee:0,final:0});
 
   const lbl = document.getElementById('f-overhead-label');
@@ -866,13 +904,14 @@ function showPrintPreview(isClient) {
   const tdW  = `padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;vertical-align:top;`;
   const tdWR = `padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;`;
 
-  /* — Agregar horas por rol — */
+  /* — Agregar horas por rol (× qty de cada pieza) — */
   const horasAgg = {};
   S.pieces.forEach(p => {
+    const q = p.qty || 1;
     (p.hrRows||[]).forEach(r => {
       if (!r.role || !r.hrs) return;
       if (!horasAgg[r.role]) horasAgg[r.role] = { label: RATE_LABELS[r.role]||r.role, hrs: 0 };
-      horasAgg[r.role].hrs += r.hrs || 0;
+      horasAgg[r.role].hrs += (r.hrs || 0) * q;
     });
   });
   const totalHrs = Object.values(horasAgg).reduce((s, v) => s + v.hrs, 0);
@@ -885,13 +924,14 @@ function showPrintPreview(isClient) {
       <td style="${tdW}"></td>
     </tr>`).join('');
 
-  /* — Agregar materiales (BOM) — */
+  /* — Agregar materiales (BOM × qty de cada pieza) — */
   const bomAgg = {};
   S.pieces.forEach(p => {
+    const q = p.qty || 1;
     p.mats.forEach(m => {
       const k = (m.n||'') + '|' + (m.u||'');
       if (!bomAgg[k]) bomAgg[k] = { name: m.n||'', unit: m.u||'', qty: 0 };
-      bomAgg[k].qty += m.qty || 0;
+      bomAgg[k].qty += (m.qty || 0) * q;
     });
   });
   const bomRows = Object.values(bomAgg)
