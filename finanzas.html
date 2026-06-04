@@ -324,6 +324,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     
     <div class="sp-foot">
       <div id="status-badge" class="pill pill-amber" style="display:none;">Borrador</div>
+      <button id="btn-delete-panel" class="btn btn-outline" onclick="deletePanelMovement()"
+        style="display:none;color:var(--red);border-color:var(--red);margin-right:auto;">🗑 Eliminar</button>
       <div style="display:flex; gap:8px; margin-left:auto;">
         <button class="btn btn-outline" onclick="closePanel()">Cancelar</button>
         <button class="btn btn-outline" id="btn-draft" onclick="saveMov(false)" style="background:var(--base)">Guardar Borrador</button>
@@ -440,10 +442,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     DBm = [..._allMovements];
     LOADED_MONTHS = [...new Set(_allMovements.map(m => (m.date||'').slice(0,7)).filter(Boolean))];
 
-    STATE_PROJECTS = await window.DB.query("projects");
-    STATE_CATEGORIES = window.DB.get().expense_categories || []; // Keeping standard config
-    STATE_CONTACTS = await window.DB.query("contacts", { activo: true });
-    if (!STATE_CONTACTS || STATE_CONTACTS.length === 0) STATE_CONTACTS = window.DB.get().contacts || [];
+    STATE_PROJECTS   = await window.DB.query("projects");
+    const rawCats    = await window.DB.query("expense_categories");
+    // expense_categories puede venir como array de docs con {name,type} o como doc único con {list:[]}
+    if (rawCats.length && rawCats[0]?.name) {
+      STATE_CATEGORIES = rawCats;
+    } else if (rawCats.length && rawCats[0]?.list) {
+      STATE_CATEGORIES = rawCats[0].list; // formato legacy
+    } else {
+      STATE_CATEGORIES = window.DB.get().expense_categories || [];
+    }
+    const rawContacts = await window.DB.query("contacts");
+    STATE_CONTACTS = rawContacts.filter(c => c.activo !== false && (c.name || c.nombre || c.givenName));
+    if (!STATE_CONTACTS.length) STATE_CONTACTS = window.DB.get().contacts || [];
     
     STATE_ORDERS = await window.DB.query("purchase_orders");
     if (!STATE_ORDERS || STATE_ORDERS.length === 0) STATE_ORDERS = window.DB.get().orders || [];
@@ -516,11 +527,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     renderList();
   }
 
+  function contactDisplayName(c) {
+    if (c.nombre && (c.apellidoPaterno || c.apellidoMaterno)) {
+      return [c.nombre, c.apellidoPaterno, c.apellidoMaterno].filter(Boolean).join(' ');
+    }
+    return c.nombre || c.name || c.givenName || '';
+  }
+
   function populateContacts() {
     const cSel = document.getElementById('f-entity');
     const prev = cSel.value;
+    // Agrupar por tipo para mejor navegación
+    const clientes   = STATE_CONTACTS.filter(c => c.tipo === 'cliente');
+    const proveedores= STATE_CONTACTS.filter(c => c.tipo === 'proveedor');
+    const otros      = STATE_CONTACTS.filter(c => c.tipo !== 'cliente' && c.tipo !== 'proveedor' && c.tipo !== 'trabajador');
+    const toOpts = arr => arr.map(c => {
+      const n = contactDisplayName(c);
+      return n ? `<option value="${n}">${n}</option>` : '';
+    }).join('');
     cSel.innerHTML = '<option value="">-- Seleccionar / Varios --</option>' +
-      STATE_CONTACTS.map(c => `<option value="${c.name || c.givenName}">${c.name || c.givenName}</option>`).join('');
+      (clientes.length    ? `<optgroup label="Clientes">${toOpts(clientes)}</optgroup>` : '') +
+      (proveedores.length ? `<optgroup label="Proveedores">${toOpts(proveedores)}</optgroup>` : '') +
+      (otros.length       ? `<optgroup label="Otros">${toOpts(otros)}</optgroup>` : '');
     if(prev) cSel.value = prev;
     if (cSel._ssInit) cSel._ssRefresh(); else SearchableSelect.init(cSel);
   }
@@ -683,6 +711,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     }
   }
 
+  function deletePanelMovement() {
+    const mid = document.getElementById('btn-delete-panel').dataset.mid;
+    if (!mid) return;
+    closePanel();
+    deleteMovement(mid);
+  }
+
   function deleteMovement(mid) {
     const mov = _allMovements.find(m => m.id === mid);
     if (!mov) return;
@@ -779,7 +814,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       document.getElementById('f-amount').value = m.amount;
       document.getElementById('f-acc').value = m.account;
       if(m.destAccount) document.getElementById('f-dest').value = m.destAccount;
-      document.getElementById('f-entity').value = m.entity || '';
+      // Si el movimiento viene de una OC y no tiene entidad, auto-llenar desde la OC
+      let entityVal = m.entity || '';
+      if (!entityVal && m.purchase_order_id) {
+        const oc = STATE_ORDERS.find(o => o.id === m.purchase_order_id);
+        if (oc) entityVal = oc.proveedorNombre || oc.provider || '';
+      }
+      document.getElementById('f-entity').value = entityVal;
+      if (document.getElementById('f-entity')._ssSync) document.getElementById('f-entity')._ssSync();
       document.getElementById('f-concept').value = m.concept || '';
       document.getElementById('f-cat-input').value = m.category || '';
       document.getElementById('f-notes').value = m.notes || '';
@@ -795,6 +837,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       } else {
         badge.className='pill pill-amber'; badge.textContent='Borrador';
       }
+      document.getElementById('btn-delete-panel').style.display = 'inline-flex';
+      document.getElementById('btn-delete-panel').dataset.mid = id;
 
     } else {
       document.getElementById('sp-title').textContent = 'Nuevo Movimiento';
@@ -809,6 +853,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       document.getElementById('f-cat-input').value = '';
       document.getElementById('f-notes').value = '';
       document.getElementById('status-badge').style.display = 'none';
+      document.getElementById('btn-delete-panel').style.display = 'none';
       const projEl2 = document.getElementById('f-proj');
       projEl2.value = '';
       if (projEl2._ssSync) projEl2._ssSync();
