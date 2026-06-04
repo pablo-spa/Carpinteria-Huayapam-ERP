@@ -7,26 +7,6 @@
 <title>Inventario General — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --green: #40a02b; --amber: #df8e1d; --red: #d20f39;
-  --green-bg: rgba(64,160,43,0.15); --amber-bg: rgba(223,142,29,0.15); --red-bg: rgba(210,15,57,0.15);
-  --blue: #1e66f5; --radius-lg: 14px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --green: #a6da95; --amber: #f9e2af; --red: #f38ba8;
-    --green-bg: rgba(166,218,149,0.15); --amber-bg: rgba(249,226,175,0.15); --red-bg: rgba(243,139,168,0.15);
-    --blue: #8caaee;
-  }
-}
-
-body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
 
 .hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .hdr-title { font-size: 17px; font-weight: 800; }
@@ -277,14 +257,20 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   let STATE_BRANDS    = []; // [{id, name, brandCode}]
 
   async function init() {
-    [STATE_INVENTORY, STATE_WORKERS] = await Promise.all([
+    const [invData, workersData, , catsRaw, brandsData] = await Promise.all([
       window.DB.query("inventory"),
       window.DB.query("contacts", { tipo: "trabajador", activo: true }),
-      window.DB.query("inventory_locations"),
+      window.DB.query("inventory_locations"),   // no se usa en este módulo
       window.DB.query("concept_categories"),
       window.DB.query("inventory_brands"),
     ]);
+    STATE_INVENTORY = invData;
+    STATE_WORKERS   = workersData;
     if (!STATE_WORKERS || STATE_WORKERS.length === 0) STATE_WORKERS = window.DB.get().workers || [];
+    // concept_categories guardado como doc 'main' con campo list:[{name, catCode}]
+    STATE_CATS   = (catsRaw[0]?.list || []).map(x => typeof x === 'string' ? { name: x, catCode: '' } : x);
+    // inventory_brands guardado como docs individuales {id, name, brandCode}
+    STATE_BRANDS = brandsData.filter(b => b.name && !b._init);
     initSelects();
     renderTable();
   }
