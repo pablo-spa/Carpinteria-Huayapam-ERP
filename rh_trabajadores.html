@@ -7,62 +7,13 @@
   <title>Directorio RH - Trabajadores</title>
   <style>
     :root {
-      --bg: #eff1f5;
-      --surface: #ffffff;
-      --border: #dce0e8;
-      --border-strong: #bcc0cc;
-      --text: #4c4f69;
-      --muted: #8c8fa1;
-      --primary: #1e66f5;
-      --primary-hover: #1e66f5e6;
-      --radius: 8px;
+      --surface: var(--mantle);
+      --border: var(--crust);
+      --border-strong: var(--surface0);
+      --muted: var(--subtext);
+      --primary: var(--blue);
+      --primary-hover: var(--blue);
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1e1e2e;
-        --surface: #181825;
-        --border: #313244;
-        --border-strong: #45475a;
-        --text: #cdd6f4;
-        --muted: #a6adc8;
-        --primary: #8caaee;
-        --primary-hover: #8caaeed9;
-      }
-    }
-    
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-    h1 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .btn {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 8px 16px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .btn:hover { background: var(--primary-hover); }
     
     /* Tabla de trabajadores */
     .table-container {
@@ -78,11 +29,11 @@
       font-weight: 700; color: var(--muted);
       text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;
     }
-    @media (prefers-color-scheme: dark) { th { background: rgba(255,255,255,0.02); } }
+    body.dark-mode th { background: rgba(255,255,255,0.02); }
     tbody tr:last-child td { border-bottom: none; }
     tbody tr { cursor: pointer; transition: background 0.12s; }
     tbody tr:hover { background: rgba(0,0,0,0.025); }
-    @media (prefers-color-scheme: dark) { tbody tr:hover { background: rgba(255,255,255,0.03); } }
+    body.dark-mode tbody tr:hover { background: rgba(255,255,255,0.03); }
     
     .avatar {
       width: 32px;
@@ -123,9 +74,7 @@
       align-items: center;
       background: rgba(0,0,0,0.02);
     }
-    @media (prefers-color-scheme: dark) {
-      .modal-header { background: rgba(255,255,255,0.02); }
-    }
+    body.dark-mode .modal-header { background: rgba(255,255,255,0.02); }
     .modal-title { font-weight: 700; font-size: 18px; }
     .modal-close {
       background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted);
@@ -165,8 +114,8 @@
 </head>
 <body>
 
-  <div class="header">
-    <h1><span>👷‍♂️</span> Directorio de Trabajadores</h1>
+  <div class="hdr">
+    <h2 class="hdr-title"><span>👷‍♂️</span> Directorio de Trabajadores</h2>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <select id="sort-by" onchange="renderList()" style="font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer;">
         <option value="name">Ordenar: Nombre</option>
@@ -370,8 +319,8 @@
       // Ordenar
       const sortBy = document.getElementById('sort-by')?.value || 'name';
       workers = [...workers].sort((a, b) => {
-        if (sortBy === 'name')    return (a.givenName||'').localeCompare(b.givenName||'');
-        if (sortBy === 'paterno') return (a.paterno||a.name||'').localeCompare(b.paterno||b.name||'');
+        if (sortBy === 'name')    return (a.nombre||a.name||'').localeCompare(b.nombre||b.name||'');
+        if (sortBy === 'paterno') return (a.apellidoPaterno||a.name||'').localeCompare(b.apellidoPaterno||b.name||'');
         if (sortBy === 'ingreso') return (a.fechaIngreso||a.startDate||'').localeCompare(b.fechaIngreso||b.startDate||'');
         if (sortBy === 'salario') return (b.baseSalary||b.salarioBase||0) - (a.baseSalary||a.salarioBase||0);
         if (sortBy === 'id')      return (a.personalId||a.scanCode||'').localeCompare(b.personalId||b.scanCode||'');
@@ -385,8 +334,8 @@
       workers.forEach(w => {
         if(!w.personalId) {
           // Attempt to generate if missing
-          const g = w.givenName || (w.name ? w.name.split(' ')[0] : '');
-          const p = w.paterno || (w.name && w.name.split(' ').length > 1 ? w.name.split(' ')[1] : '');
+          const g = w.nombre || (w.name ? w.name.split(' ')[0] : '');
+          const p = w.apellidoPaterno || (w.name && w.name.split(' ').length > 1 ? w.name.split(' ')[1] : '');
           const bDate = w.birthDate || '2000-01-01'; // Fallback to 00 if no birth date
           
           if(g) {
@@ -431,7 +380,7 @@
 
         const tr = document.createElement('tr');
         tr.onclick = () => {
-          if (window.parent?.openModule) window.parent.openModule('trabajador_detalle.html?id=' + w.id, w.name || w.givenName || 'Trabajador');
+          if (window.parent?.openModule) window.parent.openModule('trabajador_detalle.html?id=' + w.id, w.name || 'Trabajador');
           else window.location.href = 'trabajador_detalle.html?id=' + w.id;
         };
         tr.style.cursor = 'pointer';
@@ -446,7 +395,7 @@
           <td>${fechaIngreso || '-'}</td>
           <td>${yr}</td>
           <td style="font-weight:bold;">${vacDisp} d</td>
-          <td style="color:var(--primary); font-weight:600;">$${parseFloat(w.baseSalary||0).toLocaleString('es-MX')}</td>
+          <td style="color:var(--primary); font-weight:600;">$${parseFloat(w.salarioBase||w.baseSalary||0).toLocaleString('es-MX')}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -576,9 +525,9 @@
         currentWorkerActivo = w.activo !== false;
         document.getElementById('ficha-title').textContent = 'Editar Trabajador';
         document.getElementById('f-id').value = w.id;
-        document.getElementById('f-given-name').value = w.givenName || '';
-        document.getElementById('f-paterno').value = w.paterno || '';
-        document.getElementById('f-materno').value = w.materno || '';
+        document.getElementById('f-given-name').value = w.nombre || w.givenName || '';
+        document.getElementById('f-paterno').value = w.apellidoPaterno || w.paterno || '';
+        document.getElementById('f-materno').value = w.apellidoMaterno || w.materno || '';
         document.getElementById('f-name').value = w.name || '';
         document.getElementById('f-birth').value = w.birthDate || '';
         document.getElementById('f-rfc').value = w.rfc || '';
@@ -586,11 +535,11 @@
         document.getElementById('f-in-workshop').value = w.inWorkshop || 'Si';
         document.getElementById('f-measure-att').value = w.measureAtt || 'Si';
         document.getElementById('f-phone').value = w.phone || '';
-        document.getElementById('f-start-date').value = w.startDate || '';
+        document.getElementById('f-start-date').value = w.fechaIngreso || w.startDate || '';
         document.getElementById('f-end-date').value = w.endDate || '';
         document.getElementById('f-vac-added').value = w.vacAdded || 0;
         document.getElementById('f-hours-week').value = w.hoursWeek || 48;
-        document.getElementById('f-salary').value = w.baseSalary || 0;
+        document.getElementById('f-salary').value = w.salarioBase || w.baseSalary || 0;
         document.getElementById('f-emergency').value = w.emergencyContact || '';
         document.getElementById('f-nss').value = w.nss || '';
         
@@ -646,15 +595,31 @@
     async function darDeBaja() {
       if (!currentWorkerId) return;
       const name = document.getElementById('f-name').value || 'este trabajador';
-      if (!confirm(`¿Confirmar baja de ${name}? Ya no aparecerá en nómina, reloj ni listas de operaciones.`)) return;
-      await setActivoDirectly(false);
+      
+      const doBaja = async () => {
+        await setActivoDirectly(false);
+      };
+
+      if (window.parent && window.parent.showConfirm) {
+        window.parent.showConfirm('Dar de Baja', `¿Confirmar baja de <b>${name}</b>?\n\nYa no aparecerá en nómina, reloj ni listas de operaciones.`, 'Dar de Baja', 'btn-red', doBaja);
+      } else {
+        if (confirm(`¿Confirmar baja de ${name}? Ya no aparecerá en nómina, reloj ni listas de operaciones.`)) doBaja();
+      }
     }
 
     async function reactivar() {
       if (!currentWorkerId) return;
       const name = document.getElementById('f-name').value || 'este trabajador';
-      if (!confirm(`¿Reactivar a ${name}?`)) return;
-      await setActivoDirectly(true);
+      
+      const doReactivar = async () => {
+        await setActivoDirectly(true);
+      };
+
+      if (window.parent && window.parent.showConfirm) {
+        window.parent.showConfirm('Reactivar Trabajador', `¿Reactivar a <b>${name}</b>?`, 'Reactivar', 'btn-green', doReactivar);
+      } else {
+        if (confirm(`¿Reactivar a ${name}?`)) doReactivar();
+      }
     }
 
     async function setActivoDirectly(activo) {
@@ -684,13 +649,16 @@
       const d = window.DB.get();
       const id = document.getElementById('f-id').value;
       
+      const materno = document.getElementById('f-materno').value.trim();
+      const fullName = nameStr || [g, p, materno].filter(Boolean).join(' ');
       const wData = {
         tipo: 'trabajador',
         activo: currentWorkerActivo,
-        givenName: g,
-        paterno: p,
-        materno: document.getElementById('f-materno').value.trim(),
-        name: nameStr,
+        nombre: g,
+        apellidoPaterno: p,
+        apellidoMaterno: materno,
+        empresa: '',
+        name: fullName,
         personalId: document.getElementById('f-id-personal').value,
         birthDate: document.getElementById('f-birth').value,
         rfc: document.getElementById('f-rfc').value.trim().toUpperCase(),
@@ -698,12 +666,12 @@
         inWorkshop: document.getElementById('f-in-workshop').value,
         measureAtt: document.getElementById('f-measure-att').value,
         phone: document.getElementById('f-phone').value.trim(),
-        startDate: document.getElementById('f-start-date').value,
+        fechaIngreso: document.getElementById('f-start-date').value,
         endDate: document.getElementById('f-end-date').value,
-        vacationDays: parseInt(document.getElementById('f-vacation').value) || 0,
+        diasVacaciones: parseInt(document.getElementById('f-vacation').value) || 0,
         vacAdded: parseFloat(document.getElementById('f-vac-added').value) || 0,
         hoursWeek: parseFloat(document.getElementById('f-hours-week').value) || 0,
-        baseSalary: parseFloat(document.getElementById('f-salary').value) || 0,
+        salarioBase: parseFloat(document.getElementById('f-salary').value) || 0,
         emergencyContact: document.getElementById('f-emergency').value.trim(),
         nss: document.getElementById('f-nss').value.trim(),
         notes: currentNotes

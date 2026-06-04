@@ -7,26 +7,9 @@
 <title>Wiki / Manual del Sistema — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --green: #40a02b; --blue: #1e66f5; --amber: #df8e1d; --red: #d20f39; --purple: #8839ef;
-  --radius: 8px; --radius-lg: 12px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --green: #a6da95; --blue: #8caaee; --amber: #f9e2af; --red: #f38ba8; --purple: #cba6f7;
-  }
-}
+/* Uses global.css variables */
 body.dark-mode {
-  --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-  --surface0: #313244; --surface1: #45475a;
-  --text: #cdd6f4; --subtext: #a6adc8;
-  --green: #a6da95; --blue: #8caaee; --amber: #f9e2af; --red: #f38ba8; --purple: #cba6f7;
+  --purple: #cba6f7;
 }
 
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); overflow-y: hidden; height: 100vh; display: flex; flex-direction: column; }
