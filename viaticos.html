@@ -263,7 +263,9 @@ td { color: var(--text); }
         </div>
         <div class="form-group" style="margin:0;">
           <label>Recibió</label>
-          <input type="text" id="fa-recibe" class="form-control" placeholder="Nombre del trabajador">
+          <input type="text" id="fa-recibe" class="form-control" placeholder="Nombre del trabajador"
+            list="fa-recibe-list" autocomplete="off">
+          <datalist id="fa-recibe-list"></datalist>
         </div>
         <div class="form-group" style="margin:0;">
           <label>Entregó</label>
@@ -394,8 +396,34 @@ function formatDateDMM(str) {
   return d.toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'});
 }
 
+// ── Nombre completo robusto ──────────────────────────────────
+function fullName(w) {
+  if (!w) return '?';
+  const parts = [w.givenName, w.paterno, w.materno].filter(Boolean);
+  if (parts.length >= 2) return parts.join(' ');
+  const stored = (w.nombre || w.name || '').trim();
+  if (stored) return stored;
+  return parts.length ? parts[0] : (w.id || w._id || '?');
+}
+
+// ── Guardar directamente en DB_STATE (bypass saveDB collection check) ──
+function dbStatePush(col, item) {
+  if (!window.parent?.DB_STATE) return;
+  if (!window.parent.DB_STATE[col]) window.parent.DB_STATE[col] = [];
+  window.parent.DB_STATE[col].push(item);
+}
+function dbStateRemove(col, id) {
+  if (!window.parent?.DB_STATE?.[col]) return;
+  window.parent.DB_STATE[col] = window.parent.DB_STATE[col].filter(x => (x.id||x._id) !== id);
+}
+
 async function init() {
-  await window.DB.query('viajes'); // ensure DB loaded
+  // Cargar todas las colecciones necesarias
+  await Promise.all([
+    window.DB.query('viajes'),
+    window.DB.query('anticipos_viaticos'),
+    window.DB.query('gastos_viaticos'),
+  ]);
 
   // Load viatico categories (lazy-load the collection)
   const rawCatData = await window.DB.query('viatico_categories');
@@ -413,11 +441,14 @@ async function init() {
   const contacts = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
   const sel = document.getElementById('d-workers-select');
   sel.innerHTML = '<option value="">— Seleccionar trabajador —</option>';
-  contacts.sort((a,b) => (a.name||a.givenName||'').localeCompare(b.name||b.givenName||''));
-  contacts.forEach(w => {
+  // Deduplicar por ID (puede venir de contacts Y workers)
+  const seenInit = new Set();
+  const uniqueWorkers = contacts.filter(w => { const id = w.id||w._id; if(seenInit.has(id)) return false; seenInit.add(id); return true; });
+  uniqueWorkers.sort((a,b) => fullName(a).localeCompare(fullName(b), 'es'));
+  uniqueWorkers.forEach(w => {
     const opt = document.createElement('option');
     opt.value = w.id || w._id;
-    opt.textContent = w.name || [w.givenName, w.paterno].filter(Boolean).join(' ') || '-';
+    opt.textContent = fullName(w);
     sel.appendChild(opt);
   });
 
@@ -477,12 +508,15 @@ function calcViajeStats(db, vid) {
 
 function getWorkerNames(db, ids) {
   if(!ids || !ids.length) return 'Ninguno';
+  const seen = new Set();
   const all = [...(db.contacts||[]), ...(db.workers||[])];
-  const w = all.filter(wk => ids.includes(wk.id || wk._id));
-  return w.map(wk => {
-    if (wk.nombre || wk.name) return wk.nombre || wk.name;
-    return [wk.givenName, wk.paterno, wk.materno].filter(Boolean).join(' ') || wk.id || '?';
-  }).join(', ') || 'Desconocido';
+  const w = all.filter(wk => {
+    const id = wk.id || wk._id;
+    if (!ids.includes(id) || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+  return w.map(fullName).join(', ') || 'Desconocido';
 }
 
 function renderList() {
@@ -618,6 +652,7 @@ function openDetalle(id) {
 
   document.getElementById('d-workers-select').disabled = isCerrado;
   _renderWorkerChips();
+  _refreshRecibeDatalist();
 
   renderDetalles();
   showView('detail');
@@ -649,6 +684,19 @@ function _saveViajeWorkers() {
   }
   document.getElementById('d-workers').textContent = `Personal: ${getWorkerNames(db, currentViaje.worker_ids)}`;
   _renderWorkerChips();
+  _refreshRecibeDatalist();
+}
+
+function _refreshRecibeDatalist() {
+  const db   = window.DB.get();
+  const wids = currentViaje?.worker_ids || [];
+  const seen = new Set();
+  const all  = [...(db.contacts||[]), ...(db.workers||[])];
+  const opts = all
+    .filter(c => { const id = c.id||c._id; if (!wids.includes(id)||seen.has(id)) return false; seen.add(id); return true; })
+    .map(w => `<option value="${fullName(w)}">`).join('');
+  const dl = document.getElementById('fa-recibe-list');
+  if (dl) dl.innerHTML = opts;
 }
 
 function _renderWorkerChips() {
@@ -663,7 +711,7 @@ function _renderWorkerChips() {
   }
   cont.innerHTML = wids.map(wid => {
     const w = all.find(c => (c.id || c._id) === wid);
-    const name = w ? (w.nombre || w.name || [w.givenName, w.paterno, w.materno].filter(Boolean).join(' ') || wid) : wid;
+    const name = w ? fullName(w) : wid;
     return `<div style="display:flex;align-items:center;gap:6px;background:var(--mantle);border:1px solid var(--crust);padding:5px 12px;border-radius:20px;font-size:13px;font-weight:600;">
       ${name}
       ${!isCerrado ? `<button onclick="quitarTrabajadorViaje('${wid}')" style="background:none;border:none;cursor:pointer;color:var(--subtext);font-size:18px;line-height:1;padding:0 0 0 4px;">×</button>` : ''}
@@ -798,18 +846,14 @@ function addAnticipo() {
     nota: ''
   };
 
-  const db = window.DB.get();
-  db.anticipos_viaticos = db.anticipos_viaticos || [];
-  db.anticipos_viaticos.push(ant);
-  window.DB.save(db);
-
-  if (window.parent && window.parent.setDocumentInFirebase) {
-    window.parent.setDocumentInFirebase('anticipos_viaticos', ant.id, ant);
-  }
+  // Persistir directamente en DB_STATE y Firestore
+  dbStatePush('anticipos_viaticos', ant);
+  if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('anticipos_viaticos', ant.id, ant);
 
   // Registrar en Finanzas como movimiento a comprobar
   try {
-    const pObj = (db.projects||[]).find(p => p.id === currentViaje.project_id);
+    const db2 = window.DB.get();
+    const pObj = (db2.projects||[]).find(p => p.id === currentViaje.project_id);
     const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'General';
     window.DB.addMovement({
       id: movId, type: 'Gasto', date: ant.fecha, amount: ant.monto,
@@ -849,53 +893,34 @@ function addGasto() {
     nota: ''
   };
 
-  const db = window.DB.get();
-  db.gastos_viaticos = db.gastos_viaticos || [];
-  db.gastos_viaticos.push(gas);
-  window.DB.save(db);
+  dbStatePush('gastos_viaticos', gas);
+  if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('gastos_viaticos', gas.id, gas);
 
-  if (window.parent && window.parent.setDocumentInFirebase) {
-    window.parent.setDocumentInFirebase('gastos_viaticos', gas.id, gas);
-  }
   document.getElementById('fg-monto').value = '';
   document.getElementById('fg-desc').value = '';
   document.getElementById('fg-url').value = '';
+  viatToast('Gasto registrado.');
   renderDetalles();
 }
 
 function delAnticipo(id) {
-  if(!confirm('¿Eliminar este anticipo? (Esto también eliminará la salida de dinero en Finanzas automáticamente)')) return;
-  const db = window.DB.get();
-  if (db.anticipos_viaticos) { 
-    const ant = db.anticipos_viaticos.find(a => a.id === id);
-    if (ant && ant.movimiento_id) {
-      if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.accounting_movements) {
-        window.parent.DB_STATE.accounting_movements = window.parent.DB_STATE.accounting_movements.filter(m => m.id !== ant.movimiento_id);
-      }
-      if (window.parent && window.parent.deleteDocumentFromFirebase) {
-        window.parent.deleteDocumentFromFirebase('accounting_movements', ant.movimiento_id);
-      }
-    }
-    if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.anticipos_viaticos) window.parent.DB_STATE.anticipos_viaticos = window.parent.DB_STATE.anticipos_viaticos.filter(a => a.id !== id);
-    db.anticipos_viaticos = db.anticipos_viaticos.filter(a => a.id !== id); 
-    window.DB.save(db); 
+  if(!confirm('¿Eliminar este anticipo? También se eliminará el movimiento en Finanzas.')) return;
+  // Obtener movimiento_id antes de eliminar
+  const allAnts = window.parent?.DB_STATE?.anticipos_viaticos || [];
+  const ant = allAnts.find(a => a.id === id);
+  if (ant?.movimiento_id) {
+    dbStateRemove('accounting_movements', ant.movimiento_id);
+    window.parent?.deleteDocumentFromFirebase?.('accounting_movements', ant.movimiento_id);
   }
-  if (window.parent && window.parent.deleteDocumentFromFirebase) {
-    window.parent.deleteDocumentFromFirebase('anticipos_viaticos', id);
-  }
+  dbStateRemove('anticipos_viaticos', id);
+  window.parent?.deleteDocumentFromFirebase?.('anticipos_viaticos', id);
   renderDetalles();
 }
 
 function delGasto(id) {
   if(!confirm('¿Eliminar este gasto?')) return;
-  const db = window.DB.get();
-  if (db.gastos_viaticos) { 
-    if (window.parent && window.parent.DB_STATE && window.parent.DB_STATE.gastos_viaticos) window.parent.DB_STATE.gastos_viaticos = window.parent.DB_STATE.gastos_viaticos.filter(g => g.id !== id);
-    db.gastos_viaticos = db.gastos_viaticos.filter(g => g.id !== id); window.DB.save(db); 
-  }
-  if (window.parent && window.parent.deleteDocumentFromFirebase) {
-    window.parent.deleteDocumentFromFirebase('gastos_viaticos', id);
-  }
+  dbStateRemove('gastos_viaticos', id);
+  window.parent?.deleteDocumentFromFirebase?.('gastos_viaticos', id);
   renderDetalles();
 }
 
