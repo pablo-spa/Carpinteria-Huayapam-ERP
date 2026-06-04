@@ -176,9 +176,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   </div>
 
   <!-- Banner vista parcial -->
-  <div id="mov-banner" style="display:none; background:var(--amber-bg); border:1px solid var(--amber); border-radius:8px; padding:10px 16px; font-size:13px; color:var(--text); align-items:center; justify-content:space-between; gap:12px;">
+  <div id="mov-banner" style="display:none; background:var(--mantle); border:1px solid var(--crust); border-radius:8px; padding:10px 16px; font-size:13px; color:var(--subtext); align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
     <span id="mov-banner-txt"></span>
-    <button class="btn btn-dark" style="white-space:nowrap; font-size:12px;" onclick="cargarTodos()">Cargar historial completo</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="btn-load-prev-month" class="btn btn-dark" style="white-space:nowrap; font-size:12px;" onclick="cargarMesAnterior()">Cargar mes anterior</button>
+      <button class="btn btn-ghost" style="white-space:nowrap; font-size:12px;" onclick="cargarTodoElHistorial()">Todo el historial</button>
+    </div>
   </div>
 
   <!-- Avisos / Pendientes -->
@@ -342,18 +345,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   let currentAccFilter = 'ALL';
   let llmTimer = null;
   let _allMovements = [];
-
-  // ── MODO DE DATOS ──────────────────────────────────────────────────────────
-  // MODO PREVIEW (default): Lee `accounting_movements_preview` — solo los
-  //   últimos 20 movimientos por cuenta (114 docs). Rápido, sin costo.
-  //   Para regenerar el preview: node seed-movimientos-preview.cjs
-  //
-  // MODO HISTORIAL COMPLETO: Cambia MOV_COLLECTION a 'accounting_movements'
-  //   y MOV_LIMIT a null. Carga 19k+ docs — solo hacerlo cuando sea necesario.
-  //   IMPORTANTE: borra el caché local del browser después de cambiar de vuelta.
-  // ──────────────────────────────────────────────────────────────────────────
-  const MOV_COLLECTION = 'accounting_movements_preview'; // ← cambiar a 'accounting_movements' para historial completo
-  const MOV_LIMIT      = null; // ← en preview no hace falta limitar más
+  let LOADED_MONTHS      = []; // meses ya cargados (YYYY-MM)
+  let HISTORY_EXHAUSTED  = false; // true cuando ya no hay más meses hacia atrás
 
   function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
@@ -368,27 +361,84 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     return `${+d} ${mo}\n'${y.slice(2)}`;
   }
 
-  function updateMovBanner() {
-    const banner = document.getElementById('mov-banner');
-    if (!MOV_LIMIT || DBm.length >= _allMovements.length) { banner.style.display = 'none'; return; }
-    banner.style.display = 'flex';
-    document.getElementById('mov-banner-txt').textContent =
-      `Mostrando los últimos ${DBm.length} de ${_allMovements.length} movimientos. Los saldos son parciales.`;
+  // Retorna el YYYY-MM anterior al más antiguo cargado
+  function prevMonth() {
+    const sorted = [...LOADED_MONTHS].sort();
+    if (!sorted.length) return null;
+    const [y, m] = sorted[0].split('-').map(Number);
+    const d = new Date(y, m - 2, 1); // m es 1-based, Date.month es 0-based, -2 para retroceder uno
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
 
-  function cargarTodos() {
-    DBm = _allMovements;
-    document.getElementById('mov-banner').style.display = 'none';
+  function updateMovBanner() {
+    const banner = document.getElementById('mov-banner');
+    if (!LOADED_MONTHS.length) { banner.style.display = 'none'; return; }
+    banner.style.display = 'flex';
+    const sorted = [...LOADED_MONTHS].sort();
+    const desde  = sorted[0];
+    const hasta  = sorted[sorted.length - 1];
+    document.getElementById('mov-banner-txt').textContent =
+      HISTORY_EXHAUSTED
+        ? `Todo el historial cargado — ${_allMovements.length} movimientos (${desde} → ${hasta})`
+        : `${_allMovements.length} movimientos (${desde} → ${hasta})`;
+    const prevBtn = document.getElementById('btn-load-prev-month');
+    const histBtn = document.querySelector('[onclick="cargarTodoElHistorial()"]');
+    if (HISTORY_EXHAUSTED) {
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (histBtn) histBtn.style.display = 'none';
+    } else {
+      const pm = prevMonth();
+      if (prevBtn) { prevBtn.style.display = ''; prevBtn.disabled = false; prevBtn.textContent = `← ${pm}`; }
+      if (histBtn) histBtn.style.display = '';
+    }
+  }
+
+  async function cargarMesAnterior() {
+    const pm = prevMonth();
+    if (!pm || LOADED_MONTHS.includes(pm)) return;
+    if (!window.parent?.loadAccountingMonth) return;
+    const btn = document.getElementById('btn-load-prev-month');
+    if (btn) { btn.disabled = true; btn.textContent = 'Cargando...'; }
+    const newMovs = await window.parent.loadAccountingMonth(pm);
+    LOADED_MONTHS.push(pm);
+    if (newMovs.length === 0) {
+      HISTORY_EXHAUSTED = true;
+    } else {
+      _allMovements = [..._allMovements, ...newMovs];
+      DBm = [...DBm, ...newMovs];
+    }
+    updateMovBanner();
+    calcBalances();
+    renderList();
+  }
+
+  async function cargarTodoElHistorial() {
+    if (!window.parent?.loadAccountingMonth) return;
+    const histBtn = document.querySelector('[onclick="cargarTodoElHistorial()"]');
+    if (histBtn) { histBtn.disabled = true; histBtn.textContent = 'Cargando...'; }
+    // Cargar accounting_by_month colección completa (~170 reads, 1 por mes)
+    const allMonthSnaps = await window.DB.query('accounting_by_month');
+    if (allMonthSnaps && allMonthSnaps.length > 0) {
+      const all = allMonthSnaps.flatMap(d => d.list || []);
+      _allMovements = all;
+      DBm = all;
+      LOADED_MONTHS = [...new Set(all.map(m => (m.date||'').slice(0,7)).filter(Boolean))];
+    }
+    HISTORY_EXHAUSTED = true;
+    updateMovBanner();
     calcBalances();
     renderList();
   }
 
   // Init Data Layer
   async function initData() {
-    const raw = await window.DB.query(MOV_COLLECTION);
-    _allMovements = (raw && raw.length > 0) ? raw : (window.DB.get()[MOV_COLLECTION] || []);
+    // Carga los últimos 3 meses desde accounting_by_month (3 reads)
+    // via cargar_coleccion en index.html que tiene el caso especial para accounting_movements
+    const raw = await window.DB.query('accounting_movements');
+    _allMovements = (raw && raw.length > 0) ? raw : [];
     _allMovements.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    DBm = MOV_LIMIT ? _allMovements.slice(0, MOV_LIMIT) : _allMovements;
+    DBm = [..._allMovements];
+    LOADED_MONTHS = [...new Set(_allMovements.map(m => (m.date||'').slice(0,7)).filter(Boolean))];
 
     STATE_PROJECTS = await window.DB.query("projects");
     STATE_CATEGORIES = window.DB.get().expense_categories || []; // Keeping standard config
@@ -552,6 +602,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     const sorted = [...DBm].sort((a,b) => new Date(b.date) - new Date(a.date));
 
     sorted.forEach(m => {
+      const mid = m.id || m._id || '';
+      if (!mid) return; // skip orphan items with no id
+
       // Filtering logic
       if (currentAccFilter !== 'ALL') {
         if (m.account !== currentAccFilter && m.destAccount !== currentAccFilter) return;
@@ -561,32 +614,32 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         if(catF==='pending' && m.category && m.category!=='') return;
         if(catF!=='pending' && m.category !== catF) return;
       }
-      if(term && !m.concept.toLowerCase().includes(term) && !m.amount.toString().includes(term)) return;
+      const concept = m.concept || '';
+      if(term && !concept.toLowerCase().includes(term) && !(m.amount||'').toString().includes(term)) return;
 
       const d = document.createElement('div');
       d.className = 'mov-row-wrap';
-      
+
       let amtColor = 'amt-out'; let sign = '-';
       if(m.type==='Ingreso') { amtColor = 'amt-in'; sign = '+'; }
       if(m.type==='Transferencia') { amtColor = 'amt-neu'; sign = ''; }
 
-      let accLabel = m.account;
+      let accLabel = m.account || '—';
       if(m.type==='Transferencia') accLabel = `${m.account} &rarr; ${m.destAccount}`;
 
       let statPill = '';
       if(m.status === 'pendiente') statPill = '<span class="pill pill-amber hide-mob" style="margin-left:6px">Pendiente</span>';
       else if(m.orderId || m.projectId) statPill = '<span class="pill pill-blue hide-mob" style="margin-left:6px">Vinculado</span>';
-      
+
       let catPill = m.category ? `<span class="pill pill-gray">${m.category}</span>` : `<span class="pill pill-gray" style="opacity:0.6;">Sin categorizar</span>`;
 
       const rowClass = m.type==='Ingreso' ? 'mov-in' : m.type==='Gasto' ? 'mov-out' : 'mov-tra';
-      // Expandable Row
       d.innerHTML = `
-        <div class="mov-row ${rowClass}" onclick="toggleDet('${m.id}')" id="row-${m.id}">
+        <div class="mov-row ${rowClass}" onclick="toggleDet('${mid}')" id="row-${mid}">
           <div class="m-date" style="white-space:pre-line">${fmtDate(m.date)}</div>
           <div class="m-acc">${accLabel}</div>
           <div class="m-concept">
-            <span style="opacity: ${m.status==='pendiente'?'0.7':'1'}; font-style: ${m.status==='pendiente'?'italic':'normal'};">${m.concept || '—'}</span>
+            <span style="opacity: ${m.status==='pendiente'?'0.7':'1'}; font-style: ${m.status==='pendiente'?'italic':'normal'};">${concept || '—'}</span>
             <div class="m-subtitle" style="display:flex;align-items:center;margin-top:4px;">${catPill} ${statPill}</div>
           </div>
           <div class="hide-mob">
@@ -595,15 +648,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
           <div class="hide-mob" style="text-align:right;">${m.status==='confirmado'?'<span class="pill pill-green">Confirmado</span>':''}</div>
           <div class="m-amt ${amtColor}">${sign}${fmt(m.amount)}</div>
         </div>
-        <div class="mov-detail" id="det-${m.id}">
+        <div class="mov-detail" id="det-${mid}">
           <div class="det-grid">
-            <div><div class="det-lbl">Concepto Completo</div><div class="det-val">${m.concept}</div></div>
+            <div><div class="det-lbl">Concepto Completo</div><div class="det-val">${concept}</div></div>
             <div><div class="det-lbl">Beneficiario/A</div><div class="det-val">${m.entity||'-'}</div></div>
             <div><div class="det-lbl">Vínculos</div><div class="det-val" style="color:var(--blue)">${m.projectId?'Proyecto '+m.projectId:''} ${m.orderId?'OC / Compra '+m.orderId:''} ${(!m.projectId && !m.orderId)?'Ninguno':''}</div></div>
             <div><div class="det-lbl">Notas internas</div><div class="det-val" style="font-style:italic;color:var(--subtext)">${m.notes||'Sin notas'}</div></div>
           </div>
           <div class="det-actions">
-            <button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="openPanel('${m.id}')">✏️ Editar Registro</button>
+            <button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="openPanel('${mid}')">✏️ Editar Registro</button>
+            <button class="btn btn-outline" style="padding:4px 8px;font-size:11px;color:var(--red);border-color:var(--red);" onclick="deleteMovement('${mid}')">🗑 Eliminar</button>
           </div>
         </div>
       `;
@@ -627,6 +681,38 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       det.style.display = 'block';
       row.classList.add('active');
     }
+  }
+
+  function deleteMovement(mid) {
+    const mov = _allMovements.find(m => m.id === mid);
+    if (!mov) return;
+
+    const desc = `${mov.date}  ${mov.type}  $${parseFloat(mov.amount).toLocaleString('es-MX', {minimumFractionDigits:2})}  ${mov.concept || ''}`;
+    if (!confirm(`¿Eliminar este movimiento?\n\n${desc}\n\nEsta acción no se puede deshacer.`)) return;
+
+    // Eliminar de Firestore
+    if (window.parent?.deleteDocumentFromFirebase) {
+      window.parent.deleteDocumentFromFirebase('accounting_movements', mid);
+    }
+
+    // Eliminar de DB_STATE
+    if (window.parent?.DB_STATE?.accounting_movements) {
+      window.parent.DB_STATE.accounting_movements = window.parent.DB_STATE.accounting_movements.filter(m => m.id !== mid);
+    }
+
+    // Eliminar de la lista local
+    _allMovements = _allMovements.filter(m => m.id !== mid);
+    DBm = DBm.filter(m => m.id !== mid);
+
+    // Re-renderizar
+    renderMovs();
+
+    // Toast
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;background:var(--red);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+    t.textContent = 'Movimiento eliminado';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
   }
 
   // LLM Simulation
@@ -684,9 +770,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     document.querySelectorAll('.ts-btn').forEach(b => b.style.pointerEvents = 'auto');
     
     if(id) {
-      const m = DBm.find(x => x.id === id);
+      const m = DBm.find(x => (x.id === id) || (x._id === id));
+      if (!m) { console.warn('[finanzas] openPanel: movimiento no encontrado:', id); return; }
       document.getElementById('sp-title').innerHTML = `Editar Movimiento`;
-      document.getElementById('f-id').value = m.id;
+      document.getElementById('f-id').value = m.id || m._id;
       setPanelType(m.type);
       document.getElementById('f-date').value = m.date;
       document.getElementById('f-amount').value = m.amount;
@@ -833,8 +920,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     
     const saveToFirestore = (mov) => {
       if (window.parent && window.parent.setDocumentInFirebase) {
+        // Escribe doc individual + actualiza accounting_by_month/{YYYY-MM} automáticamente
         window.parent.setDocumentInFirebase('accounting_movements', mov.id, mov);
-        window.parent.setDocumentInFirebase('accounting_movements_preview', mov.id, mov);
+        // Actualizar también en LOADED_MONTHS local si el mes ya fue cargado
+        const ym = (mov.date || '').slice(0, 7);
+        if (ym && LOADED_MONTHS.includes(ym)) {
+          const idx = _allMovements.findIndex(x => x.id === mov.id);
+          if (idx >= 0) _allMovements[idx] = mov;
+          else _allMovements.unshift(mov);
+        }
       }
     };
 
