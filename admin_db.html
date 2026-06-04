@@ -176,6 +176,17 @@
 
   renderTables();
 
+  // Pre-cargar todas las colecciones que aún no están en DB_STATE
+  (async () => {
+    for (const col of KNOWN_COLLECTIONS) {
+      const state = getState();
+      if (state[col] === undefined && window.parent?.cargar_coleccion) {
+        await window.parent.cargar_coleccion(col).catch(() => {});
+        renderTables();
+      }
+    }
+  })();
+
 function toast(msg, type='ok') {
   const el = document.createElement('div');
   el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
