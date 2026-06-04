@@ -933,7 +933,9 @@
 
       document.getElementById('f-code').value    = projData.codigo      || projData.code      || '';
       document.getElementById('f-name').value    = projData.nombre      || projData.name      || '';
-      document.getElementById('f-contact').value = projData.contactoId  || projData.contactId || '';
+      const contactSel = document.getElementById('f-contact');
+      contactSel.value = projData.contactoId || projData.contactId || '';
+      if (contactSel._ssSync) contactSel._ssSync();
       document.getElementById('f-status').value  = projData.estado      || projData.status    || 'Planificación';
       document.getElementById('f-start').value   = projData.fechaInicio || projData.startDate || '';
       document.getElementById('f-end').value     = projData.fechaFin    || projData.endDate   || '';
