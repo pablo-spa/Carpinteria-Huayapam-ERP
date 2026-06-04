@@ -22,47 +22,71 @@
     --green: #a6da95; --blue: #8caaee; --amber: #f9e2af; --red: #f38ba8; --purple: #cba6f7;
   }
 }
+body.dark-mode {
+  --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
+  --surface0: #313244; --surface1: #45475a;
+  --text: #cdd6f4; --subtext: #a6adc8;
+  --green: #a6da95; --blue: #8caaee; --amber: #f9e2af; --red: #f38ba8; --purple: #cba6f7;
+}
 
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); overflow-y: hidden; height: 100vh; display: flex; flex-direction: column; }
 
 .hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
 .hdr-title { font-size: 18px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 12px; }
 
+/* Barra de búsqueda */
+.search-input { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 7px 14px; font-size: 13px; color: var(--text); width: 220px; font-family: inherit; outline: none; transition: border-color .15s; }
+.search-input:focus { border-color: var(--blue); }
+
 .main-container { display: flex; flex: 1; overflow: hidden; }
 
 /* Sidebar */
-.wiki-nav { width: 280px; background: var(--mantle); border-right: 1px solid var(--crust); display: flex; flex-direction: column; overflow-y: auto; padding: 20px 12px; }
+.wiki-nav { width: 280px; background: var(--mantle); border-right: 1px solid var(--crust); display: flex; flex-direction: column; overflow-y: auto; padding: 20px 12px; flex-shrink: 0; }
 .nav-cat { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--subtext); letter-spacing: 0.05em; margin: 16px 8px 8px; }
 .nav-cat:first-child { margin-top: 0; }
 .nav-item { padding: 8px 12px; font-size: 13px; font-weight: 600; color: var(--text); border-radius: var(--radius); cursor: pointer; transition: 0.15s; margin-bottom: 2px; }
 .nav-item:hover { background: var(--surface0); }
 .nav-item.active { background: rgba(30,102,245,0.15); color: var(--blue); }
+.nav-item.search-hidden { display: none; }
 
 /* Content */
 .wiki-content { flex: 1; overflow-y: auto; padding: 40px; scroll-behavior: smooth; }
-.wiki-article { max-width: 800px; margin: 0 auto; display: none; }
-.wiki-article.active { display: block; animation: fadeIn 0.3s ease; }
+.wiki-article { max-width: 820px; margin: 0 auto; display: none; }
+.wiki-article.active { display: block; animation: fadeIn 0.25s ease; }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 .wiki-article h1 { font-size: 28px; font-weight: 800; margin-bottom: 12px; color: var(--text); }
-.wiki-article p { font-size: 15px; line-height: 1.6; color: var(--subtext); margin-bottom: 24px; }
-.wiki-article h2 { font-size: 20px; font-weight: 700; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--crust); color: var(--text); }
-.wiki-article h3 { font-size: 16px; font-weight: 700; margin: 24px 0 12px; color: var(--text); }
-.wiki-article ul { margin-bottom: 24px; padding-left: 20px; color: var(--subtext); font-size: 15px; line-height: 1.6; }
+.wiki-article > p, .wiki-article > ul, .wiki-article > ol { font-size: 15px; line-height: 1.65; color: var(--subtext); margin-bottom: 24px; }
+.wiki-article ul, .wiki-article ol { padding-left: 20px; }
 .wiki-article li { margin-bottom: 8px; }
+.wiki-article h2 { font-size: 20px; font-weight: 700; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--crust); color: var(--text); }
+.wiki-article h3 { font-size: 16px; font-weight: 700; margin: 24px 0 10px; color: var(--text); }
 .wiki-article strong { color: var(--text); }
 
-.info-box { background: rgba(30,102,245,0.1); border-left: 4px solid var(--blue); padding: 16px; border-radius: 4px 8px 8px 4px; margin-bottom: 24px; font-size: 14px; line-height: 1.5; color: var(--text); }
-.warn-box { background: rgba(223,142,29,0.1); border-left: 4px solid var(--amber); padding: 16px; border-radius: 4px 8px 8px 4px; margin-bottom: 24px; font-size: 14px; line-height: 1.5; color: var(--text); }
+.info-box  { background: rgba(30,102,245,0.1);   border-left: 4px solid var(--blue);  padding: 14px 16px; border-radius: 4px 8px 8px 4px; margin-bottom: 20px; font-size: 14px; line-height: 1.6; color: var(--text); }
+.warn-box  { background: rgba(223,142,29,0.1);   border-left: 4px solid var(--amber); padding: 14px 16px; border-radius: 4px 8px 8px 4px; margin-bottom: 20px; font-size: 14px; line-height: 1.6; color: var(--text); }
+.green-box { background: rgba(64,160,43,0.1);    border-left: 4px solid var(--green); padding: 14px 16px; border-radius: 4px 8px 8px 4px; margin-bottom: 20px; font-size: 14px; line-height: 1.6; color: var(--text); }
 
 .db-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; }
-.db-table th, .db-table td { padding: 10px 14px; border: 1px solid var(--crust); text-align: left; }
+.db-table th, .db-table td { padding: 10px 14px; border: 1px solid var(--crust); text-align: left; vertical-align: top; }
 .db-table th { background: var(--mantle); font-weight: 700; color: var(--text); }
 .db-table td { color: var(--subtext); }
-.db-table td code { background: var(--surface0); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; color: var(--purple); }
+.db-table td code, .db-table th code { background: var(--surface0); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; color: var(--purple); }
 
 .pill { padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: var(--surface0); color: var(--text); display: inline-block; margin-right: 4px; }
+.pill-green { background: rgba(64,160,43,0.15); color: var(--green); }
+.pill-blue  { background: rgba(30,102,245,0.15); color: var(--blue); }
+.pill-amber { background: rgba(223,142,29,0.15); color: var(--amber); }
+.pill-red   { background: rgba(210,15,57,0.12); color: var(--red); }
+
+/* Flujo de pasos */
+.flow-steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 24px; align-items: center; }
+.flow-step { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 90px; }
+.fs-num { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.fs-label { font-size: 11px; font-weight: 700; color: var(--text); text-align: center; }
+.fs-sub   { font-size: 10px; color: var(--subtext); text-align: center; }
+.flow-arrow { font-size: 16px; color: var(--subtext); align-self: center; margin-bottom: 20px; }
 </style>
 </head>
 <body>
@@ -70,259 +94,550 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 <div class="hdr">
   <div class="hdr-title">
     <button onclick="if(window.parent?.openModule) window.parent.openModule('index.html','Inicio'); else window.history.back();" style="background:none;border:none;font-size:16px;color:var(--subtext);cursor:pointer;">←</button>
-    📖 Manual del ERP (Wiki)
+    📖 Manual del ERP — Carpintería Huayapam
   </div>
+  <input class="search-input" type="search" placeholder="Buscar en el manual…" oninput="searchWiki(this.value)" />
 </div>
 
 <div class="main-container">
-  <div class="wiki-nav">
+  <div class="wiki-nav" id="wiki-nav">
+
     <div class="nav-cat">Introducción</div>
-    <div class="nav-item active" onclick="showArticle('art-intro')">¿Qué es el ERP?</div>
-    
+    <div class="nav-item active" data-search="introduccion bienvenida que es erp sincronizacion permisos roles" onclick="showArticle('art-intro', this)">¿Qué es el ERP?</div>
+
     <div class="nav-cat">Módulos Operativos</div>
-    <div class="nav-item" onclick="showArticle('art-proyectos')">Proyectos y Cotizaciones</div>
-    <div class="nav-item" onclick="showArticle('art-produccion')">Producción y Tiempos</div>
-    <div class="nav-item" onclick="showArticle('art-almacen')">Almacén y Compras</div>
-    <div class="nav-item" onclick="showArticle('art-madera')">Control de Madera</div>
-    
+    <div class="nav-item" data-search="dashboard administracion kpi saldos cuentas flujo neto ingresos gastos" onclick="showArticle('art-dashboard', this)">Dashboard Administrativo</div>
+    <div class="nav-item" data-search="proyectos cotizaciones cotizador ia pdf presupuesto rentabilidad avance hitos" onclick="showArticle('art-proyectos', this)">Proyectos y Cotizaciones</div>
+    <div class="nav-item" data-search="produccion diaria tiempos horas trabajos registro asistencia" onclick="showArticle('art-produccion', this)">Producción y Tiempos</div>
+    <div class="nav-item" data-search="almacen compras inventario salidas hoja pedido recepcion ordenes" onclick="showArticle('art-almacen', this)">Almacén y Compras</div>
+    <div class="nav-item" data-search="flujo compras pedido confirmado autorizado comprado recibido ordenes compra" onclick="showArticle('art-flujo-compras', this)">Flujo de Compras (5 pasos)</div>
+    <div class="nav-item" data-search="madera ingreso control inventario especie espesor ancho largo pie tablon sku etiqueta" onclick="showArticle('art-madera', this)">Control de Madera</div>
+
     <div class="nav-cat">Administrativos</div>
-    <div class="nav-item" onclick="showArticle('art-finanzas')">Finanzas y Viáticos</div>
-    <div class="nav-item" onclick="showArticle('art-rrhh')">Nómina y RRHH</div>
-    
+    <div class="nav-item" data-search="finanzas viaticos contabilidad movimientos ingresos gastos transferencia categoria ia libro mayor ledger" onclick="showArticle('art-finanzas', this)">Finanzas y Viáticos</div>
+    <div class="nav-item" data-search="nomina rrhh recursos humanos reloj checador horas extra descuentos prestamos sueldo raya semanal" onclick="showArticle('art-rrhh', this)">Nómina y RRHH</div>
+
+    <div class="nav-cat">Sistemas de Codificación</div>
+    <div class="nav-item" data-search="codigo empleado id personal pin checador nombre apellido nacimiento" onclick="showArticle('art-codigos-personal', this)">Código de Empleado</div>
+    <div class="nav-item" data-search="codigo inventario cc mmm ss categoria marca secuencial almacen articulo" onclick="showArticle('art-codigos-inventario', this)">Código de Inventario (CC-MMM-SS)</div>
+
+    <div class="nav-cat">Administración del Sistema</div>
+    <div class="nav-item" data-search="admin usuarios permisos roles acceso listas categorias cuentas metodos pago marcas configuracion" onclick="showArticle('art-admin', this)">Usuarios, Roles y Permisos</div>
+
     <div class="nav-cat">Técnico (Desarrollo)</div>
-    <div class="nav-item" onclick="showArticle('art-db')">Estructura de Base de Datos</div>
+    <div class="nav-item" data-search="base datos firestore colecciones estructura db arquitectura tecnico" onclick="showArticle('art-db', this)">Estructura de Base de Datos</div>
   </div>
 
   <div class="wiki-content">
-    
-    <!-- ART: INTRO -->
+
+    <!-- ─────────────────────────── INTRO ─────────────────────────────────── -->
     <div class="wiki-article active" id="art-intro">
       <h1>Bienvenido al Sistema ERP</h1>
-      <p>Este sistema (Enterprise Resource Planning) fue diseñado a la medida para <strong>Carpintería Huayapam</strong>. Su objetivo es unificar todas las operaciones de la empresa: desde que un cliente pide un presupuesto, hasta que el mueble se entrega, se pagan los materiales, y se calcula la nómina del equipo.</p>
-      
+      <p>Este sistema (Enterprise Resource Planning) fue diseñado a la medida para <strong>Carpintería Huayapam</strong>. Su objetivo es unificar todas las operaciones: desde que un cliente pide un presupuesto, hasta que el mueble se entrega, se pagan los materiales y se calcula la nómina del equipo.</p>
+
       <div class="info-box">
-        <strong>💡 Tip de Navegación:</strong> En la esquina superior izquierda de cualquier pantalla encontrarás un botón de flecha <strong>←</strong> para regresar al área de trabajo principal (Workspace).
+        <strong>💡 Tip de Navegación:</strong> En la esquina superior izquierda de cualquier pantalla encontrarás un botón <strong>←</strong> para regresar al Workspace principal.
       </div>
 
       <h2>¿Cómo funciona la sincronización?</h2>
-      <p>El sistema utiliza <strong>Firebase Firestore</strong> como base de datos en la nube. Cuando abres el sistema, descarga la información necesaria para que funcione rápidamente (como si fuera una app en tu celular). Al hacer cambios, se guardan en tu computadora e inmediatamente se suben a la nube para que tus compañeros puedan verlos.</p>
+      <p>El sistema utiliza <strong>Firebase Firestore</strong> como base de datos en la nube. Al abrir el sistema descarga la información necesaria. Cualquier cambio que hagas se guarda localmente y se sube a la nube de inmediato para que tus compañeros lo vean.</p>
+
+      <h2>Modo Oscuro / Claro</h2>
+      <p>El botón de luna/sol en la esquina inferior del menú lateral cambia entre tema oscuro y claro. El sistema también respeta la preferencia del sistema operativo automáticamente.</p>
 
       <h2>Permisos y Roles</h2>
-      <p>No todos los trabajadores pueden ver todas las pantallas. Dependiendo de tu rol (Administrador, Compras, Producción, Contador), el sistema ocultará botones o te mostrará información en modo de "solo lectura" para proteger los datos financieros.</p>
+      <p>No todos los trabajadores pueden ver todas las pantallas. Dependiendo de tu rol el sistema ocultará módulos o los mostrará en modo lectura. Los roles disponibles son:</p>
+      <ul>
+        <li><strong>Programador / Admin:</strong> Acceso total a todo el sistema.</li>
+        <li><strong>Gerencia:</strong> Dashboard, proyectos, finanzas (lectura), viáticos.</li>
+        <li><strong>Contador:</strong> Finanzas completas, nómina, trabajadores (lectura).</li>
+        <li><strong>Compras:</strong> Inventario, almacén, órdenes de compra, compras.</li>
+        <li><strong>Almacén:</strong> Inventario, salidas, recepción de material, madera.</li>
+        <li><strong>Producción:</strong> Producción diaria, checador, confirmar pedidos.</li>
+      </ul>
+
+      <h2>Favoritos y Menú</h2>
+      <p>Puedes marcar cualquier módulo con la estrella (★) que aparece al hacer hover para añadirlo a la sección de <strong>Favoritos</strong> en la parte superior del menú. También puedes reordenar los módulos dentro de su sección arrastrándolos.</p>
     </div>
 
-    <!-- ART: PROYECTOS -->
+    <!-- ─────────────────────────── DASHBOARD ─────────────────────────────── -->
+    <div class="wiki-article" id="art-dashboard">
+      <h1>Dashboard Administrativo</h1>
+      <p>El panel central de administración. Muestra de un vistazo el estado financiero, operativo y logístico de la empresa.</p>
+
+      <h2>Filtro de Período</h2>
+      <p>En la parte superior puedes filtrar la información por <strong>Este Mes</strong>, <strong>Este Año</strong>, <strong>Todo Histórico</strong> o un rango de fechas personalizado. Los KPIs de ingresos/gastos respetan este filtro.</p>
+
+      <h2>Tarjetas KPI</h2>
+      <ul>
+        <li><strong>Ingresos:</strong> Total de movimientos confirmados de tipo Ingreso en el período.</li>
+        <li><strong>Egresos:</strong> Total de movimientos confirmados de tipo Gasto.</li>
+        <li><strong>Flujo Neto:</strong> Ingresos menos Egresos. En verde si es positivo.</li>
+        <li><strong>Por Cobrar:</strong> Movimientos de tipo Ingreso en estado "Borrador/Pendiente".</li>
+      </ul>
+
+      <h2>Alertas Operativas</h2>
+      <p>Si hay situaciones que requieren atención, aparecen automáticamente justo debajo de los KPIs. Puedes hacer clic en cualquier alerta para ir directo al módulo correspondiente.</p>
+      <ul>
+        <li>📋 Pedidos esperando confirmación de Operaciones.</li>
+        <li>🛡️ Pedidos confirmados esperando autorización del Admin.</li>
+        <li>🛒 Órdenes autorizadas listas para que Compras procese.</li>
+        <li>📦 Compras pendientes de recibir en almacén.</li>
+        <li>⏰ Proyectos con fecha de entrega vencida.</li>
+        <li>🏷️ Movimientos contables sin categorizar.</li>
+      </ul>
+
+      <h2>Gráfico Mensual</h2>
+      <p>Muestra los últimos 6 meses con barras de Ingresos (verde) y Gastos (rojo). Útil para detectar tendencias, meses con pérdida o temporadas de mayor actividad.</p>
+
+      <h2>Saldos de Cuentas</h2>
+      <p>Muestra el balance calculado de cada cuenta bancaria/caja a partir de todos los movimientos confirmados históricos. El total en la parte inferior es el efectivo total de la empresa.</p>
+
+      <div class="warn-box">
+        <strong>⚠️ Importante:</strong> Los saldos del Dashboard se calculan recorriendo todos los movimientos en pantalla. El saldo real y oficial es el que muestra la pantalla de <strong>Finanzas → tarjetas de cuenta</strong>, que usa los saldos guardados en Firebase de forma incremental.
+      </div>
+
+      <h2>Stock Bajo / Crítico</h2>
+      <p>Muestra los artículos del inventario con stock menor o igual a 3 unidades. Los artículos <strong>AGOTADOS</strong> (stock = 0) aparecen en rojo. Los demás aparecen en amarillo con la cantidad restante.</p>
+    </div>
+
+    <!-- ─────────────────────────── PROYECTOS ─────────────────────────────── -->
     <div class="wiki-article" id="art-proyectos">
       <h1>Proyectos y Cotizaciones</h1>
-      <p>El corazón de la carpintería. Todo trabajo grande nace como una cotización y se convierte en un proyecto.</p>
+      <p>El corazón de la carpintería. Todo trabajo grande nace como una cotización y se convierte en un proyecto activo.</p>
 
       <h2>Cotizador con IA</h2>
-      <p>El módulo de <strong>Nueva Cotización</strong> te permite presupuestar muebles rápidamente. Escribes los materiales que necesitas (ej. <em>"Bisagras bidimensionales cierre lento"</em>) y las medidas de la madera.</p>
+      <p>El módulo de <strong>Nueva Cotización</strong> permite presupuestar muebles rápidamente. Escribes los materiales necesarios y las medidas de la madera.</p>
       <ul>
-        <li><strong>Cálculo Automático:</strong> Calcula el pie tablón (pt) automáticamente si pides madera.</li>
-        <li><strong>Sugerencias IA:</strong> Revisa la descripción de tu mueble y te sugiere qué operaciones (cortar, armar, barnizar) tomarán cuántas horas.</li>
-        <li><strong>Exportación:</strong> Genera un PDF elegante listo para enviar al cliente.</li>
+        <li><strong>Cálculo Automático:</strong> Calcula el pie tablón (pt) si pides madera con dimensiones.</li>
+        <li><strong>Sugerencias IA:</strong> Revisa la descripción del mueble y sugiere operaciones (cortar, armar, barnizar) con estimado de horas.</li>
+        <li><strong>Exportación PDF:</strong> Genera un PDF profesional listo para enviar al cliente.</li>
       </ul>
 
-      <h2>Proyectos Activos</h2>
-      <p>Una vez que el cliente aprueba la cotización, se convierte en un <strong>Proyecto</strong>.</p>
+      <h2>Lista de Proyectos</h2>
+      <p>Puedes filtrar proyectos por estado: <strong>En Proceso</strong>, <strong>Terminado</strong>, <strong>En Pausa</strong>, <strong>Cancelado</strong>. También hay una barra de búsqueda por nombre o cliente.</p>
+
+      <h2>Detalle de Proyecto</h2>
+      <p>Al entrar a un proyecto puedes ver:</p>
       <ul>
-        <li>Puedes ver el progreso general (%) del proyecto.</li>
-        <li><strong>Rentabilidad:</strong> El panel muestra cuánto estimaste gastar (según la cotización) contra lo que REALMENTE se ha gastado sacando material del almacén e invirtiendo horas de los trabajadores.</li>
-        <li>Permite llevar una bitácora de <strong>Hitos / Fechas clave</strong>.</li>
+        <li><strong>Avance General (%):</strong> Progreso del proyecto editable manualmente.</li>
+        <li><strong>Rentabilidad:</strong> Compara el presupuesto estimado (de la cotización) contra los gastos reales (materiales sacados del almacén + horas de producción).</li>
+        <li><strong>Hitos y Fechas Clave:</strong> Bitácora de eventos importantes del proyecto.</li>
+        <li><strong>Madera Cotizada:</strong> Desglose de madera por concepto con unidad real (pt, m², etc.).</li>
+        <li><strong>Órdenes de Compra Asociadas:</strong> Lista de todas las OC vinculadas al proyecto.</li>
       </ul>
     </div>
 
-    <!-- ART: PRODUCCIÓN -->
+    <!-- ─────────────────────────── PRODUCCIÓN ────────────────────────────── -->
     <div class="wiki-article" id="art-produccion">
       <h1>Producción y Tiempos</h1>
-      <p>La rentabilidad de un proyecto depende de llevar un buen control de cuánto tiempo se invierte en él.</p>
+      <p>Controlar las horas invertidas en cada proyecto es esencial para conocer la rentabilidad real de un trabajo.</p>
 
       <h2>Trabajos del Día (Registro de Producción)</h2>
-      <p>Esta pantalla está pensada para usarse al final de la jornada (o durante el día). El encargado de producción selecciona a cada trabajador e indica en qué proyectos estuvo trabajando y cuántas horas le dedicó.</p>
+      <p>Esta pantalla se usa al final de la jornada. El encargado de producción selecciona a cada trabajador e indica en qué proyectos estuvo trabajando y cuántas horas le dedicó.</p>
       <ul>
-        <li>El sistema divide automáticamente las horas si un trabajador estuvo en 2 o 3 proyectos.</li>
-        <li>Esto alimenta la "Bitácora de Trabajo" de la página de <strong>Proyectos</strong>, permitiendo saber si nos pasamos del tiempo estimado.</li>
-        <li>Al mismo tiempo, registra la asistencia para la <strong>Nómina</strong>.</li>
+        <li>Divide automáticamente las horas si un trabajador trabajó en varios proyectos.</li>
+        <li>Alimenta la bitácora de la pantalla de <strong>Proyectos</strong> para saber si se superó el tiempo estimado.</li>
+        <li>Al mismo tiempo registra la asistencia para la <strong>Nómina Semanal</strong>.</li>
       </ul>
 
       <div class="warn-box">
-        <strong>⚠️ Importante:</strong> El registro de trabajos del día genera dos movimientos en la base de datos simultáneamente: La Asistencia (`attendance_logs`) y la Bitácora de Producción (`production_logs`).
+        <strong>⚠️ Dos registros simultáneos:</strong> El guardado de producción crea dos documentos: uno en <code>attendance_logs</code> (asistencia) y otro en <code>production_logs</code> (bitácora de trabajo por proyecto). Si el reloj checador ya registró asistencia ese día, el sistema de producción la sobreescribe con las horas reales trabajadas.
       </div>
+
+      <h2>Reloj Checador</h2>
+      <p>Pantalla pensada para tablet en la entrada del taller. El trabajador ingresa su <strong>PIN de 5 caracteres</strong> (su ID Personal, ej. <code>EDS92</code>) para registrar entrada o salida. El sistema detecta automáticamente si es entrada o salida según el último registro del día.</p>
     </div>
 
-    <!-- ART: ALMACÉN -->
+    <!-- ─────────────────────────── ALMACÉN Y COMPRAS ─────────────────────── -->
     <div class="wiki-article" id="art-almacen">
       <h1>Almacén y Compras</h1>
-      <p>Control de insumos generales: herrajes, pegamentos, barnices, lijas, clavos, etc.</p>
+      <p>Control completo de insumos: herrajes, pegamentos, barnices, lijas, clavos, MDF, y cualquier material que se consuma en los proyectos.</p>
 
-      <h2>Módulos de Almacén</h2>
+      <h2>Inventario General</h2>
+      <p>Catálogo de todos los insumos con stock actual, costo promedio, unidad de medida, ubicación y código CC-MMM-SS. Desde aquí puedes:</p>
       <ul>
-        <li><strong>Inventario General:</strong> Catálogo de todos los insumos con stock, costos y ubicaciones. Acceso desde el menú Compras y Almacén.</li>
-        <li><strong>Registro de Salidas:</strong> Cuando un maestro pide material, se registra la salida asociándola a un proyecto. Descuenta el stock automáticamente.</li>
-        <li><strong>Hoja de Pedido:</strong> Solicitud formal de materiales al área de compras, ligada a un proyecto y solicitante.</li>
+        <li>Agregar, editar o desactivar artículos.</li>
+        <li>Ver el historial de movimientos de un artículo.</li>
+        <li>Re-codificar categorías con el botón <strong>⟳</strong> para regenerar todos los códigos.</li>
       </ul>
 
-      <h2>Panel de Compras (Órdenes)</h2>
-      <p>Si hace falta material, se genera una requisición (Orden de Compra).</p>
-      <ul>
-        <li><strong>Borradores/Pedidos:</strong> Puedes enlistar lo que hace falta. Si es un proveedor o concepto nuevo, puedes escribir el nombre y el sistema lo creará automáticamente en la base de datos al autorizar.</li>
-        <li><strong>Autorización:</strong> Administración revisa la orden, captura los precios reales y marca como "Comprado".</li>
-        <li><strong>Recepción:</strong> Al recibir la mercancía, se aprueba, lo que suma automáticamente los artículos al inventario.</li>
-      </ul>
+      <h2>Registro de Salidas</h2>
+      <p>Cuando un maestro pide material del almacén, se registra aquí asociándolo a un proyecto. El stock del artículo se descuenta automáticamente.</p>
+
+      <h2>Hoja de Pedido</h2>
+      <p>Solicitud formal de materiales al área de compras. La llena el área de almacén o producción cuando detecta que algo va a faltar. Se vincula a un proyecto y a un solicitante. Al guardar, crea una Orden de Compra en estado <strong>Pedido</strong>.</p>
+
+      <h2>Historial de Compras</h2>
+      <p>Vista de solo lectura con todas las órdenes de compra históricas (cualquier estado). Permite buscar por proveedor, proyecto, folio o rango de fechas.</p>
     </div>
 
-    <!-- ART: MADERA -->
+    <!-- ─────────────────────────── FLUJO DE COMPRAS ──────────────────────── -->
+    <div class="wiki-article" id="art-flujo-compras">
+      <h1>Flujo de Compras — Los 5 Pasos</h1>
+      <p>Cada vez que se necesita comprar material, la solicitud pasa por 5 estados hasta que los artículos llegan al almacén. Cada estado pertenece a un área diferente.</p>
+
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="fs-num">1</div>
+          <div class="fs-label">Pedido</div>
+          <div class="fs-sub">Almacén / Producción</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="fs-num">2</div>
+          <div class="fs-label">Confirmado</div>
+          <div class="fs-sub">Operaciones</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="fs-num">3</div>
+          <div class="fs-label">Autorizado</div>
+          <div class="fs-sub">Administración</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="fs-num">4</div>
+          <div class="fs-label">Comprado</div>
+          <div class="fs-sub">Compras</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="fs-num">5</div>
+          <div class="fs-label">Recibido</div>
+          <div class="fs-sub">Almacén</div>
+        </div>
+      </div>
+
+      <h2>Paso 1 — Pedido (Almacén / Producción)</h2>
+      <p>Se crea en <strong>Almacén → Hoja de Pedido</strong>. El solicitante escribe qué materiales necesita, en qué cantidades y para qué proyecto. Al guardar, la orden queda en estado <span class="pill pill-amber">Pedido</span> y aparece en el Dashboard como alerta.</p>
+
+      <h2>Paso 2 — Confirmado (Operaciones)</h2>
+      <p>Operaciones revisa la solicitud en <strong>Operaciones → Confirmar Pedidos</strong>. Puede editar cantidades o conceptos antes de confirmar. Al confirmar, la orden pasa a <span class="pill pill-blue">Confirmado</span> y llega a Administración.</p>
+      <div class="info-box">Si el material se creará como nuevo concepto en el inventario (nombre nuevo), Operaciones puede ajustar el nombre exacto en este paso.</div>
+
+      <h2>Paso 3 — Autorizado (Administración)</h2>
+      <p>El administrador revisa en <strong>Admin → Autorizar Pedidos</strong>. Captura el precio por artículo y la cuenta de pago. Al autorizar, la orden pasa a <span class="pill pill-green">Autorizado</span> y llega al área de Compras.</p>
+      <div class="warn-box"><strong>Proveedores y conceptos nuevos:</strong> Si el pedido contiene un proveedor o un concepto de inventario que aún no existe, el sistema los crea automáticamente en la base de datos al momento de autorizar.</div>
+
+      <h2>Paso 4 — Comprado (Compras)</h2>
+      <p>El área de compras realiza la compra físicamente y la registra en <strong>Compras y Almacén → Compras</strong>. El sistema crea automáticamente un <strong>Movimiento Contable tipo Gasto</strong> en Finanzas con estado <em>por comprobar</em>. La orden pasa a <span class="pill pill-amber">Comprado</span>.</p>
+
+      <h2>Paso 5 — Recibido (Almacén)</h2>
+      <p>Al llegar la mercancía, Almacén confirma la recepción en <strong>Compras y Almacén → Recepción</strong>. Al aprobar, el sistema <strong>incrementa automáticamente el stock</strong> de cada artículo en el inventario. La orden pasa a <span class="pill pill-green">Recibido</span> y el ciclo termina.</p>
+
+      <h2>¿Qué pantalla usa cada área?</h2>
+      <table class="db-table">
+        <thead><tr><th>Área</th><th>Pantalla</th><th>Acción</th></tr></thead>
+        <tbody>
+          <tr><td>Almacén / Producción</td><td>Hoja de Pedido</td><td>Crear solicitud</td></tr>
+          <tr><td>Operaciones</td><td>Confirmar Pedidos</td><td>Revisar y confirmar</td></tr>
+          <tr><td>Administración</td><td>Autorizar Pedidos</td><td>Capturar precios y autorizar</td></tr>
+          <tr><td>Compras</td><td>Compras (Panel)</td><td>Ejecutar la compra</td></tr>
+          <tr><td>Almacén</td><td>Recepción de Material</td><td>Confirmar llegada y surtir inventario</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─────────────────────────── MADERA ────────────────────────────────── -->
     <div class="wiki-article" id="art-madera">
       <h1>Control de Madera</h1>
-      <p>La madera no se trata como un insumo normal (tornillos) porque cada tabla es única. El sistema tiene un inventario especializado para ella.</p>
+      <p>La madera se maneja de forma diferente al inventario general porque cada tabla es una pieza única con dimensiones propias. El sistema tiene un módulo especializado para ella.</p>
 
-      <h2>Ingreso de Madera</h2>
-      <p>Pantalla para dar de alta nuevas tablas o paquetes de madera. Se captura la Especie (ej. Huanacaxtle), el Espesor (T), Ancho (W), y Largo (L). El sistema calcula el Pie Tablón (PT) de la tabla.</p>
-      <p>El sistema genera automáticamente un <strong>Código/SKU</strong> único para esa tabla, que puede imprimirse en una etiqueta.</p>
+      <h2>Ingreso de Madera (Escanear Madera)</h2>
+      <p>Pantalla para dar de alta nuevas tablas o paquetes de madera. Se captura:</p>
+      <ul>
+        <li><strong>Especie</strong> (ej. Huanacaxtle, Parota, Cedro)</li>
+        <li><strong>Espesor (T)</strong>, <strong>Ancho (W)</strong> y <strong>Largo (L)</strong> en las unidades del caso</li>
+        <li><strong>Cantidad</strong> de tablas del mismo lote</li>
+      </ul>
+      <p>El sistema calcula automáticamente el <strong>Pie Tablón (PT)</strong> de cada tabla con la fórmula: <code>PT = (T × W × L) / 144</code>. También genera un <strong>Código/SKU único</strong> para cada pieza que puede imprimirse en etiqueta.</p>
 
       <h2>Almacén de Madera</h2>
-      <p>Muestra el stock actual de piezas de madera, calculando el total de PT disponible y el valor económico del inventario. Funciona enlazado al inventario general (`inventory`), por lo que cuando la madera se usa en un proyecto, se descuenta de aquí.</p>
+      <p>Vista del stock actual de piezas de madera. Muestra el total de PT disponible y el valor económico del inventario. Cuando la madera se usa en un proyecto o se registra una salida, el stock se descuenta automáticamente.</p>
+
+      <div class="info-box">
+        <strong>Integración con Inventario General:</strong> Cada tabla de madera también existe como un documento en la colección <code>inventory</code> de Firestore, con su propio código y stock. Los módulos de cotización y detalle de proyecto pueden referenciar madera del inventario por código SKU.
+      </div>
+
+      <h2>Control de Madera (Vista de Almacén)</h2>
+      <p>Lista paginada de todas las piezas de madera activas, con filtros por especie, estado y rango de PT. Permite marcar piezas como usadas o reservadas para un proyecto específico.</p>
     </div>
 
-    <!-- ART: FINANZAS -->
+    <!-- ─────────────────────────── FINANZAS ──────────────────────────────── -->
     <div class="wiki-article" id="art-finanzas">
       <h1>Finanzas y Viáticos</h1>
-      
-      <h2>Contabilidad (Movimientos)</h2>
-      <p>Es el libro mayor (Ledger) de la carpintería. Aquí se registran todas las salidas y entradas de dinero de las cuentas bancarias y cajas de efectivo.</p>
+
+      <h2>Contabilidad — Movimientos</h2>
+      <p>El libro mayor (Ledger) de la carpintería. Aquí se registran todas las entradas y salidas de dinero de las cuentas bancarias y cajas de efectivo.</p>
       <ul>
-        <li><strong>Tipos:</strong> Ingreso, Gasto, y Transferencia (pasar dinero del banco a la caja).</li>
-        <li><strong>Vínculos:</strong> Los gastos pueden vincularse a un Proyecto o a una Orden de Compra para tener trazabilidad.</li>
-        <li><strong>Categorización IA:</strong> Si escribes "pago de luz cfe", la inteligencia artificial del sistema sugerirá automáticamente categorizarlo como "Servicios Públicos".</li>
+        <li><strong>Tipos:</strong> <span class="pill pill-green">Ingreso</span> <span class="pill pill-red">Gasto</span> <span class="pill pill-blue">Transferencia</span></li>
+        <li><strong>Estados:</strong> <span class="pill pill-amber">Borrador</span> (no afecta saldos) y <span class="pill pill-green">Confirmado</span> (afecta saldos).</li>
+        <li><strong>Vínculos:</strong> Los gastos pueden vincularse a un Proyecto o a una Orden de Compra para tener trazabilidad completa.</li>
       </ul>
+
+      <h2>Categorización con IA</h2>
+      <p>Al escribir el concepto del movimiento (ej. <em>"pago luz CFE"</em>), el sistema sugiere automáticamente una categoría. Funciona con palabras clave comunes del negocio:</p>
+      <ul>
+        <li><em>cfe, luz, agua</em> → Servicios Públicos</li>
+        <li><em>nómina, sueldo</em> → Nómina y Mano de Obra</li>
+        <li><em>madera, barniz, herraje</em> → Materiales y Materia Prima</li>
+        <li><em>banorte, cuota, préstamo</em> → Financieros</li>
+      </ul>
+
+      <h2>Saldos de Cuentas</h2>
+      <p>Las tarjetas en la parte superior de Finanzas muestran el saldo actualizado de cada cuenta. El saldo se calcula de forma incremental: cada vez que confirmas un movimiento, se suma o resta de la cuenta correspondiente en tiempo real. Puedes hacer clic en una tarjeta para filtrar la lista a esa cuenta.</p>
+      <p>También puedes crear nuevas cuentas (ej. una cuenta bancaria nueva) con el botón <strong>+ Cuenta</strong>.</p>
+
+      <h2>Eliminar un Movimiento</h2>
+      <p>No se borra físicamente — se <strong>anula</strong> (soft delete). El movimiento queda marcado como <code>anulado</code> y desaparece de la lista, pero permanece en la base de datos por trazabilidad de auditoría. Al anular, el saldo de la cuenta se revierte automáticamente.</p>
 
       <h2>Viáticos</h2>
       <p>Módulo para controlar el dinero que se le da al equipo para viajes o instalaciones foráneas.</p>
       <ol>
         <li><strong>Crear Viaje:</strong> Se define destino, proyecto y fechas.</li>
         <li><strong>Asignar Personal:</strong> Se selecciona quién viaja.</li>
-        <li><strong>Anticipos:</strong> Se registra el dinero que se les entrega. Al hacerlo, el sistema <strong>crea automáticamente un Gasto</strong> en la pantalla de Finanzas, descontándolo de la Caja/Banco.</li>
-        <li><strong>Comprobación:</strong> El equipo entrega tickets de gasolina, comida, etc.</li>
-        <li><strong>Liquidación:</strong> Al cerrar el viaje, el sistema calcula si sobró dinero (el trabajador lo devuelve y se registra un <em>Ingreso</em> en Finanzas) o si faltó (se le paga y se registra un <em>Gasto</em> extra).</li>
+        <li><strong>Anticipos:</strong> Se registra el dinero entregado. Al hacerlo, el sistema crea automáticamente un <strong>Gasto en Finanzas</strong> descontándolo de la caja/banco.</li>
+        <li><strong>Comprobación:</strong> El equipo entrega tickets (gasolina, comida, etc.).</li>
+        <li><strong>Liquidación:</strong> Al cerrar el viaje, el sistema calcula si sobró dinero (el trabajador lo devuelve → Ingreso en Finanzas) o si faltó (se le paga → Gasto extra).</li>
       </ol>
+      <div class="info-box"><strong>Vínculo automático:</strong> Si eliminas un Anticipo de Viático, el sistema borra automáticamente el Gasto Financiero que había creado, manteniendo la contabilidad limpia.</div>
     </div>
 
-    <!-- ART: RRHH -->
+    <!-- ─────────────────────────── RRHH / NÓMINA ─────────────────────────── -->
     <div class="wiki-article" id="art-rrhh">
       <h1>Nómina y Recursos Humanos</h1>
-      <p>Gestión del personal y sus pagos semanales.</p>
+      <p>Gestión integral del personal y sus pagos semanales.</p>
+
+      <h2>Lista de Trabajadores</h2>
+      <p>Directorio de todos los empleados activos. Desde aquí puedes dar de alta nuevos trabajadores, editar datos, ver su historial de préstamos y vacaciones. Los campos principales son:</p>
+      <ul>
+        <li>Nombre completo, puesto, fecha de nacimiento, ID Personal</li>
+        <li>Salario base semanal</li>
+        <li>Préstamos activos (se descuentan en nómina)</li>
+        <li>Días de vacaciones acumulados y tomados</li>
+      </ul>
 
       <h2>Reloj Checador</h2>
-      <p>Pantalla para uso en tablet (o en la entrada del taller) donde el trabajador ingresa su PIN (ej. 1234) para registrar su hora de Entrada y Salida.</p>
+      <p>Pantalla para tablet en la entrada del taller. El trabajador ingresa su PIN (su ID Personal de 5 caracteres) para registrar entrada o salida. El sistema detecta automáticamente si ya hay una entrada del día para marcar salida.</p>
 
       <h2>Nómina Semanal</h2>
-      <p>Generador de rayas. Seleccionas la semana y el sistema busca todas las asistencias de los trabajadores.</p>
+      <p>Generador de rayas. Seleccionas la semana con los botones ← → y el sistema calcula automáticamente:</p>
       <ul>
-        <li>Calcula el sueldo base.</li>
-        <li><strong>Horas Extra:</strong> Si el reloj checador detectó salidas tardías, sugiere pagar Horas Extra (x1.5) o Dobles (x2).</li>
-        <li><strong>Descuentos:</strong> Permite restar dinero por préstamos (que se gestionan en el perfil del trabajador) o faltas.</li>
-        <li><strong>Liquidación:</strong> Al autorizar la nómina, se genera el recibo de pago y se puede enviar a finanzas.</li>
+        <li><strong>Sueldo base:</strong> Según los días trabajados registrados en asistencia.</li>
+        <li><strong>Horas extra:</strong> Si el reloj checador detectó salidas tarde (después de completar las 45h semanales), sugiere pagar HE al 1.5x o 2x.</li>
+        <li><strong>Descuentos:</strong> Abonos a préstamos, faltas injustificadas.</li>
+        <li><strong>Resumen total:</strong> Muestra el monto a pagar a cada trabajador y el total de la nómina.</li>
+      </ul>
+
+      <div class="info-box">
+        <strong>Fuente de datos:</strong> La nómina toma asistencia de dos fuentes: el Reloj Checador (<code>attendance_logs</code>) y el Registro de Producción Diaria (<code>production_logs</code>). El registro de producción tiene prioridad si ambos existen para el mismo día.
+      </div>
+
+      <h2>Pestañas de la Nómina</h2>
+      <ul>
+        <li><strong>Por Calcular:</strong> Trabajadores sin nómina finalizada esta semana.</li>
+        <li><strong>Verificados:</strong> Trabajadores con nómina ya calculada y revisada.</li>
+        <li><strong>Historial:</strong> Nóminas de semanas anteriores.</li>
       </ul>
     </div>
 
-    <!-- ART: DB -->
-    <div class="wiki-article" id="art-db">
-      <h1>Estructura de Base de Datos</h1>
-      <p>El sistema utiliza <strong>NoSQL (Firestore)</strong>. La información se guarda en colecciones de documentos JSON. A continuación, las colecciones principales:</p>
+    <!-- ─────────────────────────── CÓDIGO EMPLEADO ───────────────────────── -->
+    <div class="wiki-article" id="art-codigos-personal">
+      <h1>Código de Empleado (ID Personal)</h1>
+      <p>Cada trabajador tiene un identificador único de <strong>5 caracteres</strong> que sirve como PIN del reloj checador y como identificación interna en nóminas y reportes.</p>
+
+      <h2>Fórmula de Generación</h2>
+      <p>Se genera automáticamente al dar de alta o editar al trabajador, siempre que estén capturados los tres datos requeridos:</p>
 
       <table class="db-table">
-        <thead>
-          <tr><th>Colección</th><th>Descripción de su uso</th></tr>
-        </thead>
+        <thead><tr><th>Posición</th><th>Fuente</th><th>Largo</th><th>Ejemplo</th></tr></thead>
         <tbody>
-          <tr>
-            <td><code>projects</code></td>
-            <td>Todos los proyectos activos e históricos. Guarda porcentajes de avance, presupuestos, fechas e hitos.</td>
-          </tr>
-          <tr>
-            <td><code>contacts</code></td>
-            <td>El CRM. Clientes, Proveedores y el registro Legacy del personal (se está migrando a workers).</td>
-          </tr>
-          <tr>
-            <td><code>workers</code></td>
-            <td>Ficha técnica de los trabajadores: Sueldo base, puesto, PIN para checador, préstamos activos.</td>
-          </tr>
-          <tr>
-            <td><code>inventory</code></td>
-            <td>El catálogo del almacén. Cada documento tiene código, nombre, costo promedio y <code>stock</code> actual. La madera también vive aquí como productos individuales.</td>
-          </tr>
-          <tr>
-            <td><code>wood</code></td>
-            <td>(Legacy) Detalles extendidos de la madera (Especie, Lote, Espesor, Ancho, Largo). Actualmente en sincronización directa con <code>inventory</code>.</td>
-          </tr>
-          <tr>
-            <td><code>inventory_salidas</code></td>
-            <td>Bitácora de movimientos del almacén. Guarda qué se sacó, quién lo sacó y a qué Proyecto se mandó.</td>
-          </tr>
-          <tr>
-            <td><code>purchase_orders</code></td>
-            <td>Órdenes de compra. Guarda los renglones requeridos y su estado (Pedido, Confirmado, Recibido).</td>
-          </tr>
-          <tr>
-            <td><code>accounting_movements</code></td>
-            <td>Las transacciones de finanzas (Ingresos/Gastos). Guarda montos, fechas, cuentas origen/destino.</td>
-          </tr>
-          <tr>
-            <td><code>viajes</code></td>
-            <td>Cabecera de los viáticos. Guarda el destino y el estado (Activo/Cerrado).</td>
-          </tr>
-          <tr>
-            <td><code>anticipos_viaticos</code></td>
-            <td>Dinero entregado a los trabajadores vinculado a un ID de <code>viajes</code>.</td>
-          </tr>
-          <tr>
-            <td><code>gastos_viaticos</code></td>
-            <td>Tickets comprobados vinculados a un ID de <code>viajes</code>.</td>
-          </tr>
-          <tr>
-            <td><code>attendance_logs</code></td>
-            <td>Registro diario de asistencia. Guarda hora de entrada, salida, retardos y horas totales calculadas.</td>
-          </tr>
-          <tr>
-            <td><code>production_logs</code></td>
-            <td>Surgidos de "Producción Diaria". Liga las horas de un <code>worker</code> a un <code>project</code>.</td>
-          </tr>
-          <tr>
-            <td><code>quotations</code></td>
-            <td>Cotizaciones generadas. Guardan los muebles, piezas, mano de obra requerida y precios calculados.</td>
-          </tr>
-          <tr>
-            <td><code>users</code></td>
-            <td>Control de acceso y autenticación. Liga un correo de Google con un rol (admin, compras, contador, etc).</td>
-          </tr>
+          <tr><td><code>PP</code></td><td>Primeras 2 letras del <strong>Nombre</strong></td><td>2 caracteres</td><td>Eddie → <code>ED</code></td></tr>
+          <tr><td><code>A</code></td><td>Inicial del <strong>Apellido Paterno</strong></td><td>1 carácter</td><td>Santiago → <code>S</code></td></tr>
+          <tr><td><code>YY</code></td><td>Últimos 2 dígitos del <strong>Año de Nacimiento</strong></td><td>2 dígitos</td><td>1992 → <code>92</code></td></tr>
         </tbody>
       </table>
 
-      <h3>Cascadas y Automatizaciones Críticas</h3>
-      <p>El archivo <code>db.js</code> contiene un gran poder. Para evitar la corrupción de datos, algunas funciones disparan acciones en cadena:</p>
+      <div class="info-box">
+        <strong>Ejemplo completo:</strong><br>
+        Eddie Santiago Sánchez, nacido el 14/06/1992<br>
+        → <code>ED</code> + <code>S</code> + <code>92</code> = <strong>EDS92</strong>
+      </div>
+
+      <h2>Reglas Especiales</h2>
       <ul>
-        <li>Si eliminas un <strong>Anticipo de Viático</strong>, el sistema borra automáticamente el <strong>Gasto Financiero</strong> que había creado en <code>accounting_movements</code>.</li>
-        <li>Si apruebas una <strong>Orden de Compra</strong> con conceptos "nuevos", se inyectan silenciosamente como documentos en <code>inventory</code> y en <code>contacts</code> antes de guardarse.</li>
-        <li>El <strong>Registro de Producción Diaria</strong> sobreescribe el <code>attendance_logs</code> si hay discrepancias con el reloj checador.</li>
+        <li>Si el nombre tiene solo una letra, la segunda posición se rellena con <strong>X</strong>.</li>
+        <li>Sin fecha de nacimiento, el código no se genera automáticamente — debe capturarse manualmente.</li>
+        <li>Si dos trabajadores tienen el mismo código, se puede agregar un dígito manual para diferenciarlos (ej. <code>EDS921</code>).</li>
+        <li>El código es editable en el perfil del trabajador en cualquier momento.</li>
       </ul>
     </div>
 
-  </div>
-</div>
+    <!-- ─────────────────────────── CÓDIGO INVENTARIO ────────────────────── -->
+    <div class="wiki-article" id="art-codigos-inventario">
+      <h1>Código de Inventario (CC-MMM-SS)</h1>
+      <p>Todo artículo del almacén general tiene un código estructurado de la forma <strong>CC-MMM-SS</strong>. Este código aparece en etiquetas de producto y hojas de pedido.</p>
+
+      <h2>Estructura del Código</h2>
+      <table class="db-table">
+        <thead><tr><th>Segmento</th><th>Significado</th><th>Largo</th><th>Ejemplo</th></tr></thead>
+        <tbody>
+          <tr><td><code>CC</code></td><td><strong>Categoría</strong> del producto (número asignado por categoría)</td><td>2 dígitos</td><td>Tornillería → <code>02</code></td></tr>
+          <tr><td><code>MMM</code></td><td><strong>Marca</strong> del producto (número asignado a cada marca)</td><td>3 dígitos</td><td>Spax → <code>003</code></td></tr>
+          <tr><td><code>SS</code></td><td><strong>Secuencial</strong> dentro de esa categoría+marca (automático)</td><td>2 dígitos</td><td>Tercer artículo → <code>02</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>Ejemplo completo:</strong><br>
+        Tornillo SPAX Madera 6×100mm, categoría Tornillería (02), marca Spax (003), tercer artículo:<br>
+        → <strong>02-003-02</strong>
+      </div>
+
+      <h2>Cómo se Asignan los Códigos</h2>
+      <h3>CC — Código de Categoría</h3>
+      <p>Se gestionan en <strong>Almacén → Inventario General → botón ⟳ (Re-codificar)</strong>. Al confirmar, el sistema regenera todos los códigos del inventario.</p>
+
+      <h3>MMM — Código de Marca</h3>
+      <p>Se gestionan en <strong>Admin → Editar Listas → Marcas de Inventario</strong>. Cada marca tiene un código de 3 dígitos. Si un artículo no tiene marca, el segmento MMM aparece como <code>000</code>.</p>
+
+      <h3>SS — Secuencial</h3>
+      <p>Lo asigna el sistema automáticamente al crear un artículo nuevo. Es el siguiente número libre dentro de esa combinación CC+MMM.</p>
+
+      <div class="warn-box">
+        <strong>⚠ Si ves "000" en el centro del código</strong> (ej. <code>02-000-03</code>): el artículo no tiene marca asignada. Para corregirlo: edita el artículo, asigna la marca correcta, y vuelve a pulsar <strong>⟳ Re-codificar</strong>.
+      </div>
+
+      <h2>Códigos de Categoría Actuales</h2>
+      <table class="db-table">
+        <thead><tr><th>CC</th><th>Categoría</th><th>CC</th><th>Categoría</th></tr></thead>
+        <tbody>
+          <tr><td><code>01</code></td><td>Ferretería</td><td><code>12</code></td><td>Siliconas y Adhesivos</td></tr>
+          <tr><td><code>02</code></td><td>Tornillería y Fijaciones</td><td><code>13</code></td><td>Herramienta</td></tr>
+          <tr><td><code>03</code></td><td>Barniz, Aceite y Pintura</td><td><code>14</code></td><td>Repuestos de Herramientas</td></tr>
+          <tr><td><code>04</code></td><td>Sierras, Cuchillas y Brocas</td><td><code>15</code></td><td>Cristal y Vidrio</td></tr>
+          <tr><td><code>05</code></td><td>Lijas y Abrasivos</td><td><code>16</code></td><td>Construcción</td></tr>
+          <tr><td><code>07</code></td><td>MDF, Triplay y Ecotab</td><td><code>17</code></td><td>Telas y Lonas</td></tr>
+          <tr><td><code>08</code></td><td>Metálicos</td><td><code>18</code></td><td>Limpieza</td></tr>
+          <tr><td><code>09</code></td><td>Eléctrico e Iluminación</td><td><code>19</code></td><td>Papelería y Oficina</td></tr>
+          <tr><td><code>10</code></td><td>Mantenimiento</td><td><code>20</code></td><td>Automóviles</td></tr>
+          <tr><td><code>11</code></td><td>Equipo de Seguridad</td><td><code>99</code></td><td>General</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─────────────────────────── ADMIN ─────────────────────────────────── -->
+    <div class="wiki-article" id="art-admin">
+      <h1>Usuarios, Roles y Permisos</h1>
+      <p>Sección exclusiva para Administrador. Permite gestionar quién puede acceder al sistema y qué puede hacer en cada módulo.</p>
+
+      <h2>Gestión de Usuarios</h2>
+      <p>En <strong>Admin → Gestión de Usuarios</strong> puedes:</p>
+      <ul>
+        <li>Ver todos los correos de Google que han iniciado sesión.</li>
+        <li>Asignar o cambiar el rol de cada usuario.</li>
+        <li>Revocar el acceso eliminando al usuario.</li>
+      </ul>
+      <div class="warn-box"><strong>Primer login:</strong> La primera vez que un usuario inicia sesión con Google, su rol queda como <code>ninguno</code> (sin acceso). El administrador debe asignarle un rol desde esta pantalla.</div>
+
+      <h2>Permisos de Acceso</h2>
+      <p>En <strong>Admin → Admin Permisos</strong> puedes configurar qué nivel de acceso tiene cada rol en cada sección del sistema:</p>
+      <ul>
+        <li><strong>Completo:</strong> Puede ver, crear, editar y eliminar.</li>
+        <li><strong>Solo Lectura:</strong> Puede ver pero no modificar.</li>
+        <li><strong>Sin Acceso:</strong> El módulo no se muestra y no puede abrirse.</li>
+      </ul>
+
+      <h2>Editar Listas</h2>
+      <p>En <strong>Admin → Editar Listas</strong> puedes gestionar los catálogos del sistema sin modificar código:</p>
+      <ul>
+        <li><strong>Cuentas Bancarias / Cajas</strong> (ej. CHU, CAJA, SATP)</li>
+        <li><strong>Métodos de Pago</strong> (EFECTIVO, TRANSF, CHEQUE…)</li>
+        <li><strong>Categorías de Ingresos y Gastos</strong></li>
+        <li><strong>Marcas de Inventario</strong> (con sus códigos MMM)</li>
+        <li><strong>Categorías de Inventario</strong> (con sus códigos CC)</li>
+      </ul>
+
+      <h2>Reglas y Ajustes (Admin Config)</h2>
+      <p>Configuración general del sistema: umbral de horas extra, días laborables de la semana, configuración de la nómina, y otros parámetros operativos.</p>
+
+      <h2>Esquema de DB (Admin DB)</h2>
+      <p>Vista técnica de las colecciones en Firestore con conteo de documentos. Exclusivo para el rol <strong>Programador</strong>. Útil para auditoría de datos y diagnóstico de problemas.</p>
+    </div>
+
+    <!-- ─────────────────────────── BASE DE DATOS ─────────────────────────── -->
+    <div class="wiki-article" id="art-db">
+      <h1>Estructura de Base de Datos</h1>
+      <p>El sistema utiliza <strong>Firestore NoSQL</strong> de Firebase. La información se guarda en colecciones de documentos JSON. A continuación las colecciones principales:</p>
+
+      <table class="db-table">
+        <thead><tr><th>Colección</th><th>Descripción</th></tr></thead>
+        <tbody>
+          <tr><td><code>projects</code></td><td>Proyectos activos e históricos. Avance (%), presupuesto, fechas e hitos.</td></tr>
+          <tr><td><code>contacts</code></td><td>CRM unificado. Campo <code>tipo</code>: <code>'cliente'</code>, <code>'proveedor'</code>, <code>'trabajador'</code>. Campo <code>activo: boolean</code>.</td></tr>
+          <tr><td><code>contacts_lists</code></td><td>Partición optimizada de contacts (3 documentos: clientes, proveedores, trabajadores). Se usa en lugar de escanear toda la colección contacts para reducir lecturas de Firestore.</td></tr>
+          <tr><td><code>workers</code></td><td>Ficha técnica de trabajadores: sueldo base, puesto, PIN, préstamos activos, vacaciones.</td></tr>
+          <tr><td><code>inventory</code></td><td>Catálogo del almacén. Código CC-MMM-SS, nombre, costo promedio y stock actual. La madera también vive aquí como piezas individuales.</td></tr>
+          <tr><td><code>inventory_lists</code></td><td>Partición del inventario por categoría (~20 documentos). Reduce lecturas al cargar el almacén.</td></tr>
+          <tr><td><code>inventory_salidas</code></td><td>Bitácora de salidas del almacén. Qué se sacó, quién, para qué proyecto y cuándo.</td></tr>
+          <tr><td><code>purchase_orders</code></td><td>Órdenes de compra con sus renglones y estado (Pedido → Confirmado → Autorizado → Comprado → Recibido).</td></tr>
+          <tr><td><code>accounting_movements</code></td><td>Movimientos contables (Ingreso / Gasto / Transferencia). Estado: <code>confirmado</code> o <code>pendiente</code>.</td></tr>
+          <tr><td><code>accounting_by_month</code></td><td>Partición mensual de accounting_movements (un documento por mes YYYY-MM). Reduce lecturas al cargar finanzas.</td></tr>
+          <tr><td><code>account_balances</code></td><td>Saldos en tiempo real de cada cuenta bancaria/caja. Se actualizan de forma incremental con cada movimiento confirmado.</td></tr>
+          <tr><td><code>viajes</code></td><td>Cabecera de viáticos: destino, proyecto, estado (Activo / Cerrado).</td></tr>
+          <tr><td><code>anticipos_viaticos</code></td><td>Dinero entregado a trabajadores vinculado a un ID de <code>viajes</code>.</td></tr>
+          <tr><td><code>gastos_viaticos</code></td><td>Tickets comprobados vinculados a un ID de <code>viajes</code>.</td></tr>
+          <tr><td><code>attendance_logs</code></td><td>Registros del reloj checador: entrada, salida, horas totales por día y trabajador.</td></tr>
+          <tr><td><code>production_logs</code></td><td>Horas de trabajo por proyecto. Generado desde Producción Diaria.</td></tr>
+          <tr><td><code>quotations</code></td><td>Cotizaciones guardadas: muebles, piezas, mano de obra y precios calculados.</td></tr>
+          <tr><td><code>users</code></td><td>Control de acceso. Liga un correo de Google con un rol.</td></tr>
+          <tr><td><code>config_params</code></td><td>Parámetros de configuración global, incluyendo el mapa de permisos por rol.</td></tr>
+          <tr><td><code>settings</code></td><td>Configuración general del negocio (doc <code>main</code>): horas de jornada, días laborables, etc.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Automatizaciones Críticas (Cascadas)</h2>
+      <p>Estas acciones disparan operaciones en cadena que mantienen la integridad de los datos:</p>
+      <ul>
+        <li>Eliminar un <strong>Anticipo de Viático</strong> → borra el <strong>Gasto en Finanzas</strong> asociado.</li>
+        <li>Autorizar una <strong>Orden de Compra</strong> con proveedores/conceptos nuevos → los crea silenciosamente en <code>contacts</code> e <code>inventory</code>.</li>
+        <li>Registrar una <strong>Recepción de Material</strong> → incrementa el stock de cada artículo en <code>inventory</code>.</li>
+        <li>Confirmar un <strong>Movimiento Contable</strong> → actualiza incrementalmente el saldo en <code>account_balances</code>.</li>
+        <li>El <strong>Registro de Producción Diaria</strong> sobreescribe la asistencia del reloj checador si hay discrepancia.</li>
+      </ul>
+
+      <h2>Estrategia de Optimización de Lecturas</h2>
+      <p>Para no agotar la cuota gratuita de Firestore (50k lecturas/día), el sistema usa <strong>listas particionadas</strong>:</p>
+      <ul>
+        <li><code>contacts</code>: 3 lecturas (clientes, proveedores, trabajadores) en lugar de ~800.</li>
+        <li><code>inventory</code>: ~20 lecturas (una por categoría) en lugar de ~2,000.</li>
+        <li><code>accounting_movements</code>: 3 lecturas (últimos 3 meses) en lugar de ~19,000.</li>
+      </ul>
+      <div class="warn-box">
+        <strong>⚠ Si el sistema no carga:</strong> Probablemente se agotó la cuota de lecturas diarias de Firebase. El sistema se recupera solo a las ~2am hora de México. Puedes verificarlo en la consola de Firebase.
+      </div>
+    </div>
+
+  </div><!-- wiki-content -->
+</div><!-- main-container -->
 
 <script>
-  function showArticle(id) {
-    // Quitar activos de nav
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-
-    // Quitar activos de articulos
-    document.querySelectorAll('.wiki-article').forEach(el => el.classList.remove('active'));
+  function showArticle(id, el) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if(el) el.classList.add('active');
+    document.querySelectorAll('.wiki-article').forEach(a => a.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-
-    // Scroll to top
     document.querySelector('.wiki-content').scrollTo(0, 0);
+  }
+
+  function searchWiki(q) {
+    const term = q.toLowerCase().trim();
+    document.querySelectorAll('.nav-item').forEach(el => {
+      if(!term) { el.classList.remove('search-hidden'); return; }
+      const text = (el.textContent + ' ' + (el.dataset.search || '')).toLowerCase();
+      el.classList.toggle('search-hidden', !text.includes(term));
+    });
   }
 </script>
 </body>

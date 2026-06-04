@@ -7,41 +7,6 @@
 <title>Contabilidad / Movimientos — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --green: #40a02b; --green-bg: #e5f4e3;
-  --blue: #1e66f5; --blue-bg: #e6eaf6;
-  --amber: #df8e1d; --amber-bg: #fdf3e5;
-  --red: #d20f39; --red-bg: #f8e1e7;
-  --purple: #8839ef; --purple-bg: #f0e6fc;
-  --radius: 8px; --radius-lg: 12px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
-    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
-    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
-    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15);
-    --purple: #cba6f7; --purple-bg: rgba(203,166,247,0.15);
-  }
-}
-
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); overflow-x: hidden; }
-
-.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 10; }
-.hdr-title { font-size: 18px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 12px; }
-
-.btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s; border: none; font-family: inherit; }
-.btn-blue { background: var(--blue); color: #fff; }
-.btn-green { background: var(--green); color: #fff; }
-.btn-dark { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
-.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--crust); }
-.btn:hover { opacity: 0.9; }
 
 .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
 
@@ -91,13 +56,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .amt-in  { color: var(--green); }
 .amt-out { color: var(--text); }
 .amt-neu { color: var(--subtext); }
-
-.pill { padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; text-transform: uppercase; display: inline-block; white-space: nowrap; text-align: center; }
-.pill-gray { background: var(--surface0); color: var(--text); }
-.pill-blue { background: var(--blue-bg); color: var(--blue); }
-.pill-green { background: var(--green-bg); color: var(--green); }
-.pill-amber { background: var(--amber-bg); color: var(--amber); }
-.pill-purple { background: var(--purple-bg); color: var(--purple); }
 
 /* Detalle Expandido */
 .mov-detail { background: var(--base); border: 1px solid var(--blue); border-top: 1px dashed var(--crust); padding: 16px; border-radius: 0 0 8px 8px; margin-top: 0; margin-bottom: 8px; display: none; }
@@ -150,7 +108,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
 <div class="hdr">
   <div class="hdr-title">
-    <button onclick="if(window.parent&&window.parent.goHome){window.parent.goHome()}else{window.history.back()}" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;transition:0.15s;padding:4px 8px;border-radius:6px;" onmouseenter="this.style.background='var(--surface0)'" onmouseleave="this.style.background='none'">←</button>
+    <button class="back-btn" onclick="if(window.parent&&window.parent.goHome){window.parent.goHome()}else{window.history.back()}">← Volver</button>
     Movimientos
   </div>
   <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -205,6 +163,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       <option value="Gasto">Gastos</option>
       <option value="Transferencia">Transferencias</option>
     </select>
+    <button class="btn btn-ghost" onclick="exportarCSV()" style="margin-left:auto;">📥 Exportar CSV</button>
   </div>
 
   <!-- Lista -->
@@ -665,6 +624,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     sorted.forEach(m => {
       const mid = m.id || m._id || '';
       if (!mid) return; // skip orphan items with no id
+      if (m.eliminado) return; // Ocultar movimientos anulados de la lista
 
       // Filtering logic
       if (currentAccFilter !== 'ALL') {
@@ -706,7 +666,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
           <div class="hide-mob">
              <div style="font-size:12px;color:var(--text);font-weight:600">${m.entity || '--'}</div>
           </div>
-          <div class="hide-mob" style="text-align:right;">${m.status==='confirmado'?'<span class="pill pill-green">Confirmado</span>':''}</div>
+          <div class="hide-mob" style="text-align:right;">${(m.status==='confirmado'||m.status==='confirmed')?'<span class="pill pill-green">Confirmado</span>':''}</div>
           <div class="m-amt ${amtColor}">${sign}${fmt(m.amount)}</div>
         </div>
         <div class="mov-detail" id="det-${mid}">
@@ -755,29 +715,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     if (!mov) return;
 
     const desc = `${mov.date}  ${mov.type}  $${parseFloat(mov.amount).toLocaleString('es-MX', {minimumFractionDigits:2})}  ${mov.concept || ''}`;
-    if (!confirm(`¿Eliminar este movimiento?\n\n${desc}\n\nEsta acción no se puede deshacer.`)) return;
+    if (!confirm(`¿Anular este movimiento contable?\n\n${desc}\n\nEl registro se marcará como anulado pero no desaparecerá de la base de datos por motivos de auditoría.`)) return;
 
-    // Eliminar de Firestore
-    if (window.parent?.deleteDocumentFromFirebase) {
-      window.parent.deleteDocumentFromFirebase('accounting_movements', mid);
+    // CRÍTICO: Revertir el saldo de la cuenta bancaria ANTES de borrar el movimiento.
+    updateAccountBalance({ status: 'eliminado' }, false, mov);
+
+    // Soft Delete (Anular) en Firestore
+    mov.status = 'anulado';
+    mov.eliminado = true;
+    if (window.parent?.setDocumentInFirebase) {
+      window.parent.setDocumentInFirebase('accounting_movements', mid, mov);
     }
-
-    // Eliminar de DB_STATE
-    if (window.parent?.DB_STATE?.accounting_movements) {
-      window.parent.DB_STATE.accounting_movements = window.parent.DB_STATE.accounting_movements.filter(m => m.id !== mid);
-    }
-
-    // Eliminar de la lista local
-    _allMovements = _allMovements.filter(m => m.id !== mid);
-    DBm = DBm.filter(m => m.id !== mid);
 
     // Re-renderizar
-    renderMovs();
+    renderList();
 
     // Toast
     const t = document.createElement('div');
     t.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;background:var(--red);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
-    t.textContent = 'Movimiento eliminado';
+    t.textContent = 'Movimiento anulado';
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3000);
   }
@@ -864,7 +820,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
       const badge = document.getElementById('status-badge');
       badge.style.display = 'block';
-      if(m.status === 'confirmado') {
+      if(m.status === 'confirmado' || m.status === 'confirmed') {
         badge.className='pill pill-green'; badge.textContent='Confirmado';
       } else {
         badge.className='pill pill-amber'; badge.textContent='Borrador';
@@ -940,7 +896,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     }
   }
 
-  function saveMov(isConfirm) {
+  async function saveMov(isConfirm) {
     const id = document.getElementById('f-id').value;
     const type = document.getElementById('f-type-val').value;
     
@@ -995,37 +951,43 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       if(p) { p.payments = (p.payments||0) + m.amount; window.DB.updateProject(p); }
     }
     
-    const saveToFirestore = (mov) => {
-      if (window.parent && window.parent.setDocumentInFirebase) {
-        // Escribe doc individual + actualiza accounting_by_month/{YYYY-MM} automáticamente
-        window.parent.setDocumentInFirebase('accounting_movements', mov.id, mov);
-        // Actualizar también en LOADED_MONTHS local si el mes ya fue cargado
-        const ym = (mov.date || '').slice(0, 7);
+    const isNew = !id;
+    if (isNew) m.id = crypto.randomUUID();
+    else m.id = id;
+
+    const oldMov = isNew ? null : DBm.find(x => x.id === id);
+    
+    const batchOps = [
+      { type: 'set', col: 'accounting_movements', id: m.id, data: m }
+    ];
+    const balOps = getBalanceOps(m, isNew, oldMov);
+    batchOps.push(...balOps);
+
+    try {
+      if (window.parent?.runBatchedWrites) await window.parent.runBatchedWrites(batchOps);
+      
+      // Actualizar variables en memoria
+      if (isNew) {
+        DBm.unshift(m);
+        _allMovements.unshift(m);
+      } else {
+        const idx = DBm.findIndex(x => x.id === id);
+        if (idx !== -1) DBm[idx] = m; else DBm.unshift(m);
+        const ym = (m.date || '').slice(0, 7);
         if (ym && LOADED_MONTHS.includes(ym)) {
-          const idx = _allMovements.findIndex(x => x.id === mov.id);
-          if (idx >= 0) _allMovements[idx] = mov;
-          else _allMovements.unshift(mov);
+          const aidx = _allMovements.findIndex(x => x.id === m.id);
+          if (aidx >= 0) _allMovements[aidx] = m; else _allMovements.unshift(m);
         }
       }
-    };
+      applyLocalBalances(balOps);
 
-    if(id) {
-       m.id = id;
-       const idx = DBm.findIndex(x => x.id === id);
-       const oldMov = DBm[idx];
-       if (idx !== -1) DBm[idx] = m; else DBm.unshift(m);
-       saveToFirestore(m);
-       updateAccountBalance(m, false, oldMov);
-    } else {
-       m.id = crypto.randomUUID();
-       DBm.unshift(m);
-       saveToFirestore(m);
-       updateAccountBalance(m, true, null);
+      closePanel();
+      calcBalances();
+      renderList();
+    } catch(e) {
+      console.error("Error guardando movimiento:", e);
+      toast('Error al sincronizar con la nube. Revisa tu conexión.', 'error');
     }
-
-    closePanel();
-    calcBalances();
-    renderList();
   }
 
 
@@ -1170,16 +1132,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     });
   }
 
-  // Actualiza account_balances en Firestore cuando se agrega/edita un movimiento
-  function updateAccountBalance(mov, isNew, oldMov) {
-    if (!window.parent || !window.parent.setDocumentInFirebase) return;
+  // Genera operaciones atómicas (increment) para el batch y aplica localmente si el batch es exitoso
+  function getBalanceOps(mov, isNew, oldMov) {
+    const ops = [];
     const apply = (acc, delta) => {
-      if (!acc) return;
-      if (!STATE_ACCOUNT_BALANCES[acc]) STATE_ACCOUNT_BALANCES[acc] = { id: acc, account: acc, balance: 0, before_d7: 0, before_d30: 0, before_d180: 0, before_d365: 0 };
-      STATE_ACCOUNT_BALANCES[acc].balance = (STATE_ACCOUNT_BALANCES[acc].balance || 0) + delta;
-      STATE_ACCOUNT_BALANCES[acc].updated_at = new Date().toISOString();
-      window.parent.setDocumentInFirebase('account_balances', acc, STATE_ACCOUNT_BALANCES[acc]);
+      if (!acc || delta === 0) return;
+      ops.push({ type: 'increment', col: 'account_balances', id: acc, field: 'balance', amount: delta, extraUpdates: { updated_at: new Date().toISOString() } });
     };
+
     if (!isNew && oldMov && (oldMov.status === 'confirmado' || oldMov.status === 'confirmed')) {
       // Revertir movimiento anterior
       const oldDelta = oldMov.type === 'Ingreso' ? -oldMov.amount : oldMov.type === 'Gasto' ? oldMov.amount : 0;
@@ -1191,6 +1151,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       if (mov.type === 'Transferencia') { apply(mov.account, -mov.amount); apply(mov.destAccount, mov.amount); }
       else apply(mov.account, delta);
     }
+    return ops;
+  }
+
+  function applyLocalBalances(ops) {
+    ops.forEach(op => {
+      if (op.type === 'increment' && op.col === 'account_balances') {
+        if (!STATE_ACCOUNT_BALANCES[op.id]) STATE_ACCOUNT_BALANCES[op.id] = { id: op.id, account: op.id, balance: 0, before_d7: 0, before_d30: 0, before_d180: 0, before_d365: 0 };
+        STATE_ACCOUNT_BALANCES[op.id].balance += op.amount;
+        STATE_ACCOUNT_BALANCES[op.id].updated_at = op.extraUpdates.updated_at;
+      }
+    });
   }
 
   // ── Nueva Cuenta ───────────────────────────────────────────────────────────
