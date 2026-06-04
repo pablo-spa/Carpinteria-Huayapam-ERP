@@ -7,29 +7,6 @@
 <title>Nueva Cotización — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --green: #40a02b; --green-bg: rgba(64,160,43,0.15);
-  --amber: #df8e1d; --amber-bg: rgba(223,142,29,0.15);
-  --red: #d20f39; --red-bg: rgba(210,15,57,0.15);
-  --blue: #1e66f5; --blue-bg: rgba(30,102,245,0.15);
-  --radius: 10px; --radius-lg: 14px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
-    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
-    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15);
-    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
-  }
-}
-
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); min-height: 100vh; padding-bottom: 240px; }
 
 /* Header */
 .hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 10px 24px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; z-index: 20; }
@@ -40,14 +17,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .hdr-input, .hdr-select { flex: 1; padding: 8px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; box-sizing:border-box; min-height:40px; }
 .hdr-input:focus, .hdr-select:focus { outline: none; border-color: var(--blue); }
 .hdr-num { font-size: 12px; color: var(--subtext); font-weight: 600; white-space: nowrap; }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--mantle); color: var(--text); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap; transition: all .15s; }
-.btn:hover { background: var(--surface0); border-color: var(--surface1); }
-.btn-dark { background: var(--surface0); color: var(--text); border-color: var(--surface1); }
-.btn-dark:hover { background: var(--surface1); border-color: var(--subtext); }
-.btn-blue { background: var(--blue); color: var(--base); border-color: var(--blue); }
-.btn-blue:hover { opacity: 0.9; background: var(--blue); }
-.btn-green { background: var(--green); color: var(--base); border-color: var(--green); }
-.btn-green:hover { opacity: 0.9; background: var(--green); }
 @media (max-width: 768px) {
   .hdr { flex-direction: column; align-items: stretch; }
   .hdr-brand { border: none; padding-bottom: 8px; border-bottom: 1px solid var(--crust); }
@@ -57,9 +26,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 /* Fix layout and make it more compact to prevent sideways scrolling */
 .main { max-width: 1000px; margin: 0 auto; padding: 24px 20px; }
 
-/* AI Add Box - make it less bulky */
-.ai-box { display: flex; gap: 8px; align-items: center; border: 1px solid var(--blue); border-radius: 8px; background: var(--blue-bg); padding: 8px 12px; flex: 1; min-width: 280px; }
-.ai-lbl { font-size: 13px; font-weight: 700; color: var(--blue); white-space: nowrap; }
 .ai-input { flex: 1; border: 1px solid var(--surface0); border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; background: var(--base); color: var(--text); min-width: 120px; box-sizing:border-box; min-height:40px; }
 .ai-input:focus { outline: none; border-color: var(--blue); }
 
@@ -191,6 +157,7 @@ input.mat-price { text-align: right; font-size: 12px; }
 
 <div class="hdr">
   <div class="hdr-row1">
+    <button id="btn-back-project" class="back-btn" style="display:none;" onclick="goBackToProject()">← Volver al Proyecto</button>
     <div class="hdr-brand">Nueva Cotización</div>
     <div style="flex:1;"></div>
     <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
@@ -208,13 +175,6 @@ input.mat-price { text-align: right; font-size: 12px; }
   
   <!-- Add / Config Bar -->
   <div class="top-action-bar" style="flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 20px; background: none; border: none; padding: 0;">
-    <!-- Fila del Asistente AI -->
-    <div class="ai-box">
-      <div class="ai-lbl">✨ Asistente IA</div>
-      <input type="text" class="ai-input" id="ai-prompt" placeholder="Ej: Dos libreros de tzalam...">
-      <button class="btn btn-blue" onclick="simulateAI()" style="padding:6px 12px;">Generar</button>
-    </div>
-    
     <!-- Fila Manual -->
     <div style="display: flex; gap: 8px; align-items: center; background: var(--mantle); padding: 12px; border: 1px solid var(--crust); border-radius: 12px; flex-wrap:wrap;">
       <select class="type-sel" id="typeSelect" style="flex:2; min-width:160px;">
@@ -408,38 +368,6 @@ function updateCfg() {
   render();
 }
 
-function simulateAI() {
-  const input = document.getElementById('ai-prompt');
-  const text = input.value;
-  if(!text) { input.focus(); return; }
-  
-  const original = input.value;
-  input.value = "Consultando base de datos y creando desglose...";
-  input.disabled = true;
-  
-  setTimeout(() => {
-    // Generate Puerta
-    S.typeCounts['PTA'] = (S.typeCounts['PTA']||0)+1;
-    S.pieces.unshift({
-      id: S.nextId++,
-      code: 'PTA' + S.typeCounts['PTA'],
-      name: 'Puerta abatible con herrajes IA', 
-      mats: [
-        { n: 'Tablero MDF 15mm', u: 'lámina', p: 185, qty: 1.5 },
-        { n: 'Madera tzalam maciza', u: 'pt', p: 850, qty: 12 },
-        { n: 'Barniz brillante', u: 'lt', p: 220, qty: 1 },
-        { n: 'Bisagra clip 110°', u: 'pieza', p: 38, qty: 4 },
-        { n: 'Jalador acero inox', u: 'pieza', p: 45, qty: 1 },
-      ],
-      hrRows: [{ role:'maestroA', hrs:8 }, { role:'oficialA', hrs:4 }, { role:'barniz', hrs:3 }, { role:'pulido', hrs:2 }, { role:'chofer', hrs:1 }],
-      open: true,
-    });
-    
-    input.value = "";
-    input.disabled = false;
-    updateCfg();
-  }, 1000);
-}
 
 function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
@@ -1317,11 +1245,26 @@ async function loadOptions() {
   });
 }
 
+let BACK_PROJECT_ID = null;
+
 function navToProject(pId) {
   setTimeout(() => {
     if (window.parent?.openModule) window.parent.openModule('proyecto_detalle.html?id=' + pId, 'Detalle del Proyecto');
     else window.location.href = 'proyecto_detalle.html?id=' + pId;
   }, 700);
+}
+
+function goBackToProject() {
+  const pId = BACK_PROJECT_ID;
+  if (!pId) return;
+  if (window.parent?.openModule) window.parent.openModule('proyecto_detalle.html?id=' + pId, 'Detalle del Proyecto');
+  else window.location.href = 'proyecto_detalle.html?id=' + pId;
+}
+
+function showBackButton(pId) {
+  BACK_PROJECT_ID = pId;
+  const btn = document.getElementById('btn-back-project');
+  if (btn) btn.style.display = '';
 }
 
 function linkClientToProject(d, pId, cId) {
@@ -1423,6 +1366,7 @@ function processURLParams() {
 
   if (pId) {
     setSel('projectInput', pId);
+    showBackButton(pId);
     const proj = d.projects.find(p => p.id === pId);
     if (proj) {
       const cId = proj.contactoId || proj.contactId;
@@ -1473,6 +1417,7 @@ function processURLParams() {
   }
 
   if (loadQ) {
+    if (loadQ.projectId) showBackButton(loadQ.projectId);
     if (loadQ.globalCfg) {
       EXTRAS     = loadQ.globalCfg.EXTRAS     || 0.07;
       MARGIN     = loadQ.globalCfg.MARGIN     || 0.20;
