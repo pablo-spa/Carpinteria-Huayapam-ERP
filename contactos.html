@@ -195,8 +195,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       </div>
 
       <div class="field">
-        <label>Nombre / Empresa</label>
-        <input type="text" id="p-name" placeholder="Nombre completo o razón social">
+        <label>Empresa / Razón Social</label>
+        <input type="text" id="p-empresa" placeholder="Nombre de la empresa (dejar vacío si es persona)">
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Nombre</label>
+          <input type="text" id="p-nombre" placeholder="Primer nombre">
+        </div>
+        <div class="field">
+          <label>Apellido Paterno</label>
+          <input type="text" id="p-paterno" placeholder="—">
+        </div>
+        <div class="field">
+          <label>Apellido Materno</label>
+          <input type="text" id="p-materno" placeholder="—">
+        </div>
+        <!-- Campo oculto backward-compat para código legacy -->
+        <input type="hidden" id="p-name">
       </div>
 
       <div class="grid2">
@@ -279,7 +296,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       window.DB.query('contacts'),
       window.DB.query('projects'),
     ]);
-    STATE_CONTACTS = rawContacts.filter(c => !c._init && (c.name || c.givenName));
+    STATE_CONTACTS = rawContacts.filter(c => !c._init && (c.name || c.nombre || c.givenName || c.empresa));
     STATE_PROJECTS = rawProjects.filter(p => !p._init);
     STATE_CONTACTS.sort((a,b) => (a.name||a.givenName||'').localeCompare(b.name||b.givenName||''));
     renderGrid();
@@ -384,16 +401,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   // ── Form helpers ──────────────────────────────────────────────────────
   function fillForm(c) {
-    document.getElementById('p-id').value      = c.id;
-    document.getElementById('p-tipo').value    = c.tipo || 'cliente';
-    document.getElementById('p-name').value    = c.name || c.givenName || '';
-    document.getElementById('p-phone').value   = c.phone || '';
-    document.getElementById('p-email').value   = c.email || '';
-    document.getElementById('p-person').value  = c.person || '';
-    document.getElementById('p-address').value = c.address || '';
-    document.getElementById('p-web').value     = c.web || '';
-    document.getElementById('p-rfc').value     = c.rfc || '';
-    document.getElementById('p-notes').value   = c.notes || '';
+    document.getElementById('p-id').value       = c.id;
+    document.getElementById('p-tipo').value     = c.tipo || 'cliente';
+    document.getElementById('p-empresa').value  = c.empresa || '';
+    document.getElementById('p-nombre').value   = c.nombre || '';
+    document.getElementById('p-paterno').value  = c.apellidoPaterno || '';
+    document.getElementById('p-materno').value  = c.apellidoMaterno || '';
+    document.getElementById('p-name').value     = c.name || '';
+    document.getElementById('p-phone').value    = c.phone || c.telefono || '';
+    document.getElementById('p-email').value    = c.email || '';
+    document.getElementById('p-person').value   = c.person || '';
+    document.getElementById('p-address').value  = c.address || '';
+    document.getElementById('p-web').value      = c.web || '';
+    document.getElementById('p-rfc').value      = c.rfc || '';
+    document.getElementById('p-notes').value    = c.notas || c.notes || '';
 
     const cfc = document.getElementById('cf-container');
     cfc.innerHTML = '';
@@ -402,8 +423,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     const tipo = c.tipo || 'cliente';
     const tipoLabel = tipo==='proveedor'?'Proveedor':tipo==='trabajador'?'Trabajador':'Cliente';
     const tipoClr = tipo==='proveedor'?'color:var(--green)':tipo==='trabajador'?'color:var(--mauve)':'color:var(--blue)';
-    document.getElementById('p-avt').textContent = (c.name||c.givenName||'?').substring(0,2).toUpperCase();
-    document.getElementById('p-hdr-name').textContent = c.name || c.givenName || 'Sin nombre';
+    const displayName = c.name || c.empresa || [c.nombre, c.apellidoPaterno].filter(Boolean).join(' ') || 'Sin nombre';
+    document.getElementById('p-avt').textContent = displayName.substring(0,2).toUpperCase();
+    document.getElementById('p-hdr-name').textContent = displayName;
     document.getElementById('p-hdr-tipo').textContent = tipoLabel;
     document.getElementById('p-hdr-tipo').style = tipoClr;
     document.getElementById('p-foot-info').textContent = `ID: ${c.id}`;
@@ -424,7 +446,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   }
 
   function clearForm() {
-    ['p-id','p-name','p-phone','p-email','p-person','p-address','p-web','p-rfc','p-notes'].forEach(id => document.getElementById(id).value = '');
+    ['p-id','p-name','p-empresa','p-nombre','p-paterno','p-materno','p-phone','p-email','p-person','p-address','p-web','p-rfc','p-notes'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('p-tipo').value = 'cliente';
     document.getElementById('cf-container').innerHTML = '';
     document.getElementById('p-avt').textContent = '+';
@@ -463,9 +485,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   // ── Save ──────────────────────────────────────────────────────────────
   async function saveContact() {
-    const id = document.getElementById('p-id').value;
-    const name = document.getElementById('p-name').value.trim();
-    if (!name) { toast('El nombre es obligatorio', 'warn'); return; }
+    const id      = document.getElementById('p-id').value;
+    const empresa = document.getElementById('p-empresa').value.trim();
+    const nombre  = document.getElementById('p-nombre').value.trim();
+    const paterno = document.getElementById('p-paterno').value.trim();
+    const materno = document.getElementById('p-materno').value.trim();
+    const fullName = empresa || [nombre, paterno, materno].filter(Boolean).join(' ');
+
+    if (!fullName) { toast('Ingresa al menos un nombre o empresa', 'warn'); return; }
 
     const customFields = [];
     document.querySelectorAll('#cf-container .cf-row').forEach(row => {
@@ -475,15 +502,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     });
 
     const data = {
-      name,
-      tipo:   document.getElementById('p-tipo').value,
-      phone:  document.getElementById('p-phone').value.trim(),
-      email:  document.getElementById('p-email').value.trim(),
-      person: document.getElementById('p-person').value.trim(),
-      address:document.getElementById('p-address').value.trim(),
-      web:    document.getElementById('p-web').value.trim(),
-      rfc:    document.getElementById('p-rfc').value.trim(),
-      notes:  document.getElementById('p-notes').value.trim(),
+      empresa,
+      nombre,
+      apellidoPaterno: paterno,
+      apellidoMaterno: materno,
+      name: fullName,
+      tipo:    document.getElementById('p-tipo').value,
+      telefono:document.getElementById('p-phone').value.trim(),
+      email:   document.getElementById('p-email').value.trim(),
+      person:  document.getElementById('p-person').value.trim(),
+      address: document.getElementById('p-address').value.trim(),
+      web:     document.getElementById('p-web').value.trim(),
+      rfc:     document.getElementById('p-rfc').value.trim(),
+      notas:   document.getElementById('p-notes').value.trim(),
       customFields,
       activo: true,
     };
@@ -493,7 +524,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       const existing = STATE_CONTACTS.find(x => x.id === id);
       const merged = { ...existing, ...data };
 
-      // Update DB_STATE directly
       if (window.parent?.DB_STATE?.contacts) {
         const idx = window.parent.DB_STATE.contacts.findIndex(c => c.id === id);
         if (idx !== -1) window.parent.DB_STATE.contacts[idx] = merged;
@@ -505,8 +535,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       if (si !== -1) STATE_CONTACTS[si] = merged;
     } else {
       data.id = crypto.randomUUID();
-      data.givenName = name;
-      data.paterno = '';
       if (window.parent?.DB_STATE?.contacts) {
         window.parent.DB_STATE.contacts.push(data);
       }

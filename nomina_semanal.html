@@ -649,13 +649,17 @@ function toggleShowAll() {
   updLabels();
 }
 
+let _chgWeekTimer = null;
 function chgWeek(d){
-  weekOffset+=d;
-  processRealCheckins(weekOffset);
+  weekOffset += d;
   updWeekLbl();
-  renderWorkerList();
-  rebuildDates();
-  WORKERS.forEach(w => refreshCard(w.id));
+  clearTimeout(_chgWeekTimer);
+  _chgWeekTimer = setTimeout(() => {
+    processRealCheckins(weekOffset);
+    renderWorkerList();
+    rebuildDates();
+    WORKERS.forEach(w => refreshCard(w.id));
+  }, 80);
 }
 function rebuildDates(){
   const dates=dayDates(weekOffset);

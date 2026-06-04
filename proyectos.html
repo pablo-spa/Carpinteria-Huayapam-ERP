@@ -536,6 +536,12 @@ body {
     if (existing) {
       Object.assign(existing, p);
       window.DB.save(d);
+      // Sync explícito para garantizar persistencia
+      if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('projects', existing.id, existing);
+      if (window.parent?.DB_STATE?.projects) {
+        const li = window.parent.DB_STATE.projects.findIndex(x => x.id === existing.id);
+        if (li >= 0) window.parent.DB_STATE.projects[li] = existing;
+      }
     } else {
       p.id              = crypto.randomUUID();
       p.horasEstimadas  = 0;

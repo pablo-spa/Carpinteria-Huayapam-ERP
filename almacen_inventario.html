@@ -612,8 +612,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const item = STATE_INVENTORY.find(x => x.id === id) || window.DB.get().inventory.find(x => x.id === id);
     if (!item) return;
 
-    item.name = document.getElementById('m-name').value;
-    item.code = document.getElementById('m-code').value;
+    item.name = document.getElementById('m-name').value.trim();
+    const newCode = document.getElementById('m-code').value.trim();
+    // Validar código único (excepto el propio item al editar)
+    const duplicate = STATE_INVENTORY.find(x => x.code === newCode && x.id !== id);
+    if (duplicate) { alert(`El código "${newCode}" ya está usado por: ${duplicate.name}. Elige otro.`); return; }
+    item.code = newCode;
     item.category = document.getElementById('m-cat').value;
     const brandSel = document.getElementById('m-brand');
     item.brandId = brandSel.value || '';

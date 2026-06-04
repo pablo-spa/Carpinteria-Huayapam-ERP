@@ -851,7 +851,16 @@
       if (!confirm('¿Archivar este proyecto? Dejará de aparecer en la lista principal.')) return;
       const d  = window.DB.get();
       const pi = d.projects.findIndex(p => p.id === projId);
-      if (pi > -1) { d.projects[pi].archivado = true; window.DB.save(d); window.location.href = 'proyectos.html'; }
+      if (pi > -1) {
+        d.projects[pi].archivado = true;
+        window.DB.save(d);
+        if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('projects', projId, d.projects[pi]);
+        if (window.parent?.DB_STATE?.projects) {
+          const li = window.parent.DB_STATE.projects.findIndex(p => p.id === projId);
+          if (li >= 0) window.parent.DB_STATE.projects[li].archivado = true;
+        }
+        window.location.href = 'proyectos.html';
+      }
     }
 
     // ── Guardar ───────────────────────────────────────

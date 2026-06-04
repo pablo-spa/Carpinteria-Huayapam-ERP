@@ -480,13 +480,16 @@ async function init() {
     sel.appendChild(opt);
   });
 
-  // Init Admin / Contador select
-  const db = window.DB.get();
-  const adminRoles = ['admin', 'administracion', 'administrador', 'contador', 'contabilidad', 'compras', 'recursos humanos', 'oficina'];
-  const admins = (db.contacts || []).filter(c => (typeof c.tipo === 'string' && adminRoles.includes(c.tipo.toLowerCase())) || (typeof c.rol === 'string' && adminRoles.includes(c.rol.toLowerCase())));
+  // Init Admin / Contador select — cargar todos los contactos para incluir roles admin
+  const allContacts = await window.DB.query('contacts');
+  const adminRoles = ['admin', 'administracion', 'administrador', 'contador', 'contabilidad', 'compras', 'recursos humanos', 'oficina', 'gerencia'];
+  const admins = allContacts.filter(c =>
+    (typeof c.tipo === 'string' && adminRoles.includes(c.tipo.toLowerCase())) ||
+    (typeof c.rol  === 'string' && adminRoles.includes(c.rol.toLowerCase()))
+  );
   let adminOpts = admins.map(a => `<option value="${fullName(a)}">${fullName(a)}</option>`).join('');
   if (!adminOpts) {
-     adminOpts = `<option value="Administración">Administración</option><option value="Contabilidad">Contabilidad</option><option value="Compras">Compras</option>`;
+    adminOpts = `<option value="Administración">Administración</option><option value="Contabilidad">Contabilidad</option><option value="Compras">Compras</option>`;
   }
   document.getElementById('fa-por').innerHTML = '<option value="">— Seleccionar —</option>' + adminOpts;
 

@@ -630,8 +630,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       address: ''
     };
     
-    if(window.parent && window.parent.setDocumentInFirebase) {
-        window.parent.setDocumentInFirebase("contacts", nc.id, nc);
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('contacts', nc.id, nc);
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.contacts) window.parent.DB_STATE.contacts = [];
+      window.parent.DB_STATE.contacts.push(nc);
     }
     STATE_CONTACTS.push(nc);
 
