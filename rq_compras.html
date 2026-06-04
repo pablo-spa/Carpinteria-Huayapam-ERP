@@ -55,12 +55,26 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .pill-gray   { background: var(--surface0);  color: var(--subtext); }
 
 /* Order items table */
-.items-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.items-tbl { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
 .items-tbl th { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); padding: 4px 6px; border-bottom: 2px solid var(--crust); text-align: left; white-space: nowrap; }
 .items-tbl td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: middle; }
 .items-tbl tr:last-child td { border-bottom: none; }
 .items-tbl input, .items-tbl select { padding: 6px 8px; border-radius: var(--radius); border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
 .items-tbl input:focus, .items-tbl select:focus { outline: none; border-color: var(--blue); }
+/* Autocomplete concept field inside items table */
+.iac-wrap { position: relative; }
+.iac-drop {
+  position: fixed; background: var(--base); border: 1px solid var(--surface0);
+  border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.14);
+  z-index: 9999; max-height: 220px; overflow-y: auto; display: none; min-width: 260px;
+}
+.iac-drop.open { display: block; }
+.iac-item { padding: 8px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--crust); display: flex; justify-content: space-between; align-items: center; }
+.iac-item:last-child { border-bottom: none; }
+.iac-item:hover, .iac-item.focused { background: var(--surface0); }
+.iac-item-name { font-weight: 600; color: var(--text); white-space: normal; word-break: break-word; }
+.iac-item-meta { font-size: 11px; color: var(--subtext); margin-left: 8px; white-space: nowrap; }
+.iac-new { color: var(--blue); font-style: italic; }
 
 .card-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
 
@@ -445,23 +459,109 @@ function statusFlow(cur) {
   ).join('') + '</div>';
 }
 
+// ── Autocomplete for concept field in existing order cards ─────
+function iacFilter(input, key) {
+  const q   = input.value.trim();
+  const drop = document.getElementById('iacdrop-' + key);
+  if (!drop) return;
+  const rect = input.getBoundingClientRect();
+  drop.style.top   = (rect.bottom + 2) + 'px';
+  drop.style.left  = rect.left + 'px';
+  drop.style.width = Math.max(rect.width, 260) + 'px';
+
+  const results = (INV || [])
+    .map(i => ({ ...i, s: (() => {
+      const t = (i.name||i.nombre||'').toLowerCase(), ql = q.toLowerCase();
+      if (!ql) return 0;
+      if (t.startsWith(ql)) return 1;
+      if (t.includes(ql)) return 2;
+      let ti = 0;
+      for (let c of ql) { ti = t.indexOf(c, ti); if (ti === -1) return Infinity; ti++; }
+      return 3;
+    })() }))
+    .filter(i => i.s < Infinity)
+    .sort((a, b) => a.s - b.s)
+    .slice(0, 14);
+
+  drop.innerHTML = '';
+  results.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'iac-item';
+    div.dataset.idx = idx;
+    div.innerHTML = `<span class="iac-item-name">${item.name||item.nombre}</span><span class="iac-item-meta">${item.unit||item.unidad||'pza'} · ${item.category||''}</span>`;
+    div.addEventListener('mousedown', e => {
+      e.preventDefault();
+      iacSelect(input, item.name||item.nombre, item.unit||item.unidad||'pza');
+    });
+    drop.appendChild(div);
+  });
+
+  // "Texto libre" option when typed text doesn't match exactly
+  if (q && !(INV||[]).find(i => (i.name||i.nombre||'').toLowerCase() === q.toLowerCase())) {
+    const div = document.createElement('div');
+    div.className = 'iac-item iac-new';
+    div.innerHTML = `<span class="iac-item-name">Usar "<strong>${q}</strong>" como concepto personalizado</span>`;
+    div.addEventListener('mousedown', e => { e.preventDefault(); iacSelect(input, q, null); });
+    drop.appendChild(div);
+  }
+
+  drop.classList.toggle('open', drop.children.length > 0);
+}
+
+function iacSelect(input, name, unit) {
+  input.value = name;
+  input.title = name;
+  // If unit is provided, try to update the unit select in the same row
+  if (unit) {
+    const tr = input.closest('tr');
+    if (tr) {
+      const unitSel = tr.querySelector('.iunit');
+      if (unitSel) {
+        // Find or add the option
+        let found = false;
+        for (const opt of unitSel.options) { if (opt.value === unit) { found = true; break; } }
+        if (!found) { const o = document.createElement('option'); o.value = unit; o.textContent = unit; unitSel.appendChild(o); }
+        unitSel.value = unit;
+      }
+    }
+  }
+  const key = input.dataset.iackey;
+  const drop = document.getElementById('iacdrop-' + key);
+  if (drop) drop.classList.remove('open');
+}
+
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('.iac-wrap') && !e.target.closest('.iac-drop')) {
+    document.querySelectorAll('.iac-drop.open').forEach(d => d.classList.remove('open'));
+  }
+}, true);
+
 // ── Build editable items table HTML ───────────────────────────
 function buildItemsTable(o) {
-  const rows = (o.items||[]).map((item, i) => `
+  const rows = (o.items||[]).map((item, i) => {
+    const key = `${o.id}-${i}`;
+    const nameVal = (item.name||item.code||'').replace(/"/g,'&quot;');
+    return `
     <tr>
       <td>
-        <input type="text" class="iname" data-order="${o.id}" data-idx="${i}"
-          value="${(item.name||item.code||'').replace(/"/g,'&quot;')}"
-          style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
+        <div class="iac-wrap">
+          <input type="text" class="iname" data-order="${o.id}" data-idx="${i}" data-iackey="${key}"
+            value="${nameVal}" title="${nameVal}"
+            autocomplete="off"
+            oninput="iacFilter(this,'${key}')" onfocus="iacFilter(this,'${key}')"
+            onkeydown="iacKey(event,this,'${key}')"
+            style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
+          <div class="iac-drop" id="iacdrop-${key}"></div>
+        </div>
         ${item.conceptoPendiente ? `
           <div class="add-cat-row">
             <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
-            <label for="cat-${o.id}-${i}">✦ Agregar al catálogo de inventario</label>
+            <label for="cat-${o.id}-${i}">✦ Agregar al catálogo</label>
           </div>` : ''}
       </td>
-      <td style="white-space:nowrap;">
+      <td>
         <div style="display:flex;gap:4px;align-items:center;">
-          <input type="number" class="iqty" data-order="${o.id}" data-idx="${i}" value="${item.qty}" min="0.01" step="any" style="width:65px;text-align:center;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
+          <input type="number" class="iqty" data-order="${o.id}" data-idx="${i}" value="${item.qty}" min="0.01" step="any" style="width:60px;text-align:center;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
           <select class="iunit" data-order="${o.id}" data-idx="${i}" style="padding:4px 5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;">
             ${buildUnitOpts(item.unit||'pza')}
           </select>
@@ -475,21 +575,41 @@ function buildItemsTable(o) {
              </select>`
         }
       </td>
-      <td><input type="number" class="iprice" data-order="${o.id}" data-idx="${i}" value="${item.price||''}" placeholder="0.00" min="0" step="any" style="width:90px;text-align:right;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;"></td>
+      <td><input type="number" class="iprice" data-order="${o.id}" data-idx="${i}" value="${item.price||''}" placeholder="0.00" min="0" step="any" style="width:85px;text-align:right;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;"></td>
       <td>
         <select class="iaccount" data-order="${o.id}" data-idx="${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
           ${buildAccountOpts(item.account||'')}
         </select>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   return `<table class="items-tbl">
+    <colgroup>
+      <col style="width:40%">
+      <col style="width:140px">
+      <col style="width:20%">
+      <col style="width:100px">
+      <col style="width:auto">
+    </colgroup>
     <thead><tr>
-      <th>Concepto</th><th>Cant./Unidad</th><th style="min-width:140px;">Proveedor</th>
-      <th>$ Precio Unit.</th><th>Cuenta</th>
+      <th>Concepto</th><th>Cant. / Unidad</th><th>Proveedor</th>
+      <th style="text-align:right;">$ Precio Unit.</th><th>Cuenta</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
+}
+
+function iacKey(e, input, key) {
+  const drop = document.getElementById('iacdrop-' + key);
+  if (!drop || !drop.classList.contains('open')) return;
+  const items = drop.querySelectorAll('.iac-item');
+  let focused = drop.querySelector('.iac-item.focused');
+  const idx = focused ? parseInt(focused.dataset.idx ?? -1) : -1;
+  if (e.key === 'ArrowDown') { e.preventDefault(); items.forEach(i => i.classList.remove('focused')); const next = items[Math.min(idx+1, items.length-1)]; if (next) next.classList.add('focused'); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); items.forEach(i => i.classList.remove('focused')); const prev = items[Math.max(idx-1,0)]; if (prev) prev.classList.add('focused'); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (focused) focused.dispatchEvent(new MouseEvent('mousedown')); else drop.classList.remove('open'); }
+  else if (e.key === 'Escape') { drop.classList.remove('open'); }
 }
 
 function buildActiveCard(o, mode) {
@@ -607,41 +727,22 @@ function renderOrders() {
   }
 }
 
-// ── Authorize: Confirmado → Autorizado ───────────────────────
-async function autorizarOrden(ordId) {
-  const card  = document.getElementById('ord-'+ordId);
-  const db    = window.DB.get();
-  const order = (db.purchase_orders || db.orders || []).find(o => o.id === ordId);
-  if (!order || !card) return;
-
-  readPricesFromCard(ordId, order);
-
-  // Validar precios
-  const missingPrice = (order.items||[]).some(i => !i.price || parseFloat(i.price) <= 0);
-  if (missingPrice) { alert('⚠ Ingresa el precio unitario en todos los renglones antes de autorizar.'); return; }
-
-  // Validar proveedores
-  const missingSup = (order.items||[]).some(i => !i.proveedorId && !i.proveedorNombre && !i.proveedorPendiente);
-  if (missingSup) { alert('⚠ Asigna un proveedor a todos los renglones antes de autorizar.'); return; }
-
-  order.status       = 'Autorizado';
-  order.authorizedAt = new Date().toISOString();
-
-  window.DB.save(db);
-  if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
-
-  showToast('✓ Orden autorizada — lista para comprar');
-  renderOrders();
-}
-
-// ── Save prices without authorizing ──────────────────────────
+// ── Save prices (concepto, qty, unidad, precio — proveedor y cuenta opcionales) ──
 async function guardarPrecios(ordId) {
   const db    = window.DB.get();
   const order = (db.purchase_orders||db.orders||[]).find(o => o.id === ordId);
   if (!order) return;
   readPricesFromCard(ordId, order);
+
+  // Sync en DB_STATE para que otros módulos vean el cambio
+  if (window.parent?.DB_STATE?.purchase_orders) {
+    const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
+    if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
+  }
+
   if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
-  showToast('Precios guardados');
+  showToast('✓ Guardado');
+  renderOrders();
 }
 
 function readPricesFromCard(ordId, order) {
@@ -684,10 +785,10 @@ async function act(ordId, newStatus) {
   const card = document.getElementById('ord-'+ordId);
   if (!card) return;
 
-  // Validate: need price and account on all items
-  const prices  = card.querySelectorAll('.iprice');
-  const missing = Array.from(prices).some(p => !p.value || parseFloat(p.value) <= 0);
-  if (missing) { alert('Ingresa el precio unitario en todos los renglones antes de autorizar.'); return; }
+  // Validar que haya concepto y cantidad en cada renglón
+  const missingConcept = card.querySelectorAll('.iname');
+  const hasEmpty = Array.from(missingConcept).some(inp => !inp.value.trim());
+  if (hasEmpty) { alert('Ingresa el concepto en todos los renglones antes de continuar.'); return; }
 
   const db    = window.DB.get();
   const order = (db.purchase_orders || db.orders || []).find(o => o.id === ordId);
@@ -745,6 +846,10 @@ async function act(ordId, newStatus) {
 
   window.DB.save(db);
   if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
+  if (window.parent?.DB_STATE?.purchase_orders) {
+    const si = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
+    if (si >= 0) window.parent.DB_STATE.purchase_orders[si] = order;
+  }
 
   let msg = `✓ Orden marcada como "${newStatus}"`;
   if (newConcepts.length) msg += `\n→ ${newConcepts.length} concepto(s) agregado(s) al inventario: ${newConcepts.join(', ')}`;
