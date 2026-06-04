@@ -714,28 +714,44 @@
     const mov = _allMovements.find(m => m.id === mid);
     if (!mov) return;
 
-    const desc = `${mov.date}  ${mov.type}  $${parseFloat(mov.amount).toLocaleString('es-MX', {minimumFractionDigits:2})}  ${mov.concept || ''}`;
-    if (!confirm(`¿Anular este movimiento contable?\n\n${desc}\n\nEl registro se marcará como anulado pero no desaparecerá de la base de datos por motivos de auditoría.`)) return;
+    const desc = `${mov.date} · ${mov.type} · $${parseFloat(mov.amount).toLocaleString('es-MX', {minimumFractionDigits:2})} · ${mov.concept || ''}`;
+    const showConfirm = window.parent?.showConfirm || ((t,m,b,c,fn) => { if (confirm(`${t}\n\n${m}`)) fn(); });
+    showConfirm(
+      'Anular movimiento',
+      `${desc}\n\nEl registro se marcará como anulado. No desaparece de la BD por trazabilidad.`,
+      'Anular', 'btn-red',
+      () => _doDeleteMovement(mid)
+    );
+  }
 
-    // CRÍTICO: Revertir el saldo de la cuenta bancaria ANTES de borrar el movimiento.
-    updateAccountBalance({ status: 'eliminado' }, false, mov);
+  function _doDeleteMovement(mid) {
+    const mov = _allMovements.find(m => m.id === mid);
+    if (!mov) return;
 
-    // Soft Delete (Anular) en Firestore
-    mov.status = 'anulado';
+    // Revertir el saldo de la cuenta si el movimiento estaba confirmado
+    const balOps = getBalanceOps({ status: 'anulado', type: mov.type, amount: mov.amount, account: mov.account, destAccount: mov.destAccount }, false, mov);
+    applyLocalBalances(balOps);
+    if (balOps.length > 0 && window.parent?.runBatchedWrites) {
+      window.parent.runBatchedWrites(balOps).catch(e => console.warn('[finanzas] error al revertir saldo:', e.message));
+    }
+
+    // Soft delete — marcar como anulado en objeto local Y en DB_STATE del padre
+    mov.status   = 'anulado';
     mov.eliminado = true;
+    if (window.parent?.DB_STATE?.accounting_movements) {
+      const liveM = window.parent.DB_STATE.accounting_movements.find(m => (m.id || m._id) === mid);
+      if (liveM) { liveM.status = 'anulado'; liveM.eliminado = true; }
+    }
+
+    // Persistir en Firestore
     if (window.parent?.setDocumentInFirebase) {
       window.parent.setDocumentInFirebase('accounting_movements', mid, mov);
     }
 
-    // Re-renderizar
+    // Actualizar UI
     renderList();
-
-    // Toast
-    const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;background:var(--red);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
-    t.textContent = 'Movimiento anulado';
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    calcBalances();
+    toast('Movimiento anulado.', 'warn');
   }
 
   // LLM Simulation
