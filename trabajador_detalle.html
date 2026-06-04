@@ -960,8 +960,16 @@ async function dpGuardar() {
 
 async function dpBorrar() {
   if (!selectedDay || !DP.existingId) return;
-  if (!confirm(`¿Borrar el registro del ${selectedDay}?\n\nSe eliminarán la asistencia y los registros de producción de ese día.`)) return;
+  const showConfirm = window.parent?.showConfirm || ((t,m,b,c,fn)=>{ if(confirm(`${t}\n\n${m}`)) fn(); });
+  showConfirm(
+    'Borrar registro del día',
+    `¿Eliminar el registro del ${selectedDay}?\n\nSe borrará la asistencia y los registros de producción de ese día.`,
+    'Borrar', 'btn-red',
+    () => _dpBorrarConfirmado()
+  );
+}
 
+async function _dpBorrarConfirmado() {
   const db = window.DB.get();
   const id  = DP.existingId;
   const batchOps = [];
@@ -1173,27 +1181,31 @@ function render_prestamos() {
 async function eliminar_prestamo(id) {
   const p = PRESTAMOS_TRABAJADOR.find(x => x.id === id);
   if (!p) return;
-  const desc = p.descripcion || 'Préstamo';
+  const desc  = p.descripcion || 'Préstamo';
   const monto = '$' + (p.monto_total||0).toLocaleString('es-MX');
-  const confirmMsg = `¿Eliminar el préstamo "${desc}" (${monto})?\n\nEsta acción no se puede deshacer.`;
-  if (!confirm(confirmMsg)) return;
-
-  try {
-    if (window.parent?.deleteDocumentFromFirebase) {
-      await window.parent.deleteDocumentFromFirebase('worker_loans', id);
-    } else if (window.parent?.deleteDocumentInFirebase) {
-      await window.parent.deleteDocumentInFirebase('worker_loans', id);
+  const showConfirm = window.parent?.showConfirm || ((t,m,b,c,fn)=>{ if(confirm(`${t}\n\n${m}`)) fn(); });
+  showConfirm(
+    'Eliminar préstamo',
+    `¿Eliminar "${desc}" (${monto})?\n\nEsta acción no se puede deshacer.`,
+    'Eliminar', 'btn-red',
+    async () => {
+      try {
+        if (window.parent?.deleteDocumentFromFirebase) {
+          await window.parent.deleteDocumentFromFirebase('worker_loans', id);
+        } else if (window.parent?.deleteDocumentInFirebase) {
+          await window.parent.deleteDocumentInFirebase('worker_loans', id);
+        }
+        PRESTAMOS_TRABAJADOR = PRESTAMOS_TRABAJADOR.filter(x => x.id !== id);
+        if (window.parent?.DB_STATE?.worker_loans) {
+          window.parent.DB_STATE.worker_loans = window.parent.DB_STATE.worker_loans.filter(x => x.id !== id);
+        }
+        render_prestamos();
+        toast('Préstamo eliminado.', 'ok');
+      } catch(e) {
+        toast('Error al eliminar: ' + e.message, 'error');
+      }
     }
-    // Actualizar estado local
-    PRESTAMOS_TRABAJADOR = PRESTAMOS_TRABAJADOR.filter(x => x.id !== id);
-    if (window.parent?.DB_STATE?.worker_loans) {
-      window.parent.DB_STATE.worker_loans = window.parent.DB_STATE.worker_loans.filter(x => x.id !== id);
-    }
-    render_prestamos();
-    toast('Préstamo eliminado.', 'ok');
-  } catch(e) {
-    toast('Error al eliminar: ' + e.message, 'error');
-  }
+  );
 }
 
 // ── Vacaciones ────────────────────────────────────────────────
