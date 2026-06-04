@@ -5,22 +5,22 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  /* Latte (Modo Claro) */
-  --base: #eff1f5; --bg: #eff1f5;
-  --mantle: #e6e9ef; --surface: #ffffff;
-  --crust: #dce0e8;
-  --surface0: #ccd0da;
-  --surface1: #bcc0cc;
+  /* Soft Warm Light (Crema / Arena - Más contraste, menos brillo) */
+  --base: #edece8; --bg: #edece8;
+  --mantle: #f5f4f1; --surface: #fcfbfc;
+  --crust: #dfddd8;
+  --surface0: #d0cec7;
+  --surface1: #bcbab3;
   
-  --text: #4c4f69;
-  --subtext: #8c8fa1; --muted: #8c8fa1;
-  --hint: #bcc0cc;
+  --text: #363431;
+  --subtext: #73706a; --muted: #73706a;
+  --hint: #9e9b95;
   
-  --green: #40a02b; --green-text: #317222; --green-bg: rgba(64,160,43,0.15);
-  --amber: #df8e1d; --amber-text: #b87315; --amber-bg: rgba(223,142,29,0.15);
-  --red: #d20f39;   --red-text: #a80c2e;   --red-bg: rgba(210,15,57,0.15);
-  --blue: #1e66f5;  --blue-text: #1750c1;  --blue-bg: rgba(30,102,245,0.15);
-  --mauve: #8839ef; --purple: #8839ef;     --purple-bg: rgba(136,57,239,0.15);
+  --green: #3e8234; --green-text: #24521c; --green-bg: rgba(62,130,52,0.15);
+  --amber: #c46d0c; --amber-text: #824706; --amber-bg: rgba(196,109,12,0.15);
+  --red: #c9364a;   --red-text: #871e2e;   --red-bg: rgba(201,54,74,0.15);
+  --blue: #2c63c2;  --blue-text: #194082;  --blue-bg: rgba(44,99,194,0.15);
+  --mauve: #834eb3; --purple: #834eb3;     --purple-bg: rgba(131,78,179,0.15);
   
   --border: var(--surface0);
   --border-strong: var(--surface1);
@@ -28,28 +28,26 @@
   --radius-lg: 12px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Mocha (Modo Oscuro) */
-    --base: #1e1e2e; --bg: #16161a;
-    --mantle: #181825; --surface: #222228;
-    --crust: #11111b;
-    --surface0: #313244;
-    --surface1: #45475a;
-    
-    --text: #cdd6f4;
-    --subtext: #a6adc8; --muted: #999;
-    --hint: #585b70;
-    
-    --green: #a6da95; --green-text: #a6da95; --green-bg: rgba(166,218,149,0.15);
-    --amber: #f9e2af; --amber-text: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
-    --red: #f38ba8;   --red-text: #f38ba8;   --red-bg: rgba(243,139,168,0.15);
-    --blue: #8caaee;  --blue-text: #8caaee;  --blue-bg: rgba(140,170,238,0.15);
-    --mauve: #cba6f7; --purple: #cba6f7;     --purple-bg: rgba(203,166,247,0.15);
-    
-    --border: var(--surface1);
-    --border-strong: #585b70;
-  }
+body.dark-mode {
+  /* Mocha (Modo Oscuro) */
+  --base: #1e1e2e; --bg: #16161a;
+  --mantle: #181825; --surface: #222228;
+  --crust: #11111b;
+  --surface0: #313244;
+  --surface1: #45475a;
+  
+  --text: #cdd6f4;
+  --subtext: #a6adc8; --muted: #999;
+  --hint: #585b70;
+  
+  --green: #a6da95; --green-text: #a6da95; --green-bg: rgba(166,218,149,0.15);
+  --amber: #f9e2af; --amber-text: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
+  --red: #f38ba8;   --red-text: #f38ba8;   --red-bg: rgba(243,139,168,0.15);
+  --blue: #8caaee;  --blue-text: #8caaee;  --blue-bg: rgba(140,170,238,0.15);
+  --mauve: #cba6f7; --purple: #cba6f7;     --purple-bg: rgba(203,166,247,0.15);
+  
+  --border: var(--surface1);
+  --border-strong: #585b70;
 }
 
 body { 
@@ -133,14 +131,13 @@ select { padding-right: 28px; appearance: auto; }
 .sf-done   { background:var(--green-bg,rgba(64,160,43,.15));  color:var(--green-text,#317222); opacity:.85; }
 .sf-active { background:var(--blue-bg,rgba(30,102,245,.15));  color:var(--blue-text,#1750c1); }
 .sf-sep    { font-size:9px; color:var(--subtext,#8c8fa1); margin:0 1px; }
-@media (prefers-color-scheme: dark) {
-  .pill-amber  { color:var(--amber,#f9e2af); }
-  .pill-blue   { color:var(--blue,#8caaee); }
-  .pill-green  { color:var(--green,#a6da95); }
-  .pill-red    { color:var(--red,#f38ba8); }
-  .sf-done   { color:var(--green,#a6da95); }
-  .sf-active { color:var(--blue,#8caaee); }
-}
+/* Colores de pills en modo oscuro — via body.dark-mode (NO @media) */
+body.dark-mode .pill-amber  { color:var(--amber); }
+body.dark-mode .pill-blue   { color:var(--blue); }
+body.dark-mode .pill-green  { color:var(--green); }
+body.dark-mode .pill-red    { color:var(--red); }
+body.dark-mode .sf-done     { color:var(--green); }
+body.dark-mode .sf-active   { color:var(--blue); }
 
 /* date específico: quitar padding extra que el navegador agrega */
 input[type="date"],
@@ -156,3 +153,32 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   opacity: 0.6;
   cursor: pointer;
 }
+
+/* ==========================================================================
+   Componentes Estandarizados (UI Toolkit)
+   ========================================================================== */
+
+/* ── Layout & Estructura ── */
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 20; flex-wrap: wrap; }
+.hdr-title, .hdr h1, .hdr h2 { font-size: 18px; font-weight: 800; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; }
+.back-btn { background: transparent; border: none; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: 0.15s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; margin-left: -8px; }
+.back-btn:hover { background: var(--surface0); color: var(--text); }
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+
+/* ── Tarjetas (Cards) ── */
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg, 12px); padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+.card-title, .card-header { font-size: 12px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; border-bottom: 1px solid var(--crust); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.card-body { display: flex; flex-direction: column; gap: 16px; padding: 0; }
+
+/* ── Formularios (Fields) ── */
+.field, .f-field, .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; margin-bottom: 0; }
+.field label, .f-field label, .form-group label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0; display: block; }
+
+/* ── Etiquetas (Badges / Chips / Pills) ── */
+.badge, .chip, .pill { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; border: 1px solid transparent; }
+.badge-amber, .chip-amber, .pill-amber  { background: var(--amber-bg);  color: var(--amber-text); border-color: rgba(223,142,29,0.2); }
+.badge-blue,  .chip-blue,  .pill-blue   { background: var(--blue-bg);   color: var(--blue-text);  border-color: rgba(30,102,245,0.2); }
+.badge-green, .chip-green, .pill-green  { background: var(--green-bg);  color: var(--green-text); border-color: rgba(64,160,43,0.2); }
+.badge-red,   .chip-red,   .pill-red    { background: var(--red-bg);    color: var(--red-text);   border-color: rgba(210,15,57,0.2); }
+.badge-purple,.chip-purple,.pill-purple { background: var(--purple-bg); color: var(--purple);     border-color: rgba(136,57,239,0.2); }
+.badge-gray,  .chip-gray,  .pill-gray   { background: var(--surface0);  color: var(--subtext);    border-color: var(--crust); }
