@@ -399,10 +399,17 @@ function formatDateDMM(str) {
 // ── Nombre completo robusto ──────────────────────────────────
 function fullName(w) {
   if (!w) return '?';
+  // Caso 1: tiene las tres partes separadas → "Nombre Paterno Materno"
   const parts = [w.givenName, w.paterno, w.materno].filter(Boolean);
   if (parts.length >= 2) return parts.join(' ');
+  // Caso 2: tiene nombre/primer-nombre + al menos un apellido
+  const first = (w.givenName || w.name || w.nombre || '').trim();
+  const last  = [w.paterno, w.materno].filter(Boolean);
+  if (first && last.length) return [first, ...last].join(' ');
+  // Caso 3: sólo hay un campo con el nombre completo (puede tener espacios)
   const stored = (w.nombre || w.name || '').trim();
   if (stored) return stored;
+  // Caso 4: fallback al único campo disponible
   return parts.length ? parts[0] : (w.id || w._id || '?');
 }
 
@@ -456,7 +463,7 @@ async function init() {
   const db = window.DB.get();
   const adminRoles = ['admin', 'administracion', 'administrador', 'contador', 'contabilidad', 'compras', 'recursos humanos', 'oficina'];
   const admins = (db.contacts || []).filter(c => (typeof c.tipo === 'string' && adminRoles.includes(c.tipo.toLowerCase())) || (typeof c.rol === 'string' && adminRoles.includes(c.rol.toLowerCase())));
-  let adminOpts = admins.map(a => `<option value="${a.name || a.nombre || a.givenName}">${a.name || a.nombre || a.givenName}</option>`).join('');
+  let adminOpts = admins.map(a => `<option value="${fullName(a)}">${fullName(a)}</option>`).join('');
   if (!adminOpts) {
      adminOpts = `<option value="Administración">Administración</option><option value="Contabilidad">Contabilidad</option><option value="Compras">Compras</option>`;
   }
