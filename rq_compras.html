@@ -98,10 +98,10 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 /* New item rows */
 .new-item-row { background: var(--base); border: 1px solid var(--crust); border-radius: var(--radius); padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px; position: relative; }
 .new-item-top { display: grid; grid-template-columns: 2fr 2fr 80px 90px; gap: 8px; align-items: end; }
-.new-item-bot { display: grid; grid-template-columns: 1fr 1fr 30px; gap: 8px; align-items: end; }
+.new-item-bot { display: grid; grid-template-columns: 1fr 30px; gap: 8px; align-items: end; }
 @media (max-width: 700px) {
   .new-item-top { grid-template-columns: 1fr 1fr; }
-  .new-item-bot { grid-template-columns: 1fr 1fr 30px; }
+  .new-item-bot { grid-template-columns: 1fr 30px; }
 }
 .row-rm { background: none; border: none; cursor: pointer; color: var(--subtext); font-size: 16px; padding: 4px 6px; border-radius: 6px; }
 .row-rm:hover { background: var(--red-bg); color: var(--red); }
@@ -130,9 +130,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .sec-hdr { display:flex; align-items:center; gap:10px; margin:24px 0 10px; }
 .sec-hdr-lbl { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--subtext); }
 .sec-hdr-line { flex:1; height:1px; background:var(--crust); }
-.hist-card { background:none; border:none; border-bottom:1px solid var(--crust); border-radius:0; padding:10px 0; margin-bottom:0; }
-.hist-card:last-child { border-bottom:none; }
-.hist-wrap { background:var(--mantle); border:1px solid var(--crust); border-radius:var(--radius-lg); padding:4px 16px; margin-bottom:14px; }
 </style>
 </head>
 <body>
@@ -147,11 +144,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <!-- ── Formulario Nueva Orden ── -->
 <div id="new-order-panel" style="display:none;">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
     <div style="font-size:16px; font-weight:800;">Nueva Orden de Compra</div>
-    <div style="font-size:12px;color:var(--subtext);margin-top:4px;">Se enviará a Administración para autorización antes de poder comprarse.</div>
     <button class="btn btn-dark" onclick="hideNewOrderForm()">✕ Cancelar</button>
   </div>
+  <div style="font-size:12px;color:var(--subtext);margin-bottom:16px;">Se enviará a Administración para autorización antes de poder comprarse.</div>
 
   <div class="form-grid">
     <div class="f-field">
@@ -248,9 +245,6 @@ function buildUnitOpts(selected) {
   return UNITS.map(u => `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
 }
 
-function buildAccountOpts(selected) {
-  return `<option value="">— Cuenta —</option>` + ACCOUNTS.map(a => `<option value="${a}" ${a===selected?'selected':''}>${a}</option>`).join('');
-}
 
 // ── New order form ─────────────────────────────────────────────
 function showNewOrderForm() {
@@ -316,11 +310,6 @@ function addNewItemRow(data = {}) {
         <label>Precio Unitario ($)</label>
         <input type="number" class="ni-price" value="${data.price||''}" min="0" step="any" placeholder="0.00">
       </div>
-      <!-- Cuenta -->
-      <div class="f-field">
-        <label>Cuenta</label>
-        <select class="ni-account">${buildAccountOpts(data.account||'')}</select>
-      </div>
       <!-- Remove -->
       <div style="display:flex; align-items:flex-end; padding-bottom:2px;">
         <button class="row-rm" onclick="document.getElementById('${rowId}').remove(); updPendingNotice()">✕</button>
@@ -384,14 +373,13 @@ function collectItems() {
     const provSel   = row.querySelector('.ni-proveedor');
     const provTxt   = row.querySelector('.ni-proveedor-txt');
     const provNuevo = row.querySelector('.ni-proveedor-nuevo')?.style.display !== 'none';
-    const qty       = parseFloat(row.querySelector('.ni-qty')?.value) || 0;
-    const unit      = row.querySelector('.ni-unit')?.value || 'pza';
-    const price     = parseFloat(row.querySelector('.ni-price')?.value) || 0;
-    const account   = row.querySelector('.ni-account')?.value || '';
+    const qty   = parseFloat(row.querySelector('.ni-qty')?.value) || 0;
+    const unit  = row.querySelector('.ni-unit')?.value || 'pza';
+    const price = parseFloat(row.querySelector('.ni-price')?.value) || 0;
 
     if (qty <= 0) return;
 
-    const item = { qty, unit, price, account };
+    const item = { qty, unit, price };
 
     if (concNuevo) {
       const nombre = concTxt?.value.trim();
@@ -582,26 +570,20 @@ function buildItemsTable(o) {
              </select>`
         }
       </td>
-      <td><input type="number" class="iprice" data-order="${o.id}" data-idx="${i}" value="${item.price||''}" placeholder="0.00" min="0" step="any" style="width:85px;text-align:right;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;"></td>
-      <td>
-        <select class="iaccount" data-order="${o.id}" data-idx="${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
-          ${buildAccountOpts(item.account||'')}
-        </select>
-      </td>
+      <td><input type="number" class="iprice" data-order="${o.id}" data-idx="${i}" value="${item.price||''}" placeholder="0.00" min="0" step="any" style="width:90px;text-align:right;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;"></td>
     </tr>`;
   }).join('');
 
   return `<table class="items-tbl">
     <colgroup>
-      <col style="width:40%">
-      <col style="width:140px">
-      <col style="width:20%">
-      <col style="width:100px">
+      <col style="width:44%">
+      <col style="width:130px">
       <col style="width:auto">
+      <col style="width:100px">
     </colgroup>
     <thead><tr>
       <th>Concepto</th><th>Cant. / Unidad</th><th>Proveedor</th>
-      <th style="text-align:right;">$ Precio Unit.</th><th>Cuenta</th>
+      <th style="text-align:right;">$ Precio Unit.</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -787,10 +769,6 @@ function readPricesFromCard(ordId, order) {
   card.querySelectorAll('.iprice').forEach(inp => {
     const idx = parseInt(inp.dataset.idx);
     if (order.items[idx] !== undefined) order.items[idx].price = parseFloat(inp.value)||0;
-  });
-  card.querySelectorAll('.iaccount').forEach(sel => {
-    const idx = parseInt(sel.dataset.idx);
-    if (order.items[idx] !== undefined) order.items[idx].account = sel.value;
   });
   (order.items||[]).forEach((item, i) => {
     if (!item.proveedorPendiente) {
