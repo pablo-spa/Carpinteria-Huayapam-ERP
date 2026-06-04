@@ -6,32 +6,7 @@
 <link rel="stylesheet" href="global.css">
 <title>Trabajador — Carpintería Huayapam</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --green: #40a02b; --green-bg: #e5f4e3; --green-text: #2d6e1e;
-  --blue: #1e66f5; --blue-bg: #e6eaf6; --blue-text: #1e66f5;
-  --amber: #df8e1d; --amber-bg: #fdf3e5; --amber-text: #8a5500;
-  --red: #d20f39; --red-bg: #fde8ed; --red-text: #9a0a29;
-  --purple: #8839ef; --purple-bg: rgba(136,57,239,0.12);
-  --radius: 8px; --radius-lg: 12px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --green: #a6da95; --green-bg: rgba(166,218,149,0.15); --green-text: #a6da95;
-    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15); --blue-text: #8caaee;
-    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15); --amber-text: #f9e2af;
-    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15); --red-text: #f38ba8;
-    --purple: #cba6f7; --purple-bg: rgba(203,166,247,0.15);
-  }
-}
-
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); padding-bottom: 40px; }
+body { padding-bottom: 40px; }
 
 /* ── Header ── */
 .hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 13px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
@@ -237,13 +212,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       <!-- Formulario de edición (oculto por default) -->
       <div class="edit-section" id="edit-section">
         <div class="e-grid">
-          <div class="e-field" style="grid-column:span 2;"><label>Nombre Completo</label><input type="text" id="e-name"></div>
+          <div class="e-field"><label>Nombre</label><input type="text" id="e-nombre" placeholder="Primer nombre" oninput="recalcPersonalId()"></div>
+          <div class="e-field"><label>Apellido Paterno</label><input type="text" id="e-paterno" oninput="recalcPersonalId()"></div>
+          <div class="e-field"><label>Apellido Materno</label><input type="text" id="e-materno"></div>
+          <div class="e-field"><label>Empresa (si aplica)</label><input type="text" id="e-empresa" placeholder="—"></div>
           <div class="e-field"><label>Puesto / Categoría</label><input type="text" id="e-role"></div>
           <div class="e-field"><label>Salario Base ($/semana)</label><input type="number" id="e-salary" step="any" min="0"></div>
           <div class="e-field"><label>Teléfono</label><input type="text" id="e-phone"></div>
           <div class="e-field"><label>RFC</label><input type="text" id="e-rfc" style="text-transform:uppercase;"></div>
           <div class="e-field"><label>CURP</label><input type="text" id="e-curp" style="text-transform:uppercase;"></div>
           <div class="e-field"><label>NSS (IMSS)</label><input type="text" id="e-imss"></div>
+          <div class="e-field"><label>Fecha de Nacimiento</label><input type="date" id="e-birth" onchange="recalcPersonalId()"></div>
+          <div class="e-field"><label>ID Personal (auto)</label><input type="text" id="e-id-personal" style="background:var(--surface0);cursor:default;" readonly></div>
           <div class="e-field"><label>Fecha de Ingreso</label><input type="date" id="e-ingreso"></div>
           <div class="e-field"><label>Días de Vacaciones</label><input type="number" id="e-vacaciones" min="0" step="1"></div>
           <div class="e-field" style="grid-column:span 2;">
@@ -457,20 +437,24 @@ function horasEq(h1, h15, h2) {
 // ── Worker info display ───────────────────────────────────────
 function renderInfo() {
   const w = workerData;
-  const nombre = w.nombre || w.name || '—';
-  const rol    = w.puesto || w.role || '—';
-  document.getElementById('hdr-nombre').textContent = nombre;
+  const displayName = w.name || [w.nombre, w.apellidoPaterno, w.apellidoMaterno].filter(Boolean).join(' ') || '—';
+  const rol = w.puesto || w.role || '—';
+  document.getElementById('hdr-nombre').textContent = displayName;
   document.getElementById('hdr-sub').textContent    = rol + (w.activo === false ? ' · BAJA' : '');
 
   const rows = [
+    ['Nombre',          w.nombre || '—'],
+    ['Apellido Paterno',w.apellidoPaterno || '—'],
+    ['Apellido Materno',w.apellidoMaterno || '—'],
+    ...(w.empresa ? [['Empresa', w.empresa]] : []),
     ['Puesto',          rol],
-    ['Salario Semanal', (w.salarioBase||w.baseSalary) ? '$'+parseFloat(w.salarioBase||w.baseSalary).toLocaleString('es-MX') : '—'],
-    ['Teléfono',        w.telefono||w.phone||'—'],
+    ['Salario Semanal', w.salarioBase ? '$'+parseFloat(w.salarioBase).toLocaleString('es-MX') : '—'],
+    ['Teléfono',        w.telefono||'—'],
     ['RFC',             w.rfc||'—'],
     ['CURP',            w.curp||'—'],
     ['NSS (IMSS)',       w.imss||'—'],
-    ['Fecha Ingreso',   w.fechaIngreso||w.startDate||w.ingreso||'—'],
-    ['Días Vacaciones', (w.diasVacaciones||w.vacationDays||'—') + (w.diasVacaciones||w.vacationDays ? ' días' : '')],
+    ['Fecha Ingreso',   w.fechaIngreso||'—'],
+    ['Días Vacaciones', w.diasVacaciones ? w.diasVacaciones + ' días' : '—'],
     ['Estado',          w.activo === false ? '❌ Baja' : '✅ Activo'],
   ];
   document.getElementById('info-rows').innerHTML = rows.map(([l, v]) =>
@@ -484,20 +468,37 @@ function toggleEditWorker() {
   const open = sec.classList.contains('open');
   if (open) { cancelEditWorker(); return; }
   const w = workerData;
-  document.getElementById('e-name').value       = w.nombre || w.name || '';
-  document.getElementById('e-role').value       = w.puesto || w.role || '';
-  document.getElementById('e-salary').value     = w.salarioBase || w.baseSalary || '';
-  document.getElementById('e-phone').value      = w.telefono || w.phone || '';
-  document.getElementById('e-rfc').value        = w.rfc || '';
-  document.getElementById('e-curp').value       = w.curp || '';
-  document.getElementById('e-imss').value       = w.imss || '';
-  document.getElementById('e-ingreso').value    = w.fechaIngreso || w.startDate || w.ingreso || '';
-  document.getElementById('e-vacaciones').value = w.diasVacaciones || w.vacationDays || '';
-  document.getElementById('e-activo').value     = w.activo === false ? 'false' : 'true';
+  document.getElementById('e-nombre').value    = w.nombre || '';
+  document.getElementById('e-paterno').value   = w.apellidoPaterno || '';
+  document.getElementById('e-materno').value   = w.apellidoMaterno || '';
+  document.getElementById('e-empresa').value   = w.empresa || '';
+  document.getElementById('e-role').value      = w.puesto || w.role || '';
+  document.getElementById('e-salary').value    = w.salarioBase || '';
+  document.getElementById('e-phone').value     = w.telefono || '';
+  document.getElementById('e-rfc').value       = w.rfc || '';
+  document.getElementById('e-curp').value      = w.curp || '';
+  document.getElementById('e-imss').value      = w.imss || '';
+  document.getElementById('e-birth').value     = w.birthDate || '';
+  document.getElementById('e-id-personal').value = w.personalId || '';
+  document.getElementById('e-ingreso').value   = w.fechaIngreso || '';
+  document.getElementById('e-vacaciones').value= w.diasVacaciones || '';
+  document.getElementById('e-activo').value    = w.activo === false ? 'false' : 'true';
   sec.classList.add('open');
   document.getElementById('edit-toggle-lbl').textContent = 'Cancelar';
   document.getElementById('btn-editar').textContent = '✕ Cancelar';
 }
+function recalcPersonalId() {
+  const g = document.getElementById('e-nombre').value.trim();
+  const p = document.getElementById('e-paterno').value.trim();
+  const b = document.getElementById('e-birth').value;
+  if (g && p && b) {
+    const part1 = g.substring(0,2).toUpperCase();
+    const part2 = p.substring(0,1).toUpperCase();
+    const part3 = b.substring(2,4); // YY
+    document.getElementById('e-id-personal').value = `${part1}${part2}${part3}`;
+  }
+}
+
 function cancelEditWorker() {
   document.getElementById('edit-section').classList.remove('open');
   document.getElementById('edit-toggle-lbl').textContent = 'Editar';
@@ -508,22 +509,30 @@ function saveWorkerInfo() {
   const idx = (db.contacts||[]).findIndex(c => c.id === workerId);
   if (idx < 0) return;
   const w = db.contacts[idx];
-  const nombre  = document.getElementById('e-name').value.trim();
-  const puesto  = document.getElementById('e-role').value.trim();
-  const salario = parseFloat(document.getElementById('e-salary').value) || 0;
-  const tel     = document.getElementById('e-phone').value.trim();
-  w.nombre       = nombre;  w.name        = nombre;  // mantener alias
-  w.puesto       = puesto;  w.role        = puesto;
-  w.salarioBase  = salario; w.baseSalary  = salario;
-  w.telefono     = tel;     w.phone       = tel;
+
+  const nombre   = document.getElementById('e-nombre').value.trim();
+  const paterno  = document.getElementById('e-paterno').value.trim();
+  const materno  = document.getElementById('e-materno').value.trim();
+  const empresa  = document.getElementById('e-empresa').value.trim();
+
+  w.nombre          = nombre;
+  w.apellidoPaterno = paterno;
+  w.apellidoMaterno = materno;
+  w.empresa         = empresa;
+  w.name            = empresa || [nombre, paterno, materno].filter(Boolean).join(' ');
+
+  w.puesto       = document.getElementById('e-role').value.trim();
+  w.salarioBase  = parseFloat(document.getElementById('e-salary').value) || 0;
+  w.telefono     = document.getElementById('e-phone').value.trim();
   w.rfc          = document.getElementById('e-rfc').value.trim().toUpperCase();
   w.curp         = document.getElementById('e-curp').value.trim().toUpperCase();
   w.imss         = document.getElementById('e-imss').value.trim();
+  w.birthDate    = document.getElementById('e-birth').value;
+  w.personalId   = document.getElementById('e-id-personal').value.trim() || w.personalId;
   w.fechaIngreso = document.getElementById('e-ingreso').value;
-  w.startDate    = w.fechaIngreso; // alias
   w.diasVacaciones = parseInt(document.getElementById('e-vacaciones').value) || 0;
-  w.vacationDays   = w.diasVacaciones;
   w.activo       = document.getElementById('e-activo').value === 'true';
+
   window.DB.save(db);
   if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('contacts', w.id, w);
   workerData = w;
