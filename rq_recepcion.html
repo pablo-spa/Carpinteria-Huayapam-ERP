@@ -49,37 +49,75 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <script src="db.js"></script>
 <script>
+const PILL_MAP = {
+  'Pedido':'pill-amber','Solicitado':'pill-amber',
+  'Confirmado':'pill-blue',
+  'Autorizado':'pill-green',
+  'Comprado':'pill-green',
+  'Recibido':'pill-green',
+  'Cancelado':'pill-red'
+};
+
+function statusFlow(cur) {
+  const steps = [['Pedido','Solicitado'],['Confirmado','Confirmado'],['Autorizado','Autorizado'],['Comprado','Comprado'],['Recibido','Recibido']];
+  const ci = steps.findIndex(([s]) => s === cur);
+  return '<div class="sf-flow">' + steps.map(([,lbl],i) =>
+    (i>0?'<span class="sf-sep">›</span>':'')+
+    `<span class="sf-step ${i<ci?'sf-done':i===ci?'sf-active':''}">${lbl}</span>`
+  ).join('') + '</div>';
+}
+
+function toast(msg) {
+  let tw = document.getElementById('rec-toast');
+  if (!tw) { tw = document.createElement('div'); tw.id='rec-toast'; tw.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(tw); }
+  const t = document.createElement('div');
+  t.style.cssText='background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+  t.textContent = msg;
+  tw.appendChild(t); setTimeout(() => t.remove(), 3500);
+}
+
 async function init() {
   const orders = await window.DB.query('purchase_orders');
-  const pending  = orders.filter(o => o.id && !o._init && o.status === 'Comprado');
-  const recibidos = orders
-    .filter(o => o.id && !o._init && o.status !== 'Comprado')
-    .sort((a, b) => new Date(b.createdAt||b.fechaRecepcion||b.date) - new Date(a.createdAt||a.fechaRecepcion||a.date));
+  const sorted  = orders
+    .filter(o => o.id && !o._init)
+    .sort((a,b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
+
+  // Sección 1: Por recibir — solo las marcadas como Comprado
+  const porRecibir = sorted.filter(o => o.status === 'Comprado');
+  // Sección 2: Todas las demás (read-only, con su estado real)
+  const resto      = sorted.filter(o => o.status !== 'Comprado');
+
   const container = document.getElementById('main-list');
   container.innerHTML = '';
 
-  if (pending.length === 0) {
-    container.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:12px;">📦</div><div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;">Sin pedidos para recibir</div><div>Los pedidos marcados como "Comprado" en el panel de Compras aparecerán aquí.</div></div>';
-  } else {
-    pending.forEach(o => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.id = 'card-' + o.id;
+  // ── Sección 1: Accionables ──
+  const secLbl1 = document.createElement('div');
+  secLbl1.style.cssText = 'font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:4px 0 8px;';
+  secLbl1.textContent = `Por Recibir (${porRecibir.length})`;
+  container.appendChild(secLbl1);
 
-      const items = (o.items || []).map((i, idx) => `
+  if (porRecibir.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.innerHTML = '<div style="font-size:48px;margin-bottom:12px;">📦</div><div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;">Sin pedidos para recibir</div><div>Los pedidos marcados como "Comprado" en el Panel de Compras aparecerán aquí.</div>';
+    container.appendChild(empty);
+  } else {
+    porRecibir.forEach(o => {
+      const card = document.createElement('div');
+      card.className = 'ficha';
+      card.id = 'card-' + o.id;
+      const items = (o.items||[]).map((i,idx) => `
         <div class="ficha-item">
           <label class="ficha-item-name" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
             <input type="checkbox" class="chk" id="chk-${o.id}-${idx}" checked style="width:16px;height:16px;flex-shrink:0;">
-            ${i.name || i.code || '—'}
+            ${i.name||i.code||'—'}
           </label>
-          <span class="ficha-item-qty">${i.qty}× ${i.unit || 'pza'}</span>
+          <span class="ficha-item-qty">${i.qty}× ${i.unit||'pza'}</span>
         </div>`).join('');
-
-      card.className = 'ficha';
       card.innerHTML = `
         <div class="ficha-hdr">
-          <span class="ficha-folio">${o.folio || o.id}</span>
-          <span class="pill pill-green">Comprado</span>
+          <span class="ficha-folio">${o.folio||o.id}</span>
+          <span class="pill pill-blue">Comprado</span>
         </div>
         <div class="ficha-meta">
           <span>📁 ${o.project||'Stock General'}</span>
@@ -88,41 +126,48 @@ async function init() {
           ${o.cuentaPago?`<span>🏦 ${o.cuentaPago}</span>`:''}
           ${o.notes?`<span>📝 ${o.notes}</span>`:''}
         </div>
-        <div id="sf-rec-${o.id}"></div>
+        ${statusFlow(o.status)}
         <div class="ficha-items">${items}</div>
         <div class="ficha-actions">
           <button class="btn btn-green" onclick="recibir('${o.id}')">✓ Confirmar Recepción</button>
         </div>`;
-
       container.appendChild(card);
     });
   }
 
-  if (recibidos.length) {
-    const histDiv = document.createElement('div');
-    histDiv.innerHTML = `
-      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;">
-        Todas las órdenes (${recibidos.length})
-      </div>
-      ${recibidos.map(o => {
-        const itemsHtml = (o.items||[]).map(i =>
-          `<div class="ficha-item"><span class="ficha-item-name">${i.name||i.code}</span><span class="ficha-item-qty">${i.qty}× ${i.unit||'pza'}</span></div>`
-        ).join('');
-        return `<div class="ficha" style="opacity:.65;">
-          <div class="ficha-hdr"><span class="ficha-folio">${o.folio||o.id}</span><span class="pill pill-green">Recibido</span></div>
-          <div class="ficha-meta">
-            <span>📁 ${o.project||'Stock'}</span>
-            ${o.requester?`<span>👤 ${o.requester}</span>`:''}
-            ${o.fechaRecepcion?`<span>📅 ${o.fechaRecepcion}</span>`:''}
-          </div>
-          <div class="ficha-items">${itemsHtml}</div>
-        </div>`;
-      }).join('')}`;
-    container.appendChild(histDiv);
+  // ── Sección 2: Todas las demás (read-only, estado correcto) ──
+  if (resto.length) {
+    const secLbl2 = document.createElement('div');
+    secLbl2.style.cssText = 'font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;';
+    secLbl2.textContent = `Todas las órdenes (${resto.length})`;
+    container.appendChild(secLbl2);
+
+    resto.forEach(o => {
+      const pill = PILL_MAP[o.status] || 'pill-gray';
+      const itemsHtml = (o.items||[]).map(i =>
+        `<div class="ficha-item"><span class="ficha-item-name">${i.name||i.code||'—'}</span><span class="ficha-item-qty">${i.qty}× ${i.unit||'pza'}</span></div>`
+      ).join('');
+      const div = document.createElement('div');
+      div.className = 'ficha';
+      div.style.opacity = '.7';
+      div.innerHTML = `
+        <div class="ficha-hdr"><span class="ficha-folio">${o.folio||o.id}</span><span class="pill ${pill}">${o.status}</span></div>
+        <div class="ficha-meta">
+          <span>📁 ${o.project||'Stock General'}</span>
+          ${o.requester?`<span>👤 ${o.requester}</span>`:''}
+          ${(o.fechaRecepcion||o.fechaCompra||o.date)?`<span>📅 ${o.fechaRecepcion||o.fechaCompra||o.date}</span>`:''}
+          ${o.cuentaPago?`<span>🏦 ${o.cuentaPago}</span>`:''}
+        </div>
+        ${statusFlow(o.status)}
+        <div class="ficha-items">${itemsHtml}</div>`;
+      container.appendChild(div);
+    });
   }
 }
 
 async function recibir(id) {
+  if (!confirm('¿Confirmar recepción de este pedido? Se actualizará el inventario.')) return;
+
   const orders = await window.DB.query('purchase_orders');
   const order = orders.find(o => o.id === id);
   if (!order) return;
@@ -130,26 +175,25 @@ async function recibir(id) {
   order.status = 'Recibido';
   order.fechaRecepcion = new Date().toISOString().slice(0, 10);
 
-  if (window.parent && window.parent.setDocumentInFirebase) {
+  if (window.parent?.setDocumentInFirebase) {
     await window.parent.setDocumentInFirebase('purchase_orders', id, order);
-    if (window.parent.DB_STATE && window.parent.DB_STATE.purchase_orders) {
-      const idx = window.parent.DB_STATE.purchase_orders.findIndex(o => o.id === id);
-      if (idx !== -1) window.parent.DB_STATE.purchase_orders[idx] = order;
-    }
   }
-  // Update inventory stock for items with codes (always, not just when parent exists)
+  if (window.parent?.DB_STATE?.purchase_orders) {
+    const idx = window.parent.DB_STATE.purchase_orders.findIndex(o => o.id === id);
+    if (idx !== -1) window.parent.DB_STATE.purchase_orders[idx] = order;
+    else window.parent.DB_STATE.purchase_orders.push(order);
+  }
+
+  // Actualizar stock del inventario
   if (order.items) {
     order.items.forEach(i => {
-      if (i.code) window.DB.logInventoryPurchase(i.code, parseFloat(i.qty) || 0, parseFloat(i.price) || 0, order.fechaRecepcion);
+      if (i.code) window.DB.logInventoryPurchase(i.code, parseFloat(i.qty)||0, parseFloat(i.price)||0, order.fechaRecepcion);
     });
   }
 
-  const card = document.getElementById('card-' + id);
-  if (card) {
-    card.style.opacity = '0.5';
-    card.style.pointerEvents = 'none';
-    setTimeout(() => card.remove(), 400);
-  }
+  toast(`✓ ${order.folio} recibido — inventario actualizado`);
+  // Recargar para reflejar el cambio de estado
+  await init();
 }
 
 document.addEventListener('DOMContentLoaded', init);
