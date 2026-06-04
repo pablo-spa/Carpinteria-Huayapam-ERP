@@ -65,19 +65,22 @@
 .tab.active { color: var(--text); border-bottom-color: var(--blue); }
 
 /* ── Main ── */
-.main { max-width: 880px; margin: 0 auto; padding: 16px 16px 110px; }
+.main { max-width: 1200px; margin: 0 auto; padding: 24px 24px 110px; }
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
-.sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); padding: 12px 4px 6px; }
+.sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); padding: 12px 0 8px; border-bottom: 1px solid var(--crust); margin-bottom: 8px; }
 
 /* ── Worker card ── */
 .wcard {
-  background: var(--mantle); border: 1px solid var(--crust);
-  border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 8px; transition: border-color .18s;
+  background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px;
+  overflow: hidden; margin-bottom: 6px; transition: all .12s; border-left: 3px solid transparent;
 }
-.wcard.verif { border-color: var(--green); }
-.wrow { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; min-height: 60px; user-select: none; }
-.wrow:hover { background: var(--base); }
+.wcard:hover:not(.open-det) { background: var(--surface0); transform: translateX(2px); }
+.wcard.verif { border-left-color: var(--green); }
+.wcard.open-det { border-color: var(--blue); border-left-color: var(--blue); border-radius: 8px; background: var(--base); transform: none; }
+
+.wrow { display: flex; align-items: center; gap: 14px; padding: 11px 16px; cursor: pointer; min-height: 54px; user-select: none; }
+.wrow:hover { background: transparent; }
 .avatar {
   width: 38px; height: 38px; border-radius: 99px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -106,7 +109,7 @@
 .abtn-verif:hover { opacity: .9; }
 
 /* ── Detalle ── */
-.wdet { border-top: 1px solid var(--crust); padding: 16px; display: none; flex-direction: column; gap: 14px; }
+.wdet { border-top: 1px dashed var(--crust); padding: 16px; display: none; flex-direction: column; gap: 14px; background: var(--base); }
 .wdet.open { display: flex; }
 
 /* ── Tabla de días ── */
@@ -904,9 +907,9 @@ function renderDias(id){
 function saveJornadaNomina(workerId, diaIdx) {
   const fechaStr = dayDates(weekOffset)[diaIdx].toISOString().slice(0,10);
   const d = S[workerId]?.dias[diaIdx];
-  if (!d || d.st === 'libre') return;
+  if (!d || d.st === 'libre') return Promise.resolve();
   const estadoMap = { trabajo:'trabajo', falta:'falta', vac:'vacaciones', retardo:'retardo' };
-  window.DB.saveJornada(workerId, fechaStr, {
+  return window.DB.saveJornada(workerId, fechaStr, {
     estado:              estadoMap[d.st] || d.st,
     status:              estadoMap[d.st] || d.st,
     horasNormal:         d.hrs || 0,
@@ -938,6 +941,8 @@ function togDet(id){
   if(!det) return;
   const opening=!det.classList.contains('open');
   det.classList.toggle('open');
+  const card=document.getElementById(`card-${id}`);
+  if(card) card.classList.toggle('open-det', opening);
   if(opening){ renderDias(id); renderDesglose(id); }
 }
 
@@ -1002,72 +1007,152 @@ function buildChips(id,r){
 }
 
 function toast(msg, type='ok') {
+  const bg = type === 'warn' ? 'var(--amber)' : type === 'error' ? 'var(--red)' : 'var(--green)';
   const el = document.createElement('div');
-  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
 
-function registrar_pagos_prestamos(id) {
-  const lista = PRESTAMOS[id] || [];
-  if (!lista.length) return;
+async function guardarTrabajador(id) {
+  try {
+    const db = window.DB.get();
+    const batchOps = [];
+    const localUpdates = { attendance: [], attendance_logs: [], loans: [] };
+    let count = 0;
 
-  const { sat } = weekDates(weekOffset);
-  const semana  = sat.toISOString().slice(0, 10);
-  const hoy     = new Date().toISOString().slice(0, 10);
-  const db      = window.DB.get();
+    const estadoMap = { trabajo: 'trabajo', falta: 'falta', vac: 'vacaciones', retardo: 'retardo' };
+    const dates = dayDates(weekOffset);
+    
+    for (let i = 0; i < 7; i++) {
+      const d = S[id].dias[i];
+      if (!d || d.st === 'libre') continue;
 
-  lista.forEach((p, i) => {
-    if (!S[id].prestAplic[i]) return;
-    const monto = S[id].prestMonto[i] || 0;
+      const fechaStr = dates[i].toISOString().slice(0, 10);
+      const existing = (db.attendance || []).find(a => (a.fecha || a.date) === fechaStr && (a.trabajadorId || a.workerId) === id && !a._init);
+      const recordId = existing ? existing.id : crypto.randomUUID();
+      
+      const attRecord = {
+        ...(existing || {}),
+        estado: estadoMap[d.st] || d.st,
+        status: estadoMap[d.st] || d.st,
+        horasNormal: d.hrs || 0,
+        horasTotales: d.hrs || 0,
+        editado_manualmente: true,
+        editado_por: 'nomina',
+        id: recordId,
+        fecha: fechaStr,
+        date: fechaStr,
+        trabajadorId: id,
+        workerId: id
+      };
 
-    const prestamo = (db.worker_loans || []).find(l => l.id === p.loanId);
-    if (!prestamo) return;
+      const alRecord = {
+        id: recordId,
+        trabajadorId: id, workerId: id,
+        fecha: fechaStr,
+        estado: attRecord.estado, status: attRecord.status,
+        horasNormal: attRecord.horasNormal, horasExtra: 0, horasDoble: 0,
+        horasTotales: attRecord.horasTotales, retardoMin: 0, notas: '',
+        editado_manualmente: true, editado_por: 'nomina'
+      };
 
-    if (!prestamo.pagos) prestamo.pagos = [];
-
-    // Si ya hay pago registrado esta semana, ajustar saldo
-    const idx_existente = prestamo.pagos.findIndex(pg => pg.semana === semana);
-    if (idx_existente >= 0) {
-      const monto_anterior = prestamo.pagos[idx_existente].monto;
-      prestamo.saldo = Math.max(0, (prestamo.saldo || 0) + monto_anterior - monto);
-      prestamo.pagos[idx_existente] = { id: prestamo.pagos[idx_existente].id, fecha: hoy, monto, semana };
-    } else {
-      prestamo.pagos.push({ id: crypto.randomUUID(), fecha: hoy, monto, semana });
-      prestamo.saldo = Math.max(0, (prestamo.saldo || 0) - monto);
+      batchOps.push({ type: 'set', col: 'attendance', id: recordId, data: attRecord });
+      batchOps.push({ type: 'set', col: 'attendance_logs', id: recordId, data: alRecord });
+      localUpdates.attendance.push(attRecord);
+      localUpdates.attendance_logs.push(alRecord);
+      count++;
     }
 
-    // Ajustar plan según lo que realmente se pagó
-    const cuota = prestamo.cuota_semanal || Math.ceil((prestamo.monto_total || 0) / (prestamo.semanas_plan || 1));
-    if (monto === 0) {
-      // Semana saltada: agregar semana al final
-      prestamo.semanas_restantes = (prestamo.semanas_restantes || prestamo.semanas_plan || 1) + 1;
-    } else if (prestamo.saldo > 0) {
-      // Recalcular semanas restantes con base en saldo actual y cuota original
-      prestamo.semanas_restantes = Math.ceil(prestamo.saldo / cuota);
+    const lista = PRESTAMOS[id] || [];
+    const { sat } = weekDates(weekOffset);
+    const semana  = sat.toISOString().slice(0, 10);
+    const hoy     = new Date().toISOString().slice(0, 10);
+
+    lista.forEach((p, i) => {
+      // Si el checkbox está desmarcado, se trata como pago $0 (semana salteada → extiende plazo)
+      const monto = S[id].prestAplic[i] ? (S[id].prestMonto[i] || 0) : 0;
+      const prestamoOriginal = (db.worker_loans || []).find(l => l.id === p.loanId);
+      if (!prestamoOriginal) return;
+
+      const prestamo = JSON.parse(JSON.stringify(prestamoOriginal));
+      if (!prestamo.pagos) prestamo.pagos = [];
+
+      const idx_existente = prestamo.pagos.findIndex(pg => pg.semana === semana);
+      if (idx_existente >= 0) {
+        const monto_anterior = prestamo.pagos[idx_existente].monto;
+        prestamo.saldo = Math.max(0, (prestamo.saldo || 0) + monto_anterior - monto);
+        prestamo.pagos[idx_existente] = { id: prestamo.pagos[idx_existente].id, fecha: hoy, monto, semana };
+      } else {
+        prestamo.pagos.push({ id: crypto.randomUUID(), fecha: hoy, monto, semana });
+        prestamo.saldo = Math.max(0, (prestamo.saldo || 0) - monto);
+      }
+
+      const cuota = prestamo.cuota_semanal || Math.ceil((prestamo.monto_total || 0) / (prestamo.semanas_plan || 1));
+      if (monto === 0) {
+        prestamo.semanas_restantes = (prestamo.semanas_restantes || prestamo.semanas_plan || 1) + 1;
+      } else if (prestamo.saldo > 0) {
+        prestamo.semanas_restantes = Math.ceil(prestamo.saldo / cuota);
+      }
+
+      if (prestamo.saldo <= 0) {
+        prestamo.saldo = 0;
+        prestamo.estado = 'pagado';
+      }
+
+      batchOps.push({ type: 'set', col: 'worker_loans', id: prestamo.id, data: prestamo });
+      localUpdates.loans.push({ index: i, prestamo });
+    });
+
+    if (window.parent?.runBatchedWrites && batchOps.length > 0) {
+      await window.parent.runBatchedWrites(batchOps);
+    } else if (batchOps.length > 0) {
+      for (const op of batchOps) {
+        if (op.type === 'set' && window.parent?.setDocumentInFirebase) {
+          await window.parent.setDocumentInFirebase(op.col, op.id, op.data);
+        }
+      }
     }
 
-    if (prestamo.saldo <= 0) {
-      prestamo.saldo = 0;
-      prestamo.estado = 'pagado';
-    }
+    if (!db.attendance) db.attendance = [];
+    if (!db.attendance_logs) db.attendance_logs = [];
+    if (!db.worker_loans) db.worker_loans = [];
+    const pState = window.parent?.DB_STATE;
 
-    // Actualizar estado local
-    PRESTAMOS[id][i].saldo       = prestamo.saldo;
-    PRESTAMOS[id][i].semanasPlan = prestamo.semanas_restantes || prestamo.semanas_plan;
+    localUpdates.attendance.forEach(rec => {
+      const li = db.attendance.findIndex(a => a.id === rec.id);
+      if (li >= 0) db.attendance[li] = rec; else db.attendance.push(rec);
+      if (pState?.attendance) {
+        const pi = pState.attendance.findIndex(a => a.id === rec.id);
+        if (pi >= 0) pState.attendance[pi] = rec; else pState.attendance.push(rec);
+      }
+    });
+    localUpdates.attendance_logs.forEach(rec => {
+      const li = db.attendance_logs.findIndex(a => a.id === rec.id);
+      if (li >= 0) db.attendance_logs[li] = rec; else db.attendance_logs.push(rec);
+      if (pState?.attendance_logs) {
+        const pi = pState.attendance_logs.findIndex(a => a.id === rec.id);
+        if (pi >= 0) pState.attendance_logs[pi] = rec; else pState.attendance_logs.push(rec);
+      }
+    });
+    localUpdates.loans.forEach(({ index, prestamo }) => {
+      const li = db.worker_loans.findIndex(l => l.id === prestamo.id);
+      if (li >= 0) db.worker_loans[li] = prestamo; else db.worker_loans.push(prestamo);
+      if (pState?.worker_loans) {
+        const pi = pState.worker_loans.findIndex(l => l.id === prestamo.id);
+        if (pi >= 0) pState.worker_loans[pi] = prestamo; else pState.worker_loans.push(prestamo);
+      }
+      PRESTAMOS[id][index].saldo = prestamo.saldo;
+      PRESTAMOS[id][index].semanasPlan = prestamo.semanas_restantes || prestamo.semanas_plan;
+    });
 
-    window.DB.actualizar_prestamo(prestamo);
-  });
-}
-
-function guardarTrabajador(id){
-  let count=0;
-  for(let i=0;i<7;i++){
-    if(S[id].dias[i].st!=='libre'){ saveJornadaNomina(id,i); count++; }
+    window.DB.save(db);
+    toast(`✓ ${count} día${count !== 1 ? 's' : ''} guardado${count !== 1 ? 's' : ''}`);
+  } catch (e) {
+    console.error("Error al sincronizar nómina:", e);
+    toast('Error guardando los datos. Verifica tu conexión.', 'error');
   }
-  registrar_pagos_prestamos(id);
-  toast(`✓ ${count} día${count!==1?'s':''} guardado${count!==1?'s':''}`);
 }
 
 function markVerif(id){
