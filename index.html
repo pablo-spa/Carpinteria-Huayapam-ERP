@@ -1336,8 +1336,8 @@
                     updateInventoryLists.add(item.category || 'General'); 
                   }
                 }
-                // Enviar la instrucción matemática atómica
-                batch.update(docRef, { [op.field]: increment(op.amount), ...(op.extraUpdates || {}) });
+                // Usar set+merge en vez de update: funciona aunque el doc no exista todavía
+                batch.set(docRef, { [op.field]: increment(op.amount), ...(op.extraUpdates || {}) }, { merge: true });
               }
             });
 

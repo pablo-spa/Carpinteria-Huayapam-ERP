@@ -117,6 +117,7 @@
       <input type="date" id="iv-desde" class="f-input" style="padding:4px 8px;font-size:12px;height:30px;width:128px;" onchange="onIntervalChange()">
     </label>
     <button class="btn btn-dark" onclick="openNuevaCuenta()">+ Cuenta</button>
+    <button class="btn btn-ghost" onclick="recalcularSaldos()" title="Recalcula los saldos de todas las cuentas a partir del historial de movimientos cargado" style="font-size:11px; padding:5px 10px;">⟳ Saldos</button>
     <button class="btn btn-blue" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Movimiento</button>
   </div>
 </div>
@@ -728,37 +729,41 @@
     );
   }
 
-  function _doDeleteMovement(mid) {
+  async function _doDeleteMovement(mid) {
     const mov = _allMovements.find(m => (m.id || m._id) === mid);
     if (!mov) return;
 
-    // Revertir el saldo de la cuenta si el movimiento estaba confirmado
-    const balOps = getBalanceOps({ status: 'anulado', type: mov.type, amount: mov.amount, account: mov.account, destAccount: mov.destAccount }, false, mov);
-    applyLocalBalances(balOps);
-    if (balOps.length > 0 && window.parent?.runBatchedWrites) {
-      window.parent.runBatchedWrites(balOps).catch(e => console.warn('[finanzas] error al revertir saldo:', e.message));
-    }
+    const balOps = getBalanceOps(
+      { status: 'anulado', type: mov.type, amount: mov.amount, account: mov.account, destAccount: mov.destAccount },
+      false, mov
+    );
 
-    // Soft delete — marcar como anulado en _allMovements, DBm Y DB_STATE del padre
-    mov.status   = 'anulado';
+    // Actualizar memoria local primero para respuesta inmediata en UI
+    mov.status    = 'anulado';
     mov.eliminado = true;
-    // DBm puede tener una referencia diferente al mismo movimiento (si fue reemplazado por saveMov)
     const dbmMov = DBm.find(m => (m.id || m._id) === mid);
     if (dbmMov && dbmMov !== mov) { dbmMov.status = 'anulado'; dbmMov.eliminado = true; }
     if (window.parent?.DB_STATE?.accounting_movements) {
       const liveM = window.parent.DB_STATE.accounting_movements.find(m => (m.id || m._id) === mid);
       if (liveM) { liveM.status = 'anulado'; liveM.eliminado = true; }
     }
-
-    // Persistir en Firestore
-    if (window.parent?.setDocumentInFirebase) {
-      window.parent.setDocumentInFirebase('accounting_movements', mid, mov);
-    }
-
-    // Actualizar UI
+    applyLocalBalances(balOps);
     renderList();
     calcBalances();
     toast('Movimiento anulado.', 'warn');
+
+    // Persistir en Firestore (awaited — garantiza que balance y movimiento se guarden juntos)
+    try {
+      const ops = [{ type: 'set', col: 'accounting_movements', id: mid, data: mov }, ...balOps];
+      if (window.parent?.runBatchedWrites) {
+        await window.parent.runBatchedWrites(ops);
+      } else if (window.parent?.setDocumentInFirebase) {
+        await window.parent.setDocumentInFirebase('accounting_movements', mid, mov);
+      }
+    } catch(e) {
+      console.error('[finanzas] error al anular movimiento en Firestore:', e.message);
+      toast('Anulado localmente — error al sincronizar con la nube.', 'warn');
+    }
   }
 
   // LLM Simulation
@@ -1225,6 +1230,49 @@
     calcBalances();
     closeNuevaCuenta();
     toast(`Cuenta "${name}" creada.`);
+  }
+
+  // Recalcula saldos desde cero usando todos los movimientos cargados en pantalla
+  async function recalcularSaldos() {
+    const showConfirmFn = window.parent?.showConfirm || ((t,m,b,c,fn) => { if(confirm(`${t}\n\n${m}`)) fn(); });
+    showConfirmFn(
+      'Recalcular Saldos',
+      'Esto recalcula el saldo de todas las cuentas a partir de los movimientos confirmados actualmente cargados. Útil si los saldos están desincronizados.\n\n¿Continuar?',
+      'Recalcular', 'btn-blue',
+      async () => {
+        // Construir saldos desde cero
+        const newBalances = {};
+        _allMovements.forEach(m => {
+          if (m.eliminado) return;
+          if (m.status !== 'confirmado' && m.status !== 'confirmed') return;
+          const apply = (acc, delta) => {
+            if (!acc) return;
+            if (!newBalances[acc]) newBalances[acc] = 0;
+            newBalances[acc] += delta;
+          };
+          if (m.type === 'Ingreso')       apply(m.account, m.amount);
+          else if (m.type === 'Gasto')    apply(m.account, -m.amount);
+          else if (m.type === 'Transferencia') {
+            apply(m.account, -m.amount);
+            apply(m.destAccount, m.amount);
+          }
+        });
+
+        // Actualizar STATE_ACCOUNT_BALANCES y Firestore
+        const ops = [];
+        for (const [acc, bal] of Object.entries(newBalances)) {
+          if (!STATE_ACCOUNT_BALANCES[acc])
+            STATE_ACCOUNT_BALANCES[acc] = { id: acc, account: acc, balance: 0, before_d7:0, before_d30:0, before_d180:0, before_d365:0 };
+          STATE_ACCOUNT_BALANCES[acc].balance = bal;
+          if (window.parent?.setDocumentInFirebase) {
+            ops.push(window.parent.setDocumentInFirebase('account_balances', acc, { ...STATE_ACCOUNT_BALANCES[acc], balance: bal }));
+          }
+        }
+        await Promise.all(ops).catch(e => console.warn('Error guardando saldos:', e));
+        calcBalances();
+        toast('Saldos recalculados y guardados.', 'ok');
+      }
+    );
   }
 
   initData();
