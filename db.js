@@ -182,11 +182,20 @@ window.DB = {
     saveDB(d);
   },
   addMovement: (mov) => {
-    const d = getDB();
     if(!mov.id) mov.id = crypto.randomUUID();
-    d.accounting_movements.unshift(mov);
+    // Siempre persistir en Firestore primero (no depende de que la colección esté cacheada)
     if(window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase("accounting_movements", mov.id, mov);
-    saveDB(d);
+    // Actualizar DB_STATE en memoria si existe
+    if(window.parent && window.parent.DB_STATE) {
+      if(!window.parent.DB_STATE.accounting_movements) window.parent.DB_STATE.accounting_movements = [];
+      window.parent.DB_STATE.accounting_movements.unshift(mov);
+    }
+    // También guardar en la copia local si está cargada
+    const d = getDB();
+    if(d && !d._isIncomplete && Array.isArray(d.accounting_movements)) {
+      d.accounting_movements.unshift(mov);
+      saveDB(d);
+    }
   },
   updateMovement: (mov) => {
     const d = getDB();

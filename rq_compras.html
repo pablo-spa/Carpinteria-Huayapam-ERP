@@ -507,7 +507,7 @@ function buildActiveCard(o, mode) {
 
   const actionBtns = isCotizar
     ? `<button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
-       <button class="btn btn-blue" onclick="autorizarOrden('${o.id}')">✓ Autorizar compra</button>`
+       <span style="font-size:12px;color:var(--subtext);margin-left:8px;">⏳ Esperando autorización en <strong>Autorizar Pedidos</strong></span>`
     : `<button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
        <button class="btn btn-blue"  onclick="act('${o.id}','Comprado')">✓ Marcar Comprado</button>
        <button class="btn btn-green" onclick="act('${o.id}','Recibido')">✓✓ Comprado y Recibido</button>`;

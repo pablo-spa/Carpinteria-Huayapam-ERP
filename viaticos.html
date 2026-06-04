@@ -199,12 +199,19 @@ td { color: var(--text); }
   <!-- VIEW: DETAIL -->
   <div id="view-detail" class="view">
     <div class="card" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
-      <div>
+      <div style="flex:1; min-width:260px;">
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-          <h2 id="d-title" style="font-size: 20px; font-weight:700;">Viaje Tulum</h2>
+          <h2 id="d-title" style="font-size: 20px; font-weight:700;">Viaje</h2>
           <span id="d-badge" class="badge">ACTIVO</span>
         </div>
-        <div id="d-meta" style="color:var(--subtext); font-size:14px; margin-bottom:12px;"></div>
+        <div id="d-meta" style="color:var(--subtext); font-size:14px; margin-bottom:10px;"></div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <label style="font-size:12px; font-weight:700; color:var(--subtext); white-space:nowrap;">Proyecto:</label>
+          <select id="d-project-sel" class="form-control" style="flex:1; max-width:340px; font-size:13px;"
+            onchange="updateViajeProject(this.value)">
+            <option value="">— General / Sin proyecto —</option>
+          </select>
+        </div>
         <div id="d-workers" style="font-size:14px; font-weight:600;"></div>
         <div id="d-nota-cierre" style="font-size:13px; font-style:italic; color:var(--amber); margin-top:8px; display:none;"></div>
       </div>
@@ -424,13 +431,14 @@ async function init() {
   }
   document.getElementById('fa-por').innerHTML = '<option value="">— Seleccionar —</option>' + adminOpts;
 
-  // Init projects select
+  // Init projects select (form nuevo viaje + detalle)
   const projects = await window.DB.query('projects');
-  const pSel = document.getElementById('f-project');
-  pSel.innerHTML = '<option value="">— General / Sin proyecto —</option>' + 
+  const projOpts = '<option value="">— General / Sin proyecto —</option>' +
     projects.filter(p => !p._init).map(p => `<option value="${p.id}">${p.codigo||p.code} - ${p.nombre||p.name}</option>`).join('');
-  // Iniciar componente de búsqueda si está disponible
+  const pSel = document.getElementById('f-project');
+  pSel.innerHTML = projOpts;
   if (pSel._ssInit) pSel._ssRefresh(); else if (typeof SearchableSelect !== 'undefined') SearchableSelect.init(pSel);
+  document.getElementById('d-project-sel').innerHTML = projOpts;
   
   // Set default dates
   const today = new Date().toISOString().split('T')[0];
@@ -471,7 +479,10 @@ function getWorkerNames(db, ids) {
   if(!ids || !ids.length) return 'Ninguno';
   const all = [...(db.contacts||[]), ...(db.workers||[])];
   const w = all.filter(wk => ids.includes(wk.id || wk._id));
-  return w.map(wk => String(wk.nombre || wk.name || wk.givenName || wk.id || '').split(' ').slice(0,2).join(' ')).join(', ') || 'Desconocido';
+  return w.map(wk => {
+    if (wk.nombre || wk.name) return wk.nombre || wk.name;
+    return [wk.givenName, wk.paterno, wk.materno].filter(Boolean).join(' ') || wk.id || '?';
+  }).join(', ') || 'Desconocido';
 }
 
 function renderList() {
@@ -577,8 +588,13 @@ function openDetalle(id) {
   
   const pObj = (db.projects||[]).find(p => p.id === currentViaje.project_id);
   const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'Viaje General / Sin Proyecto';
-  
+
   document.getElementById('d-title').textContent = pName;
+  const dProjSel = document.getElementById('d-project-sel');
+  if (dProjSel) {
+    dProjSel.value = currentViaje.project_id || '';
+    dProjSel.disabled = (currentViaje.estado === 'cerrado');
+  }
   document.getElementById('d-badge').textContent = currentViaje.estado.toUpperCase();
   document.getElementById('d-badge').className = 'badge badge-' + currentViaje.estado;
   
@@ -647,7 +663,7 @@ function _renderWorkerChips() {
   }
   cont.innerHTML = wids.map(wid => {
     const w = all.find(c => (c.id || c._id) === wid);
-    const name = w ? (w.name || [w.givenName, w.paterno].filter(Boolean).join(' ') || wid) : wid;
+    const name = w ? (w.nombre || w.name || [w.givenName, w.paterno, w.materno].filter(Boolean).join(' ') || wid) : wid;
     return `<div style="display:flex;align-items:center;gap:6px;background:var(--mantle);border:1px solid var(--crust);padding:5px 12px;border-radius:20px;font-size:13px;font-weight:600;">
       ${name}
       ${!isCerrado ? `<button onclick="quitarTrabajadorViaje('${wid}')" style="background:none;border:none;cursor:pointer;color:var(--subtext);font-size:18px;line-height:1;padding:0 0 0 4px;">×</button>` : ''}
@@ -792,23 +808,29 @@ function addAnticipo() {
   }
 
   // Registrar en Finanzas como movimiento a comprobar
-  const pObj = (db.projects||[]).find(p => p.id === currentViaje.project_id);
-  const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'General';
-  window.DB.addMovement({
-    id: movId, type: 'Gasto', date: ant.fecha, amount: ant.monto,
-    account: cuenta, concept: `Anticipo Viáticos: ${pName} → ${recibe}`,
-    category: 'Viáticos e Instalación', projectId: currentViaje.project_id, status: 'por_comprobar'
-  });
+  try {
+    const pObj = (db.projects||[]).find(p => p.id === currentViaje.project_id);
+    const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'General';
+    window.DB.addMovement({
+      id: movId, type: 'Gasto', date: ant.fecha, amount: ant.monto,
+      account: cuenta, concept: `Anticipo Viáticos: ${pName} → ${recibe}`,
+      category: 'Viáticos e Instalación', projectId: currentViaje.project_id, status: 'por_comprobar'
+    });
+  } catch(e) { console.warn('addMovement (anticipo):', e); }
 
-  const tw = document.getElementById('toast-viat') || (() => { const el = document.createElement('div'); el.id='toast-viat'; el.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(el); return el; })();
-  const t = document.createElement('div');
-  t.style.cssText='background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
-  t.textContent = `Anticipo sumado. Sale de ${cuenta} (pendiente de comprobar en Finanzas).`;
-  tw.appendChild(t); setTimeout(() => t.remove(), 4000);
-
+  viatToast(`Anticipo sumado. Sale de ${cuenta} — pendiente de comprobar en Finanzas.`);
   document.getElementById('fa-monto').value = '';
   document.getElementById('fa-recibe').value = '';
   renderDetalles();
+}
+
+function viatToast(msg, ok=true) {
+  let tw = document.getElementById('toast-viat');
+  if (!tw) { tw = document.createElement('div'); tw.id='toast-viat'; tw.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(tw); }
+  const t = document.createElement('div');
+  t.style.cssText=`background:${ok?'var(--green)':'var(--amber)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  t.textContent = msg;
+  tw.appendChild(t); setTimeout(() => t.remove(), 4000);
 }
 
 function addGasto() {
@@ -936,6 +958,21 @@ function reabrirViaje() {
     if (window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
   }
   openDetalle(currentViajeId);
+}
+
+function updateViajeProject(pId) {
+  if (!currentViaje) return;
+  const db = window.DB.get();
+  const v = (db.viajes||[]).find(vx => vx.id === currentViajeId);
+  if (!v) return;
+  v.project_id = pId || null;
+  currentViaje.project_id = pId || null;
+  window.DB.save(db);
+  if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+  // Actualizar título
+  const pObj = (db.projects||[]).find(p => p.id === pId);
+  const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'Viaje General / Sin Proyecto';
+  document.getElementById('d-title').textContent = pName;
 }
 
 function guardarYSalir() {
