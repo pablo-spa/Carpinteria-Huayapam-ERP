@@ -453,8 +453,9 @@ function renderInfo() {
     ['RFC',             w.rfc||'—'],
     ['CURP',            w.curp||'—'],
     ['NSS (IMSS)',       w.imss||'—'],
-    ['Fecha Ingreso',   w.fechaIngreso||'—'],
-    ['Días Vacaciones', w.diasVacaciones ? w.diasVacaciones + ' días' : '—'],
+    ['Fecha Nacimiento', w.birthDate ? new Date(w.birthDate + 'T12:00:00').toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'}) : '—'],
+    ['Fecha Ingreso',   w.fechaIngreso ? new Date(w.fechaIngreso + 'T12:00:00').toLocaleDateString('es-MX', {day:'2-digit', month:'long', year:'numeric'}) : '—'],
+
     ['Estado',          w.activo === false ? '❌ Baja' : '✅ Activo'],
   ];
   document.getElementById('info-rows').innerHTML = rows.map(([l, v]) =>
@@ -504,7 +505,7 @@ function cancelEditWorker() {
   document.getElementById('edit-toggle-lbl').textContent = 'Editar';
   document.getElementById('btn-editar').textContent = '✏️ Editar';
 }
-function saveWorkerInfo() {
+async function saveWorkerInfo() {
   const db = window.DB.get();
   const idx = (db.contacts||[]).findIndex(c => c.id === workerId);
   if (idx < 0) return;
@@ -533,13 +534,19 @@ function saveWorkerInfo() {
   w.diasVacaciones = parseInt(document.getElementById('e-vacaciones').value) || 0;
   w.activo       = document.getElementById('e-activo').value === 'true';
 
-  window.DB.save(db);
-  if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('contacts', w.id, w);
-  workerData = w;
-  renderInfo();
-  renderVacaciones();
-  cancelEditWorker();
-  toast('✓ Datos guardados');
+  try {
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('contacts', w.id, w);
+    }
+    workerData = w; // Update local state only on success
+    renderInfo();
+    renderVacaciones();
+    cancelEditWorker();
+    toast('✓ Datos guardados');
+  } catch (e) {
+    console.error("Error guardando trabajador:", e);
+    toast('Error al guardar. Revisa tu conexión.', 'error');
+  }
 }
 
 // ── Stats ─────────────────────────────────────────────────────
@@ -838,7 +845,7 @@ function closeDayPanel() {
 }
 
 // ── Save / Delete day record ──────────────────────────────────
-function dpGuardar() {
+async function dpGuardar() {
   if (!DP.status) { toast('Selecciona un estado (Trabajó, Falta, etc.)', 'warn'); return; }
   if (!selectedDay) return;
 
@@ -848,48 +855,144 @@ function dpGuardar() {
   DP.h2    = document.getElementById('dp-h2')?.value    || DP.h2;
   DP.notas = document.getElementById('dp-notas')?.value || '';
 
-  const saved = window.DB.saveJornada(workerId, selectedDay, {
-    estado:              DP.status,
-    retardoMin:          parseFloat(DP.retMin)  || 0,
-    horasNormal:         parseFloat(DP.h1)      || 0,
-    horasExtra:          parseFloat(DP.h15)     || 0,
-    horasDoble:          parseFloat(DP.h2)      || 0,
-    horasTotales:        dpEquiv(),
-    proyectos:           DP.proyectos.filter(p => p.p || p.horas || p.descripcion),
-    notas:               DP.notas,
+  const db = window.DB.get();
+  const batchOps = [];
+  
+  const recordId = DP.existingId || crypto.randomUUID();
+  const eq = dpEquiv();
+  const record = {
+    id: recordId,
+    fecha:         selectedDay,
+    date:          selectedDay,
+    trabajadorId:  workerId,
+    workerId:      workerId,
+    estado:        DP.status,
+    status:        DP.status,
+    retardoMin:    parseFloat(DP.retMin)  || 0,
+    horasNormal:   parseFloat(DP.h1)      || 0,
+    horasExtra:    parseFloat(DP.h15)     || 0,
+    horasDoble:    parseFloat(DP.h2)      || 0,
+    horasTotales:  eq,
+    proyectos:     DP.proyectos.filter(p => p.p || p.horas || p.descripcion),
+    notas:         DP.notas,
     editado_manualmente: true,
-    editado_por:         'perfil',
-  });
+    editado_por:   'perfil'
+  };
 
-  DP.existingId = saved.id;
-  document.getElementById('dp-btn-borrar').style.display = '';
+  batchOps.push({ type: 'set', col: 'attendance', id: recordId, data: record });
 
-  // Actualizar SOLO la celda del calendario sin re-renderizar todo
-  updateCell(selectedDay);
-  renderStats(calYear, calMonth);
-  renderPayWeeks();
-  toast('✓ Día guardado');
+  const attLog = {
+    id:           recordId,
+    trabajadorId: workerId, workerId: workerId,
+    fecha:        selectedDay,
+    estado:       DP.status, status: DP.status,
+    entrada:      '', salida: '',
+    horasNormal:  record.horasNormal, horasExtra: record.horasExtra, horasDoble: record.horasDoble,
+    horasTotales: record.horasTotales, retardoMin: record.retardoMin, notas: record.notas,
+    editado_manualmente: true, editado_por: 'perfil'
+  };
+  batchOps.push({ type: 'set', col: 'attendance_logs', id: recordId, data: attLog });
+
+  // Eliminar production_logs antiguos de este día
+  const oldLogs = (db.production_logs || []).filter(pl => pl.trabajadorId === workerId && pl.fecha === selectedDay);
+  oldLogs.forEach(pl => batchOps.push({ type: 'delete', col: 'production_logs', id: pl.id }));
+
+  // Crear production_logs nuevos
+  if (record.proyectos && record.proyectos.length) {
+    record.proyectos.forEach(p => {
+      if (!p.p) return;
+      const pLog = {
+        id:              crypto.randomUUID(),
+        trabajadorId:    workerId,
+        proyectoId:      p.p,
+        fecha:           selectedDay,
+        actividad:       p.actividad || '',
+        descripcion:     p.descripcion || p.pieza || '',
+        horasTrabajadas: parseFloat(p.horas) || (record.horasTotales ? record.horasTotales / record.proyectos.length : 0)
+      };
+      batchOps.push({ type: 'set', col: 'production_logs', id: pLog.id, data: pLog });
+    });
+  }
+
+  try {
+    if (window.parent?.runBatchedWrites) await window.parent.runBatchedWrites(batchOps);
+
+    DP.existingId = recordId;
+    document.getElementById('dp-btn-borrar').style.display = '';
+
+    // Actualizar Memoria Local
+    batchOps.forEach(op => {
+      const colList = db[op.col];
+      if (colList) {
+        if (op.type === 'set') {
+          const idx = colList.findIndex(x => x.id === op.id);
+          if (idx >= 0) colList[idx] = Object.assign(colList[idx] || {}, op.data);
+          else colList.push(op.data);
+        } else if (op.type === 'delete') {
+          const idx = colList.findIndex(x => x.id === op.id);
+          if (idx >= 0) colList.splice(idx, 1);
+        }
+      }
+      const pState = window.parent?.DB_STATE;
+      if (pState && pState[op.col]) {
+        if (op.type === 'set') {
+          const pIdx = pState[op.col].findIndex(x => x.id === op.id);
+          if (pIdx >= 0) pState[op.col][pIdx] = Object.assign(pState[op.col][pIdx] || {}, op.data);
+          else pState[op.col].push(op.data);
+        } else if (op.type === 'delete') {
+          const pIdx = pState[op.col].findIndex(x => x.id === op.id);
+          if (pIdx >= 0) pState[op.col].splice(pIdx, 1);
+        }
+      }
+    });
+    window.DB.save(db);
+
+    updateCell(selectedDay);
+    renderStats(calYear, calMonth);
+    renderPayWeeks();
+    toast('✓ Día guardado atómicamente');
+  } catch (e) {
+    console.error("Error guardando el día:", e);
+    toast('Error al guardar. Verifica tu conexión.', 'error');
+  }
 }
 
-function dpBorrar() {
+async function dpBorrar() {
   if (!selectedDay || !DP.existingId) return;
   if (!confirm(`¿Borrar el registro del ${selectedDay}?`)) return;
   const db = window.DB.get();
+  const batchOps = [];
+
   const idx = (db.attendance||[]).findIndex(a => a.id === DP.existingId);
   if (idx >= 0) {
     const id = db.attendance[idx].id;
-    db.attendance.splice(idx, 1);
-    if (window.parent?.deleteDocumentFromFirebase) window.parent.deleteDocumentFromFirebase('attendance', id);
-    // Also remove from attendance_logs
-    const li = (db.attendance_logs||[]).findIndex(a => a.id === id);
-    if (li >= 0) { db.attendance_logs.splice(li, 1); if (window.parent?.deleteDocumentFromFirebase) window.parent.deleteDocumentFromFirebase('attendance_logs', id); }
-    window.DB.save(db);
+    
+    batchOps.push({ type: 'delete', col: 'attendance', id: id });
+    batchOps.push({ type: 'delete', col: 'attendance_logs', id: id });
+
+    // Remover los logs de producción
+    const prodLogs = (db.production_logs || []).filter(pl => pl.trabajadorId === workerId && pl.fecha === selectedDay);
+    prodLogs.forEach(pl => batchOps.push({ type: 'delete', col: 'production_logs', id: pl.id }));
+
+    try {
+      if (window.parent?.runBatchedWrites) await window.parent.runBatchedWrites(batchOps);
+
+      db.attendance.splice(idx, 1);
+      const li = (db.attendance_logs||[]).findIndex(a => a.id === id);
+      if (li >= 0) db.attendance_logs.splice(li, 1);
+      db.production_logs = (db.production_logs || []).filter(pl => !(pl.trabajadorId === workerId && pl.fecha === selectedDay));
+
+      window.DB.save(db);
+      updateCell(selectedDay);
+      renderStats(calYear, calMonth);
+      renderPayWeeks();
+      closeDayPanel();
+      toast('Registro borrado atómicamente', 'warn');
+    } catch(e) {
+      console.error("Error borrando el registro:", e);
+      toast('Error al borrar. Verifica tu conexión.', 'error');
+    }
   }
-  updateCell(selectedDay);
-  renderStats(calYear, calMonth);
-  renderPayWeeks();
-  closeDayPanel();
-  toast('Registro borrado', 'warn');
 }
 
 // Actualiza una celda del calendario sin re-renderizar todo
@@ -1023,9 +1126,12 @@ function render_prestamos() {
           <div class="loan-desc">${p.descripcion || 'Préstamo'}</div>
           <div class="loan-meta">$${(p.monto_total||0).toLocaleString('es-MX')} total · $${cuota.toLocaleString('es-MX')}/sem · ${semRes} sem restantes</div>
         </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:18px;font-weight:800;color:var(--${liquidado?'green':'amber'}-text);">$${(p.saldo||0).toLocaleString('es-MX')}</div>
-          <div class="loan-meta">${liquidado ? '✓ Liquidado' : 'saldo pendiente'}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+          <div style="text-align:right;">
+            <div style="font-size:18px;font-weight:800;color:var(--${liquidado?'green':'amber'}-text);">$${(p.saldo||0).toLocaleString('es-MX')}</div>
+            <div class="loan-meta">${liquidado ? '✓ Liquidado' : 'saldo pendiente'}</div>
+          </div>
+          <button onclick="eliminar_prestamo('${p.id}')" style="background:none;border:1px solid var(--crust);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--subtext);cursor:pointer;" title="Eliminar préstamo">🗑 Eliminar</button>
         </div>
       </div>
       <div class="loan-progress" style="margin:8px 0 4px;">
@@ -1038,6 +1144,32 @@ function render_prestamos() {
       ${pagosHtml}
     </div>`;
   }).join('<hr style="border:none;border-top:1px solid var(--crust);margin:4px 0 16px;">');
+}
+
+async function eliminar_prestamo(id) {
+  const p = PRESTAMOS_TRABAJADOR.find(x => x.id === id);
+  if (!p) return;
+  const desc = p.descripcion || 'Préstamo';
+  const monto = '$' + (p.monto_total||0).toLocaleString('es-MX');
+  const confirmMsg = `¿Eliminar el préstamo "${desc}" (${monto})?\n\nEsta acción no se puede deshacer.`;
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    if (window.parent?.deleteDocumentFromFirebase) {
+      await window.parent.deleteDocumentFromFirebase('worker_loans', id);
+    } else if (window.parent?.deleteDocumentInFirebase) {
+      await window.parent.deleteDocumentInFirebase('worker_loans', id);
+    }
+    // Actualizar estado local
+    PRESTAMOS_TRABAJADOR = PRESTAMOS_TRABAJADOR.filter(x => x.id !== id);
+    if (window.parent?.DB_STATE?.worker_loans) {
+      window.parent.DB_STATE.worker_loans = window.parent.DB_STATE.worker_loans.filter(x => x.id !== id);
+    }
+    render_prestamos();
+    toast('Préstamo eliminado.', 'ok');
+  } catch(e) {
+    toast('Error al eliminar: ' + e.message, 'error');
+  }
 }
 
 // ── Vacaciones ────────────────────────────────────────────────
