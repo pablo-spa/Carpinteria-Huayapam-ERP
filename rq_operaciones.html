@@ -118,34 +118,59 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           <div style="font-size:14px;">Los pedidos creados en Hoja de Pedido aparecerán aquí.</div>
         </div>`;
     } else {
-      list.innerHTML = filtered.map(o => {
+      list.innerHTML = '';
+      filtered.forEach(o => {
         const proj = d.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
         const projLabel = proj ? `${proj.code||proj.codigo} – ${proj.name||proj.nombre}` : (o.project || 'Stock General');
-        const items = o.items || [];
-        return `
-          <div class="card" id="card-${o.id}">
-            <div class="card-title">
-              <span>${o.folio || o.id}</span>
-              <span class="badge badge-pedido">Pendiente</span>
-            </div>
-            <div class="card-meta">
-              <span>📁 ${projLabel}</span>
-              ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
-              ${o.date      ? `<span>📅 ${o.date}</span>`      : ''}
-              ${o.notes     ? `<span>📝 ${o.notes}</span>`     : ''}
-            </div>
-            ${statusFlow(o.status)}
-            ${items.map(i => `
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.id = 'card-' + o.id;
+        card.innerHTML = `
+          <div class="card-title">
+            <span>${o.folio || o.id}</span>
+            <span class="badge badge-pedido">Pendiente</span>
+          </div>
+          <div class="card-meta">
+            <span>📁 ${projLabel}</span>
+            ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
+            ${o.date      ? `<span>📅 ${o.date}</span>`      : ''}
+            ${o.notes     ? `<span>📝 ${o.notes}</span>`     : ''}
+          </div>
+          ${statusFlow(o.status)}
+          <div id="items-view-${o.id}">
+            ${(o.items||[]).map(i => `
               <div class="item-row">
                 <span>${i.qty} × ${i.name || i.code || '—'}</span>
                 <span class="item-unit">${i.unit || 'pza'}</span>
               </div>`).join('')}
-            <div class="actions">
-              <button class="btn btn-red"   onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
-              <button class="btn btn-green" onclick="act('${o.id}','Confirmado')">✓ Confirmar para Compras</button>
+          </div>
+          <div id="items-edit-${o.id}" style="display:none; margin-top:12px; display:none;">
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr>
+                  <th style="text-align:left;padding:4px 6px;font-size:11px;font-weight:700;color:var(--subtext);border-bottom:2px solid var(--crust);">Concepto</th>
+                  <th style="text-align:center;padding:4px 6px;font-size:11px;font-weight:700;color:var(--subtext);border-bottom:2px solid var(--crust);width:70px;">Cant.</th>
+                  <th style="text-align:left;padding:4px 6px;font-size:11px;font-weight:700;color:var(--subtext);border-bottom:2px solid var(--crust);width:80px;">Unidad</th>
+                  <th style="border-bottom:2px solid var(--crust);width:28px;"></th>
+                </tr></thead>
+                <tbody id="edit-tbody-${o.id}">
+                  ${(o.items||[]).map((it, idx) => editRow(o.id, idx, it)).join('')}
+                </tbody>
+              </table>
             </div>
+            <button onclick="addEditRow('${o.id}')"
+              style="margin-top:8px;background:none;border:1.5px dashed var(--crust);border-radius:6px;color:var(--subtext);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;width:100%;">
+              + Añadir renglón
+            </button>
+          </div>
+          <div class="actions" style="margin-top:12px;">
+            <button class="btn" id="btn-edit-${o.id}" onclick="toggleEdit('${o.id}')"
+              style="background:var(--surface0);color:var(--text);border:1px solid var(--surface1);">✏️ Editar</button>
+            <button class="btn btn-red"   onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
+            <button class="btn btn-green" onclick="actConfirm('${o.id}')">✓ Confirmar para Compras</button>
           </div>`;
-      }).join('');
+        list.appendChild(card);
+      });
     }
 
     if (historial.length) {
@@ -182,6 +207,92 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       (i > 0 ? '<span class="sf-sep">›</span>' : '') +
       `<span class="sf-step ${i < ci ? 'sf-done' : i === ci ? 'sf-active' : ''}">${lbl}</span>`
     ).join('') + '</div>';
+  }
+
+  function editRow(ordId, idx, item) {
+    return `<tr id="erow-${ordId}-${idx}">
+      <td style="padding:4px 4px;">
+        <input type="text" value="${(item.name||item.code||'').replace(/"/g,'&quot;')}"
+          style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
+      </td>
+      <td style="padding:4px 4px;">
+        <input type="number" value="${item.qty||1}" min="0.01" step="any"
+          style="width:65px;text-align:center;padding:6px 4px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
+      </td>
+      <td style="padding:4px 4px;">
+        <input type="text" value="${item.unit||'pza'}"
+          style="width:70px;padding:6px 6px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
+      </td>
+      <td style="padding:4px 2px;text-align:center;">
+        <button onclick="this.closest('tr').remove()"
+          style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1;">✕</button>
+      </td>
+    </tr>`;
+  }
+
+  let _editRowCount = 0;
+  function addEditRow(ordId) {
+    const tbody = document.getElementById('edit-tbody-' + ordId);
+    if (!tbody) return;
+    const idx = 'new-' + (++_editRowCount);
+    tbody.insertAdjacentHTML('beforeend', editRow(ordId, idx, { name:'', qty:1, unit:'pza' }));
+  }
+
+  function toggleEdit(ordId) {
+    const viewEl = document.getElementById('items-view-' + ordId);
+    const editEl = document.getElementById('items-edit-' + ordId);
+    const btn    = document.getElementById('btn-edit-' + ordId);
+    if (!viewEl || !editEl) return;
+    const editing = editEl.style.display !== 'none';
+    viewEl.style.display = editing ? '' : 'none';
+    editEl.style.display = editing ? 'none' : 'block';
+    btn.textContent = editing ? '✏️ Editar' : '↩ Cancelar edición';
+  }
+
+  async function actConfirm(id) {
+    const order = ALL_ORDERS.find(o => o.id === id);
+    if (!order) return;
+
+    // Leer items editados si el modo edición está activo
+    const editEl = document.getElementById('items-edit-' + id);
+    if (editEl && editEl.style.display !== 'none') {
+      const rows = editEl.querySelectorAll('tbody tr');
+      const newItems = [];
+      rows.forEach(tr => {
+        const inputs = tr.querySelectorAll('input');
+        const name = inputs[0]?.value.trim();
+        const qty  = parseFloat(inputs[1]?.value) || 0;
+        const unit = inputs[2]?.value.trim() || 'pza';
+        if (name && qty > 0) newItems.push({ name, qty, unit, price: 0, code: '' });
+      });
+      if (!newItems.length) { alert('Agrega al menos un renglón antes de confirmar.'); return; }
+      order.items = newItems;
+    }
+
+    if (!confirm(`¿Confirmar pedido ${order.folio}?`)) return;
+    order.status = 'Confirmado';
+    order.confirmedAt = new Date().toISOString();
+
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('purchase_orders', id, order);
+      if (window.parent.DB_STATE?.purchase_orders) {
+        const idx = window.parent.DB_STATE.purchase_orders.findIndex(o => o.id === id);
+        if (idx !== -1) window.parent.DB_STATE.purchase_orders[idx] = order;
+        else window.parent.DB_STATE.purchase_orders.push(order);
+      }
+    }
+    toast('✓ Pedido confirmado');
+    ALL_ORDERS = ALL_ORDERS.map(o => o.id === id ? order : o);
+    render();
+  }
+
+  function toast(msg) {
+    let tw = document.getElementById('toast-ops');
+    if (!tw) { tw = document.createElement('div'); tw.id='toast-ops'; tw.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(tw); }
+    const t = document.createElement('div');
+    t.style.cssText='background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+    t.textContent = msg;
+    tw.appendChild(t); setTimeout(() => t.remove(), 3500);
   }
 
   async function act(id, newStatus) {

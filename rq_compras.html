@@ -625,12 +625,22 @@ function buildActiveCard(o, mode) {
     ? `<div class="pending-notice" style="margin-bottom:10px;">⚠ Esta orden tiene conceptos o proveedores nuevos que se confirmarán al autorizar.</div>`
     : '';
 
+  const cuentaOpts = ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
   const actionBtns = isCotizar
     ? `<button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
        <span style="font-size:12px;color:var(--subtext);margin-left:8px;">⏳ Esperando autorización en <strong>Autorizar Pedidos</strong></span>`
-    : `<button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
-       <button class="btn btn-blue"  onclick="act('${o.id}','Comprado')">✓ Marcar Comprado</button>
-       <button class="btn btn-green" onclick="act('${o.id}','Recibido')">✓✓ Comprado y Recibido</button>`;
+    : `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;justify-content:flex-end;">
+         <div style="display:flex;align-items:center;gap:6px;margin-right:auto;">
+           <label style="font-size:12px;font-weight:700;color:var(--subtext);white-space:nowrap;">Cuenta de pago:</label>
+           <select id="cuentapago-${o.id}" style="padding:6px 10px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:700;">
+             <option value="">— Seleccionar —</option>
+             ${cuentaOpts}
+           </select>
+         </div>
+         <button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
+         <button class="btn btn-blue"  onclick="act('${o.id}','Comprado')">✓ Marcar Comprado</button>
+         <button class="btn btn-green" onclick="act('${o.id}','Recibido')">✓✓ Comprado y Recibido</button>
+       </div>`;
 
   const card = document.createElement('div');
   card.id        = 'ord-' + o.id;
@@ -785,10 +795,15 @@ async function act(ordId, newStatus) {
   const card = document.getElementById('ord-'+ordId);
   if (!card) return;
 
-  // Validar que haya concepto y cantidad en cada renglón
+  // Validar que haya concepto en cada renglón
   const missingConcept = card.querySelectorAll('.iname');
   const hasEmpty = Array.from(missingConcept).some(inp => !inp.value.trim());
   if (hasEmpty) { alert('Ingresa el concepto en todos los renglones antes de continuar.'); return; }
+
+  // Validar cuenta de pago al marcar como Comprado o Recibido
+  const cuentaSel  = card.querySelector(`#cuentapago-${ordId}`);
+  const cuentaPago = cuentaSel?.value || '';
+  if (!cuentaPago) { alert('Selecciona la cuenta de pago antes de marcar como comprado.'); return; }
 
   const db    = window.DB.get();
   const order = (db.purchase_orders || db.orders || []).find(o => o.id === ordId);
@@ -797,6 +812,27 @@ async function act(ordId, newStatus) {
   readPricesFromCard(ordId, order);
   order.status      = newStatus;
   order.fechaCompra = new Date().toISOString().slice(0,10);
+  order.cuentaPago  = cuentaPago;
+
+  // ── Crear movimiento contable "por_comprobar" ────────────────
+  const total = (order.items||[]).reduce((s, i) => s + (parseFloat(i.price)||0) * (parseFloat(i.qty)||0), 0);
+  const itemsDesc = (order.items||[]).map(i => `${i.name||i.code} ×${i.qty}`).join(', ');
+  const proyNombre = order.project || 'Stock General';
+  const movId = crypto.randomUUID();
+  const pObj = (db.projects||[]).find(p => (p.codigo||p.code) === order.project || p.id === order.projectId);
+  window.DB.addMovement({
+    id: movId,
+    type: 'Gasto',
+    date: order.fechaCompra,
+    amount: total,
+    account: cuentaPago,
+    concept: `Compra ${order.folio} — ${proyNombre}: ${itemsDesc.slice(0, 100)}`,
+    category: 'Compras',
+    projectId: pObj?.id || null,
+    status: 'por_comprobar',
+    purchase_order_id: order.id
+  });
+  order.movimiento_id = movId;
 
   // ── Process pending concepts → add to inventory ──────────────
   const newConcepts  = [];
