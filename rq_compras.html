@@ -640,8 +640,8 @@ function buildActiveCard(o, mode) {
     : `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;justify-content:flex-end;">
          <div style="display:flex;align-items:center;gap:6px;margin-right:auto;">
            <label style="font-size:12px;font-weight:700;color:var(--subtext);white-space:nowrap;">Cuenta de pago:</label>
-           <select id="cuentapago-${o.id}" style="padding:6px 10px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:700;">
-             <option value="">— Seleccionar —</option>
+           <select class="sel-cuenta-pago" style="padding:6px 10px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:700;">
+             <option value="">— Seleccionar cuenta —</option>
              ${cuentaOpts}
            </select>
          </div>
@@ -809,8 +809,8 @@ async function act(ordId, newStatus) {
   const card = document.getElementById('ord-'+ordId);
   if (!card) return;
 
-  // Validar cuenta de pago (buscar en el card completo)
-  const cuentaSel  = document.getElementById(`cuentapago-${ordId}`) || card.querySelector('[id^="cuentapago-"]');
+  // Leer cuenta de pago del select dentro del card
+  const cuentaSel  = card.querySelector('.sel-cuenta-pago');
   const cuentaPago = cuentaSel?.value || '';
   if (!cuentaPago) {
     alert('Selecciona la cuenta de pago (CAJA, CHU, SATP...) antes de marcar como comprado.');
