@@ -422,7 +422,9 @@
       const hours = {};
       RATE_KEYS.forEach(k => hours[k] = 0);
       const woodByMat = {};
-      let woodTotal = 0, otherCost = 0;
+      let otherCost = 0;
+      // woodByMat: clave = "nombre|unidad", valor = { name, unit, qty }
+      // (igual que cotizacion.html línea 1043)
 
       // Sumar todas las cotizaciones seleccionadas
       toUse.forEach(q => {
@@ -435,19 +437,22 @@
           }
           // Madera: viene en piece.woodRows (formato nuevo de cotizacion.html)
           (piece.woodRows || []).forEach(w => {
-            const wQty = (parseFloat(w.qty) || 0) * qty;
-            const matName = w.nombre || 'Madera';
-            woodByMat[matName] = (woodByMat[matName] || 0) + wQty;
-            woodTotal += wQty;
+            const wQty  = (parseFloat(w.qty) || 0) * qty;
+            const name  = w.nombre || 'Madera';
+            const unit  = w.unidad || 'pt';
+            const k     = `${name}|${unit}`;
+            if (!woodByMat[k]) woodByMat[k] = { name, unit, qty: 0 };
+            woodByMat[k].qty += wQty;
           });
           // Materiales: piece.mats (herrajes, consumibles, etc.)
           // También acepta el formato legacy donde madera venía con u='pt'
           (piece.mats || []).forEach(m => {
             const matQty = (parseFloat(m.qty) || 0) * qty;
             if ((m.u || '').toLowerCase() === 'pt') {
-              const matName = m.n || 'Madera';
-              woodByMat[matName] = (woodByMat[matName] || 0) + matQty;
-              woodTotal += matQty;
+              const name = m.n || 'Madera';
+              const k    = `${name}|pt`;
+              if (!woodByMat[k]) woodByMat[k] = { name, unit: 'pt', qty: 0 };
+              woodByMat[k].qty += matQty;
             } else {
               otherCost += matQty * (parseFloat(m.p) || 0);
             }
@@ -460,7 +465,9 @@
         if (inp) inp.value = hours[k].toFixed(1);
       });
       updateHoursTotal();
-      document.getElementById('f-wood-est').value = woodTotal.toFixed(2);
+      // Solo guardar total en pt para el campo legacy
+      const woodTotalPt = Object.values(woodByMat).filter(e => e.unit === 'pt').reduce((s, e) => s + e.qty, 0);
+      document.getElementById('f-wood-est').value = woodTotalPt.toFixed(2);
       renderWoodBreakdown(woodByMat);
       document.getElementById('f-other-mat-est').value = otherCost.toFixed(2);
       updateMatDiff();
@@ -472,20 +479,33 @@
     }
 
     function renderWoodBreakdown(woodByMat) {
-      const entries = Object.entries(woodByMat);
+      const entries = Object.values(woodByMat);
       const el = document.getElementById('wood-cotizada');
       if (entries.length === 0) {
         el.innerHTML = '<span style="color:var(--subtext);">Sin madera en la(s) cotización(es)</span>';
         return;
       }
-      let total = 0;
-      entries.forEach(([, qty]) => total += qty);
-      el.innerHTML = `<div class="mat-cmp">` +
-        entries.map(([name, qty]) =>
-          `<div class="mat-row"><span style="color:var(--subtext);">${name}</span><span style="font-weight:700;">${qty.toFixed(2)} pt</span></div>`
-        ).join('') +
-        `<div class="mat-row" style="border-top:2px solid var(--crust);margin-top:4px;font-weight:800;"><span>TOTAL</span><span>${total.toFixed(2)} pt</span></div>
+
+      // Totales por unidad
+      const totByUnit = {};
+      entries.forEach(e => { totByUnit[e.unit] = (totByUnit[e.unit] || 0) + e.qty; });
+
+      let html = '<div class="mat-cmp">';
+      entries.forEach(e => {
+        html += `<div class="mat-row">
+          <span style="color:var(--subtext);">${e.name}</span>
+          <span style="font-weight:700;">${e.qty.toFixed(2)} <span style="font-size:11px;color:var(--subtext);">${e.unit}</span></span>
         </div>`;
+      });
+      // Totales por unidad al pie
+      Object.entries(totByUnit).forEach(([unit, tot]) => {
+        html += `<div class="mat-row" style="border-top:2px solid var(--crust);margin-top:4px;font-weight:800;">
+          <span>TOTAL ${unit.toUpperCase()}</span>
+          <span>${tot.toFixed(2)} <span style="font-size:11px;">${unit}</span></span>
+        </div>`;
+      });
+      html += '</div>';
+      el.innerHTML = html;
     }
 
     function renderWoodActual(d) {
