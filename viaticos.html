@@ -131,6 +131,7 @@ td { color: var(--text); }
   </div>
   <div id="hdr-actions-detail" style="display:none; gap: 8px;">
     <button class="btn" onclick="showView('list')">← Viajes</button>
+    <button class="btn btn-blue" onclick="guardarYSalir()">Guardar y Salir</button>
   </div>
 </div>
 
@@ -229,7 +230,7 @@ td { color: var(--text); }
     <div class="card">
       <h3 class="card-title">Anticipos Entregados</h3>
       
-      <div id="form-anticipo" style="display:grid; grid-template-columns:130px 110px 120px 1fr 1fr 110px; gap:8px; padding:12px; background:var(--base); border-radius:8px; border:1px dashed var(--surface0); margin-bottom:16px; align-items:end;">
+      <div id="form-anticipo" style="display:grid; grid-template-columns:130px 110px 120px 130px 1fr 1fr 110px; gap:8px; padding:12px; background:var(--base); border-radius:8px; border:1px dashed var(--surface0); margin-bottom:16px; align-items:end;">
         <div class="form-group" style="margin:0;">
           <label>Fecha</label>
           <input type="date" id="fa-fecha" class="form-control">
@@ -246,8 +247,16 @@ td { color: var(--text); }
           </select>
         </div>
         <div class="form-group" style="margin:0;">
+          <label>Sale de cuenta</label>
+          <select id="fa-cuenta" class="form-control">
+            <option value="CAJA">CAJA</option>
+            <option value="CHU">CHU</option>
+            <option value="SATP">SATP</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
           <label>Recibió</label>
-          <select id="fa-recibe" class="form-control"></select>
+          <input type="text" id="fa-recibe" class="form-control" placeholder="Nombre del trabajador">
         </div>
         <div class="form-group" style="margin:0;">
           <label>Entregó</label>
@@ -260,7 +269,7 @@ td { color: var(--text); }
 
       <div class="table-wrapper">
         <table>
-          <thead><tr><th>Fecha</th><th>Monto</th><th>Forma</th><th>Recibió</th><th>Entregó</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Monto</th><th>Forma</th><th>Cuenta</th><th>Recibió</th><th>Entregó</th><th></th></tr></thead>
           <tbody id="tb-anticipos"></tbody>
           <tfoot style="border-top: 2px solid var(--crust); background: var(--base);">
             <tr>
@@ -276,7 +285,7 @@ td { color: var(--text); }
     <div class="card">
       <h3 class="card-title">Gastos Registrados</h3>
       
-      <div id="form-gasto" style="display:grid; grid-template-columns:130px 1fr 110px 110px; gap:8px; padding:12px; background:var(--base); border-radius:8px; border:1px dashed var(--surface0); margin-bottom:16px; align-items:end;">
+      <div id="form-gasto" style="display:grid; grid-template-columns:130px 1fr 110px 130px 110px; gap:8px; padding:12px; background:var(--base); border-radius:8px; border:1px dashed var(--surface0); margin-bottom:16px; align-items:end;">
         <div class="form-group" style="margin:0;">
           <label>Fecha</label>
           <input type="date" id="fg-fecha" class="form-control">
@@ -290,6 +299,15 @@ td { color: var(--text); }
         <div class="form-group" style="margin:0;">
           <label>Monto</label>
           <input type="number" id="fg-monto" class="form-control" placeholder="0.00" step="0.01">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Sale de cuenta</label>
+          <select id="fg-cuenta" class="form-control">
+            <option value="CAJA">CAJA</option>
+            <option value="CHU">CHU</option>
+            <option value="SATP">SATP</option>
+            <option value="trabajador">Del trabajador</option>
+          </select>
         </div>
         <div class="form-group" style="margin:0;">
           <button class="btn btn-blue" style="width:100%; height:42px;" onclick="addGasto()">+ Agregar</button>
@@ -306,7 +324,7 @@ td { color: var(--text); }
 
       <div class="table-wrapper">
         <table>
-          <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th class="num-col">Monto</th><th style="text-align:center;">Justif.</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Cuenta</th><th class="num-col">Monto</th><th style="text-align:center;">Justif.</th><th></th></tr></thead>
           <tbody id="tb-gastos"></tbody>
           <tfoot style="border-top: 2px solid var(--crust); background: var(--base);">
             <tr>
@@ -584,7 +602,6 @@ function openDetalle(id) {
 
   document.getElementById('d-workers-select').disabled = isCerrado;
   _renderWorkerChips();
-  _updateFaRecibe();
 
   renderDetalles();
   showView('detail');
@@ -616,7 +633,6 @@ function _saveViajeWorkers() {
   }
   document.getElementById('d-workers').textContent = `Personal: ${getWorkerNames(db, currentViaje.worker_ids)}`;
   _renderWorkerChips();
-  _updateFaRecibe();
 }
 
 function _renderWorkerChips() {
@@ -676,6 +692,7 @@ function renderDetalles() {
       <td>${formatDateDMM(a.fecha)}</td>
       <td style="font-weight:600;">${formatMoney(a.monto)}</td>
       <td style="text-transform:capitalize;">${a.forma}</td>
+      <td><span style="font-size:11px;font-weight:700;background:var(--surface0);padding:2px 6px;border-radius:4px;">${a.cuenta||'CAJA'}</span></td>
       <td>${a.recibido_por || '-'}</td>
       <td>${a.entregado_por || '-'}</td>
       <td style="text-align:right;">${currentViaje.estado==='cerrado'?'':`<button class="btn btn-small" onclick="delAnticipo('${a.id}')" style="color:var(--red);">✕</button>`}</td>
@@ -692,6 +709,7 @@ function renderDetalles() {
       <td>${formatDateDMM(g.fecha)}</td>
       <td>${CAT_LABELS[g.categoria]||g.categoria}</td>
       <td>${g.descripcion || '-'}${linkHtml}</td>
+      <td><span style="font-size:11px;font-weight:700;background:var(--surface0);padding:2px 6px;border-radius:4px;">${g.cuenta||'—'}</span></td>
       <td class="num-col" style="font-weight:600;">${formatMoney(g.monto)}</td>
       <td style="text-align:center;">${g.justificado ? '<span style="color:var(--green-text);">Sí 📄</span>' : '<span style="color:var(--amber-text);">No</span>'}</td>
       <td style="text-align:right;">${currentViaje.estado==='cerrado'?'':`<button class="btn btn-small" onclick="delGasto('${g.id}')" style="color:var(--red);">✕</button>`}</td>
@@ -744,18 +762,20 @@ function renderDetalles() {
 
 function addAnticipo() {
   const m = parseFloat(document.getElementById('fa-monto').value);
-  if(!m || m<=0) return;
-  const recibe = document.getElementById('fa-recibe').value;
+  if(!m || m<=0) { alert('Ingresa un monto válido.'); return; }
+  const recibe = document.getElementById('fa-recibe').value.trim();
   const por = document.getElementById('fa-por').value;
-  if(!recibe || !por) { alert('Debes seleccionar quién recibe y quién entrega el anticipo.'); return; }
+  if(!recibe) { alert('Ingresa el nombre de quien recibe el anticipo.'); return; }
 
   const movId = crypto.randomUUID();
+  const cuenta = document.getElementById('fa-cuenta').value || 'CAJA';
   const ant = {
     id: crypto.randomUUID(),
     viaje_id: currentViajeId,
     fecha: document.getElementById('fa-fecha').value,
     monto: m,
     forma: document.getElementById('fa-forma').value,
+    cuenta,
     recibido_por: recibe,
     entregado_por: por,
     movimiento_id: movId,
@@ -771,18 +791,23 @@ function addAnticipo() {
     window.parent.setDocumentInFirebase('anticipos_viaticos', ant.id, ant);
   }
 
-  // Integración con Finanzas: Registrar salida del dinero
+  // Registrar en Finanzas como movimiento a comprobar
   const pObj = (db.projects||[]).find(p => p.id === currentViaje.project_id);
   const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'General';
-  const cuentaOrigen = ant.forma === 'transferencia' ? 'CHU' : 'CAJA';
   window.DB.addMovement({
     id: movId, type: 'Gasto', date: ant.fecha, amount: ant.monto,
-    account: cuentaOrigen, concept: `Anticipo Viáticos: ${pName}`,
-    category: 'Viáticos e Instalación', projectId: currentViaje.project_id, status: 'confirmado'
+    account: cuenta, concept: `Anticipo Viáticos: ${pName} → ${recibe}`,
+    category: 'Viáticos e Instalación', projectId: currentViaje.project_id, status: 'por_comprobar'
   });
-  if(window.toast) window.toast(`Anticipo sumado y descontado de ${cuentaOrigen} en Finanzas.`);
+
+  const tw = document.getElementById('toast-viat') || (() => { const el = document.createElement('div'); el.id='toast-viat'; el.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(el); return el; })();
+  const t = document.createElement('div');
+  t.style.cssText='background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+  t.textContent = `Anticipo sumado. Sale de ${cuenta} (pendiente de comprobar en Finanzas).`;
+  tw.appendChild(t); setTimeout(() => t.remove(), 4000);
 
   document.getElementById('fa-monto').value = '';
+  document.getElementById('fa-recibe').value = '';
   renderDetalles();
 }
 
@@ -796,6 +821,7 @@ function addGasto() {
     categoria: document.getElementById('fg-cat').value,
     descripcion: document.getElementById('fg-desc').value,
     monto: m,
+    cuenta: document.getElementById('fg-cuenta').value || 'CAJA',
     justificado: document.getElementById('fg-just').checked,
     url: document.getElementById('fg-url').value.trim(),
     nota: ''
@@ -852,7 +878,7 @@ function delGasto(id) {
 }
 
 function comenzarLiquidacion() {
-  const nota = prompt('¿Deseas cerrar este viaje y marcarlo como liquidado?\\nEsto generará automáticamente ajustes de caja en Finanzas.\\n\\nSi deseas, agrega una nota de cierre (opcional):');
+  const nota = prompt('¿Deseas cerrar este viaje y marcarlo como liquidado?\nEsto generará automáticamente ajustes de caja en Finanzas.\n\nSi deseas, agrega una nota de cierre (opcional):');
   if(nota === null) return; // cancelado por el usuario
 
   const db = window.DB.get();
@@ -874,19 +900,15 @@ function comenzarLiquidacion() {
       v.movimiento_cierre_id = movId;
       window.DB.addMovement({
         id: movId, type: 'Ingreso', date: v.fecha_regreso_real, amount: saldo, account: 'CAJA', concept: `Devolución sobrante viáticos: ${pName}${notaExt}`,
-        category: 'Devoluciones', projectId: v.project_id, status: 'confirmado'
+        category: 'Devoluciones', projectId: v.project_id, status: 'por_comprobar'
       });
-      if(window.toast) window.toast(`Liquidado. INGRESO a CAJA por sobrante: ${formatMoney(saldo)}`);
     } else if (saldo < 0) {
       const movId = crypto.randomUUID();
       v.movimiento_cierre_id = movId;
       window.DB.addMovement({
         id: movId, type: 'Gasto', date: v.fecha_regreso_real, amount: Math.abs(saldo), account: 'CAJA', concept: `Reembolso faltante viáticos: ${pName}${notaExt}`,
-        category: 'Viáticos e Instalación', projectId: v.project_id, status: 'confirmado'
+        category: 'Viáticos e Instalación', projectId: v.project_id, status: 'por_comprobar'
       });
-      if(window.toast) window.toast(`Liquidado. GASTO de CAJA por reembolso: ${formatMoney(Math.abs(saldo))}`);
-    } else {
-      if(window.toast) window.toast("Liquidación exacta. Cierre completado.");
     }
 
     window.DB.save(db);
@@ -914,6 +936,14 @@ function reabrirViaje() {
     if (window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
   }
   openDetalle(currentViajeId);
+}
+
+function guardarYSalir() {
+  // Los anticipos/gastos ya están guardados individualmente.
+  // Solo navegar al padre o a la lista de viajes.
+  if (window.parent && window.parent.goHome) window.parent.goHome();
+  else if (window.parent && window.parent.goBack) window.parent.goBack();
+  else showView('list');
 }
 
 function editNotaCierre() {

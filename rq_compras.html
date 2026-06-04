@@ -111,6 +111,14 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .sf-sep { font-size:9px; color:var(--subtext); margin:0 1px; }
 .add-cat-row { display:flex; align-items:center; gap:6px; margin-top:4px; }
 .add-cat-row label { font-size:11px; font-weight:700; color:var(--amber-text); cursor:pointer; }
+
+/* Section headers */
+.sec-hdr { display:flex; align-items:center; gap:10px; margin:24px 0 10px; }
+.sec-hdr-lbl { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--subtext); }
+.sec-hdr-line { flex:1; height:1px; background:var(--crust); }
+.hist-card { background:none; border:none; border-bottom:1px solid var(--crust); border-radius:0; padding:10px 0; margin-bottom:0; }
+.hist-card:last-child { border-bottom:none; }
+.hist-wrap { background:var(--mantle); border:1px solid var(--crust); border-radius:var(--radius-lg); padding:4px 16px; margin-bottom:14px; }
 </style>
 </head>
 <body>
@@ -437,98 +445,193 @@ function statusFlow(cur) {
   ).join('') + '</div>';
 }
 
+// ── Build editable items table HTML ───────────────────────────
+function buildItemsTable(o) {
+  const rows = (o.items||[]).map((item, i) => `
+    <tr>
+      <td>
+        <input type="text" class="iname" data-order="${o.id}" data-idx="${i}"
+          value="${(item.name||item.code||'').replace(/"/g,'&quot;')}"
+          style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
+        ${item.conceptoPendiente ? `
+          <div class="add-cat-row">
+            <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
+            <label for="cat-${o.id}-${i}">✦ Agregar al catálogo de inventario</label>
+          </div>` : ''}
+      </td>
+      <td style="white-space:nowrap;">
+        <div style="display:flex;gap:4px;align-items:center;">
+          <input type="number" class="iqty" data-order="${o.id}" data-idx="${i}" value="${item.qty}" min="0.01" step="any" style="width:65px;text-align:center;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
+          <select class="iunit" data-order="${o.id}" data-idx="${i}" style="padding:4px 5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;">
+            ${buildUnitOpts(item.unit||'pza')}
+          </select>
+        </div>
+      </td>
+      <td>
+        ${item.proveedorPendiente
+          ? `<div style="font-size:12px;font-weight:600;">${item.proveedorNombre||'—'} <span class="new-badge">✦ Nuevo</span></div>`
+          : `<select class="prov-sel-${o.id}-${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
+               ${buildSupplierOpts(item.proveedorId||'')}
+             </select>`
+        }
+      </td>
+      <td><input type="number" class="iprice" data-order="${o.id}" data-idx="${i}" value="${item.price||''}" placeholder="0.00" min="0" step="any" style="width:90px;text-align:right;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;"></td>
+      <td>
+        <select class="iaccount" data-order="${o.id}" data-idx="${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
+          ${buildAccountOpts(item.account||'')}
+        </select>
+      </td>
+    </tr>`).join('');
+
+  return `<table class="items-tbl">
+    <thead><tr>
+      <th>Concepto</th><th>Cant./Unidad</th><th style="min-width:140px;">Proveedor</th>
+      <th>$ Precio Unit.</th><th>Cuenta</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function buildActiveCard(o, mode) {
+  // mode: 'cotizar' (Confirmado) or 'comprar' (Autorizado)
+  const isCotizar = mode === 'cotizar';
+  const isManual  = o.manual === true;
+  const pillCls   = isCotizar ? 'pill-amber' : isManual ? 'pill-blue' : 'pill-green';
+  const pillTxt   = isCotizar ? 'Por cotizar' : isManual ? 'Manual' : 'Autorizado';
+  const cardCls   = isCotizar ? 'c-pending' : isManual ? 'c-manual' : 'c-ready';
+
+  const hasPending = o.items?.some(i => i.conceptoPendiente || i.proveedorPendiente);
+  const pendingHtml = hasPending
+    ? `<div class="pending-notice" style="margin-bottom:10px;">⚠ Esta orden tiene conceptos o proveedores nuevos que se confirmarán al autorizar.</div>`
+    : '';
+
+  const actionBtns = isCotizar
+    ? `<button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
+       <button class="btn btn-blue" onclick="autorizarOrden('${o.id}')">✓ Autorizar compra</button>`
+    : `<button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
+       <button class="btn btn-blue"  onclick="act('${o.id}','Comprado')">✓ Marcar Comprado</button>
+       <button class="btn btn-green" onclick="act('${o.id}','Recibido')">✓✓ Comprado y Recibido</button>`;
+
+  const card = document.createElement('div');
+  card.id        = 'ord-' + o.id;
+  card.className = `card ${cardCls}`;
+  card.innerHTML = `
+    <div class="card-hdr">
+      <div>
+        <div class="card-folio">${o.folio||'Sin folio'} ${o.project ? '· '+o.project : ''}</div>
+        <div class="card-meta">${o.date||''} · Solicitante: ${o.requester||'—'} ${o.notes ? '· '+o.notes : ''}</div>
+      </div>
+      <span class="pill ${pillCls}">${pillTxt}</span>
+    </div>
+    ${statusFlow(o.status)}
+    ${pendingHtml}
+    ${buildItemsTable(o)}
+    <div class="card-actions">${actionBtns}</div>
+  `;
+  return card;
+}
+
 // ── Render existing orders ─────────────────────────────────────
 function renderOrders() {
-  const db     = window.DB.get();
-  const orders = (db.purchase_orders || db.orders || [])
-    .filter(o => o.status === 'Autorizado' || o.manual === true)
+  const db  = window.DB.get();
+  const all = (db.purchase_orders || db.orders || []).filter(o => !o._init);
+
+  const confirmados = all
+    .filter(o => o.status === 'Confirmado')
+    .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
+
+  const autorizados = all
+    .filter(o => o.status === 'Autorizado' || (o.manual === true && !['Comprado','Recibido','Entregado'].includes(o.status)))
+    .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
+
+  const historial = all
+    .filter(o => ['Comprado','Recibido','Entregado'].includes(o.status))
     .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
 
   const cont = document.getElementById('orders-list');
-  if (!orders.length) {
-    cont.innerHTML = '<div style="color:var(--subtext); text-align:center; padding:48px; background:var(--mantle); border-radius:12px; border:1px solid var(--crust);">No hay órdenes pendientes de compra.</div>';
-    return;
-  }
   cont.innerHTML = '';
-  orders.forEach(o => {
-    const isReady  = o.status === 'Confirmado';
-    const isManual = o.manual === true;
-    const card     = document.createElement('div');
-    card.id        = 'ord-' + o.id;
-    card.className = `card ${isManual ? 'c-manual' : isReady ? 'c-ready' : 'c-pending'}`;
 
-    const pillCls  = isManual ? 'pill-blue' : isReady ? 'pill-green' : 'pill-amber';
-    const pillTxt  = isManual ? 'Manual' : o.status;
+  // ── Sección 1: Por Cotizar (Confirmado) ──
+  if (confirmados.length) {
+    cont.insertAdjacentHTML('beforeend', `
+      <div class="sec-hdr">
+        <span class="sec-hdr-lbl">⏳ Por Cotizar</span>
+        <span style="font-size:11px;color:var(--amber-text);font-weight:700;background:var(--amber-bg);padding:2px 8px;border-radius:99px;">${confirmados.length} orden${confirmados.length>1?'es':''}</span>
+        <div class="sec-hdr-line"></div>
+      </div>`);
+    confirmados.forEach(o => cont.appendChild(buildActiveCard(o, 'cotizar')));
+  }
 
-    // Pending items warning
-    const hasPending = o.items?.some(i => i.conceptoPendiente || i.proveedorPendiente);
-    const pendingHtml = hasPending
-      ? `<div class="pending-notice" style="margin-bottom:10px;">⚠ Esta orden tiene conceptos o proveedores nuevos que se confirmarán al autorizar la compra.</div>`
-      : '';
+  // ── Sección 2: Autorizadas / Por Comprar ──
+  cont.insertAdjacentHTML('beforeend', `
+    <div class="sec-hdr">
+      <span class="sec-hdr-lbl">✓ Autorizadas — Por Comprar</span>
+      <div class="sec-hdr-line"></div>
+    </div>`);
 
-    // Build items table
-    const itemsHtml = (o.items||[]).map((item, i) => `
-      <tr>
-        <td>
-          <input type="text" class="iname" data-order="${o.id}" data-idx="${i}"
-            value="${(item.name||item.code||'').replace(/"/g,'&quot;')}"
-            style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
-          ${item.conceptoPendiente ? `
-            <div class="add-cat-row">
-              <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
-              <label for="cat-${o.id}-${i}">✦ Agregar al catálogo de inventario</label>
-            </div>` : ''}
-        </td>
-        <td style="white-space:nowrap;">
-          <div style="display:flex;gap:4px;align-items:center;">
-            <span style="font-weight:600;">${item.qty}</span>
-            <select class="iunit" data-order="${o.id}" data-idx="${i}" style="padding:4px 5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;">
-              ${buildUnitOpts(item.unit||'pza')}
-            </select>
-          </div>
-        </td>
-        <td>
-          ${item.proveedorPendiente
-            ? `<div style="font-size:12px; font-weight:600;">${item.proveedorNombre||'—'} <span class="new-badge">✦ Nuevo</span></div>`
-            : `<select class="prov-sel-${o.id}-${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
-                 ${buildSupplierOpts(item.proveedorId||'')}
-               </select>`
-          }
-        </td>
-        <td><input type="number" class="iprice" data-order="${o.id}" data-idx="${i}" value="${item.price||''}" placeholder="0.00" min="0" step="any" style="width:90px;text-align:right;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;"></td>
-        <td>
-          <select class="iaccount" data-order="${o.id}" data-idx="${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
-            ${buildAccountOpts(item.account||'')}
-          </select>
-        </td>
-      </tr>
-    `).join('');
+  if (autorizados.length) {
+    autorizados.forEach(o => cont.appendChild(buildActiveCard(o, 'comprar')));
+  } else {
+    cont.insertAdjacentHTML('beforeend', '<div style="color:var(--subtext);text-align:center;padding:32px;background:var(--mantle);border-radius:12px;border:1px solid var(--crust);margin-bottom:14px;">No hay órdenes autorizadas pendientes.</div>');
+  }
 
-    card.innerHTML = `
-      <div class="card-hdr">
-        <div>
-          <div class="card-folio">${o.folio||'Sin folio'} ${o.project ? '· '+o.project : ''}</div>
-          <div class="card-meta">${o.date||''} · Solicitante: ${o.requester||'—'} ${o.notes ? '· '+o.notes : ''}</div>
-        </div>
-        <span class="pill ${pillCls}">${pillTxt}</span>
+  // ── Sección 3: Historial ──
+  if (historial.length) {
+    cont.insertAdjacentHTML('beforeend', `
+      <div class="sec-hdr">
+        <span class="sec-hdr-lbl">Historial (${historial.length})</span>
+        <div class="sec-hdr-line"></div>
       </div>
-      ${statusFlow(o.status)}
-      ${pendingHtml}
-      <table class="items-tbl">
-        <thead><tr>
-          <th>Concepto</th><th>Cant./Unidad</th><th style="min-width:140px;">Proveedor</th>
-          <th>$ Precio Unit.</th><th>Cuenta</th>
-        </tr></thead>
-        <tbody>${itemsHtml}</tbody>
-      </table>
-      <div class="card-actions">
-        <button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
-        <button class="btn btn-blue"  onclick="act('${o.id}','Comprado')">✓ Marcar Comprado</button>
-        <button class="btn btn-green" onclick="act('${o.id}','Recibido')">✓✓ Comprado y Recibido</button>
-      </div>
-    `;
-    cont.appendChild(card);
-  });
+      <div class="hist-wrap">
+        ${historial.map(o => {
+          const total = (o.items||[]).reduce((s, i) => s + ((i.price||0)*(i.qty||0)), 0);
+          const pillCls = o.status === 'Recibido' ? 'pill-green' : 'pill-blue';
+          const fmt2 = n => '$' + parseFloat(n).toLocaleString('es-MX', {minimumFractionDigits:2});
+          const items = (o.items||[]).map(i => `${i.qty}×${i.name||i.code}`).join(' · ');
+          return `
+            <div class="hist-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <div>
+                  <span style="font-size:13px;font-weight:700;">${o.folio}</span>
+                  <span style="font-size:12px;color:var(--subtext);margin-left:8px;">${o.date||''} · ${o.project||'Stock'} · ${o.requester||'—'}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:13px;font-weight:700;color:var(--text);">${fmt2(total)}</span>
+                  <span class="pill ${pillCls}">${o.status}</span>
+                </div>
+              </div>
+              <div style="font-size:12px;color:var(--subtext);margin-top:3px;">${items}</div>
+            </div>`;
+        }).join('')}
+      </div>`);
+  }
+}
+
+// ── Authorize: Confirmado → Autorizado ───────────────────────
+async function autorizarOrden(ordId) {
+  const card  = document.getElementById('ord-'+ordId);
+  const db    = window.DB.get();
+  const order = (db.purchase_orders || db.orders || []).find(o => o.id === ordId);
+  if (!order || !card) return;
+
+  readPricesFromCard(ordId, order);
+
+  // Validar precios
+  const missingPrice = (order.items||[]).some(i => !i.price || parseFloat(i.price) <= 0);
+  if (missingPrice) { alert('⚠ Ingresa el precio unitario en todos los renglones antes de autorizar.'); return; }
+
+  // Validar proveedores
+  const missingSup = (order.items||[]).some(i => !i.proveedorId && !i.proveedorNombre && !i.proveedorPendiente);
+  if (missingSup) { alert('⚠ Asigna un proveedor a todos los renglones antes de autorizar.'); return; }
+
+  order.status       = 'Autorizado';
+  order.authorizedAt = new Date().toISOString();
+
+  window.DB.save(db);
+  if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
+
+  showToast('✓ Orden autorizada — lista para comprar');
+  renderOrders();
 }
 
 // ── Save prices without authorizing ──────────────────────────
@@ -547,6 +650,10 @@ function readPricesFromCard(ordId, order) {
   card.querySelectorAll('.iname').forEach(inp => {
     const idx = parseInt(inp.dataset.idx);
     if (order.items[idx] !== undefined) order.items[idx].name = inp.value.trim();
+  });
+  card.querySelectorAll('.iqty').forEach(inp => {
+    const idx = parseInt(inp.dataset.idx);
+    if (order.items[idx] !== undefined) order.items[idx].qty = parseFloat(inp.value) || order.items[idx].qty;
   });
   card.querySelectorAll('.iunit').forEach(sel => {
     const idx = parseInt(sel.dataset.idx);
@@ -644,9 +751,8 @@ async function act(ordId, newStatus) {
   if (newSuppliers.length) msg += `\n→ ${newSuppliers.length} proveedor(es) agregado(s) al CRM: ${newSuppliers.join(', ')}`;
   alert(msg);
 
-  card.style.opacity = '0.4';
-  card.style.pointerEvents = 'none';
-  setTimeout(() => { card.style.display = 'none'; }, 400);
+  showToast(`✓ ${order.folio} → ${newStatus}`);
+  renderOrders();
 }
 
 // ── Toast ──────────────────────────────────────────────────────

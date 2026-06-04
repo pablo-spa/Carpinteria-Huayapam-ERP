@@ -452,9 +452,9 @@ body {
   function populateContactSelect() {
     const d = window.DB.get();
     const sel = document.getElementById('m-contact');
-    sel.innerHTML = '<option value="">— Sin contacto —</option>' +
-      (d.contacts || []).filter(c => !c._init).map(c =>
-        `<option value="${c.id}">${c.nombre || c.name || c.givenName || '-'} (${c.tipo || 'cliente'})</option>`
+    sel.innerHTML = '<option value="">— Sin cliente —</option>' +
+      (d.contacts || []).filter(c => !c._init && c.tipo === 'cliente' && c.activo !== false).map(c =>
+        `<option value="${c.id}">${c.name || c.empresa || c.nombre || '-'}</option>`
       ).join('');
     if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
   }
@@ -472,7 +472,9 @@ body {
       document.getElementById('m-code').value  = p.codigo  || p.code    || '';
       document.getElementById('m-name').value  = p.nombre  || p.name    || '';
       document.getElementById('m-status').value = p.estado || p.status  || 'Planificación';
-      document.getElementById('m-contact').value = p.contactoId || p.contactId || '';
+      const mContact = document.getElementById('m-contact');
+      mContact.value = p.contactoId || p.contactId || '';
+      if (mContact._ssSync) mContact._ssSync();
       document.getElementById('m-start').value = p.fechaInicio || p.startDate || '';
       document.getElementById('m-end').value   = p.fechaFin   || p.endDate   || '';
       document.getElementById('m-pieces').value = (p.piezas || p.pieces || []).join(', ');

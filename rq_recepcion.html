@@ -51,39 +51,66 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <script>
 async function init() {
   const orders = await window.DB.query('purchase_orders');
-  const pending = orders.filter(o => o.id && !o._init && o.status === 'Comprado');
+  const pending  = orders.filter(o => o.id && !o._init && o.status === 'Comprado');
+  const recibidos = orders
+    .filter(o => o.id && !o._init && o.status === 'Recibido')
+    .sort((a, b) => new Date(b.fechaRecepcion||b.date) - new Date(a.fechaRecepcion||a.date))
+    .slice(0, 30);
   const container = document.getElementById('main-list');
+  container.innerHTML = '';
 
   if (pending.length === 0) {
     container.innerHTML = '<div class="empty"><div style="font-size:48px;margin-bottom:12px;">📦</div><div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;">Sin pedidos para recibir</div><div>Los pedidos marcados como "Comprado" en el panel de Compras aparecerán aquí.</div></div>';
-    return;
+  } else {
+    pending.forEach(o => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = 'card-' + o.id;
+
+      const items = (o.items || []).map((i, idx) => `
+        <div class="item-row">
+          <input type="checkbox" class="chk" id="chk-${o.id}-${idx}" checked>
+          <label for="chk-${o.id}-${idx}" style="flex:1;">${i.qty}× ${i.name || i.code || '—'} <span style="color:var(--subtext)">(${i.unit || 'pza'})</span></label>
+        </div>`).join('');
+
+      card.innerHTML = `
+        <div class="card-title">
+          <span>${o.folio || o.id} — ${o.project || o.requester || 'Stock General'}</span>
+          <span class="badge badge-comprado">${o.status}</span>
+        </div>
+        ${o.notes ? `<div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: ${o.notes}</div>` : ''}
+        ${items}
+        <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end;">
+          <button class="btn btn-green" onclick="recibir('${o.id}')">✓ Confirmar Recepción</button>
+        </div>`;
+
+      container.appendChild(card);
+    });
   }
 
-  container.innerHTML = '';
-  pending.forEach(o => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.id = 'card-' + o.id;
-
-    const items = (o.items || []).map((i, idx) => `
-      <div class="item-row">
-        <input type="checkbox" class="chk" id="chk-${o.id}-${idx}" checked>
-        <label for="chk-${o.id}-${idx}" style="flex:1;">${i.qty}x ${i.name || i.code || '—'} <span style="color:var(--subtext)">(${i.unit || 'pza'})</span></label>
-      </div>`).join('');
-
-    card.innerHTML = `
-      <div class="card-title">
-        <span>${o.folio || o.id} — ${o.project || o.requester || 'Stock General'}</span>
-        <span class="badge badge-comprado">${o.status}</span>
+  if (recibidos.length) {
+    const histDiv = document.createElement('div');
+    histDiv.innerHTML = `
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;">
+        Historial de Recepciones (${recibidos.length})
       </div>
-      ${o.notes ? `<div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Notas: ${o.notes}</div>` : ''}
-      ${items}
-      <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end;">
-        <button class="btn btn-green" onclick="recibir('${o.id}')">✓ Confirmar Recepción</button>
+      <div style="background:var(--mantle);border:1px solid var(--crust);border-radius:12px;padding:4px 16px;">
+        ${recibidos.map(o => {
+          const itemsTxt = (o.items||[]).map(i => `${i.qty}× ${i.name||i.code}`).join(' · ');
+          return `<div style="border-bottom:1px solid var(--crust);padding:10px 0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+              <div>
+                <span style="font-size:13px;font-weight:700;">${o.folio||o.id}</span>
+                <span style="font-size:12px;color:var(--subtext);margin-left:8px;">${o.fechaRecepcion||o.date||''} · ${o.project||'Stock'} · ${o.requester||'—'}</span>
+              </div>
+              <span class="badge badge-recibido">Recibido</span>
+            </div>
+            <div style="font-size:12px;color:var(--subtext);margin-top:3px;">${itemsTxt}</div>
+          </div>`;
+        }).join('')}
       </div>`;
-
-    container.appendChild(card);
-  });
+    container.appendChild(histDiv);
+  }
 }
 
 async function recibir(id) {
@@ -100,12 +127,12 @@ async function recibir(id) {
       const idx = window.parent.DB_STATE.purchase_orders.findIndex(o => o.id === id);
       if (idx !== -1) window.parent.DB_STATE.purchase_orders[idx] = order;
     }
-    // Update inventory stock for items with codes
-    if (order.items) {
-      order.items.forEach(i => {
-        if (i.code) window.DB.logInventoryPurchase(i.code, parseFloat(i.qty) || 0, parseFloat(i.price) || 0, order.fechaRecepcion);
-      });
-    }
+  }
+  // Update inventory stock for items with codes (always, not just when parent exists)
+  if (order.items) {
+    order.items.forEach(i => {
+      if (i.code) window.DB.logInventoryPurchase(i.code, parseFloat(i.qty) || 0, parseFloat(i.price) || 0, order.fechaRecepcion);
+    });
   }
 
   const card = document.getElementById('card-' + id);

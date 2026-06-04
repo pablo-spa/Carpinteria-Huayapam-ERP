@@ -67,8 +67,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <div class="main">
   <div class="tabs">
-    <div class="tab act" onclick="setTab('pending')">Pendientes</div>
-    <div class="tab" onclick="setTab('all')">Todos</div>
+    <div class="tab act">Pendientes</div>
   </div>
   <div id="orders-list"></div>
 </div>
@@ -102,59 +101,78 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     document.getElementById('hdr-count').textContent =
       pending.length ? `${pending.length} pedido(s) esperando confirmación` : 'Sin pedidos pendientes';
 
-    const filtered = currentTab === 'pending' ? pending : ALL_ORDERS;
+    const historial = ALL_ORDERS
+      .filter(o => o.status !== 'Pedido' && o.status !== 'Solicitado')
+      .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date))
+      .slice(0, 40);
+
+    const filtered = currentTab === 'pending' ? pending : ALL_ORDERS.filter(o => o.status === 'Pedido' || o.status === 'Solicitado');
+
+    list.innerHTML = '';
 
     if (!filtered.length) {
       list.innerHTML = `
         <div class="empty">
-          <div class="empty-icon">${currentTab === 'pending' ? '✅' : '📭'}</div>
-          <div class="empty-title">${currentTab === 'pending' ? 'Sin pedidos pendientes' : 'Sin pedidos registrados'}</div>
-          <div style="font-size:14px;">${currentTab === 'pending'
-            ? 'Los pedidos creados en Hoja de Pedido aparecerán aquí.'
-            : 'Aún no hay pedidos en el sistema.'}</div>
+          <div class="empty-icon">✅</div>
+          <div class="empty-title">Sin pedidos pendientes</div>
+          <div style="font-size:14px;">Los pedidos creados en Hoja de Pedido aparecerán aquí.</div>
         </div>`;
-      return;
+    } else {
+      list.innerHTML = filtered.map(o => {
+        const proj = d.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
+        const projLabel = proj ? `${proj.code||proj.codigo} – ${proj.name||proj.nombre}` : (o.project || 'Stock General');
+        const items = o.items || [];
+        return `
+          <div class="card" id="card-${o.id}">
+            <div class="card-title">
+              <span>${o.folio || o.id}</span>
+              <span class="badge badge-pedido">Pendiente</span>
+            </div>
+            <div class="card-meta">
+              <span>📁 ${projLabel}</span>
+              ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
+              ${o.date      ? `<span>📅 ${o.date}</span>`      : ''}
+              ${o.notes     ? `<span>📝 ${o.notes}</span>`     : ''}
+            </div>
+            ${statusFlow(o.status)}
+            ${items.map(i => `
+              <div class="item-row">
+                <span>${i.qty} × ${i.name || i.code || '—'}</span>
+                <span class="item-unit">${i.unit || 'pza'}</span>
+              </div>`).join('')}
+            <div class="actions">
+              <button class="btn btn-red"   onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
+              <button class="btn btn-green" onclick="act('${o.id}','Confirmado')">✓ Confirmar para Compras</button>
+            </div>
+          </div>`;
+      }).join('');
     }
 
-    list.innerHTML = filtered.map(o => {
-      const proj = d.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
-      const projLabel = proj ? `${proj.code} – ${proj.name}` : (o.project || 'Stock General');
-      const isPending = o.status === 'Pedido' || o.status === 'Solicitado';
-
-      const badgeMap = {
-        'Pedido':     ['badge-pedido',    'Pendiente'],
-        'Solicitado': ['badge-pedido',    'Pendiente'],
-        'Confirmado': ['badge-confirmed', 'Confirmado'],
-        'Cancelado':  ['badge-cancelled', 'Cancelado'],
-      };
-      const [badgeClass, badgeLabel] = badgeMap[o.status] || ['', o.status || '—'];
-
-      const items = o.items || [];
-      return `
-        <div class="card" id="card-${o.id}">
-          <div class="card-title">
-            <span>${o.folio || o.id}</span>
-            <span class="badge ${badgeClass}">${badgeLabel}</span>
-          </div>
-          <div class="card-meta">
-            <span>📁 ${projLabel}</span>
-            ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
-            ${o.date      ? `<span>📅 ${o.date}</span>`      : ''}
-            ${o.notes     ? `<span>📝 ${o.notes}</span>`     : ''}
-          </div>
-          ${statusFlow(o.status)}
-          ${items.map(i => `
-            <div class="item-row">
-              <span>${i.qty} × ${i.name || i.code || '—'}</span>
-              <span class="item-unit">${i.unit || 'pza'}</span>
-            </div>`).join('')}
-          ${isPending ? `
-          <div class="actions">
-            <button class="btn btn-red"   onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
-            <button class="btn btn-green" onclick="act('${o.id}','Confirmado')">✓ Confirmar para Compras</button>
-          </div>` : ''}
-        </div>`;
-    }).join('');
+    if (historial.length) {
+      const pillMap = { Confirmado:'badge-confirmed', Autorizado:'badge-confirmed', Comprado:'badge-confirmed', Recibido:'badge-confirmed', Cancelado:'badge-cancelled' };
+      list.insertAdjacentHTML('beforeend', `
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;">
+          Historial (${historial.length})
+        </div>
+        <div style="background:var(--mantle);border:1px solid var(--crust);border-radius:12px;padding:4px 16px;">
+          ${historial.map(o => {
+            const proj = d.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
+            const projLabel = proj ? `${proj.code||proj.codigo} – ${proj.name||proj.nombre}` : (o.project || 'Stock');
+            const cls = pillMap[o.status] || '';
+            const itemsTxt = (o.items||[]).map(i => `${i.qty}× ${i.name||i.code}`).join(' · ');
+            return `<div style="border-bottom:1px solid var(--crust);padding:10px 0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <div>
+                  <span style="font-size:13px;font-weight:700;">${o.folio||o.id}</span>
+                  <span style="font-size:12px;color:var(--subtext);margin-left:8px;">${o.date||''} · ${projLabel} · ${o.requester||'—'}</span>
+                </div>
+                <span class="badge ${cls}">${o.status}</span>
+              </div>
+              <div style="font-size:12px;color:var(--subtext);margin-top:3px;">${itemsTxt}</div>
+            </div>`;
+          }).join('')}
+        </div>`);
+    }
   }
 
   function statusFlow(cur) {

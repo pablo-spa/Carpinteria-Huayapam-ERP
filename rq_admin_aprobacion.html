@@ -139,7 +139,8 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <div class="main">
   <div class="tabs">
-    <div class="tab act" onclick="setTab('pending')">Pendientes</div>
+    <div class="tab act" onclick="setTab('pending')">Por Autorizar</div>
+    <div class="tab" onclick="setTab('authorized')">Autorizados</div>
     <div class="tab" onclick="setTab('all')">Todos</div>
   </div>
   <div id="orders-list"></div>
@@ -164,8 +165,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     currentTab = tab;
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('act'));
     document.querySelectorAll('.tab').forEach(t => {
-      if ((tab === 'pending' && t.textContent === 'Pendientes') ||
-          (tab === 'all'     && t.textContent === 'Todos')) t.classList.add('act');
+      if ((tab === 'pending'    && t.textContent === 'Por Autorizar') ||
+          (tab === 'authorized' && t.textContent === 'Autorizados') ||
+          (tab === 'all'        && t.textContent === 'Todos')) t.classList.add('act');
     });
     render();
   }
@@ -183,21 +185,24 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const list = document.getElementById('orders-list');
     const d = window.DB.get();
 
-    let filtered = currentTab === 'pending'
-      ? ALL_ORDERS.filter(o => o.status === 'Confirmado')
-      : ALL_ORDERS;
+    let filtered;
+    if (currentTab === 'pending')         filtered = ALL_ORDERS.filter(o => o.status === 'Confirmado');
+    else if (currentTab === 'authorized') filtered = ALL_ORDERS.filter(o => ['Autorizado','Comprado','Recibido'].includes(o.status));
+    else                                  filtered = ALL_ORDERS;
+    filtered = [...filtered].sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
 
     const pending = ALL_ORDERS.filter(o => o.status === 'Confirmado');
     document.getElementById('hdr-count').textContent =
       pending.length ? `${pending.length} pedido(s) esperando autorización` : 'Sin pedidos pendientes';
 
+    const emptyLabels = {
+      pending:    ['✅', 'Sin pedidos pendientes', 'No hay pedidos esperando autorización.'],
+      authorized: ['📋', 'Sin pedidos autorizados', 'Los pedidos autorizados aparecerán aquí.'],
+      all:        ['📭', 'Sin pedidos registrados', 'Aún no hay pedidos en el sistema.'],
+    };
     if (!filtered.length) {
-      list.innerHTML = `
-        <div class="empty">
-          <div class="empty-icon">${currentTab === 'pending' ? '✅' : '📭'}</div>
-          <div class="empty-title">${currentTab === 'pending' ? 'Sin pedidos pendientes' : 'Sin pedidos registrados'}</div>
-          <div class="empty-sub">${currentTab === 'pending' ? 'No hay pedidos esperando autorización.' : 'Los pedidos creados en Pedidos Kanban aparecerán aquí.'}</div>
-        </div>`;
+      const [icon, title, sub] = emptyLabels[currentTab] || emptyLabels.all;
+      list.innerHTML = `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;
       return;
     }
 

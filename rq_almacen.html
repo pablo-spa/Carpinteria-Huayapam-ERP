@@ -34,8 +34,22 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .btn { padding: 9px 16px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; transition: opacity .15s; }
 .btn:hover { opacity: .8; }
-.btn-blue { background: var(--blue); color: #fff; }
+.btn-blue  { background: var(--blue);  color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
 .btn-sm { background: var(--surface0); color: var(--text); padding: 6px 12px; font-size: 12px; }
+
+/* Orders list */
+.sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--crust); }
+.ord-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+.ord-card.c-done { opacity: .55; }
+.ord-folio { font-size: 13px; font-weight: 800; }
+.ord-meta  { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+.pill { padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
+.pill-amber  { background: rgba(223,142,29,0.15);  color: var(--amber); }
+.pill-blue   { background: rgba(30,102,245,0.15);  color: var(--blue);  }
+.pill-green  { background: rgba(64,160,43,0.15);   color: var(--green); }
+.pill-gray   { background: var(--surface0);         color: var(--subtext); }
+.toast-wrap  { position: fixed; top: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
 
 /* Items table */
 .items-table { width: 100%; border-collapse: collapse; }
@@ -48,9 +62,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 </head>
 <body>
 
+<div class="toast-wrap" id="toast-wrap"></div>
+
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="goBack()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
     <span class="hdr-title">Hoja de Pedido</span>
   </div>
   <button class="btn btn-blue" onclick="submitRequest()">↗ Enviar Solicitud</button>
@@ -101,14 +117,108 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 </div>
 
+<!-- ── Pedidos Activos & Historial ── -->
+<div class="main" id="orders-sections" style="margin-top:0;">
+  <div id="pedidos-activos"></div>
+  <div id="historial-pedidos"></div>
+</div>
+
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
-  let INV = [];
+  let INV   = [];
   let UNITS = [];
+  let ORDERS = [];
 
-  function goBack() {
-    window.history.back();
+  // ── Orders loading ────────────────────────────────────────────
+  async function loadOrders() {
+    ORDERS = (await window.DB.query('purchase_orders')) || [];
+    renderActivePedidos();
+    renderHistorialPedidos();
+  }
+
+  function renderActivePedidos() {
+    const pedidos = ORDERS
+      .filter(o => !o._init && o.status === 'Pedido')
+      .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
+    const cont = document.getElementById('pedidos-activos');
+    if (!pedidos.length) { cont.innerHTML = ''; return; }
+
+    let html = `<div class="sec-lbl">Pendientes de Confirmar (${pedidos.length})</div>`;
+    pedidos.forEach(o => {
+      const items = (o.items||[]).map(i => `<li>${i.qty} ${i.unit} — ${i.name||i.code}</li>`).join('');
+      html += `
+        <div class="ord-card" id="rq-${o.id}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
+            <div>
+              <div class="ord-folio">${o.folio}</div>
+              <div class="ord-meta">${o.date} · ${o.project||'Stock General'} · ${o.requester||'—'}</div>
+            </div>
+            <span class="pill pill-amber">Pedido</span>
+          </div>
+          <ul style="font-size:13px;margin:6px 0 10px 18px;line-height:1.9;">${items}</ul>
+          ${o.notes ? `<div style="font-size:12px;color:var(--subtext);margin-bottom:10px;">📝 ${o.notes}</div>` : ''}
+        </div>`;
+    });
+    cont.innerHTML = html;
+  }
+
+  function renderHistorialPedidos() {
+    const hist = ORDERS
+      .filter(o => !o._init && o.status !== 'Pedido' && !o.manual)
+      .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date))
+      .slice(0, 30);
+    const cont = document.getElementById('historial-pedidos');
+    if (!hist.length) { cont.innerHTML = ''; return; }
+
+    const pillMap = { Confirmado:'pill-amber', Autorizado:'pill-blue', Comprado:'pill-green', Recibido:'pill-green' };
+    let html = `<div class="sec-lbl">Historial de Pedidos (${hist.length})</div>`;
+    hist.forEach(o => {
+      const cls = pillMap[o.status] || 'pill-gray';
+      const itemsTxt = (o.items||[]).map(i => `${i.qty} ${i.unit} ${i.name||i.code}`).join(' · ');
+      html += `
+        <div class="ord-card c-done">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div>
+              <span class="ord-folio">${o.folio}</span>
+              <span class="ord-meta" style="margin-left:8px;">${o.date} · ${o.project||'Stock'} · ${o.requester||'—'}</span>
+            </div>
+            <span class="pill ${cls}">${o.status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--subtext);margin-top:4px;">${itemsTxt}</div>
+        </div>`;
+    });
+    cont.innerHTML = html;
+  }
+
+  async function confirmOrder(ordId) {
+    const order = ORDERS.find(o => o.id === ordId);
+    if (!order) return;
+    if (!confirm(`¿Confirmar pedido ${order.folio}?\nPasará a la lista de cotizaciones en el Panel de Compras.`)) return;
+
+    order.status = 'Confirmado';
+    order.confirmedAt = new Date().toISOString();
+
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
+    }
+    if (window.parent?.DB_STATE?.purchase_orders) {
+      const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
+      if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
+    }
+
+    toast('✓ Pedido confirmado — ahora aparece en Panel de Compras para cotizar precio y proveedor');
+    renderActivePedidos();
+    renderHistorialPedidos();
+  }
+
+  function toast(msg) {
+    const wrap = document.getElementById('toast-wrap');
+    const el = document.createElement('div');
+    el.style.cssText = 'background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
   }
 
   async function init() {
@@ -163,6 +273,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     UNITS = rawUnits.length ? rawUnits : ['pza','caja','mt','mt2','lt','kg','gln','rollo','par','juego','bolsa'];
 
     addRow(); // start with one empty row
+    await loadOrders();
   }
 
   function buildInvOptions(selectedCode) {
@@ -265,17 +376,23 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     if (window.parent && window.parent.setDocumentInFirebase) {
       await window.parent.setDocumentInFirebase('purchase_orders', request.id, request);
-      // Update parent DB_STATE
       if (window.parent.DB_STATE) {
         if (!window.parent.DB_STATE.purchase_orders) window.parent.DB_STATE.purchase_orders = [];
         window.parent.DB_STATE.purchase_orders.push(request);
       }
-      alert(`✅ Pedido ${folio} enviado correctamente.`);
-    } else {
-      alert(`✅ Pedido ${folio} listo (sin conexión a Firebase en este contexto).`);
     }
 
-    goBack();
+    // Clear form
+    document.getElementById('proj').value = '';
+    document.getElementById('requester').value = '';
+    document.getElementById('notes').value = '';
+    document.getElementById('itemsList').innerHTML = '';
+    addRow();
+
+    ORDERS.push(request);
+    renderActivePedidos();
+    renderHistorialPedidos();
+    toast(`✅ Pedido ${folio} enviado — pendiente de confirmación`);
   }
 
   document.addEventListener('DOMContentLoaded', init);
