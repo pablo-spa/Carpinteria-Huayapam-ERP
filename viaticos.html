@@ -444,13 +444,34 @@ async function init() {
   document.getElementById('fg-cat').innerHTML = finalCats.map(c => `<option value="${c}">${c}</option>`).join('');
   finalCats.forEach(c => { CAT_LABELS[c] = c; });
 
-  // Poblar select de trabajadores (dropdown simple)
-  const contacts = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
+  // Poblar select de trabajadores
+  // Cargamos AMBAS colecciones: contacts (puede tener datos incompletos) y workers (tiene datos completos)
+  const [contacts, workersRaw] = await Promise.all([
+    window.DB.query('contacts', { tipo: 'trabajador', activo: true }),
+    window.DB.query('workers'),
+  ]);
+
+  // Enriquecer cada contacto con datos del workers si le faltan apellidos
+  const enriched = contacts.map(c => {
+    const id = c.id || c._id;
+    const w  = workersRaw.find(x => (x.id||x._id) === id);
+    if (!w) return c;
+    return {
+      ...c,
+      nombre:          c.nombre          || w.nombre,
+      apellidoPaterno: c.apellidoPaterno || w.apellidoPaterno || w.paterno,
+      apellidoMaterno: c.apellidoMaterno || w.apellidoMaterno || w.materno,
+      name:            c.name            || w.name,
+    };
+  });
+  // También incluir trabajadores que sólo están en workers (no migrados aún)
+  contacts.forEach(c => { const id = c.id||c._id; enriched._seenIds = enriched._seenIds || new Set(enriched.map(x=>x.id||x._id)); });
+  workersRaw.filter(w => !(enriched._seenIds?.has(w.id||w._id))).forEach(w => enriched.push({...w, tipo:'trabajador', activo:true}));
+
   const sel = document.getElementById('d-workers-select');
   sel.innerHTML = '<option value="">— Seleccionar trabajador —</option>';
-  // Deduplicar por ID (puede venir de contacts Y workers)
   const seenInit = new Set();
-  const uniqueWorkers = contacts.filter(w => { const id = w.id||w._id; if(seenInit.has(id)) return false; seenInit.add(id); return true; });
+  const uniqueWorkers = enriched.filter(w => { const id = w.id||w._id; if(!id||seenInit.has(id)) return false; seenInit.add(id); return true; });
   uniqueWorkers.sort((a,b) => fullName(a).localeCompare(fullName(b), 'es'));
   uniqueWorkers.forEach(w => {
     const opt = document.createElement('option');
@@ -516,14 +537,22 @@ function calcViajeStats(db, vid) {
 function getWorkerNames(db, ids) {
   if(!ids || !ids.length) return 'Ninguno';
   const seen = new Set();
-  const all = [...(db.contacts||[]), ...(db.workers||[])];
-  const w = all.filter(wk => {
-    const id = wk.id || wk._id;
-    if (!ids.includes(id) || seen.has(id)) return false;
-    seen.add(id);
-    return true;
+  // Combinar contacts + workers, dar preferencia al que tenga más datos
+  const allPeople = [...(db.contacts||[]), ...(db.workers||[])];
+  // Agrupar por ID, fusionar campos
+  const byId = {};
+  allPeople.forEach(p => {
+    const id = p.id || p._id;
+    if (!id) return;
+    if (!byId[id]) { byId[id] = {...p}; return; }
+    const cur = byId[id];
+    if (!cur.apellidoPaterno && p.apellidoPaterno) cur.apellidoPaterno = p.apellidoPaterno;
+    if (!cur.apellidoMaterno && p.apellidoMaterno) cur.apellidoMaterno = p.apellidoMaterno;
+    if (!cur.nombre && p.nombre) cur.nombre = p.nombre;
+    if ((!cur.name || !cur.name.includes(' ')) && p.name && p.name.includes(' ')) cur.name = p.name;
   });
-  return w.map(fullName).join(', ') || 'Desconocido';
+  const result = ids.filter(id => byId[id]).map(id => fullName(byId[id]));
+  return result.join(', ') || 'Desconocido';
 }
 
 function renderList() {
@@ -697,18 +726,32 @@ function _saveViajeWorkers() {
 function _refreshRecibeDatalist() {
   const db   = window.DB.get();
   const wids = currentViaje?.worker_ids || [];
-  const seen = new Set();
-  const all  = [...(db.contacts||[]), ...(db.workers||[])];
-  const opts = all
-    .filter(c => { const id = c.id||c._id; if (!wids.includes(id)||seen.has(id)) return false; seen.add(id); return true; })
-    .map(w => `<option value="${fullName(w)}">`).join('');
+  const byId = _mergedPeopleById(db);
+  const opts = wids
+    .filter(id => byId[id])
+    .map(id => `<option value="${fullName(byId[id])}">`).join('');
   const dl = document.getElementById('fa-recibe-list');
   if (dl) dl.innerHTML = opts;
 }
 
+function _mergedPeopleById(db) {
+  const byId = {};
+  [...(db.contacts||[]), ...(db.workers||[])].forEach(p => {
+    const id = p.id || p._id; if (!id) return;
+    if (!byId[id]) { byId[id] = {...p}; return; }
+    const cur = byId[id];
+    if (!cur.apellidoPaterno && p.apellidoPaterno) cur.apellidoPaterno = p.apellidoPaterno;
+    if (!cur.apellidoMaterno && p.apellidoMaterno) cur.apellidoMaterno = p.apellidoMaterno;
+    if (!cur.nombre && p.nombre) cur.nombre = p.nombre;
+    if ((!cur.name || !cur.name.includes(' ')) && p.name?.includes(' ')) cur.name = p.name;
+  });
+  return byId;
+}
+
 function _renderWorkerChips() {
-  const db = window.DB.get();
-  const all = [...(db.contacts||[]), ...(db.workers||[])];
+  const db  = window.DB.get();
+  const byId = _mergedPeopleById(db);
+  const all = Object.values(byId);
   const wids = currentViaje.worker_ids || [];
   const cont = document.getElementById('d-workers-chips');
   const isCerrado = currentViaje.estado === 'cerrado';
