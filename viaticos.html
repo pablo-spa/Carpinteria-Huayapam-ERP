@@ -397,19 +397,19 @@ function formatDateDMM(str) {
 }
 
 // ── Nombre completo robusto ──────────────────────────────────
+// Los trabajadores se guardan con: nombre (primer nombre),
+// apellidoPaterno, apellidoMaterno (así los guarda rh_trabajadores.html).
+// También acepta los alias: givenName, paterno, materno.
 function fullName(w) {
   if (!w) return '?';
-  // Caso 1: tiene las tres partes separadas → "Nombre Paterno Materno"
-  const parts = [w.givenName, w.paterno, w.materno].filter(Boolean);
+  const first = (w.nombre     || w.givenName || '').trim();
+  const pat   = (w.apellidoPaterno || w.paterno   || '').trim();
+  const mat   = (w.apellidoMaterno || w.materno   || '').trim();
+  const parts = [first, pat, mat].filter(Boolean);
   if (parts.length >= 2) return parts.join(' ');
-  // Caso 2: tiene nombre/primer-nombre + al menos un apellido
-  const first = (w.givenName || w.name || w.nombre || '').trim();
-  const last  = [w.paterno, w.materno].filter(Boolean);
-  if (first && last.length) return [first, ...last].join(' ');
-  // Caso 3: sólo hay un campo con el nombre completo (puede tener espacios)
-  const stored = (w.nombre || w.name || '').trim();
+  // Fallback: campo name ya puede traer el nombre completo
+  const stored = (w.name || '').trim();
   if (stored) return stored;
-  // Caso 4: fallback al único campo disponible
   return parts.length ? parts[0] : (w.id || w._id || '?');
 }
 
