@@ -682,7 +682,8 @@ function selectDay(dateStr) {
     retMin:     rec?.retardoMin  != null ? String(rec.retardoMin)  : '',
     proyectos:  rec?.proyectos ? JSON.parse(JSON.stringify(rec.proyectos)) : [],
     notas:      rec?.notas     || '',
-    existingId: rec?.id        || null
+    existingId: rec?.id        || null,
+    source:     rec?.source    || null   // 'produccion' | 'checador'
   };
 
   if (!DP.proyectos.length) DP.proyectos = [{ p:'', horas:'', actividad:'', descripcion:'' }];
@@ -959,39 +960,62 @@ async function dpGuardar() {
 
 async function dpBorrar() {
   if (!selectedDay || !DP.existingId) return;
-  if (!confirm(`¿Borrar el registro del ${selectedDay}?`)) return;
+  if (!confirm(`¿Borrar el registro del ${selectedDay}?\n\nSe eliminarán la asistencia y los registros de producción de ese día.`)) return;
+
   const db = window.DB.get();
+  const id  = DP.existingId;
   const batchOps = [];
 
-  const idx = (db.attendance||[]).findIndex(a => a.id === DP.existingId);
-  if (idx >= 0) {
-    const id = db.attendance[idx].id;
-    
-    batchOps.push({ type: 'delete', col: 'attendance', id: id });
-    batchOps.push({ type: 'delete', col: 'attendance_logs', id: id });
+  // Borrar de attendance (si existe — registros de Producción Diaria)
+  const inAttendance = (db.attendance || []).some(a => a.id === id);
+  if (inAttendance) {
+    batchOps.push({ type: 'delete', col: 'attendance', id });
+  }
 
-    // Remover los logs de producción
-    const prodLogs = (db.production_logs || []).filter(pl => pl.trabajadorId === workerId && pl.fecha === selectedDay);
-    prodLogs.forEach(pl => batchOps.push({ type: 'delete', col: 'production_logs', id: pl.id }));
+  // Borrar de attendance_logs (registros del Reloj Checador y de Producción Diaria)
+  const inLogs = (db.attendance_logs || []).some(a => a.id === id);
+  if (inLogs) {
+    batchOps.push({ type: 'delete', col: 'attendance_logs', id });
+  }
 
-    try {
-      if (window.parent?.runBatchedWrites) await window.parent.runBatchedWrites(batchOps);
+  // Borrar production_logs del mismo día y trabajador
+  const prodLogs = (db.production_logs || []).filter(pl =>
+    (pl.trabajadorId || pl.workerId) === workerId && pl.fecha === selectedDay
+  );
+  prodLogs.forEach(pl => batchOps.push({ type: 'delete', col: 'production_logs', id: pl.id }));
 
-      db.attendance.splice(idx, 1);
-      const li = (db.attendance_logs||[]).findIndex(a => a.id === id);
-      if (li >= 0) db.attendance_logs.splice(li, 1);
-      db.production_logs = (db.production_logs || []).filter(pl => !(pl.trabajadorId === workerId && pl.fecha === selectedDay));
+  if (batchOps.length === 0) {
+    toast('No se encontró el registro en la base de datos.', 'warn');
+    return;
+  }
 
-      window.DB.save(db);
-      updateCell(selectedDay);
-      renderStats(calYear, calMonth);
-      renderPayWeeks();
-      closeDayPanel();
-      toast('Registro borrado atómicamente', 'warn');
-    } catch(e) {
-      console.error("Error borrando el registro:", e);
-      toast('Error al borrar. Verifica tu conexión.', 'error');
+  try {
+    if (window.parent?.runBatchedWrites) {
+      await window.parent.runBatchedWrites(batchOps);
+    } else {
+      // Fallback: borrar uno a uno
+      for (const op of batchOps) {
+        if (window.parent?.deleteDocumentFromFirebase) await window.parent.deleteDocumentFromFirebase(op.col, op.id);
+        else if (window.parent?.deleteDocumentInFirebase)  await window.parent.deleteDocumentInFirebase(op.col, op.id);
+      }
     }
+
+    // Actualizar estado en memoria
+    db.attendance      = (db.attendance     || []).filter(a => a.id !== id);
+    db.attendance_logs = (db.attendance_logs|| []).filter(a => a.id !== id);
+    db.production_logs = (db.production_logs|| []).filter(pl =>
+      !((pl.trabajadorId || pl.workerId) === workerId && pl.fecha === selectedDay)
+    );
+    window.DB.save(db);
+
+    updateCell(selectedDay);
+    renderStats(calYear, calMonth);
+    renderPayWeeks();
+    closeDayPanel();
+    toast('Registro del día eliminado.', 'warn');
+  } catch(e) {
+    console.error('Error borrando registro:', e);
+    toast('Error al borrar. Verifica tu conexión.', 'error');
   }
 }
 
