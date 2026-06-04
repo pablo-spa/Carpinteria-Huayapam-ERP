@@ -197,13 +197,19 @@ let newRowCount  = 0;
 
 // ── Init ──────────────────────────────────────────────────────
 async function init() {
-  await window.DB.query('purchase_orders');
+  await Promise.all([
+    window.DB.query('purchase_orders'),
+    window.DB.query('bank_accounts'),
+    window.DB.query('concept_units'),
+  ]);
 
   const db = window.DB.get();
   INV       = (db.inventory     || []).filter(i => i.code && (i.name||i.nombre) && !i._init);
   SUPPLIERS = (db.contacts      || []).filter(c => c.tipo === 'proveedor' && !c._init && (c.name||c.nombre));
   UNITS     = (db.concept_units || [])[0]?.list || ['pza','caja','mt','mt2','lt','kg','gln','rollo','par','juego','bolsa'];
-  ACCOUNTS  = (db.bank_accounts || [])[0]?.list || ['CAJA (Efectivo)','CHU (Banco)','SMTP (Banco)'];
+  // Cargar cuentas bancarias desde Firestore (doc 'main' con campo list)
+  const baDoc = (db.bank_accounts||[]).find(d => (d._id||d.id) === 'main') || (db.bank_accounts||[])[0];
+  ACCOUNTS  = baDoc?.list?.length ? baDoc.list : ['CAJA','CHU','SATP'];
   PROJECTS  = (db.projects      || []).filter(p => !p._init && !p.archivado && !p.archived && (p.codigo||p.code));
 
   // Populate project select in new order form
@@ -709,35 +715,37 @@ function renderOrders() {
     cont.insertAdjacentHTML('beforeend', '<div style="color:var(--subtext);text-align:center;padding:32px;background:var(--mantle);border-radius:12px;border:1px solid var(--crust);margin-bottom:14px;">No hay órdenes autorizadas pendientes.</div>');
   }
 
-  // ── Sección 3: Historial ──
+  // ── Sección 3: Todas las demás (read-only) ──
   if (historial.length) {
+    const PMAP = {'Pedido':'pill-amber','Solicitado':'pill-amber','Confirmado':'pill-blue','Autorizado':'pill-green','Comprado':'pill-green','Recibido':'pill-green','Cancelado':'pill-red'};
+    const fmt2 = n => '$'+parseFloat(n).toLocaleString('es-MX',{minimumFractionDigits:2});
     cont.insertAdjacentHTML('beforeend', `
       <div class="sec-hdr">
-        <span class="sec-hdr-lbl">Historial (${historial.length})</span>
+        <span class="sec-hdr-lbl">Todas las órdenes (${historial.length})</span>
         <div class="sec-hdr-line"></div>
       </div>
-      <div class="hist-wrap">
-        ${historial.map(o => {
-          const total = (o.items||[]).reduce((s, i) => s + ((i.price||0)*(i.qty||0)), 0);
-          const pillCls = o.status === 'Recibido' ? 'pill-green' : 'pill-blue';
-          const fmt2 = n => '$' + parseFloat(n).toLocaleString('es-MX', {minimumFractionDigits:2});
-          const items = (o.items||[]).map(i => `${i.qty}×${i.name||i.code}`).join(' · ');
-          return `
-            <div class="hist-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                <div>
-                  <span style="font-size:13px;font-weight:700;">${o.folio}</span>
-                  <span style="font-size:12px;color:var(--subtext);margin-left:8px;">${o.date||''} · ${o.project||'Stock'} · ${o.requester||'—'}</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span style="font-size:13px;font-weight:700;color:var(--text);">${fmt2(total)}</span>
-                  <span class="pill ${pillCls}">${o.status}</span>
-                </div>
-              </div>
-              <div style="font-size:12px;color:var(--subtext);margin-top:3px;">${items}</div>
-            </div>`;
-        }).join('')}
-      </div>`);
+      ${historial.map(o => {
+        const proj = db.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
+        const pLbl = proj ? `${proj.codigo||proj.code} – ${proj.nombre||proj.name}` : (o.project||'Stock General');
+        const total = (o.items||[]).reduce((s,i) => s+((i.price||0)*(i.qty||0)), 0);
+        const pill  = PMAP[o.status] || 'pill-gray';
+        const itemsHtml = (o.items||[]).map(i =>
+          `<div class="ficha-item"><span class="ficha-item-name">${i.name||i.code||'—'}</span><span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}${i.price>0?' · '+fmt2(i.price):''}</span></div>`
+        ).join('');
+        return `
+          <div class="ficha" style="opacity:.72;">
+            <div class="ficha-hdr"><span class="ficha-folio">${o.folio||o.id}</span><span class="pill ${pill}">${o.status}</span></div>
+            <div class="ficha-meta">
+              <span>📁 ${pLbl}</span>
+              ${o.requester?`<span>👤 ${o.requester}</span>`:''}
+              ${o.date?`<span>📅 ${o.date}</span>`:''}
+              ${o.cuentaPago?`<span>🏦 ${o.cuentaPago}</span>`:''}
+              ${total>0?`<span>💰 ${fmt2(total)}</span>`:''}
+            </div>
+            ${statusFlow(o.status)}
+            <div class="ficha-items">${itemsHtml}</div>
+          </div>`;
+      }).join('')}`);
   }
 }
 
@@ -799,15 +807,14 @@ async function act(ordId, newStatus) {
   const card = document.getElementById('ord-'+ordId);
   if (!card) return;
 
-  // Validar que haya concepto en cada renglón
-  const missingConcept = card.querySelectorAll('.iname');
-  const hasEmpty = Array.from(missingConcept).some(inp => !inp.value.trim());
-  if (hasEmpty) { alert('Ingresa el concepto en todos los renglones antes de continuar.'); return; }
-
-  // Validar cuenta de pago al marcar como Comprado o Recibido
-  const cuentaSel  = card.querySelector(`#cuentapago-${ordId}`);
+  // Validar cuenta de pago (buscar en el card completo)
+  const cuentaSel  = document.getElementById(`cuentapago-${ordId}`) || card.querySelector('[id^="cuentapago-"]');
   const cuentaPago = cuentaSel?.value || '';
-  if (!cuentaPago) { alert('Selecciona la cuenta de pago antes de marcar como comprado.'); return; }
+  if (!cuentaPago) {
+    alert('Selecciona la cuenta de pago (CAJA, CHU, SATP...) antes de marcar como comprado.');
+    cuentaSel?.focus();
+    return;
+  }
 
   const db    = window.DB.get();
   const order = (db.purchase_orders || db.orders || []).find(o => o.id === ordId);
