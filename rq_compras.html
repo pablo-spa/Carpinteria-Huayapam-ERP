@@ -149,6 +149,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <div id="new-order-panel" style="display:none;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
     <div style="font-size:16px; font-weight:800;">Nueva Orden de Compra</div>
+    <div style="font-size:12px;color:var(--subtext);margin-top:4px;">Se enviará a Administración para autorización antes de poder comprarse.</div>
     <button class="btn btn-dark" onclick="hideNewOrderForm()">✕ Cancelar</button>
   </div>
 
@@ -433,7 +434,7 @@ async function submitNewOrder() {
     id:         crypto.randomUUID(),
     folio,
     date:       now.toISOString().slice(0,10),
-    status:     'Autorizado',
+    status:     'Confirmado',
     project:    document.getElementById('no-proyecto').value,
     requester:  'Compras',
     notes:      document.getElementById('no-notas').value.trim(),
