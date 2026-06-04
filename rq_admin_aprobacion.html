@@ -227,13 +227,14 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       const canApprove = allPriced && o.status === 'Confirmado';
       const isPending  = o.status === 'Confirmado';
 
+      const fmt = n => '$'+parseFloat(n).toLocaleString('es-MX',{minimumFractionDigits:2});
       return `
-        <div class="card" id="card-${o.id}">
-          <div class="card-title">
-            <span>${o.folio || o.id}</span>
-            <span class="badge ${badgeClass}">${badgeLabel}</span>
+        <div class="ficha" id="card-${o.id}">
+          <div class="ficha-hdr">
+            <span class="ficha-folio">${o.folio || o.id}</span>
+            <span class="pill ${badgeClass}">${badgeLabel}</span>
           </div>
-          <div class="card-meta">
+          <div class="ficha-meta">
             <span>📁 ${projLabel}</span>
             ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
             ${o.date ? `<span>📅 ${o.date}</span>` : ''}
@@ -241,30 +242,35 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             ${o.notes ? `<span>📝 ${o.notes}</span>` : ''}
           </div>
           ${statusFlow(o.status)}
-          <div class="col-hdr">
-            <div>Concepto</div><div>Proveedor</div><div style="text-align:right">Cant.</div>
-            <div style="text-align:right">P. Unit.</div><div style="text-align:right">Subtotal</div>
-          </div>
-          ${items.map(i => {
-            const sub = (parseFloat(i.qty)||0) * (parseFloat(i.price)||0);
-            const priceStr = parseFloat(i.price) > 0
-              ? `$${parseFloat(i.price).toLocaleString('es-MX',{minimumFractionDigits:2})}`
-              : `<span class="price-pending">⚠ Sin precio</span>`;
-            return `<div class="item-row">
-              <div>${i.name || i.code || '—'} <span class="item-subtext">(${i.unit||'pza'})</span></div>
-              <div class="item-subtext">${i.provider || o.provider || '—'}</div>
-              <div style="text-align:right">${i.qty}</div>
-              <div style="text-align:right">${priceStr}</div>
-              <div style="text-align:right; font-weight:600">${sub > 0 ? '$'+sub.toLocaleString('es-MX',{minimumFractionDigits:2}) : '—'}</div>
-            </div>`;
-          }).join('')}
-          ${allPriced && total > 0 ? `<div class="total-row"><span>Total:</span><span>$${total.toLocaleString('es-MX',{minimumFractionDigits:2})}</span></div>` : ''}
+          <table style="width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:13px;">
+            <thead><tr style="border-bottom:2px solid var(--crust);">
+              <th style="text-align:left;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Concepto</th>
+              <th style="text-align:left;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Proveedor</th>
+              <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Cant.</th>
+              <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">P. Unit.</th>
+              <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Subtotal</th>
+            </tr></thead>
+            <tbody>
+            ${items.map(i => {
+              const sub = (parseFloat(i.qty)||0) * (parseFloat(i.price)||0);
+              const priceStr = parseFloat(i.price) > 0 ? fmt(i.price) : `<span style="color:var(--amber);font-size:11px;">⚠ Sin precio</span>`;
+              return `<tr style="border-top:1px solid var(--crust);">
+                <td style="padding:6px;font-weight:600;">${i.name||i.code||'—'} <span style="color:var(--subtext);font-size:11px;">(${i.unit||'pza'})</span></td>
+                <td style="padding:6px;color:var(--subtext);font-size:12px;">${i.provider||o.provider||'—'}</td>
+                <td style="padding:6px;text-align:right;">${i.qty}</td>
+                <td style="padding:6px;text-align:right;">${priceStr}</td>
+                <td style="padding:6px;text-align:right;font-weight:600;">${sub>0?fmt(sub):'—'}</td>
+              </tr>`;
+            }).join('')}
+            </tbody>
+          </table>
+          ${allPriced && total > 0 ? `<div class="ficha-total"><span>Total:</span><span>${fmt(total)}</span></div>` : ''}
           ${isPending ? `
-          <div class="actions">
-            <button class="btn btn-red"   onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
-            <button class="btn btn-gray"  onclick="act('${o.id}','Pedido')">↩ Pedir Re-Cotización</button>
-            <button class="btn btn-green ${canApprove?'':'disabled'}" style="${canApprove?'':'opacity:.4;pointer-events:none;'}"
-              onclick="act('${o.id}','Autorizado')">✓ Autorizar${allPriced&&total>0?' $'+total.toLocaleString('es-MX',{minimumFractionDigits:2}):' (faltan precios)'}</button>
+          <div class="ficha-actions">
+            <button class="btn btn-red"  onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
+            <button class="btn btn-gray" onclick="act('${o.id}','Pedido')">↩ Re-Cotizar</button>
+            <button class="btn btn-green" style="${canApprove?'':'opacity:.4;pointer-events:none;'}"
+              onclick="act('${o.id}','Autorizado')">✓ Autorizar${allPriced&&total>0?' '+fmt(total):' (faltan precios)'}</button>
           </div>` : ''}
         </div>`;
     }).join('');

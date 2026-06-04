@@ -137,6 +137,16 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     renderHistorialPedidos();
   }
 
+  const PILL_MAP = {
+    'Pedido':'pill-amber','Solicitado':'pill-amber','Confirmado':'pill-blue',
+    'Autorizado':'pill-green','Comprado':'pill-green','Recibido':'pill-green','Cancelado':'pill-red'
+  };
+  function sfFlow(cur) {
+    const steps = [['Pedido','Solicitado'],['Confirmado','Confirmado'],['Autorizado','Autorizado'],['Comprado','Comprado'],['Recibido','Recibido']];
+    const ci = steps.findIndex(([s])=>s===cur);
+    return '<div class="sf-flow">'+steps.map(([,l],i)=>(i>0?'<span class="sf-sep">›</span>':'')+`<span class="sf-step ${i<ci?'sf-done':i===ci?'sf-active':''}">${l}</span>`).join('')+'</div>';
+  }
+
   function renderActivePedidos() {
     const pedidos = ORDERS
       .filter(o => !o._init && o.status === 'Pedido')
@@ -146,18 +156,25 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     let html = `<div class="sec-lbl">Pedidos Enviados (${pedidos.length})</div>`;
     pedidos.forEach(o => {
-      const items = (o.items||[]).map(i => `<li>${i.qty} ${i.unit} — ${i.name||i.code}</li>`).join('');
+      const itemsHtml = (o.items||[]).map(i => `
+        <div class="ficha-item">
+          <span class="ficha-item-name">${i.name||i.code||'—'}</span>
+          <span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}</span>
+        </div>`).join('');
       html += `
-        <div class="ord-card" id="rq-${o.id}">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
-            <div>
-              <div class="ord-folio">${o.folio}</div>
-              <div class="ord-meta">${o.date} · ${o.project||'Stock General'} · ${o.requester||'—'}</div>
-            </div>
+        <div class="ficha" id="rq-${o.id}">
+          <div class="ficha-hdr">
+            <span class="ficha-folio">${o.folio}</span>
             <span class="pill pill-amber">Pedido</span>
           </div>
-          <ul style="font-size:13px;margin:6px 0 10px 18px;line-height:1.9;">${items}</ul>
-          ${o.notes ? `<div style="font-size:12px;color:var(--subtext);margin-bottom:10px;">📝 ${o.notes}</div>` : ''}
+          <div class="ficha-meta">
+            <span>📁 ${o.project||'Stock General'}</span>
+            ${o.requester?`<span>👤 ${o.requester}</span>`:''}
+            ${o.date?`<span>📅 ${o.date}</span>`:''}
+            ${o.notes?`<span>📝 ${o.notes}</span>`:''}
+          </div>
+          ${sfFlow('Pedido')}
+          <div class="ficha-items">${itemsHtml}</div>
         </div>`;
     });
     cont.innerHTML = html;
@@ -171,20 +188,22 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const cont = document.getElementById('historial-pedidos');
     if (!hist.length) { cont.innerHTML = ''; return; }
 
-    const pillMap = { Confirmado:'pill-amber', Autorizado:'pill-blue', Comprado:'pill-green', Recibido:'pill-green' };
     let html = `<div class="sec-lbl">Historial de Pedidos (${hist.length})</div>`;
     hist.forEach(o => {
-      const cls = pillMap[o.status] || 'pill-gray';
-      const itemsTxt = (o.items||[]).map(i => `${i.qty} ${i.unit} ${i.name||i.code}`).join(' · ');
+      const cls = PILL_MAP[o.status] || 'pill-gray';
+      const itemsTxt = (o.items||[]).map(i => `${i.qty} ${i.unit||'pza'} — ${i.name||i.code}`).join(' · ');
       html += `
-        <div class="ord-card c-done">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div>
-              <span class="ord-folio">${o.folio}</span>
-              <span class="ord-meta" style="margin-left:8px;">${o.date} · ${o.project||'Stock'} · ${o.requester||'—'}</span>
-            </div>
+        <div class="ficha" style="opacity:.65;">
+          <div class="ficha-hdr">
+            <span class="ficha-folio">${o.folio}</span>
             <span class="pill ${cls}">${o.status}</span>
           </div>
+          <div class="ficha-meta">
+            <span>📁 ${o.project||'Stock'}</span>
+            ${o.requester?`<span>👤 ${o.requester}</span>`:''}
+            ${o.date?`<span>📅 ${o.date}</span>`:''}
+          </div>
+          ${sfFlow(o.status)}
           <div style="font-size:12px;color:var(--subtext);margin-top:4px;">${itemsTxt}</div>
         </div>`;
     });

@@ -107,6 +107,41 @@ input:focus, select:focus, textarea:focus { border-color: var(--blue); }
 textarea { height: auto; padding: 9px 10px; resize: vertical; }
 select { padding-right: 28px; appearance: auto; }
 
+/* ── Ficha de Pedido — clases compartidas entre todas las hojas del flujo de compras ── */
+.ficha { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg, 12px); padding: 18px; margin-bottom: 14px; }
+.ficha-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:12px; }
+.ficha-folio { font-size:14px; font-weight:800; color:var(--text); }
+.ficha-meta { font-size:12px; color:var(--subtext); display:flex; gap:14px; flex-wrap:wrap; margin-bottom:4px; }
+.ficha-items { margin:10px 0 4px; }
+.ficha-item { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-top:1px solid var(--crust); font-size:13px; gap:8px; }
+.ficha-item:first-child { border-top:none; }
+.ficha-item-name { flex:1; font-weight:600; color:var(--text); min-width:0; word-break:break-word; }
+.ficha-item-qty  { color:var(--subtext); white-space:nowrap; font-size:12px; }
+.ficha-item-price { font-weight:700; white-space:nowrap; font-size:12px; }
+.ficha-total { display:flex; justify-content:flex-end; gap:8px; font-weight:800; font-size:14px; padding-top:10px; border-top:2px solid var(--crust); margin-top:4px; }
+.ficha-actions { display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-top:14px; padding-top:12px; border-top:1px solid var(--crust); flex-wrap:wrap; }
+/* Pills */
+.pill { padding:3px 9px; border-radius:99px; font-size:11px; font-weight:800; text-transform:uppercase; white-space:nowrap; display:inline-block; }
+.pill-amber  { background:var(--amber-bg,rgba(223,142,29,.15));  color:var(--amber-text,#b87315); }
+.pill-blue   { background:var(--blue-bg,rgba(30,102,245,.15));   color:var(--blue-text,#1750c1); }
+.pill-green  { background:var(--green-bg,rgba(64,160,43,.15));   color:var(--green-text,#317222); }
+.pill-red    { background:var(--red-bg,rgba(210,15,57,.12));     color:var(--red-text,#a80c2e); }
+.pill-gray   { background:var(--surface0,#ccd0da);               color:var(--subtext,#8c8fa1); }
+/* Status flow */
+.sf-flow { display:flex; align-items:center; gap:3px; flex-wrap:wrap; margin:8px 0 6px; }
+.sf-step { font-size:10px; font-weight:700; padding:2px 8px; border-radius:99px; background:var(--surface0,#ccd0da); color:var(--subtext,#8c8fa1); white-space:nowrap; }
+.sf-done   { background:var(--green-bg,rgba(64,160,43,.15));  color:var(--green-text,#317222); opacity:.85; }
+.sf-active { background:var(--blue-bg,rgba(30,102,245,.15));  color:var(--blue-text,#1750c1); }
+.sf-sep    { font-size:9px; color:var(--subtext,#8c8fa1); margin:0 1px; }
+@media (prefers-color-scheme: dark) {
+  .pill-amber  { color:var(--amber,#f9e2af); }
+  .pill-blue   { color:var(--blue,#8caaee); }
+  .pill-green  { color:var(--green,#a6da95); }
+  .pill-red    { color:var(--red,#f38ba8); }
+  .sf-done   { color:var(--green,#a6da95); }
+  .sf-active { color:var(--blue,#8caaee); }
+}
+
 /* date específico: quitar padding extra que el navegador agrega */
 input[type="date"],
 input[type="time"],

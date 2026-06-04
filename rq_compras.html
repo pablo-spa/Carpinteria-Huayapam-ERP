@@ -644,19 +644,22 @@ function buildActiveCard(o, mode) {
 
   const card = document.createElement('div');
   card.id        = 'ord-' + o.id;
-  card.className = `card ${cardCls}`;
+  card.className = `ficha ${cardCls}`;
   card.innerHTML = `
-    <div class="card-hdr">
-      <div>
-        <div class="card-folio">${o.folio||'Sin folio'} ${o.project ? '· '+o.project : ''}</div>
-        <div class="card-meta">${o.date||''} · Solicitante: ${o.requester||'—'} ${o.notes ? '· '+o.notes : ''}</div>
-      </div>
+    <div class="ficha-hdr">
+      <span class="ficha-folio">${o.folio||'Sin folio'}</span>
       <span class="pill ${pillCls}">${pillTxt}</span>
+    </div>
+    <div class="ficha-meta">
+      <span>📁 ${o.project||'Stock General'}</span>
+      ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
+      ${o.date ? `<span>📅 ${o.date}</span>` : ''}
+      ${o.notes ? `<span>📝 ${o.notes}</span>` : ''}
     </div>
     ${statusFlow(o.status)}
     ${pendingHtml}
     ${buildItemsTable(o)}
-    <div class="card-actions">${actionBtns}</div>
+    <div class="ficha-actions">${actionBtns}</div>
   `;
   return card;
 }
