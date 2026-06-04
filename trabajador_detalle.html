@@ -105,6 +105,7 @@ body { padding-bottom: 40px; }
 .cal-cell.st-falta      { background: var(--red-bg);    border-color: var(--red);   opacity: .85; }
 .cal-cell.st-retardo    { background: var(--amber-bg);  border-color: var(--amber); }
 .cal-cell.st-vacaciones { background: var(--blue-bg);   border-color: var(--blue); }
+.cal-cell.st-viaje      { background: var(--purple-bg); border-color: var(--purple); }
 .cal-cell.st-trabajo.wknd, .cal-cell.st-retardo.wknd { background: var(--purple-bg); border-color: var(--purple); }
 
 .cell-num  { font-size: 11px; font-weight: 800; color: var(--subtext); line-height: 1; }
@@ -423,9 +424,11 @@ function getDayRecord(dateStr) {
     const he = parseFloat(c.horasExtra  || c.horas_x15)|| 0;
     const hd = parseFloat(c.horasDoble  || c.horas_x2) || 0;
     const ht = parseFloat(c.horasTotales) || hn + he*1.5 + hd*2;
-    return { source:'checador', id:c.id, estado: c.estado||c.status||'trabajo',
+    const src = c.source === 'auto_viaje' ? 'viaje' : 'checador';
+    return { source: src, id:c.id, estado: c.estado||c.status||'trabajo',
       horasTotales:ht, horasNormal:hn, horasExtra:he, horasDoble:hd,
-      retardoMin: parseFloat(c.retardoMin)||0, proyectos:[], notas:c.notas||'' };
+      retardoMin: parseFloat(c.retardoMin)||0, proyectos:[], notas:c.notas||'',
+      viajeNota: c.source==='auto_viaje' ? (c.notas||'Viaje') : null };
   }
   return null;
 }
@@ -608,7 +611,9 @@ function cellClass(rec, isWknd) {
 function buildCellContent(rec) {
   if (!rec) return '';
   let html = '';
-  if (rec.estado==='trabajo'||rec.estado==='retardo') {
+  if (rec.estado==='viaje') {
+    html += '<div class="cell-hrs">🗺️</div>';
+  } else if (rec.estado==='trabajo'||rec.estado==='retardo') {
     const hrsLabel = rec.horasTotales>0 ? rec.horasTotales.toFixed(1)+'h' : '';
     const retLabel = rec.estado==='retardo' && rec.retardoMin ? ` ⏰${rec.retardoMin}m` : '';
     html += `<div class="cell-hrs">${hrsLabel}${retLabel}</div>`;
@@ -616,8 +621,8 @@ function buildCellContent(rec) {
     if (projs.length) html += `<div class="cell-projs">${projs.map(p=>`<span class="cell-proj">${p.p}</span>`).join('')}</div>`;
   } else if (rec.estado==='falta')      { html += '<div class="cell-hrs">✗</div>'; }
     else if (rec.estado==='vacaciones') { html += '<div class="cell-hrs">☀</div>'; }
-  const srcCls = rec.source==='produccion' ? 'src-prod' : 'src-chk';
-  html += `<span class="src-dot ${srcCls}"></span>`;
+  const srcCls = rec.source==='produccion' ? 'src-prod' : rec.source==='viaje' ? '' : 'src-chk';
+  if (srcCls) html += `<span class="src-dot ${srcCls}"></span>`;
   return html;
 }
 
@@ -691,8 +696,12 @@ function selectDay(dateStr) {
   // Source banner
   const srcEl = document.getElementById('dp-src');
   if (rec) {
-    if (rec.source==='produccion') srcEl.innerHTML = '<span class="src-banner src-prod-banner">🟢 Producción Diaria</span>';
-    else srcEl.innerHTML = '<span class="src-banner src-chk-banner">🟡 Reloj Checador</span>';
+    if (rec.source==='produccion')
+      srcEl.innerHTML = '<span class="src-banner src-prod-banner">🟢 Producción Diaria</span>';
+    else if (rec.source==='viaje')
+      srcEl.innerHTML = `<span class="src-banner" style="background:var(--blue-bg);color:var(--blue-text);">🗺️ Auto-marcado: ${rec.viajeNota||'Viaje'}</span>`;
+    else
+      srcEl.innerHTML = '<span class="src-banner src-chk-banner">🟡 Reloj Checador</span>';
   } else { srcEl.innerHTML = ''; }
 
   // Si no hay registro y estamos en el día de hoy o pasado, auto-poner trabajo con 9h

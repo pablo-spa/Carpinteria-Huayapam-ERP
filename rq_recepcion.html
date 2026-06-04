@@ -7,31 +7,7 @@
 <title>Recepción de Material</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d; --red: #d20f39;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af; --red: #f38ba8;
-  }
-}
-body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding-bottom: 40px; }
-.hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; }
 .main { max-width: 860px; margin: 24px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
-.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; }
-.card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
-.badge-comprado { background: rgba(30,102,245,0.15); color: var(--blue); }
-.badge-recibido { background: rgba(64,160,43,0.15); color: var(--green); }
-.btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity .15s; font-size: 12px; font-family: inherit; }
-.btn:hover { opacity: .8; }
-.btn-green { background: var(--green); color: #fff; }
 .item-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; gap: 8px; }
 .chk { width: 18px; height: 18px; cursor: pointer; }
 .empty { text-align: center; padding: 60px 20px; color: var(--subtext); }
@@ -39,7 +15,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 </head>
 <body>
 <div class="hdr">
-  <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+  <button class="back-btn" onclick="window.history.back()">← Volver</button>
   <h2 style="font-size:18px;">Recepción de Material (Almacén)</h2>
 </div>
 
@@ -67,11 +43,12 @@ function statusFlow(cur) {
   ).join('') + '</div>';
 }
 
-function toast(msg) {
+function toast(msg, type='ok') {
+  const bg = type === 'error' ? 'var(--red)' : 'var(--green)';
   let tw = document.getElementById('rec-toast');
   if (!tw) { tw = document.createElement('div'); tw.id='rec-toast'; tw.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(tw); }
   const t = document.createElement('div');
-  t.style.cssText='background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+  t.style.cssText=`background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
   t.textContent = msg;
   tw.appendChild(t); setTimeout(() => t.remove(), 3500);
 }
@@ -175,25 +152,34 @@ async function recibir(id) {
   order.status = 'Recibido';
   order.fechaRecepcion = new Date().toISOString().slice(0, 10);
 
-  if (window.parent?.setDocumentInFirebase) {
-    await window.parent.setDocumentInFirebase('purchase_orders', id, order);
-  }
-  if (window.parent?.DB_STATE?.purchase_orders) {
-    const idx = window.parent.DB_STATE.purchase_orders.findIndex(o => o.id === id);
-    if (idx !== -1) window.parent.DB_STATE.purchase_orders[idx] = order;
-    else window.parent.DB_STATE.purchase_orders.push(order);
-  }
+  try {
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('purchase_orders', id, order);
+    }
 
-  // Actualizar stock del inventario
-  if (order.items) {
-    order.items.forEach(i => {
-      if (i.code) window.DB.logInventoryPurchase(i.code, parseFloat(i.qty)||0, parseFloat(i.price)||0, order.fechaRecepcion);
-    });
-  }
+    // Actualizar stock del inventario esperando todas las operaciones
+    if (order.items) {
+      const invPromises = [];
+      order.items.forEach(i => {
+        if (i.code) invPromises.push(window.DB.logInventoryPurchase(i.code, parseFloat(i.qty)||0, parseFloat(i.price)||0, order.fechaRecepcion));
+      });
+      await Promise.all(invPromises);
+    }
 
-  toast(`✓ ${order.folio} recibido — inventario actualizado`);
-  // Recargar para reflejar el cambio de estado
-  await init();
+    if (window.parent?.DB_STATE?.purchase_orders) {
+      const idx = window.parent.DB_STATE.purchase_orders.findIndex(o => o.id === id);
+      if (idx !== -1) window.parent.DB_STATE.purchase_orders[idx] = order;
+      else window.parent.DB_STATE.purchase_orders.push(order);
+    }
+
+    toast(`✓ ${order.folio} recibido — inventario actualizado`);
+    // Recargar para reflejar el cambio de estado
+    await init();
+  } catch (e) {
+    console.error("Error confirmando recepción:", e);
+    order.status = 'Comprado'; // Revertir cambio local
+    toast('Error conectando con la base de datos.', 'error');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

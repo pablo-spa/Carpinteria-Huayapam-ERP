@@ -7,73 +7,11 @@
   <title>Detalle de Proyecto</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-      --surface0: #ccd0da; --surface1: #bcc0cc;
-      --text: #4c4f69; --subtext: #8c8fa1;
-      --green: #40a02b; --green-bg: #e5f4e3;
-      --blue: #1e66f5; --blue-bg: #e6eaf6;
-      --amber: #df8e1d; --amber-bg: #fdf3e5;
-      --red: #d20f39;
-      --purple: #8839ef; --purple-bg: rgba(136,57,239,0.12);
-      --radius: 8px; --radius-lg: 12px;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-        --surface0: #313244; --surface1: #45475a;
-        --text: #cdd6f4; --subtext: #a6adc8;
-        --green: #a6da95; --green-bg: rgba(166,218,149,0.15);
-        --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15);
-        --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15);
-        --red: #f38ba8;
-        --purple: #cba6f7; --purple-bg: rgba(203,166,247,0.15);
-      }
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: var(--base); color: var(--text); padding-bottom: 60px;
-    }
-
-    .hdr {
-      background: var(--mantle); border-bottom: 1px solid var(--crust);
-      padding: 14px 24px; display: flex; align-items: center; gap: 16px;
-      position: sticky; top: 0; z-index: 10;
-    }
-    .back-btn { background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--subtext); }
-    .back-btn:hover { color: var(--text); }
-    .hdr-title { font-size: 17px; font-weight: 800; color: var(--text); flex: 1; }
-
-    .btn {
-      padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
-      cursor: pointer; transition: opacity .15s; border: none; font-family: inherit;
-    }
-    .btn-blue   { background: var(--blue); color: #fff; }
-    .btn-dark   { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
-    .btn-red    { background: transparent; color: var(--red); border: 1px solid var(--red); }
-    .btn-amber  { background: var(--amber); color: #fff; }
-    .btn:hover  { opacity: 0.85; }
 
     .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
     @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
 
-    .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; }
-    .card-title {
-      font-size: 11px; font-weight: 800; color: var(--subtext); text-transform: uppercase;
-      letter-spacing: 0.05em; margin-bottom: 16px;
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--crust); padding-bottom: 8px;
-    }
-
     .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-    .f-field { display: flex; flex-direction: column; gap: 6px; }
-    .f-field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
-    .f-field input, .f-field select {
-      background: var(--base); border: 1px solid var(--crust); padding: 8px 12px;
-      border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px;
-      width: 100%; min-height: 38px;
-    }
-    .f-field input:focus, .f-field select:focus { outline: none; border-color: var(--blue); }
 
     .drive-link {
       display: flex; align-items: center; gap: 8px; background: var(--surface0);
@@ -132,19 +70,12 @@
     .quot-card { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 12px; }
     .quot-card + .quot-card { margin-top: 10px; }
 
-    /* Pill */
-    .pill { padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; white-space: nowrap; display: inline-block; }
-    .pill-blue   { background: var(--blue-bg); color: var(--blue); }
-    .pill-green  { background: var(--green-bg); color: var(--green); }
-    .pill-amber  { background: var(--amber-bg); color: var(--amber); }
-    .pill-purple { background: var(--purple-bg); color: var(--purple); }
-    .pill-gray   { background: var(--surface0); color: var(--text); }
   </style>
 </head>
 <body>
 
   <div class="hdr">
-    <button class="back-btn" onclick="goBack()">←</button>
+    <button class="back-btn" onclick="goBack()">← Volver</button>
     <div class="hdr-title" id="h-title">Cargando…</div>
     <button class="btn btn-red" id="btn-archive" onclick="archiveProject()" style="padding:6px 12px; font-size:12px; display:none;">Archivar</button>
     <button class="btn btn-blue" onclick="saveData()">Guardar Cambios</button>
@@ -585,7 +516,7 @@
       const d = window.DB.get();
       const qList = document.getElementById('quotes-list');
       if (!projId) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>'; return; }
-      const quotes = (d.quotations || []).filter(q => q.projectId === projId);
+      const quotes = (d.quotations || []).filter(q => q.projectId === projId && !q.eliminada);
       if (quotes.length === 0) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay cotizaciones registradas.</div>'; return; }
       quotes.sort((a, b) => new Date(a.date) - new Date(b.date)); // ascendente para numerar
 
@@ -688,15 +619,23 @@
     }
 
     async function deleteQuote(qId, label) {
-      if (!confirm(`¿Eliminar la cotización "${label}"?\n\nEsta acción no se puede deshacer.`)) return;
-      // Eliminar de Firestore
-      if (window.parent?.deleteDocumentFromFirebase) await window.parent.deleteDocumentFromFirebase('quotations', qId);
-      // Eliminar de DB_STATE
-      if (window.parent?.DB_STATE?.quotations) {
-        window.parent.DB_STATE.quotations = window.parent.DB_STATE.quotations.filter(q => q.id !== qId);
+      if (!confirm(`¿Enviar la cotización "${label}" a la papelera (Eliminar)?\n\nPodrá ser recuperada por un administrador si es necesario.`)) return;
+      
+      const d = window.DB.get();
+      const qIdx = (d.quotations || []).findIndex(q => q.id === qId);
+      if (qIdx > -1) {
+        d.quotations[qIdx].eliminada = true;
+        if (window.parent?.setDocumentInFirebase) {
+          await window.parent.setDocumentInFirebase('quotations', qId, d.quotations[qIdx]);
+        }
+        if (window.parent?.DB_STATE?.quotations) {
+          const li = window.parent.DB_STATE.quotations.findIndex(q => q.id === qId);
+          if (li >= 0) window.parent.DB_STATE.quotations[li].eliminada = true;
+        }
+        window.DB.save(d);
       }
       renderQuotes();
-      toast('Cotización eliminada.');
+      toast('Cotización movida a la papelera.', 'warn');
     }
 
     function acceptQuote(qId) { changeQuoteStatus(qId, 'Activa'); }

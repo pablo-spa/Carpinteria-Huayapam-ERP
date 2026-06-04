@@ -6,52 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Producción Diaria — Carpintería Huayapam</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --green: #40a02b; --green-bg: #e5f4e3; --green-text: #2d6e1e;
-  --blue: #1e66f5; --blue-bg: #e6eaf6; --blue-text: #1e66f5;
-  --amber: #df8e1d; --amber-bg: #fdf3e5; --amber-text: #8a5500;
-  --red: #d20f39; --red-bg: #fde8ed; --red-text: #9a0a29;
-  --purple: #8839ef; --purple-bg: rgba(136,57,239,0.1);
-  --radius: 8px; --radius-lg: 12px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --green: #a6da95; --green-bg: rgba(166,218,149,0.15); --green-text: #a6da95;
-    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15); --blue-text: #8caaee;
-    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15); --amber-text: #f9e2af;
-    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15); --red-text: #f38ba8;
-    --purple: #cba6f7; --purple-bg: rgba(203,166,247,0.15);
-  }
-}
 
-body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; min-height: 100vh; padding-bottom: 80px; }
-
-/* ── Header ── */
-.hdr {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-}
-.hdr-left { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.hdr-brand { font-size: 11px; color: var(--subtext); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-.hdr-date-row { display: flex; align-items: center; gap: 8px; }
 .date-input { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 4px 8px; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
 .date-input:focus { outline: none; border-color: var(--blue); }
 .dia-label { font-size: 13px; color: var(--subtext); font-weight: 600; }
-.badge { font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 99px; white-space: nowrap; background: var(--blue-bg); color: var(--blue-text); }
-.btn { cursor: pointer; border: none; border-radius: var(--radius); padding: 9px 16px; font-size: 13px; font-weight: 700; font-family: inherit; min-height: 40px; transition: opacity .15s; white-space: nowrap; }
-.btn:active { opacity: .75; }
-.btn-green  { background: var(--green); color: #fff; }
-.btn-ghost  { background: transparent; border: 1.5px solid var(--crust); color: var(--text); }
-.btn-red    { background: var(--red-bg); color: var(--red-text); border: 1px solid var(--red); }
-.btn-amber  { background: var(--amber-bg); color: var(--amber-text); border: 1px solid var(--amber); }
 
 /* ── Calendar Strip ── */
 .cal-wrap {
@@ -86,21 +44,24 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .banner-amber  { background: var(--amber-bg);  color: var(--amber-text);  border: 1px solid var(--amber); }
 
 /* ── Main ── */
-.main { max-width: 820px; margin: 0 auto; padding: 10px 10px 20px; display: flex; flex-direction: column; gap: 4px; }
-.sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); padding: 10px 4px 4px; }
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; padding-bottom: 110px; display: flex; flex-direction: column; gap: 4px; }
+.sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); padding: 12px 0 8px; border-bottom: 1px solid var(--crust); margin-bottom: 8px; }
 
 /* ── Worker Card ── */
 .worker-card {
-  background: var(--mantle); border: 2px solid var(--crust);
-  border-radius: var(--radius-lg); overflow: hidden; transition: border-color .15s;
+  background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px;
+  overflow: hidden; margin-bottom: 6px; transition: all .12s; border-left: 3px solid transparent;
 }
-.worker-card.st-trabajo    { border-color: var(--green); }
-.worker-card.st-falta      { border-color: var(--red);    opacity: .8; }
-.worker-card.st-retardo    { border-color: var(--amber); }
-.worker-card.st-vacaciones { border-color: var(--blue); }
+.worker-card:hover:not(.open-det) { background: var(--surface0); transform: translateX(2px); }
+.worker-card.st-trabajo    { border-left-color: var(--green); }
+.worker-card.st-falta      { border-left-color: var(--red); opacity: .8; }
+.worker-card.st-retardo    { border-left-color: var(--amber); }
+.worker-card.st-vacaciones { border-left-color: var(--blue); }
+.worker-card.open-det { border-color: var(--blue); border-left-color: var(--blue); border-radius: 8px; background: var(--base); transform: none; }
 
 /* Card row */
-.wcard-row { display: flex; align-items: center; gap: 10px; padding: 11px 13px; min-height: 58px; cursor: pointer; }
+.wcard-row { display: flex; align-items: center; gap: 14px; padding: 11px 16px; min-height: 54px; cursor: pointer; user-select: none; }
+.wcard-row:hover { background: transparent; }
 .w-avatar {
   width: 38px; height: 38px; border-radius: 99px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -114,14 +75,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .w-info { flex: 1; min-width: 0; }
 .w-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .w-sub  { font-size: 12px; color: var(--subtext); }
-
-.chips { display: flex; gap: 5px; flex-wrap: wrap; flex-shrink: 0; }
-.chip { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
-.chip-green  { background: var(--green-bg);  color: var(--green-text); }
-.chip-amber  { background: var(--amber-bg);  color: var(--amber-text); }
-.chip-red    { background: var(--red-bg);    color: var(--red-text); }
-.chip-blue   { background: var(--blue-bg);   color: var(--blue-text); }
-.chip-gray   { background: var(--surface0);  color: var(--subtext); border: 1px solid var(--crust); }
 
 .sbtn-row { display: flex; gap: 5px; flex-shrink: 0; }
 .sbtn {
@@ -153,7 +106,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .edit-confirm-btns { display: flex; gap: 8px; }
 
 /* Detail section */
-.wcard-detail { border-top: 1px solid var(--crust); padding: 16px 14px 18px; display: none; flex-direction: column; gap: 18px; }
+.wcard-detail { border-top: 1px dashed var(--crust); padding: 16px; display: none; flex-direction: column; gap: 18px; background: var(--base); }
 .wcard-detail.open { display: flex; }
 
 /* Field */
@@ -216,8 +169,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 /* Listo row */
 .listo-row { display: flex; gap: 8px; padding-top: 4px; border-top: 1px dashed var(--crust); }
-.btn-listo    { flex: 1; background: var(--green); color: #fff; }
-.btn-colapsar { background: var(--base); border: 1.5px solid var(--crust); color: var(--subtext); }
+.listo-row .btn-green { flex: 1; justify-content: center; }
 
 /* Footer */
 .footer {
@@ -280,6 +232,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <div class="main" id="main-content">
   <div class="sec-lbl" id="lbl-pendientes">Cargando…</div>
   <div id="list-pendientes"></div>
+  <div id="manual-add-section"></div>
   <div id="registrados-section" style="display:none;">
     <div class="sec-lbl" id="lbl-registrados">Registrados (0)</div>
     <div id="list-registrados"></div>
@@ -305,9 +258,10 @@ const DIAS_L = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sáb
 const DIAS_S = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
 // ── Global state ──────────────────────────────────────────────
-let WORKERS      = [];
-let PROYECTOS    = [];   // { id: code, n: "0042 — Nombre", pieces: [] }
-let ACTIVIDADES  = [];   // strings from actividades_trabajo
+let WORKERS         = [];
+let VISIBLE_WORKERS = [];   // workers mostrados para la fecha actual (filtrado por asistencia)
+let PROYECTOS       = [];   // { id: code, n: "0042 — Nombre", pieces: [] }
+let ACTIVIDADES     = [];   // strings from actividades_trabajo
 
 let calWeekOffset = 0;
 let currentDate   = '';
@@ -344,17 +298,19 @@ async function loadMasterData() {
     window.DB.query('contacts', { tipo: 'trabajador' }),
     window.DB.query('projects'),
     window.DB.query('actividades_trabajo'),
+    window.DB.query('attendance_logs'),
+    window.DB.query('attendance'),
   ]);
 
   WORKERS = workers
-    .filter(w => w.activo !== false && (w.name || w.givenName) && !w._init)
+    .filter(w => w.activo !== false && (w.name || w.nombre) && !w._init)
     .map(w => {
-      const name = w.name || (w.givenName + ' ' + (w.paterno||'')).trim();
+      const name = w.name || [w.nombre, w.apellidoPaterno].filter(Boolean).join(' ') || '';
       const parts = name.split(' ');
       return {
         id: w.id,
-        nombre: w.givenName || parts[0] || 'Sin nombre',
-        ape:    w.paterno   || parts.slice(1).join(' ') || '',
+        nombre: w.nombre || parts[0] || 'Sin nombre',
+        ape:    w.apellidoPaterno || parts.slice(1).join(' ') || '',
         cat:    w.role || '',
         ini:    name.substring(0,2).toUpperCase()
       };
@@ -486,6 +442,30 @@ function updateCerradoUI() {
   document.getElementById('btn-reabrir').style.display   = diaCerrado ? ''     : 'none';
 }
 
+// ── Filtrar por asistencia del día ────────────────────────────
+function getPresentWorkerIds(dateStr) {
+  const db = window.DB.get();
+  const present = new Set();
+
+  // Reloj checador: attendance_logs
+  (db.attendance_logs || []).forEach(c => {
+    if (c.fecha === dateStr) {
+      const wId = c.workerId || c.trabajadorId;
+      if (wId) present.add(wId);
+    }
+  });
+
+  // Registros de producción ya guardados para este día
+  (db.attendance || []).forEach(a => {
+    if ((a.fecha || a.date) === dateStr && !a._init && (a.trabajadorId || a.workerId) && (a.estado || a.status)) {
+      const wId = a.trabajadorId || a.workerId;
+      if (wId) present.add(wId);
+    }
+  });
+
+  return present;
+}
+
 // ── Render all workers ────────────────────────────────────────
 function renderAll() {
   const listPend = document.getElementById('list-pendientes');
@@ -494,7 +474,13 @@ function renderAll() {
   listReg.innerHTML  = '';
   document.getElementById('registrados-section').style.display = 'none';
 
-  WORKERS.forEach(w => {
+  const presentIds = getPresentWorkerIds(currentDate);
+
+  // Mostrar solo trabajadores presentes (reloj/asistencia) o ya registrados en produccion
+  VISIBLE_WORKERS = WORKERS.filter(w => presentIds.has(w.id) || getWS(w.id).done || getWS(w.id).status);
+  const otherWorkers = WORKERS.filter(w => !VISIBLE_WORKERS.includes(w));
+
+  VISIBLE_WORKERS.forEach(w => {
     const ws   = getWS(w.id);
     const card = buildCard(w);
 
@@ -511,6 +497,49 @@ function renderAll() {
     updHrsTotal(w.id);
   });
 
+  renderManualAdd(otherWorkers);
+  updateLabels();
+  updateFooter();
+}
+
+// ── Agregar trabajador manualmente ────────────────────────────
+function renderManualAdd(otherWorkers) {
+  const sect = document.getElementById('manual-add-section');
+  if (!sect) return;
+  if (otherWorkers.length === 0) { sect.innerHTML = ''; return; }
+
+  const opts = otherWorkers.map(w =>
+    `<option value="${w.id}">${w.nombre} ${w.ape}${w.cat ? ' · ' + w.cat : ''}</option>`
+  ).join('');
+
+  sect.innerHTML = `
+    <div style="margin:8px 0;background:var(--mantle);border:1px solid var(--crust);border-radius:var(--radius-lg);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--subtext);">Agregar trabajador</span>
+      <select id="manual-worker-sel" style="flex:1;min-width:180px;max-width:340px;">
+        <option value="">— Seleccionar —</option>
+        ${opts}
+      </select>
+      <button class="btn btn-dark" style="padding:6px 12px;font-size:12px;" onclick="addManualWorker()">+ Agregar</button>
+    </div>
+  `;
+}
+
+function addManualWorker() {
+  const sel = document.getElementById('manual-worker-sel');
+  const wId = sel?.value;
+  if (!wId) return;
+  const w = WORKERS.find(x => x.id === wId);
+  if (!w || VISIBLE_WORKERS.includes(w)) return;
+  VISIBLE_WORKERS.push(w);
+
+  const card = buildCard(w);
+  document.getElementById('list-pendientes').appendChild(card);
+  buildChips(w.id);
+  renderProyRows(w.id);
+  updHrsTotal(w.id);
+
+  const otherWorkers = WORKERS.filter(x => !VISIBLE_WORKERS.includes(x));
+  renderManualAdd(otherWorkers);
   updateLabels();
   updateFooter();
 }
@@ -610,8 +639,8 @@ function buildCard(w) {
 
       <!-- Actions -->
       <div class="listo-row">
-        <button class="btn btn-listo" onclick="marcarListo('${w.id}')">✓ Listo</button>
-        <button class="btn btn-colapsar btn-ghost" onclick="closeDetail('${w.id}')">Colapsar</button>
+        <button class="btn btn-green" onclick="marcarListo('${w.id}')">✓ Listo</button>
+        <button class="btn btn-ghost" onclick="closeDetail('${w.id}')">Colapsar</button>
       </div>
     </div>
   `;
@@ -862,11 +891,13 @@ function togDet(wId, e) {
 
 function openDetail(wId) {
   document.getElementById(`det-${wId}`)?.classList.add('open');
+  document.getElementById(`card-${wId}`)?.classList.add('open-det');
   document.getElementById(`edit-${wId}`).style.display = 'none';
 }
 
 function closeDetail(wId) {
   document.getElementById(`det-${wId}`)?.classList.remove('open');
+  document.getElementById(`card-${wId}`)?.classList.remove('open-det');
   document.getElementById(`econf-${wId}`)?.classList.remove('open');
 }
 
@@ -895,10 +926,28 @@ function confirmEdit(wId) {
 
 // ── Mark done ─────────────────────────────────────────────────
 function marcarListo(wId) {
-  syncFromDOM(wId);           // asegurar que el estado refleje lo que hay en los inputs
+  syncFromDOM(wId);
   const ws = getWS(wId);
+
+  // Si las horas del día están vacías pero hay horas en proyectos, usar esas
+  if (ws.status === 'trabajo' || ws.status === 'retardo') {
+    const dayHrs = (parseFloat(ws.horasNormal)||0) + (parseFloat(ws.horasExtra)||0) + (parseFloat(ws.horasDoble)||0);
+    if (dayHrs === 0) {
+      const projHrs = ws.proyectos.reduce((s, pr) => s + (parseFloat(pr.horas)||0), 0);
+      if (projHrs > 0) {
+        ws.horasNormal = projHrs;
+        const h1 = document.getElementById(`h1-${wId}`);
+        if (h1) h1.value = projHrs;
+        updHrsTotal(wId);
+      }
+    }
+  }
+
   if (!isComplete(ws)) {
-    toast('⚠ Ingresa al menos las horas trabajadas', 'warn');
+    const msg = !ws.status
+      ? '⚠ Selecciona primero el estado del trabajador (✓ / ✗ / ⏰ / ☀)'
+      : '⚠ Ingresa al menos las horas trabajadas';
+    toast(msg, 'warn');
     document.getElementById(`h1-${wId}`)?.focus();
     return;
   }
@@ -939,8 +988,8 @@ function buildChips(wId) {
 
 // ── Labels & footer ───────────────────────────────────────────
 function updateLabels() {
-  const total = WORKERS.length;
-  const done  = WORKERS.filter(w => getWS(w.id).done).length;
+  const total = VISIBLE_WORKERS.length;
+  const done  = VISIBLE_WORKERS.filter(w => getWS(w.id).done).length;
   document.getElementById('lbl-pendientes').textContent  = `Sin registrar (${total - done})`;
   document.getElementById('lbl-registrados').textContent = `Registrados (${done})`;
   document.getElementById('hdr-badge').textContent       = `${done} / ${total}`;
@@ -948,11 +997,11 @@ function updateLabels() {
 
 function updateFooter() {
   let t=0, f=0, r=0, v=0, p=0, hrs=0;
-  WORKERS.forEach(w => {
+  VISIBLE_WORKERS.forEach(w => {
     const ws = getWS(w.id);
-    if (ws.status === 'trabajo')    { t++; hrs += horasEq(ws); }
-    else if (ws.status === 'retardo')  { r++; hrs += horasEq(ws); }
-    else if (ws.status === 'falta')    f++;
+    if (ws.status === 'trabajo')         { t++; hrs += horasEq(ws); }
+    else if (ws.status === 'retardo')    { r++; hrs += horasEq(ws); }
+    else if (ws.status === 'falta')      f++;
     else if (ws.status === 'vacaciones') v++;
     else p++;
   });
@@ -963,52 +1012,150 @@ function updateFooter() {
   document.getElementById('f-p').textContent = p;
 }
 
-function collapseAll() { WORKERS.forEach(w => closeDetail(w.id)); }
+function collapseAll() { VISIBLE_WORKERS.forEach(w => closeDetail(w.id)); }
 
 // ── Cerrar día ────────────────────────────────────────────────
-function cerrarDia() {
+async function cerrarDia() {
   if (diaCerrado) return;
-  const pend = WORKERS.filter(w => !getWS(w.id).status);
+  const pend = VISIBLE_WORKERS.filter(w => !getWS(w.id).status);
   if (pend.length > 0) {
     const ns = pend.slice(0,3).map(w=>w.nombre).join(', ') + (pend.length>3 ? ` y ${pend.length-3} más`:'');
     if (!confirm(`${pend.length} trabajador(es) sin registrar:\n${ns}\n\n¿Cerrar el día de todas formas?`)) return;
   }
 
-  const t = WORKERS.filter(w => {const s=getWS(w.id).status; return s==='trabajo'||s==='retardo';}).length;
-  const f = WORKERS.filter(w => getWS(w.id).status==='falta').length;
+  const t = VISIBLE_WORKERS.filter(w => {const s=getWS(w.id).status; return s==='trabajo'||s==='retardo';}).length;
+  const f = VISIBLE_WORKERS.filter(w => getWS(w.id).status==='falta').length;
 
-  // Guardar/actualizar todos los trabajadores con status en Firebase
-  WORKERS.forEach(w => {
-    syncFromDOM(w.id);
-    saveWorkerRecord(w.id);
-  });
+  try {
+    const batchOps = [];
+    const db = window.DB.get();
 
-  // Marcar todos los registros del día con diaCerrado:true (flag explícito)
-  const db = window.DB.get();
-  (db.attendance || [])
-    .filter(a => (a.fecha || a.date) === currentDate && !a._init && (a.trabajadorId || a.workerId) && (a.estado || a.status))
-    .forEach(a => {
-      a.diaCerrado = true;
-      if (window.parent?.setDocumentInFirebase) {
-        window.parent.setDocumentInFirebase('attendance', a.id, a);
+    // Generar operaciones para todos los trabajadores visibles con status
+    VISIBLE_WORKERS.forEach(w => {
+      syncFromDOM(w.id);
+      const ws = getWS(w.id);
+      if (!ws.status) return;
+
+      const record = {
+        fecha:         currentDate,
+        date:          currentDate,
+        trabajadorId:  w.id,
+        workerId:      w.id,
+        estado:        ws.status,
+        status:        ws.status,
+        retardoMin:    parseFloat(ws.retardoMin)  || 0,
+        horasNormal:   parseFloat(ws.horasNormal) || 0,
+        horasExtra:    parseFloat(ws.horasExtra)  || 0,
+        horasDoble:    parseFloat(ws.horasDoble)  || 0,
+        horasTotales:  horasEq(ws),
+        proyectos:     ws.proyectos.filter(pr => pr.p || pr.horas || pr.descripcion),
+        notas:         ws.notas || '',
+        diaCerrado:    true
+      };
+
+      const existing = (db.attendance || []).find(a =>
+        (a.fecha || a.date) === currentDate && (a.trabajadorId || a.workerId) === w.id && !a._init && (a.estado || a.status));
+
+      record.id = existing ? existing.id : crypto.randomUUID();
+      batchOps.push({ type: 'set', col: 'attendance', id: record.id, data: record });
+
+      const attLog = {
+        id:           record.id,
+        trabajadorId: record.trabajadorId, workerId: record.workerId,
+        fecha:        record.fecha,
+        estado:       record.estado, status: record.status,
+        entrada:      '', salida: '',
+        horasNormal:  record.horasNormal, horasExtra: record.horasExtra, horasDoble: record.horasDoble,
+        horasTotales: record.horasTotales, retardoMin: record.retardoMin, notas: record.notas
+      };
+      batchOps.push({ type: 'set', col: 'attendance_logs', id: attLog.id, data: attLog });
+
+      if (record.proyectos && record.proyectos.length) {
+        record.proyectos.forEach(p => {
+          if (!p.p) return;
+          const pLog = {
+            id:              crypto.randomUUID(),
+            trabajadorId:    record.trabajadorId,
+            proyectoId:      p.p,
+            fecha:           record.fecha,
+            actividad:       p.actividad || '',
+            descripcion:     p.descripcion || p.pieza || '',
+            horasTrabajadas: parseFloat(p.horas) || (record.horasTotales ? record.horasTotales / record.proyectos.length : 0)
+          };
+          batchOps.push({ type: 'set', col: 'production_logs', id: pLog.id, data: pLog });
+        });
       }
     });
 
-  STATE[currentDate] = { cerrado: true, data: getState(currentDate).data };
-  diaCerrado = true;
-  updateCerradoUI();
-  buildCalendar();
-  toast(`✓ Día cerrado — ${t} trabajaron, ${f} faltas`);
+    // Asegurar que los ya registrados que no estaban visibles también se marquen cerrados
+    (db.attendance || [])
+      .filter(a => (a.fecha || a.date) === currentDate && !a._init && (a.trabajadorId || a.workerId) && (a.estado || a.status))
+      .forEach(a => {
+        if (!batchOps.find(op => op.col === 'attendance' && op.id === a.id)) {
+          const updatedRec = { ...a, diaCerrado: true };
+          batchOps.push({ type: 'set', col: 'attendance', id: a.id, data: updatedRec });
+        }
+      });
+
+    if (window.parent?.runBatchedWrites && batchOps.length > 0) {
+      await window.parent.runBatchedWrites(batchOps);
+    } else if (batchOps.length > 0) {
+      for (const op of batchOps) {
+        if (op.type === 'set' && window.parent?.setDocumentInFirebase) {
+          await window.parent.setDocumentInFirebase(op.col, op.id, op.data);
+        }
+      }
+    }
+
+    // Actualización local (solo si Firebase fue exitoso)
+    if (!db.attendance) db.attendance = [];
+    if (!db.attendance_logs) db.attendance_logs = [];
+    if (!db.production_logs) db.production_logs = [];
+    const pState = window.parent?.DB_STATE;
+
+    batchOps.forEach(op => {
+      const colList = db[op.col];
+      if (colList) {
+        const idx = colList.findIndex(x => x.id === op.id);
+        if (idx >= 0) colList[idx] = Object.assign(colList[idx] || {}, op.data);
+        else colList.push(op.data);
+      }
+      if (pState && pState[op.col]) {
+        const pIdx = pState[op.col].findIndex(x => x.id === op.id);
+        if (pIdx >= 0) pState[op.col][pIdx] = Object.assign(pState[op.col][pIdx] || {}, op.data);
+        else pState[op.col].push(op.data);
+      }
+    });
+    window.DB.save(db);
+
+    STATE[currentDate] = { cerrado: true, data: getState(currentDate).data };
+    diaCerrado = true;
+    updateCerradoUI();
+    buildCalendar();
+    toast(`✓ Día cerrado — ${t} trabajaron, ${f} faltas`);
+
+  } catch(e) {
+    console.error("Error al cerrar el día:", e);
+    toast('Error guardando. Verifica tu conexión.', 'error');
+  }
 }
 
 // ── Reabrir día ───────────────────────────────────────────────
 function reabrirDia() {
-  if (!confirm(`¿Reabrir el día ${currentDate}?\n\nLos datos ya guardados en Firebase NO se borran. Solo podrás volver a registrar. Al cerrar de nuevo se sobrescribirán los registros.`)) return;
-  STATE[currentDate].cerrado = false;
-  diaCerrado = false;
-  updateCerradoUI();
-  buildCalendar();
-  toast('Día reabierto — edita y vuelve a cerrar', 'warn');
+  const msg = `¿Reabrir el día <b>${currentDate}</b>?\n\nLos datos ya guardados en Firebase NO se borran. Solo podrás volver a registrar. Al cerrar de nuevo se sobrescribirán los registros.`;
+  const doReabrir = () => {
+    STATE[currentDate].cerrado = false;
+    diaCerrado = false;
+    updateCerradoUI();
+    buildCalendar();
+    toast('Día reabierto — edita y vuelve a cerrar', 'warn');
+  };
+  
+  if (window.parent && window.parent.showConfirm) {
+    window.parent.showConfirm('Reabrir Día', msg, 'Reabrir', 'btn-amber', doReabrir);
+  } else {
+    if (confirm(`¿Reabrir el día ${currentDate}?\n\nLos datos ya guardados en Firebase NO se borran. Solo podrás volver a registrar. Al cerrar de nuevo se sobrescribirán los registros.`)) doReabrir();
+  }
 }
 
 // ── Toast ─────────────────────────────────────────────────────

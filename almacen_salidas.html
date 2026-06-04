@@ -7,21 +7,6 @@
 <title>Registro de Salidas</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --blue: #1e66f5; --green: #40a02b; --amber: #df8e1d; --red: #d20f39;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --blue: #8caaee; --green: #a6da95; --amber: #f9e2af; --red: #f38ba8;
-  }
-}
-body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding-bottom: 80px; }
 .hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
 .main { max-width: 800px; margin: 24px auto; padding: 24px; background: var(--mantle); border-radius: 12px; border: 1px solid var(--crust); display: flex; flex-direction: column; gap: 20px; }
 .field { display: flex; flex-direction: column; gap: 8px; }
@@ -148,7 +133,7 @@ async function save() {
     const unit = tr.querySelector('.i-unit').value;
     if (code && qty > 0) {
       const inv = INV.find(i => i.code === code);
-      items.push({ code, name: inv ? inv.name : code, qty, unit });
+        items.push({ code, name: inv ? inv.name : code, qty, unit, invId: inv ? inv.id : null });
     }
   });
 
@@ -161,33 +146,52 @@ async function save() {
     fecha: now.toISOString().slice(0, 10),
     workerId: workerId || '',
     proyecto: projCode || '',
-    items,
+      items: items.map(i => ({ code: i.code, name: i.name, qty: i.qty, unit: i.unit })),
     registradoEn: now.toISOString(),
   };
 
-  // Discount from inventory
-  items.forEach(i => {
-    window.DB.updateInventoryStock(i.code, -i.qty);
-  });
+    try {
+      if (window.parent?.runBatchedWrites) {
+        const batchOps = [
+          { type: 'set', col: 'inventory_salidas', id: salida.id, data: salida }
+        ];
+        items.forEach(i => {
+          if (i.invId) {
+            batchOps.push({ type: 'increment', col: 'inventory', id: i.invId, field: 'stock', amount: -i.qty });
+          }
+        });
+        await window.parent.runBatchedWrites(batchOps);
+      } else {
+        // Fallback en caso de que no esté disponible la función global
+        const invPromises = items.map(i => {
+          if (i.code) return window.DB.updateInventoryStock(i.code, -i.qty);
+        });
+        await Promise.all(invPromises);
+        if (window.parent?.setDocumentInFirebase) {
+          await window.parent.setDocumentInFirebase('inventory_salidas', salida.id, salida);
+        }
+      }
 
-  // Save salida record
-  if (window.parent && window.parent.setDocumentInFirebase) {
-    await window.parent.setDocumentInFirebase('inventory_salidas', salida.id, salida);
-    if (window.parent.DB_STATE) {
-      if (!window.parent.DB_STATE.inventory_salidas) window.parent.DB_STATE.inventory_salidas = [];
-      window.parent.DB_STATE.inventory_salidas.push(salida);
+      // Actualizar estado local (memoria)
+      if (window.parent?.DB_STATE) {
+        if (!window.parent.DB_STATE.inventory_salidas) window.parent.DB_STATE.inventory_salidas = [];
+        window.parent.DB_STATE.inventory_salidas.push(salida);
+      }
+
+      toast('✓ Salida registrada y stock actualizado.');
+      setTimeout(() => window.history.back(), 800);
+    } catch (e) {
+      console.error("Error registrando salida:", e);
+      toast('Error al guardar. Verifica tu conexión.', 'error');
     }
-  }
-
-  toast('✓ Salida registrada y stock actualizado.');
-  setTimeout(() => window.history.back(), 800);
 }
 
 document.addEventListener('DOMContentLoaded', init);
 
 function toast(msg, type='ok') {
+  const bg = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
   const el = document.createElement('div');
-  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);

@@ -7,52 +7,13 @@
 <title>Panel de Compras — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --base: #eff1f5; --mantle: #e6e9ef; --crust: #dce0e8;
-  --surface0: #ccd0da; --surface1: #bcc0cc;
-  --text: #4c4f69; --subtext: #8c8fa1;
-  --green: #40a02b; --green-bg: #e5f4e3; --green-text: #2d6e1e;
-  --blue: #1e66f5; --blue-bg: #e6eaf6; --blue-text: #1e66f5;
-  --amber: #df8e1d; --amber-bg: #fdf3e5; --amber-text: #8a5500;
-  --red: #d20f39; --red-bg: #fde8ed;
-  --radius: 8px; --radius-lg: 12px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --base: #1e1e2e; --mantle: #181825; --crust: #11111b;
-    --surface0: #313244; --surface1: #45475a;
-    --text: #cdd6f4; --subtext: #a6adc8;
-    --green: #a6da95; --green-bg: rgba(166,218,149,0.15); --green-text: #a6da95;
-    --blue: #8caaee; --blue-bg: rgba(140,170,238,0.15); --blue-text: #8caaee;
-    --amber: #f9e2af; --amber-bg: rgba(249,226,175,0.15); --amber-text: #f9e2af;
-    --red: #f38ba8; --red-bg: rgba(243,139,168,0.15);
-  }
-}
-body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; padding: 20px; }
 
-.hdr { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.hdr h2 { font-size: 18px; font-weight: 800; }
-.btn { padding: 8px 14px; border: none; border-radius: var(--radius); font-weight: 700; cursor: pointer; transition: opacity .15s; font-family: inherit; font-size: 13px; }
-.btn:hover { opacity: .85; }
-.btn-blue  { background: var(--blue);  color: #fff; }
-.btn-green { background: var(--green); color: #fff; }
-.btn-amber { background: var(--amber); color: #fff; }
-.btn-dark  { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
-.btn-red   { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
-
-.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; }
 .card.c-pending { border: 2px solid var(--amber); }
 .card.c-ready   { border: 2px solid var(--green); }
 .card.c-manual  { border: 2px solid var(--blue);  }
 .card-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 12px; }
 .card-folio { font-size: 14px; font-weight: 800; }
 .card-meta  { font-size: 12px; color: var(--subtext); margin-top: 2px; }
-
-.pill { padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
-.pill-amber  { background: var(--amber-bg);  color: var(--amber-text); }
-.pill-green  { background: var(--green-bg);  color: var(--green-text); }
-.pill-blue   { background: var(--blue-bg);   color: var(--blue-text); }
-.pill-gray   { background: var(--surface0);  color: var(--subtext); }
 
 /* Order items table */
 .items-tbl { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
@@ -85,8 +46,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
 @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
-.f-field { display: flex; flex-direction: column; gap: 5px; }
-.f-field label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--subtext); letter-spacing: .04em; }
 .f-field input, .f-field select, .f-field textarea {
   padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--crust);
   background: var(--base); color: var(--text); font-family: inherit; font-size: 13px;
@@ -136,7 +95,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
-    <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <button class="back-btn" onclick="window.history.back()">← Volver</button>
     <h2>Panel de Compras</h2>
   </div>
   <button class="btn btn-blue" onclick="showNewOrderForm()">+ Nueva Orden</button>
@@ -431,18 +390,21 @@ async function submitNewOrder() {
     createdAt:  now.toISOString()
   };
 
-  const db = window.DB.get();
-  if (!db.purchase_orders) db.purchase_orders = [];
-  db.purchase_orders.unshift(order);
-  window.DB.save(db);
-
-  if (window.parent?.setDocumentInFirebase) {
-    await window.parent.setDocumentInFirebase('purchase_orders', order.id, order);
+  try {
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('purchase_orders', order.id, order);
+    }
+    const db = window.DB.get();
+    if (!db.purchase_orders) db.purchase_orders = [];
+    db.purchase_orders.unshift(order);
+    window.DB.save(db);
+    hideNewOrderForm();
+    renderOrders();
+    showToast(`✓ Orden ${folio} guardada`);
+  } catch (e) {
+    console.error("Error guardando nueva orden:", e);
+    showToast('Error de conexión. La orden no se guardó.', 'error');
   }
-
-  hideNewOrderForm();
-  renderOrders();
-  showToast(`✓ Orden ${folio} guardada`);
 }
 
 function statusFlow(cur) {
@@ -738,17 +700,24 @@ async function guardarPrecios(ordId) {
   const db    = window.DB.get();
   const order = (db.purchase_orders||db.orders||[]).find(o => o.id === ordId);
   if (!order) return;
+  const originalOrder = JSON.parse(JSON.stringify(order));
   readPricesFromCard(ordId, order);
 
-  // Sync en DB_STATE para que otros módulos vean el cambio
-  if (window.parent?.DB_STATE?.purchase_orders) {
-    const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
-    if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
+  try {
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
+    }
+    // Sync en DB_STATE para que otros módulos vean el cambio
+    if (window.parent?.DB_STATE?.purchase_orders) {
+      const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
+      if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
+    }
+    showToast('✓ Precios guardados — selecciona la cuenta y marca como Comprado');
+  } catch (e) {
+    console.error("Error guardando precios:", e);
+    Object.assign(order, originalOrder); // Revertir cambios locales
+    showToast('Error al sincronizar con la nube. Revisa tu conexión.', 'error');
   }
-
-  if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
-  showToast('✓ Precios guardados — selecciona la cuenta y marca como Comprado');
-  // No reconstruir el card aquí: resetearía el selector de cuenta
 }
 
 function readPricesFromCard(ordId, order) {
@@ -800,18 +769,21 @@ async function act(ordId, newStatus) {
   const order = (db.purchase_orders || db.orders || []).find(o => o.id === ordId);
   if (!order) { alert('Orden no encontrada'); return; }
 
+  // Respaldar orden original en caso de error de red
+  const originalOrder = JSON.parse(JSON.stringify(order));
+
   readPricesFromCard(ordId, order);
   order.status      = newStatus;
   order.fechaCompra = new Date().toISOString().slice(0,10);
   order.cuentaPago  = cuentaPago;
 
-  // ── Crear movimiento contable "por_comprobar" ────────────────
   const total = (order.items||[]).reduce((s, i) => s + (parseFloat(i.price)||0) * (parseFloat(i.qty)||0), 0);
   const itemsDesc = (order.items||[]).map(i => `${i.name||i.code} ×${i.qty}`).join(', ');
   const proyNombre = order.project || 'Stock General';
   const movId = crypto.randomUUID();
   const pObj = (db.projects||[]).find(p => (p.codigo||p.code) === order.project || p.id === order.projectId);
-  window.DB.addMovement({
+  
+  const newMovement = {
     id: movId,
     type: 'Gasto',
     date: order.fechaCompra,
@@ -822,10 +794,9 @@ async function act(ordId, newStatus) {
     projectId: pObj?.id || null,
     status: 'por_comprobar',
     purchase_order_id: order.id
-  });
+  };
   order.movimiento_id = movId;
 
-  // ── Process pending concepts → add to inventory ──────────────
   const newConcepts  = [];
   const newSuppliers = [];
 
@@ -844,10 +815,8 @@ async function act(ordId, newStatus) {
           category: 'General',
           stock:    0, min: 0, cost: item.price || 0
         };
-        db.inventory.push(newInvItem);
-        if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('inventory', newInvItem.id, newInvItem);
         item.code = newInvItem.code;
-        newConcepts.push(newInvItem.name);
+        newConcepts.push(newInvItem);
       }
       delete item.conceptoPendiente;
     }
@@ -861,36 +830,59 @@ async function act(ordId, newStatus) {
         activo: true,
         phone: '', email: '', address: ''
       };
-      db.contacts.push(newSupplier);
-      if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('contacts', newSupplier.id, newSupplier);
       item.proveedorId     = newSupplier.id;
       item.proveedorNombre = newSupplier.nombre;
-      SUPPLIERS.push(newSupplier);
-      newSuppliers.push(newSupplier.nombre);
+      newSuppliers.push(newSupplier);
       delete item.proveedorPendiente;
     }
   });
 
-  window.DB.save(db);
-  if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
-  if (window.parent?.DB_STATE?.purchase_orders) {
-    const si = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
-    if (si >= 0) window.parent.DB_STATE.purchase_orders[si] = order;
+  try {
+    if (window.parent?.runBatchedWrites) {
+      const batchOps = [
+        { type: 'set', col: 'purchase_orders', id: ordId, data: order },
+        { type: 'set', col: 'accounting_movements', id: movId, data: newMovement }
+      ];
+      newConcepts.forEach(inv => batchOps.push({ type: 'set', col: 'inventory', id: inv.id, data: inv }));
+      newSuppliers.forEach(sup => batchOps.push({ type: 'set', col: 'contacts', id: sup.id, data: sup }));
+      await window.parent.runBatchedWrites(batchOps);
+    }
+
+    // -- ACTUALIZAR ESTADO LOCAL (solo si las promesas no fallaron) --
+    newConcepts.forEach(inv => db.inventory.push(inv));
+    newSuppliers.forEach(sup => { db.contacts.push(sup); SUPPLIERS.push(sup); });
+    
+    if (!db.accounting_movements) db.accounting_movements = [];
+    db.accounting_movements.unshift(newMovement);
+    if (window.parent?.DB_STATE?.accounting_movements) {
+      window.parent.DB_STATE.accounting_movements.unshift(newMovement);
+    }
+    window.DB.save(db);
+
+    if (window.parent?.DB_STATE?.purchase_orders) {
+      const si = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
+      if (si >= 0) window.parent.DB_STATE.purchase_orders[si] = order;
+    }
+
+    let msg = `✓ Orden marcada como "${newStatus}"`;
+    if (newConcepts.length) msg += `\n→ ${newConcepts.length} concepto(s) agregado(s) al inventario.`;
+    if (newSuppliers.length) msg += `\n→ ${newSuppliers.length} proveedor(es) agregado(s) al CRM.`;
+    alert(msg);
+
+    showToast(`✓ ${order.folio} → ${newStatus}`);
+    renderOrders();
+  } catch (e) {
+    console.error("Error conectando con la nube al procesar la compra:", e);
+    Object.assign(order, originalOrder); // Revertimos la orden en memoria
+    showToast('Error al conectar con la base de datos. Se han revertido los cambios.', 'error');
   }
-
-  let msg = `✓ Orden marcada como "${newStatus}"`;
-  if (newConcepts.length) msg += `\n→ ${newConcepts.length} concepto(s) agregado(s) al inventario: ${newConcepts.join(', ')}`;
-  if (newSuppliers.length) msg += `\n→ ${newSuppliers.length} proveedor(es) agregado(s) al CRM: ${newSuppliers.join(', ')}`;
-  alert(msg);
-
-  showToast(`✓ ${order.folio} → ${newStatus}`);
-  renderOrders();
 }
 
 // ── Toast ──────────────────────────────────────────────────────
-function showToast(msg) {
+function showToast(msg, type='ok') {
+  const bg = type === 'error' ? 'var(--red)' : 'var(--green)';
   const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+  el.style.cssText = `position:fixed;top:16px;right:16px;z-index:9999;background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);

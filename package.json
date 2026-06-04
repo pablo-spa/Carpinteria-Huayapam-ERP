@@ -14,7 +14,10 @@
     "seed:preview": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node seed-movimientos-preview.cjs",
     "seed:movimientos:combine": "node seed-movimientos.cjs --combine",
     "seed:movimientos:import": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node seed-movimientos.cjs --import",
-    "seed:movimientos:all": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node seed-movimientos.cjs --combine --import"
+    "seed:movimientos:all": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node seed-movimientos.cjs --combine --import",
+    "clean:contacts": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node clean-contacts.cjs",
+    "fix:inventory-codes": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node fix-inventory-codes.cjs",
+    "migrate:partitioned": "GOOGLE_APPLICATION_CREDENTIALS=\"/Users/pablospada/Programming Projects/carpinteria-huayapam/firebase key/gen-lang-client-0827035586-firebase-adminsdk-fbsvc-68a6f8c7ab.json\" node migrate-partitioned.cjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

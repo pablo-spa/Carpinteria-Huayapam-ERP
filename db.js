@@ -1,6 +1,12 @@
 function getDB() {
   if (window.parent && window.parent.DB_STATE_LOADED) {
-    return JSON.parse(JSON.stringify(window.parent.DB_STATE));
+    // Clonación superficial de las colecciones, no un clonado profundo del objeto global
+    // Esto previene que el navegador se congele al tener miles de registros
+    const stateClone = { ...window.parent.DB_STATE };
+    for (let key in stateClone) {
+      if (Array.isArray(stateClone[key])) stateClone[key] = [...stateClone[key]];
+    }
+    return stateClone;
   }
   return {
     _isIncomplete: true,
@@ -206,27 +212,33 @@ window.DB = {
        saveDB(d);
     }
   },
-  updateInventoryStock: (code, qtyChange) => {
+  updateInventoryStock: async (code, qtyChange) => {
     const d = getDB();
     const item = d.inventory.find((i) => i.code === code);
     if (item) {
       item.stock += qtyChange;
-      if(window.parent && window.parent.setDocumentInFirebase && item.id) window.parent.setDocumentInFirebase("inventory", item.id, item);
+      if(window.parent && window.parent.incrementFieldInFirebase && item.id) await window.parent.incrementFieldInFirebase("inventory", item.id, "stock", qtyChange);
       saveDB(d);
     }
   },
-  logInventoryPurchase: (code, qty, price, date = new Date().toISOString().slice(0, 10)) => {
+  logInventoryPurchase: async (code, qty, price, date = new Date().toISOString().slice(0, 10)) => {
     const d = getDB();
     const item = d.inventory.find((i) => i.code === code);
     if (item) {
       item.stock += qty;
       item.lastPurchaseDate = date;
+      
+      const extraUpdates = { lastPurchaseDate: date };
+
       if (price > 0 && item.cost !== price) {
         item.cost = price;
         if (!item.priceHistory) item.priceHistory = [];
         item.priceHistory.push({ date: date, price: price });
+        
+        extraUpdates.cost = price;
+        extraUpdates.priceHistory = item.priceHistory;
       }
-      if(window.parent && window.parent.setDocumentInFirebase && item.id) window.parent.setDocumentInFirebase("inventory", item.id, item);
+      if(window.parent && window.parent.incrementFieldInFirebase && item.id) await window.parent.incrementFieldInFirebase("inventory", item.id, "stock", qty, extraUpdates);
       saveDB(d);
     }
   },
@@ -402,21 +414,24 @@ window.DB = {
       window.parent.DB_STATE.worker_loans.push(prestamo);
     }
   },
-  actualizar_prestamo: (prestamo) => {
+  actualizar_prestamo: async (prestamo) => {
     const d = getDB();
     if (!d.worker_loans) d.worker_loans = [];
     const idx = d.worker_loans.findIndex(l => l.id === prestamo.id);
     if (idx >= 0) d.worker_loans[idx] = prestamo;
     else d.worker_loans.push(prestamo);
-    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('worker_loans', prestamo.id, prestamo);
+    
+    let wp = null;
+    if (window.parent?.setDocumentInFirebase) wp = window.parent.setDocumentInFirebase('worker_loans', prestamo.id, prestamo);
     if (window.parent?.DB_STATE) {
       if (!window.parent.DB_STATE.worker_loans) window.parent.DB_STATE.worker_loans = [];
       const li = window.parent.DB_STATE.worker_loans.findIndex(l => l.id === prestamo.id);
       if (li >= 0) window.parent.DB_STATE.worker_loans[li] = prestamo;
       else window.parent.DB_STATE.worker_loans.push(prestamo);
     }
+    if (wp) await wp;
   },
-  saveJornada: (workerId, fecha, fields) => {
+  saveJornada: async (workerId, fecha, fields) => {
     const d = getDB();
     if (!d.attendance) d.attendance = [];
     const existing = d.attendance.find(a =>
@@ -437,7 +452,8 @@ window.DB = {
     } else {
       d.attendance.push(record);
     }
-    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('attendance', record.id, record);
+    let p1 = null, p2 = null;
+    if (window.parent?.setDocumentInFirebase) p1 = window.parent.setDocumentInFirebase('attendance', record.id, record);
     if (window.parent?.DB_STATE) {
       if (!window.parent.DB_STATE.attendance) window.parent.DB_STATE.attendance = [];
       const li = window.parent.DB_STATE.attendance.findIndex(a => a.id === record.id);
@@ -464,13 +480,14 @@ window.DB = {
     const ali = d.attendance_logs.findIndex(x => x.id === al.id);
     if (ali >= 0) d.attendance_logs[ali] = al;
     else d.attendance_logs.push(al);
-    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('attendance_logs', al.id, al);
+    if (window.parent?.setDocumentInFirebase) p2 = window.parent.setDocumentInFirebase('attendance_logs', al.id, al);
     if (window.parent?.DB_STATE) {
       if (!window.parent.DB_STATE.attendance_logs) window.parent.DB_STATE.attendance_logs = [];
       const lli = window.parent.DB_STATE.attendance_logs.findIndex(x => x.id === al.id);
       if (lli >= 0) window.parent.DB_STATE.attendance_logs[lli] = al;
       else window.parent.DB_STATE.attendance_logs.push(al);
     }
+    if (p1 || p2) await Promise.all([p1, p2].filter(Boolean));
     return record;
   },
   addQuote: (quote) => {
@@ -503,3 +520,23 @@ window.DB = {
     }
   }
 };
+
+// ── Auto-Sincronización de Tema (Previene modo blanco en iframes) ──
+try {
+  if (window.parent && window.parent.document && window.parent.document.body) {
+    const syncTheme = () => {
+      const isDark = window.parent.document.body.classList.contains('dark-mode');
+      if (isDark) document.body.classList.add('dark-mode');
+      else document.body.classList.remove('dark-mode');
+    };
+    syncTheme(); // Ejecución inmediata
+    
+    // Observar cambios en tiempo real sin importar cuándo cargue la página
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach(m => { if (m.attributeName === 'class') syncTheme(); });
+    });
+    observer.observe(window.parent.document.body, { attributes: true });
+  }
+} catch (e) {
+  // Ignorar errores de CORS cruzado
+}

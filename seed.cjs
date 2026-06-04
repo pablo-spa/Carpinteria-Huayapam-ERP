@@ -37,48 +37,79 @@ function slug(str, maxLen = 40) {
 const SETTINGS = {
   id: 'main',
   empresa: 'Carpintería Huayapam',
-  horaEntrada: '09:00',
-  minutosRetardo: 15,
-  minutosFalta: 60,
-  moneda: 'MXN',
-  iva: 16,
-  overheadPorHora: 37.3,
-  jornadaHoras: 9,
-  semanaHoras: 45,
-  tasaSatRate: 1.5,
-  tasaSunRate: 2.0,
+  // Horarios
+  horaEntrada:          '08:00',
+  horaSalida:           '17:30',
+  minutosRetardo:       10,
+  minutosFalta:         150,
+  toleranciaSalidaMin:  15,
+  tiempoDescansoMin:    30,
+  diasAvisoFalta:       24,
+  // Penalizaciones
+  penalizacionFalta:    100,
+  penalizacionRetardo:  '3 retardos = 1 falta',
+  // Nómina
+  jornadaHoras:  9,
+  semanaHoras:   45,
+  tasaSatRate:   1.5,
+  tasaSunRate:   2.0,
+  // Financiero
+  moneda:           'MXN',
+  iva:              16,
+  overheadPorHora:  37.3,
 };
 
+const BANK_ACCOUNTS = ['CAJA', 'CHU', 'PANELES SOLARES', 'SACR', 'SATM', 'SATP', 'TERM', 'FONDO REVOLVENTE BANORTE'];
+
+const PAYMENT_METHODS = ['EFECTIVO', 'TRANSFERENCIA', 'CHEQUE', 'TARJETA', 'OTRO'];
+
+const WORKER_ROLES = [
+  'Jefe de Planta','Maestro A','Maestro B','Oficial A','Oficial B',
+  'Chalán','Barniz','Pulido','Empaque','Chofer','Almacén','Compras',
+  'Administración','Contador','Mantenimiento','Limpieza','Aprendiz',
+];
+
+const VIATICO_CATEGORIES = ['Transporte', 'Comidas', 'Alojamiento', 'Gastos Extra'];
+
+const WOOD_TYPES     = ['Pino','Cedro','Parota','Encino','Mezquite','Fresno','Caoba','Nogal','Hule'];
+const WOOD_FORMATS   = ['Tabla','Tablón','Tabloncillo','Duela','Viga','Triplay','MDF'];
+const WOOD_QUALITY   = ['Extra','Primera','Segunda','Tercera'];
+const WOOD_LOCATIONS = ['Bodega Principal','Área de Trabajo','Área de Secado','Exterior'];
+
+const INVENTORY_LOCATIONS = ['Almacen de Barniz','Almacen de Madera','Almacen General'];
+
+// Schema canónico: nombre (primer nombre), apellidoPaterno, apellidoMaterno, puesto, salarioBase
+// personalId y scanCode los calcula el sistema en rh_trabajadores.html
 const WORKERS = [
-  {id:'EDD92', givenName:'Eddie',       paterno:'Santiago',  name:'Santiago Sanchez Eddie',           role:'Jefe de Planta',  baseSalary:4150, personalId:'EDD92', scanCode:'EDD92'},
-  {id:'DIE85', givenName:'Diego',       paterno:'Romero',    name:'Romero Frias Diego',               role:'Administración', baseSalary:4000, personalId:'DIE85', scanCode:'DIE85'},
-  {id:'NAR69', givenName:'Narciso',     paterno:'Martinez',  name:'Martinez Chavez Narciso R.',       role:'Maestro A',      baseSalary:3800, personalId:'NAR69', scanCode:'NAR69'},
-  {id:'HER71', givenName:'Herón',       paterno:'Pacheco',   name:'Pacheco Garcia Heron C.',          role:'Maestro A',      baseSalary:3700, personalId:'HER71', scanCode:'HER71'},
-  {id:'GAB82', givenName:'Gabriel',     paterno:'Santiago',  name:'Santiago Moreno Gabriel',          role:'Contador',       baseSalary:3700, personalId:'GAB82', scanCode:'GAB82'},
-  {id:'VIC75', givenName:'Vicente',     paterno:'Cruz',      name:'Cruz Morales Vicente A.',          role:'Maestro A',      baseSalary:3600, personalId:'VIC75', scanCode:'VIC75'},
-  {id:'ANG70', givenName:'Angel',       paterno:'Chincoya',  name:'Chincoya Rodriguez Angel L.',      role:'Maestro A',      baseSalary:3550, personalId:'ANG70', scanCode:'ANG70'},
-  {id:'NEP80', givenName:'Neptali',     paterno:'Hernandez', name:'Hernandez Gaytan Neptali',         role:'Maestro B',      baseSalary:3500, personalId:'NEP80', scanCode:'NEP80'},
-  {id:'GAB72', givenName:'Gabriel',     paterno:'Torija',    name:'Torija Hernandez Gabriel',         role:'Mantenimiento',  baseSalary:3500, personalId:'GAB72', scanCode:'GAB72'},
-  {id:'MIL97', givenName:'Milena',      paterno:'Spada',     name:'Spada Tello Milena',               role:'Administración', baseSalary:3500, personalId:'MIL97', scanCode:'MIL97'},
-  {id:'GRE75', givenName:'Gregorio',    paterno:'Cruz',      name:'Cruz Cruz Gregorio',               role:'Barniz',         baseSalary:3250, personalId:'GRE75', scanCode:'GRE75'},
-  {id:'CAR74', givenName:'Carlos',      paterno:'Padilla',   name:'Padilla Cruz Carlos A.',           role:'Oficial A',      baseSalary:3100, personalId:'CAR74', scanCode:'CAR74'},
-  {id:'MAR73', givenName:'Martha',      paterno:'Mendoza',   name:'Mendoza Arellano Martha',          role:'Compras',        baseSalary:3000, personalId:'MAR73', scanCode:'MAR73'},
-  {id:'MIG81', givenName:'Miguel',      paterno:'Mendez',    name:'Mendez Santiago Miguel A.',        role:'Oficial A',      baseSalary:2900, personalId:'MIG81', scanCode:'MIG81'},
-  {id:'PAO95', givenName:'Paola',       paterno:'Padilla',   name:'Padilla Contreras Paola',          role:'Oficial B',      baseSalary:2900, personalId:'PAO95', scanCode:'PAO95'},
-  {id:'GUI90', givenName:'Guillermo',   paterno:'Flores',    name:'Flores Garcia Guillermo',          role:'Oficial B',      baseSalary:2650, personalId:'GUI90', scanCode:'GUI90'},
-  {id:'SAN04', givenName:'Sandra',      paterno:'Garcia',    name:'Garcia Hernandez Sandra',          role:'Oficial B',      baseSalary:2600, personalId:'SAN04', scanCode:'SAN04'},
-  {id:'ALF80', givenName:'Alfredo',     paterno:'Garcia',    name:'Garcia Garcia Alfredo',            role:'Oficial B',      baseSalary:2600, personalId:'ALF80', scanCode:'ALF80'},
-  {id:'NAP81', givenName:'Napoleon',    paterno:'Hernandez', name:'Hernandez Ignacio Napoleon',       role:'Chofer',         baseSalary:2450, personalId:'NAP81', scanCode:'NAP81'},
-  {id:'CHR91', givenName:'Christopher', paterno:'Hernandez', name:'Hernandez Ramirez Christopher',    role:'Aprendiz',       baseSalary:2400, personalId:'CHR91', scanCode:'CHR91'},
-  {id:'ANG65', givenName:'Angeles',     paterno:'Rojas',     name:'Rojas Aragon Angeles',             role:'Empleye',        baseSalary:2400, personalId:'ANG65', scanCode:'ANG65'},
-  {id:'LEX01', givenName:'Lexee',       paterno:'Jimenez',   name:'Jimenez Carranza Lexee',           role:'Chalán',         baseSalary:2350, personalId:'LEX01', scanCode:'LEX01'},
-  {id:'JEN79', givenName:'Jenny',       paterno:'Velasco',   name:'Velasco Vazquez Jenny',            role:'Pulido',         baseSalary:2300, personalId:'JEN79', scanCode:'JEN79'},
-  {id:'DIE04', givenName:'Diego',       paterno:'Hernandez', name:'Hernandez Ramirez Diego',          role:'Chalán',         baseSalary:2300, personalId:'DIE04', scanCode:'DIE04'},
-  {id:'COS70', givenName:'Cosme',       paterno:'Perez',     name:'Perez Ramirez Cosme',              role:'Almacén',        baseSalary:2300, personalId:'COS70', scanCode:'COS70'},
-  {id:'YES80', givenName:'Yesenia',     paterno:'Velasco',   name:'Velasco Vazquez Yesenia',          role:'Pulido',         baseSalary:2250, personalId:'YES80', scanCode:'YES80'},
-  {id:'ELO03', givenName:'Eloy',        paterno:'Hernandez', name:'Hernandez Ramirez Eloy',           role:'Chalán',         baseSalary:2205, personalId:'ELO03', scanCode:'ELO03'},
-  {id:'GLA77', givenName:'Gladis',      paterno:'Bautista',  name:'Bautista Santiago Gladis',         role:'Limpieza',       baseSalary:2205, personalId:'GLA77', scanCode:'GLA77'},
-  {id:'CAR02', givenName:'Carolina',    paterno:'Santiago',  name:'Santiago Reyes Carolina',          role:'Pulido',         baseSalary:2205, personalId:'CAR02', scanCode:'CAR02'},
+  {id:'EDD92', nombre:'Eddie',       apellidoPaterno:'Santiago',  apellidoMaterno:'Sanchez',    puesto:'Jefe de Planta',  salarioBase:4150, birthDate:'1992-01-01', fechaIngreso:'2011-06-14'},
+  {id:'DIE85', nombre:'Diego',       apellidoPaterno:'Romero',    apellidoMaterno:'Frias',      puesto:'Administración',  salarioBase:4000, birthDate:'1985-01-01', fechaIngreso:'2022-10-16'},
+  {id:'NAR69', nombre:'Narciso',     apellidoPaterno:'Martinez',  apellidoMaterno:'Chavez',     puesto:'Maestro A',       salarioBase:3800, birthDate:'1969-01-01', fechaIngreso:'2004-06-07'},
+  {id:'HER71', nombre:'Herón',       apellidoPaterno:'Pacheco',   apellidoMaterno:'Garcia',     puesto:'Maestro A',       salarioBase:3700, birthDate:'1971-01-01', fechaIngreso:'2005-04-25'},
+  {id:'GAB82', nombre:'Gabriel',     apellidoPaterno:'Santiago',  apellidoMaterno:'Moreno',     puesto:'Contador',        salarioBase:3700, birthDate:'1982-01-01', fechaIngreso:'2006-05-17'},
+  {id:'VIC75', nombre:'Vicente',     apellidoPaterno:'Cruz',      apellidoMaterno:'Morales',    puesto:'Maestro A',       salarioBase:3600, birthDate:'1975-01-01', fechaIngreso:'2024-03-11'},
+  {id:'ANG70', nombre:'Angel',       apellidoPaterno:'Chincoya',  apellidoMaterno:'Rodriguez',  puesto:'Maestro A',       salarioBase:3550, birthDate:'1970-01-01', fechaIngreso:'2022-04-04'},
+  {id:'NEP80', nombre:'Neptali',     apellidoPaterno:'Hernandez', apellidoMaterno:'Gaytan',     puesto:'Maestro B',       salarioBase:3500, birthDate:'1980-01-01', fechaIngreso:'2021-05-26'},
+  {id:'GAB72', nombre:'Gabriel',     apellidoPaterno:'Torija',    apellidoMaterno:'Hernandez',  puesto:'Mantenimiento',   salarioBase:3500, birthDate:'1972-01-01', fechaIngreso:'2021-08-02'},
+  {id:'MIL97', nombre:'Milena',      apellidoPaterno:'Spada',     apellidoMaterno:'Tello',      puesto:'Administración',  salarioBase:3500, birthDate:'1997-01-01', fechaIngreso:'2022-10-16'},
+  {id:'GRE75', nombre:'Gregorio',    apellidoPaterno:'Cruz',      apellidoMaterno:'Cruz',       puesto:'Barniz',          salarioBase:3250, birthDate:'1975-01-01', fechaIngreso:'2005-01-24'},
+  {id:'CAR74', nombre:'Carlos',      apellidoPaterno:'Padilla',   apellidoMaterno:'Cruz',       puesto:'Oficial A',       salarioBase:3100, birthDate:'1974-01-01', fechaIngreso:'2003-05-01'},
+  {id:'MAR73', nombre:'Martha',      apellidoPaterno:'Mendoza',   apellidoMaterno:'Arellano',   puesto:'Compras',         salarioBase:3000, birthDate:'1973-01-01', fechaIngreso:'2021-07-05'},
+  {id:'MIG81', nombre:'Miguel',      apellidoPaterno:'Mendez',    apellidoMaterno:'Santiago',   puesto:'Oficial A',       salarioBase:2900, birthDate:'1981-01-01', fechaIngreso:'2006-02-21'},
+  {id:'PAO95', nombre:'Paola',       apellidoPaterno:'Padilla',   apellidoMaterno:'Contreras',  puesto:'Oficial B',       salarioBase:2900, birthDate:'1995-01-01', fechaIngreso:'2025-04-14'},
+  {id:'GUI90', nombre:'Guillermo',   apellidoPaterno:'Flores',    apellidoMaterno:'Garcia',     puesto:'Oficial B',       salarioBase:2650, birthDate:'1990-01-01', fechaIngreso:''},
+  {id:'SAN04', nombre:'Sandra',      apellidoPaterno:'Garcia',    apellidoMaterno:'Hernandez',  puesto:'Oficial B',       salarioBase:2600, birthDate:'2004-01-01', fechaIngreso:'2022-08-17'},
+  {id:'ALF80', nombre:'Alfredo',     apellidoPaterno:'Garcia',    apellidoMaterno:'Garcia',     puesto:'Oficial B',       salarioBase:2600, birthDate:'1980-01-01', fechaIngreso:''},
+  {id:'NAP81', nombre:'Napoleon',    apellidoPaterno:'Hernandez', apellidoMaterno:'Ignacio',    puesto:'Chofer',          salarioBase:2450, birthDate:'1981-01-01', fechaIngreso:'2019-02-18'},
+  {id:'CHR91', nombre:'Christopher', apellidoPaterno:'Hernandez', apellidoMaterno:'Ramirez',    puesto:'Aprendiz',        salarioBase:2400, birthDate:'1991-01-01', fechaIngreso:'2022-03-28'},
+  {id:'ANG65', nombre:'Angeles',     apellidoPaterno:'Rojas',     apellidoMaterno:'Aragon',     puesto:'Empleye',         salarioBase:2400, birthDate:'1965-01-01', fechaIngreso:'2012-01-06'},
+  {id:'LEX01', nombre:'Lexee',       apellidoPaterno:'Jimenez',   apellidoMaterno:'Carranza',   puesto:'Chalán',          salarioBase:2350, birthDate:'2001-01-01', fechaIngreso:'2025-03-11'},
+  {id:'JEN79', nombre:'Jenny',       apellidoPaterno:'Velasco',   apellidoMaterno:'Vazquez',    puesto:'Pulido',          salarioBase:2300, birthDate:'1979-01-01', fechaIngreso:'2022-03-14'},
+  {id:'DIE04', nombre:'Diego',       apellidoPaterno:'Hernandez', apellidoMaterno:'Ramirez',    puesto:'Chalán',          salarioBase:2300, birthDate:'2004-01-01', fechaIngreso:'2022-02-23'},
+  {id:'COS70', nombre:'Cosme',       apellidoPaterno:'Perez',     apellidoMaterno:'Ramirez',    puesto:'Almacén',         salarioBase:2300, birthDate:'1970-01-01', fechaIngreso:'2005-05-09'},
+  {id:'YES80', nombre:'Yesenia',     apellidoPaterno:'Velasco',   apellidoMaterno:'Vazquez',    puesto:'Pulido',          salarioBase:2250, birthDate:'1980-01-01', fechaIngreso:'2025-04-14'},
+  {id:'ELO03', nombre:'Eloy',        apellidoPaterno:'Hernandez', apellidoMaterno:'Ramirez',    puesto:'Chalán',          salarioBase:2205, birthDate:'2003-01-01', fechaIngreso:'2024-01-08'},
+  {id:'GLA77', nombre:'Gladis',      apellidoPaterno:'Bautista',  apellidoMaterno:'Santiago',   puesto:'Limpieza',        salarioBase:2205, birthDate:'1977-01-01', fechaIngreso:'2004-07-01'},
+  {id:'CAR02', nombre:'Carolina',    apellidoPaterno:'Santiago',  apellidoMaterno:'Reyes',      puesto:'Pulido',          salarioBase:2205, birthDate:'2002-01-01', fechaIngreso:'2025-04-07'},
 ];
 
 const CLIENTS = [
@@ -586,10 +617,20 @@ async function main() {
 
   // 2. Workers → contacts (tipo: trabajador)
   const workerContacts = WORKERS.map(w => ({
-    ...w,
-    tipo: 'trabajador',
-    activo: true,
-    phone: '', email: '', address: '',
+    id:              w.id,
+    tipo:            'trabajador',
+    activo:          true,
+    nombre:          w.nombre,
+    apellidoPaterno: w.apellidoPaterno,
+    apellidoMaterno: w.apellidoMaterno || '',
+    empresa:         '',
+    name:            [w.nombre, w.apellidoPaterno, w.apellidoMaterno].filter(Boolean).join(' '),
+    puesto:          w.puesto,
+    salarioBase:     w.salarioBase,
+    telefono: '', email: '', address: '', rfc: '', curp: '', imss: '',
+    birthDate:    w.birthDate    || '',
+    fechaIngreso: w.fechaIngreso || '',
+    diasVacaciones: 0, notas: '',
   }));
   await batchWrite('contacts', workerContacts, d => d.id);
   console.log(`✅  ${WORKERS.length} trabajadores → contacts`);
@@ -597,7 +638,8 @@ async function main() {
   // 3. Clients → contacts (tipo: cliente)
   const clientDocs = CLIENTS.map(name => {
     const id = 'cli-' + slug(name, 40);
-    return { id, name, tipo: 'cliente', activo: true, phone: '', email: '', address: '', givenName: name, paterno: '' };
+    return { id, name, empresa: name, nombre: '', apellidoPaterno: '', apellidoMaterno: '',
+             tipo: 'cliente', activo: true, telefono: '', email: '', address: '', rfc: '', notas: '' };
   });
   await batchWrite('contacts', clientDocs, d => d.id);
   console.log(`✅  ${CLIENTS.length} clientes → contacts`);
@@ -605,7 +647,8 @@ async function main() {
   // 4. Suppliers → contacts (tipo: proveedor)
   const supplierDocs = SUPPLIERS.map(name => {
     const id = 'sup-' + slug(name, 40);
-    return { id, name, tipo: 'proveedor', activo: true, phone: '', email: '', address: '', givenName: name, paterno: '' };
+    return { id, name, empresa: name, nombre: '', apellidoPaterno: '', apellidoMaterno: '',
+             tipo: 'proveedor', activo: true, telefono: '', email: '', address: '', rfc: '', notas: '' };
   });
   await batchWrite('contacts', supplierDocs, d => d.id);
   console.log(`✅  ${SUPPLIERS.length} proveedores → contacts`);
@@ -615,10 +658,19 @@ async function main() {
   console.log(`✅  ${PIECE_TYPES.length} tipos de pieza`);
 
   // 6. Historical projects — codes 0001, 0002, ...
-  const projectDocs = PROJECTS.map((name, i) => {
-    const id   = 'proj-hist-' + slug(name, 36);
-    const code = String(i + 1).padStart(4, '0');
-    return { id, code, name, status: 'completado', contactId: '', startDate: '', endDate: '', description: '', pieces: [], milestones: [], _seeded: true };
+  const projectDocs = PROJECTS.map((nombre, i) => {
+    const id     = 'proj-hist-' + slug(nombre, 36);
+    const codigo = String(i + 1).padStart(4, '0');
+    return {
+      id, codigo, nombre,
+      estado:      'Terminado',
+      contactoId:  '',
+      fechaInicio: '', fechaFin: '',
+      descripcion: '',
+      piezas: [], hitos: [],
+      avance: 100,
+      _seeded: true,
+    };
   });
   await batchWrite('projects', projectDocs, d => d.id);
   console.log(`✅  ${PROJECTS.length} proyectos históricos (códigos 0001–${String(PROJECTS.length).padStart(4,'0')})`);
@@ -631,7 +683,35 @@ async function main() {
   await batchWrite('expense_categories', EXPENSE_CATEGORIES);
   console.log(`✅  ${EXPENSE_CATEGORIES.length} categorías de gasto`);
 
-  // 9. Conceptos de inventario (from CSV)
+  // 9. Listas de configuración
+  await db.collection('bank_accounts').doc('main').set({ list: BANK_ACCOUNTS });
+  console.log(`✅  bank_accounts (${BANK_ACCOUNTS.length})`);
+
+  await db.collection('payment_methods').doc('main').set({ list: PAYMENT_METHODS });
+  console.log(`✅  payment_methods (${PAYMENT_METHODS.length})`);
+
+  await db.collection('worker_roles').doc('main').set({ list: WORKER_ROLES });
+  console.log(`✅  worker_roles (${WORKER_ROLES.length})`);
+
+  await db.collection('viatico_categories').doc('main').set({ list: VIATICO_CATEGORIES });
+  console.log(`✅  viatico_categories (${VIATICO_CATEGORIES.length})`);
+
+  await db.collection('wood_types').doc('main').set({ list: WOOD_TYPES });
+  console.log(`✅  wood_types (${WOOD_TYPES.length})`);
+
+  await db.collection('wood_formats').doc('main').set({ list: WOOD_FORMATS });
+  console.log(`✅  wood_formats (${WOOD_FORMATS.length})`);
+
+  await db.collection('wood_quality').doc('main').set({ list: WOOD_QUALITY });
+  console.log(`✅  wood_quality (${WOOD_QUALITY.length})`);
+
+  await db.collection('wood_locations').doc('main').set({ list: WOOD_LOCATIONS });
+  console.log(`✅  wood_locations (${WOOD_LOCATIONS.length})`);
+
+  await db.collection('inventory_locations').doc('main').set({ list: INVENTORY_LOCATIONS });
+  console.log(`✅  inventory_locations (${INVENTORY_LOCATIONS.length})`);
+
+  // 10. Conceptos de inventario (from CSV)
   const csvPath = path.join(__dirname, 'conceptos_inventario.csv');
   const lines = fs.readFileSync(csvPath, 'utf-8').split(/\r?\n/).filter(l => l.trim());
   lines.shift();

@@ -143,7 +143,15 @@ td { color: var(--text); }
           <input type="date" id="f-regreso" class="form-control">
         </div>
       </div>
-      
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Viático diario por persona <span style="font-weight:400;color:var(--subtext);">($/persona/día — para calcular presupuesto)</span></label>
+          <input type="number" id="f-viatico-dia" class="form-control" placeholder="0" step="50" min="0">
+        </div>
+        <div class="form-group"></div>
+      </div>
+
       <div class="form-group" style="margin-top:24px;">
         <button class="btn btn-blue" onclick="saveViaje()">Guardar Viaje</button>
         <button class="btn" onclick="showView('list')">Cancelar</button>
@@ -169,6 +177,13 @@ td { color: var(--text); }
           </select>
         </div>
         <div id="d-workers" style="font-size:14px; font-weight:600;"></div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+          <label style="font-size:12px; font-weight:700; color:var(--subtext); white-space:nowrap;">Viático/día por persona:</label>
+          <input type="number" id="d-viatico-dia" class="form-control" min="0" step="50" placeholder="0"
+            style="width:110px; font-size:13px;"
+            onchange="saveViaticoDia(this.value)">
+          <span style="font-size:12px; color:var(--subtext);">$/persona/día</span>
+        </div>
         <div id="d-nota-cierre" style="font-size:13px; font-style:italic; color:var(--amber); margin-top:8px; display:none;"></div>
       </div>
       <div style="display:flex; gap:8px;">
@@ -176,6 +191,9 @@ td { color: var(--text); }
         <button id="btn-reabrir-viaje" class="btn" onclick="reabrirViaje()" style="display:none;">Reabrir Viaje</button>
       </div>
     </div>
+
+    <!-- Panel de presupuesto diario — se llena por JS -->
+    <div id="budget-panel" style="display:none;"></div>
 
     <div class="card" id="card-workers">
       <h3 class="card-title">Personal Asignado al Viaje</h3>
@@ -296,14 +314,8 @@ td { color: var(--text); }
 
     <div class="card">
       <h3 class="card-title">Saldo por Trabajador</h3>
-      <div id="r-workers-table" style="margin-bottom:16px;"></div>
-
-      <h3 class="card-title" style="margin-top:16px;">Gastos de Empresa</h3>
-      <p style="font-size:13px; color:var(--subtext); margin-bottom:12px;">Pagados directamente por la empresa (no afectan el saldo de ningún trabajador).</p>
-      <div id="r-empresa-rows"></div>
-      <div style="display:flex; justify-content:flex-end; font-weight:800; font-size:14px; padding-top:8px; border-top:1px solid var(--crust); margin-top:4px;">
-        Total empresa: <span id="r-empresa-total" style="margin-left:12px;">$0.00</span>
-      </div>
+      <p style="font-size:13px; color:var(--subtext); margin-bottom:12px;">Anticipo entregado menos lo que el trabajador comprobó. Positivo = debe devolver, negativo = empresa le debe.</p>
+      <div id="r-workers-table"></div>
     </div>
 
   </div>
@@ -545,28 +557,32 @@ function renderList() {
     }
 
     const pObj = (db.projects||[]).find(p => p.id === v.project_id);
-    const pName = pObj ? `${pObj.codigo||pObj.code} - ${pObj.nombre||pObj.name}` : 'Sin proyecto / General';
+    const pName = pObj ? `${pObj.codigo||pObj.code} — ${pObj.nombre||pObj.name}` : v.descripcion || 'Sin proyecto';
+    const totalGastos = stats.totalAnt + stats.totalGas; // anticipos + gastos empresa = costo total
+    // Calcular si hay saldo pendiente con algún trabajador
+    const wAnt = {}; const wComp = {};
+    stats.anticipos.forEach(a => { const wid = a.trabajador_id||a.recibido_por; wAnt[wid]=(wAnt[wid]||0)+Number(a.monto); });
+    stats.gastos.forEach(g => { if (g.pagado_por_trabajador||(!BANK_ACCOUNTS.includes(g.cuenta)&&g.cuenta&&g.cuenta!=='trabajador')) { wComp[g.cuenta]=(wComp[g.cuenta]||0)+Number(g.monto); } });
+    let saldoPendienteTotal = 0;
+    new Set([...Object.keys(wAnt),...Object.keys(wComp)]).forEach(wid => { saldoPendienteTotal += Math.abs((wAnt[wid]||0)-(wComp[wid]||0)); });
+    const saldoBadge = saldoPendienteTotal > 0.01
+      ? `<span style="background:var(--amber-bg);color:var(--amber-text);font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;">⚠ Saldo ${formatMoney(saldoPendienteTotal)}</span>` : '';
 
     html += `
     <div class="trip-item" onclick="openDetalle('${v.id}')">
       <div class="trip-info">
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <div class="trip-title">${pName}</div>
           <span class="badge badge-${v.estado}">${v.estado}</span>
+          ${saldoBadge}
         </div>
-        <div class="trip-meta">${workerNames}</div>
-        <div class="trip-meta" style="margin-top:4px;">📅 ${formatDateDMM(v.fecha_salida)} → ${formatDateDMM(v.fecha_regreso_real || v.fecha_regreso_est)}</div>
+        <div class="trip-meta" style="margin-top:4px;">📅 ${formatDateDMM(v.fecha_salida)} → ${formatDateDMM(v.fecha_regreso_real||v.fecha_regreso_est)} &nbsp;·&nbsp; 👷 ${workerNames}</div>
       </div>
       <div class="trip-stats">
         <div class="t-stat">
-          <span class="t-stat-lbl">Anticipos</span>
-          <span class="t-stat-val">${formatMoney(stats.totalAnt)}</span>
+          <span class="t-stat-lbl">Total gastos del viaje</span>
+          <span class="t-stat-val" style="font-size:18px;">${formatMoney(stats.totalGas)}</span>
         </div>
-        <div class="t-stat">
-          <span class="t-stat-lbl">Gastos</span>
-          <span class="t-stat-val" style="color:var(--text);">${formatMoney(stats.totalGas)}</span>
-        </div>
-        ${v.estado === 'cerrado' ? '' : saldoHtml}
       </div>
     </div>`;
   });
@@ -589,6 +605,7 @@ function saveViaje() {
     fecha_salida: document.getElementById('f-salida').value,
     fecha_regreso_est: document.getElementById('f-regreso').value,
     tipo: document.getElementById('f-type').value,
+    viatico_diario: parseFloat(document.getElementById('f-viatico-dia').value) || 0,
     estado: 'activo',
     creado: new Date().toISOString().slice(0, 10)
   };
@@ -645,11 +662,18 @@ function openDetalle(id) {
   document.getElementById('btn-reabrir-viaje').style.display = isCerrado ? 'inline-flex' : 'none';
 
   document.getElementById('d-workers-select').disabled = isCerrado;
+  // Llenar campo viático diario
+  const vdEl = document.getElementById('d-viatico-dia');
+  if (vdEl) vdEl.value = currentViaje.viatico_diario || '';
+
   _renderWorkerChips();
   updateTripSelects();
 
   renderDetalles();
   showView('detail');
+
+  // Auto-asistencia en segundo plano
+  if (currentViaje.estado === 'activo') checkAndMarkTripAttendance(currentViaje);
 }
 
 function agregarTrabajadorViaje() {
@@ -799,21 +823,42 @@ function renderDetalles() {
   });
   document.getElementById('tf-anticipos-total').textContent = formatMoney(stats.totalAnt);
 
-  // Gastos tb
-  const tbGas = document.getElementById('tb-gastos');
-  tbGas.innerHTML = stats.gastos.length ? '' : '<tr><td colspan="6" style="text-align:center;color:var(--subtext);">No hay gastos</td></tr>';
+  // Gastos agrupados por día
+  const gastosPorDia = {};
   stats.gastos.forEach(g => {
-    const linkHtml = g.url ? `<a href="${g.url}" target="_blank" style="text-decoration:none; margin-left:6px;" title="Ver comprobante">🔗</a>` : '';
-    tbGas.innerHTML += `<tr>
-      <td>${formatDateDMM(g.fecha)}</td>
-      <td>${CAT_LABELS[g.categoria]||g.categoria}</td>
-      <td>${g.descripcion || '-'}${linkHtml}</td>
-      <td><span style="font-size:11px;font-weight:700;background:${g.pagado_por_trabajador?'var(--blue-bg)':'var(--surface0)'};padding:2px 6px;border-radius:4px;">${g.cuenta_nombre||g.cuenta||'—'}</span></td>
-      <td class="num-col" style="font-weight:600;">${formatMoney(g.monto)}</td>
-      <td style="text-align:center;">${g.justificado ? '<span style="color:var(--green-text);">Sí 📄</span>' : '<span style="color:var(--amber-text);">No</span>'}</td>
-      <td style="text-align:right;">${currentViaje.estado==='cerrado'?'':`<button class="btn btn-small" onclick="delGasto('${g.id}')" style="color:var(--red);">✕</button>`}</td>
-    </tr>`;
+    const key = g.fecha || 'Sin fecha';
+    if (!gastosPorDia[key]) gastosPorDia[key] = [];
+    gastosPorDia[key].push(g);
   });
+  const diasOrdenados = Object.keys(gastosPorDia).sort();
+  let gastosHtml = '';
+  if (!diasOrdenados.length) {
+    gastosHtml = '<tr><td colspan="6" style="text-align:center;color:var(--subtext);padding:16px;">No hay gastos registrados</td></tr>';
+  } else {
+    diasOrdenados.forEach(dia => {
+      const gs = gastosPorDia[dia];
+      const totalDia = gs.reduce((s,g)=>s+Number(g.monto),0);
+      gastosHtml += `<tr style="background:var(--mantle);">
+        <td colspan="5" style="padding:6px 10px;font-size:11px;font-weight:800;color:var(--subtext);text-transform:uppercase;letter-spacing:.05em;">
+          📅 ${formatDateDMM(dia)} &nbsp;·&nbsp; ${gs.length} gasto${gs.length>1?'s':''} &nbsp;·&nbsp; ${formatMoney(totalDia)}
+        </td>
+        <td style="text-align:right;padding:6px 10px;"></td>
+      </tr>`;
+      gs.forEach(g => {
+        const linkHtml = g.url ? `<a href="${g.url}" target="_blank" style="text-decoration:none;margin-left:5px;" title="Ver comprobante">🔗</a>` : '';
+        const cuentaStyle = g.pagado_por_trabajador ? 'background:var(--blue-bg);color:var(--blue-text)' : 'background:var(--surface0)';
+        gastosHtml += `<tr style="border-bottom:1px solid var(--crust);">
+          <td style="padding:8px 10px;color:var(--subtext);font-size:12px;"></td>
+          <td style="padding:8px 10px;">${CAT_LABELS[g.categoria]||g.categoria||'—'}</td>
+          <td style="padding:8px 10px;">${g.descripcion||'—'}${linkHtml}</td>
+          <td style="padding:8px 10px;"><span style="font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;${cuentaStyle}">${g.cuenta_nombre||g.cuenta||'—'}</span></td>
+          <td style="padding:8px 10px;text-align:right;font-weight:600;">${formatMoney(g.monto)}</td>
+          <td style="padding:8px 10px;text-align:right;">${currentViaje.estado==='cerrado'?'':`<button class="btn btn-small" onclick="delGasto('${g.id}')" style="color:var(--red);padding:2px 6px;">✕</button>`}</td>
+        </tr>`;
+      });
+    });
+  }
+  document.getElementById('tb-gastos').innerHTML = gastosHtml;
   document.getElementById('tf-gastos-total').textContent = formatMoney(stats.totalGas);
 
   // ── Saldo por trabajador ─────────────────────────────────────────────────
@@ -881,20 +926,8 @@ function renderDetalles() {
   }
   document.getElementById('r-workers-table').innerHTML = workerTableHtml;
 
-  // Gastos de empresa
-  let empresaHtml = '';
-  if (gastosEmpresa.length === 0) {
-    empresaHtml = '<div style="color:var(--subtext);font-size:13px;padding:4px 0;">Sin gastos de empresa registrados.</div>';
-  } else {
-    gastosEmpresa.forEach(g => {
-      empresaHtml += `<div class="sum-row" style="padding:6px 0;font-size:13px;">
-        <span>${formatDateDMM(g.fecha)} · ${CAT_LABELS[g.categoria]||g.categoria} · ${g.descripcion||'—'} <span style="background:var(--surface0);padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;">${g.cuenta_nombre||g.cuenta}</span></span>
-        <span style="font-weight:600;">${formatMoney(g.monto)}</span>
-      </div>`;
-    });
-  }
-  document.getElementById('r-empresa-rows').innerHTML = empresaHtml;
-  document.getElementById('r-empresa-total').textContent = formatMoney(totalEmpresa);
+  // Actualizar panel de presupuesto
+  renderBudgetPanel(stats.totalAnt);
 }
 
 async function addAnticipo() {
@@ -1201,6 +1234,122 @@ async function showReporteMensual() {
   const entradas = del.filter(m => m.type === 'Ingreso').reduce((s,m) => s + m.amount, 0);
 
   alert(`📊 REPORTE VIÁTICOS — ${monthStr}\n\nSalidas (anticipos y reembolsos): ${fmt(salidas)}\nEntradas (devoluciones): ${fmt(entradas)}\n\nGASTO NETO: ${fmt(salidas - entradas)}\n\n(Basado en los últimos movimientos cargados. Para el historial completo, usar el botón "Cargar historial completo" en Movimientos.)`);
+}
+
+// ── Guardar viático diario al cambiar en el detalle ──────────────────────
+function saveViaticoDia(val) {
+  if (!currentViaje) return;
+  currentViaje.viatico_diario = parseFloat(val) || 0;
+  const db = window.DB.get();
+  const v = (db.viajes||[]).find(x => x.id === currentViajeId);
+  if (v) {
+    v.viatico_diario = currentViaje.viatico_diario;
+    window.DB.save(db);
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+  }
+  renderBudgetPanel(); // recalcular
+}
+
+// ── Panel de presupuesto de viáticos ─────────────────────────────────────
+function renderBudgetPanel(totalAntPagado) {
+  const panel = document.getElementById('budget-panel');
+  if (!panel || !currentViaje) return;
+
+  const diario  = currentViaje.viatico_diario || 0;
+  const nWorkers = (currentViaje.worker_ids||[]).length;
+  if (diario <= 0 || nWorkers === 0) { panel.style.display = 'none'; return; }
+
+  const salida  = currentViaje.fecha_salida;
+  const regreso = currentViaje.fecha_regreso_real || currentViaje.fecha_regreso_est;
+  if (!salida || !regreso) { panel.style.display = 'none'; return; }
+
+  const ms   = new Date(regreso+'T12:00:00') - new Date(salida+'T12:00:00');
+  const dias = Math.max(1, Math.round(ms / 86400000) + 1);
+  const presupuesto = dias * nWorkers * diario;
+  const dado = totalAntPagado != null ? totalAntPagado
+    : (() => { const db = window.DB.get(); return calcViajeStats(db, currentViajeId).totalAnt; })();
+  const pendiente = presupuesto - dado;
+
+  const color = pendiente > 0 ? 'var(--amber)' : 'var(--green)';
+  const msg   = pendiente > 0
+    ? `⚠ Faltan ${formatMoney(pendiente)} por entregar según el regreso programado`
+    : `✓ Anticipos cubiertos para ${dias} día${dias>1?'s':''} de viaje`;
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="card" style="border-left:4px solid ${color};padding:14px 18px;">
+      <div style="font-size:12px;font-weight:800;color:var(--subtext);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">
+        Presupuesto de Viáticos
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:12px;">
+        <div><div style="font-size:11px;color:var(--subtext);">Días programados</div><div style="font-size:20px;font-weight:800;">${dias}</div></div>
+        <div><div style="font-size:11px;color:var(--subtext);">Trabajadores</div><div style="font-size:20px;font-weight:800;">${nWorkers}</div></div>
+        <div><div style="font-size:11px;color:var(--subtext);">Tarifa/persona/día</div><div style="font-size:20px;font-weight:800;">${formatMoney(diario)}</div></div>
+        <div><div style="font-size:11px;color:var(--subtext);">Presupuesto total</div><div style="font-size:20px;font-weight:800;">${formatMoney(presupuesto)}</div></div>
+        <div><div style="font-size:11px;color:var(--subtext);">Anticipos dados</div><div style="font-size:20px;font-weight:800;color:var(--blue-text);">${formatMoney(dado)}</div></div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:${color};padding:8px 12px;background:${color}18;border-radius:8px;">${msg}</div>
+    </div>`;
+}
+
+// ── Auto-asistencia: marcar días de viaje en attendance_logs ─────────────
+async function checkAndMarkTripAttendance(viaje) {
+  if (!viaje || !viaje.fecha_salida || !(viaje.worker_ids||[]).length) return;
+  const regreso = viaje.fecha_regreso_real || viaje.fecha_regreso_est;
+  if (!regreso) return;
+
+  const d0    = new Date(viaje.fecha_salida + 'T12:00:00');
+  const dEnd  = new Date(regreso            + 'T12:00:00');
+  if (isNaN(d0) || isNaN(dEnd) || dEnd < d0) return;
+
+  // Recopilar días del viaje
+  const tripDays = [];
+  for (let d = new Date(d0); d <= dEnd; d.setDate(d.getDate()+1))
+    tripDays.push(d.toISOString().slice(0,10));
+
+  // Cargar attendance_logs si no están cargados
+  if (window.parent?.cargar_coleccion && window.parent?.DB_STATE?.attendance_logs === undefined)
+    await window.parent.cargar_coleccion('attendance_logs');
+
+  const logs = window.parent?.DB_STATE?.attendance_logs || window.DB.get().attendance_logs || [];
+  const ops  = [];
+
+  for (const wid of viaje.worker_ids) {
+    for (const fecha of tripDays) {
+      // No crear si ya existe un registro manual (editado_manualmente) o de producción
+      const existing = logs.find(a =>
+        (a.trabajadorId||a.workerId) === wid && a.fecha === fecha
+      );
+      if (existing && existing.source !== 'auto_viaje') continue; // tiene registro manual → respetar
+      if (existing) continue; // ya marcado como viaje → no duplicar
+
+      const rec = {
+        id:           crypto.randomUUID(),
+        trabajadorId: wid,
+        workerId:     wid,
+        fecha,
+        estado:       'viaje',
+        status:       'viaje',
+        horasNormal:  9,
+        horasExtra:   0,
+        horasDoble:   0,
+        horasTotales: 9,
+        source:       'auto_viaje',
+        viaje_id:     viaje.id,
+        notas:        `Auto-marcado: ${viaje.descripcion||'Viaje'} (${viaje.fecha_salida} → ${regreso})`,
+      };
+      ops.push({ type: 'set', col: 'attendance_logs', id: rec.id, data: rec });
+      logs.push(rec);
+    }
+  }
+
+  if (!ops.length) return;
+
+  // Guardar en DB_STATE y Firestore
+  if (window.parent?.DB_STATE) window.parent.DB_STATE.attendance_logs = logs;
+  if (window.parent?.runBatchedWrites) {
+    window.parent.runBatchedWrites(ops).catch(e => console.warn('[viaticos] auto-asistencia:', e.message));
+  }
 }
 
 init(); // Llamada directa (sin esperar al evento que podría ya haber pasado)

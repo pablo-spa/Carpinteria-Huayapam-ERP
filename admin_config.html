@@ -9,29 +9,8 @@
 <script src="db.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-  :root {
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --border: #334155;
-    --text: #f8fafc;
-    --subtext: #94a3b8;
-    --brand: #3b82f6;
-    --brand-hover: #2563eb;
-    --danger: #ef4444;
-  }
   body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
-    margin: 0;
-    padding: 2rem;
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    max-width: 600px;
   }
   .form-group {
     margin-bottom: 1.5rem;
@@ -42,44 +21,25 @@
     font-weight: 500;
     color: var(--subtext);
   }
-  input {
-    width: 100%;
-    padding: 0.75rem;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    color: var(--text);
-  }
-  input:focus {
-    outline: none;
-    border-color: var(--brand);
-  }
-  .btn {
-    background: var(--brand);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    border: none;
-    cursor: pointer;
-    font-weight: 500;
-  }
-  .btn:hover { background: var(--brand-hover); }
 </style>
 </head>
-<body>
+<body style="padding: 2rem;">
 
   <div class="header-actions" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
     <div>
       <h1 class="text-2xl font-bold mb-1">Configuración General</h1>
       <p style="color:var(--subtext)">Ajustes y políticas de la empresa (Asistencia, Vacaciones, Penalizaciones, etc.)</p>
     </div>
-    <button class="btn" style="padding: 0.75rem 2rem; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" onclick="saveSettings()">Guardar Todos los Cambios</button>
+    <div style="display:flex; gap:12px;">
+      <button class="btn btn-dark" onclick="if(window.parent && window.parent.toggleGlobalTheme) window.parent.toggleGlobalTheme()">🌓 Cambiar Tema</button>
+      <button class="btn btn-blue" style="padding: 0.75rem 2rem; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);" onclick="saveSettings()">Guardar Cambios</button>
+    </div>
   </div>
 
-  <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; padding-bottom: 4rem;">
+  <div class="main-content" style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 2.5rem; padding-bottom: 4rem;">
     
     <!-- TARJETA: Asistencia -->
-    <div class="card">
+    <div class="menu-section">
       <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.5rem;">⏰</span>
         <h2 class="text-xl font-semibold">Reglas de Asistencia</h2>
@@ -123,7 +83,7 @@
     </div>
 
     <!-- TARJETA: Vacaciones -->
-    <div class="card">
+    <div class="menu-section">
       <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 0.5rem;">
         <span style="font-size: 1.5rem;">🏖️</span>
         <h2 class="text-xl font-semibold">Vacaciones — Tabla LFT</h2>
@@ -154,7 +114,7 @@
     </div>
 
     <!-- TARJETA: Faltas y Permisos -->
-    <div class="card">
+    <div class="menu-section">
       <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.5rem;">⚖️</span>
         <h2 class="text-xl font-semibold">Faltas y Justificaciones</h2>
