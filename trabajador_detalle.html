@@ -970,60 +970,57 @@ async function dpBorrar() {
 }
 
 async function _dpBorrarConfirmado() {
-  const db = window.DB.get();
-  const id  = DP.existingId;
-  const batchOps = [];
+  const id     = DP.existingId;
+  const source = DP.source; // 'produccion' | 'checador'
+  const ds     = selectedDay;
 
-  // Borrar de attendance (si existe — registros de Producción Diaria)
-  const inAttendance = (db.attendance || []).some(a => a.id === id);
-  if (inAttendance) {
-    batchOps.push({ type: 'delete', col: 'attendance', id });
-  }
-
-  // Borrar de attendance_logs (registros del Reloj Checador y de Producción Diaria)
-  const inLogs = (db.attendance_logs || []).some(a => a.id === id);
-  if (inLogs) {
-    batchOps.push({ type: 'delete', col: 'attendance_logs', id });
-  }
-
-  // Borrar production_logs del mismo día y trabajador
-  const prodLogs = (db.production_logs || []).filter(pl =>
-    (pl.trabajadorId || pl.workerId) === workerId && pl.fecha === selectedDay
-  );
-  prodLogs.forEach(pl => batchOps.push({ type: 'delete', col: 'production_logs', id: pl.id }));
-
-  if (batchOps.length === 0) {
-    toast('No se encontró el registro en la base de datos.', 'warn');
+  const delFn = window.parent?.deleteDocumentFromFirebase
+    || window.parent?.deleteDocumentInFirebase
+    || null;
+  if (!delFn && !window.parent?.runBatchedWrites) {
+    toast('No hay conexión con la base de datos.', 'error');
     return;
   }
 
   try {
+    // 1. Borrar en Firestore según la fuente del registro
+    const dels = [];
+    dels.push({ col: 'attendance',      id });  // produccion (puede existir o no)
+    dels.push({ col: 'attendance_logs', id });  // checador / produccion
+    // Borrar production_logs del mismo día
+    const pState = window.parent?.DB_STATE;
+    const prodIds = (pState?.production_logs || [])
+      .filter(pl => (pl.trabajadorId || pl.workerId) === workerId && pl.fecha === ds)
+      .map(pl => pl.id);
+    prodIds.forEach(pid => dels.push({ col: 'production_logs', id: pid }));
+
     if (window.parent?.runBatchedWrites) {
-      await window.parent.runBatchedWrites(batchOps);
+      await window.parent.runBatchedWrites(dels.map(d => ({ type: 'delete', col: d.col, id: d.id })));
     } else {
-      // Fallback: borrar uno a uno
-      for (const op of batchOps) {
-        if (window.parent?.deleteDocumentFromFirebase) await window.parent.deleteDocumentFromFirebase(op.col, op.id);
-        else if (window.parent?.deleteDocumentInFirebase)  await window.parent.deleteDocumentInFirebase(op.col, op.id);
-      }
+      for (const d of dels) await delFn(d.col, d.id).catch(() => {});
     }
 
-    // Actualizar estado en memoria
-    db.attendance      = (db.attendance     || []).filter(a => a.id !== id);
-    db.attendance_logs = (db.attendance_logs|| []).filter(a => a.id !== id);
-    db.production_logs = (db.production_logs|| []).filter(pl =>
-      !((pl.trabajadorId || pl.workerId) === workerId && pl.fecha === selectedDay)
-    );
-    window.DB.save(db);
+    // 2. Actualizar DB_STATE directamente (window.DB.save NO borra — solo add/update)
+    if (pState) {
+      if (pState.attendance)
+        pState.attendance = pState.attendance.filter(a => a.id !== id);
+      if (pState.attendance_logs)
+        pState.attendance_logs = pState.attendance_logs.filter(a => a.id !== id);
+      if (pState.production_logs)
+        pState.production_logs = pState.production_logs.filter(pl =>
+          !((pl.trabajadorId || pl.workerId) === workerId && pl.fecha === ds)
+        );
+    }
 
-    updateCell(selectedDay);
+    // 3. Actualizar UI
+    updateCell(ds);
     renderStats(calYear, calMonth);
     renderPayWeeks();
     closeDayPanel();
-    toast('Registro del día eliminado.', 'warn');
+    toast('Registro eliminado.', 'warn');
   } catch(e) {
     console.error('Error borrando registro:', e);
-    toast('Error al borrar. Verifica tu conexión.', 'error');
+    toast('Error al borrar: ' + e.message, 'error');
   }
 }
 
