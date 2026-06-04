@@ -632,7 +632,8 @@ function buildActiveCard(o, mode) {
     ? `<div class="pending-notice" style="margin-bottom:10px;">⚠ Esta orden tiene conceptos o proveedores nuevos que se confirmarán al autorizar.</div>`
     : '';
 
-  const cuentaOpts = ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
+  const accts = ACCOUNTS.length ? ACCOUNTS : ['CAJA','CHU','SATP'];
+  const cuentaOpts = accts.map(a => `<option value="${a}">${a}</option>`).join('');
   const actionBtns = isCotizar
     ? `<button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
        <span style="font-size:12px;color:var(--subtext);margin-left:8px;">⏳ Esperando autorización en <strong>Autorizar Pedidos</strong></span>`
@@ -764,8 +765,8 @@ async function guardarPrecios(ordId) {
   }
 
   if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
-  showToast('✓ Guardado');
-  renderOrders();
+  showToast('✓ Precios guardados — selecciona la cuenta y marca como Comprado');
+  // No reconstruir el card aquí: resetearía el selector de cuenta
 }
 
 function readPricesFromCard(ordId, order) {
