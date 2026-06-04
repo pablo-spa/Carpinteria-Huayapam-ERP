@@ -282,13 +282,17 @@
     </div>
     
     <div class="sp-foot">
-      <div id="status-badge" class="pill pill-amber" style="display:none;">Borrador</div>
-      <button id="btn-delete-panel" class="btn btn-outline" onclick="deletePanelMovement()"
-        style="display:none;color:var(--red);border-color:var(--red);margin-right:auto;">🗑 Eliminar</button>
-      <div style="display:flex; gap:8px; margin-left:auto;">
-        <button class="btn btn-outline" onclick="closePanel()">Cancelar</button>
-        <button class="btn btn-outline" id="btn-draft" onclick="saveMov(false)" style="background:var(--base)">Guardar Borrador</button>
-        <button class="btn btn-blue" id="btn-confirm" onclick="saveMov(true)">Confirmar</button>
+      <!-- Izquierda: estado + eliminar -->
+      <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+        <div id="status-badge" class="pill pill-amber" style="display:none;">Borrador</div>
+        <button id="btn-delete-panel" class="btn btn-ghost" onclick="deletePanelMovement()"
+          style="display:none; color:var(--red); border-color:var(--red); padding:6px 10px; font-size:12px;">🗑</button>
+      </div>
+      <!-- Derecha: acciones -->
+      <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; flex:1;">
+        <button class="btn btn-ghost" onclick="closePanel()" style="font-size:12px; padding:6px 12px;">Cancelar</button>
+        <button class="btn btn-ghost" id="btn-draft" onclick="saveMov(false)" style="font-size:12px; padding:6px 12px;">Borrador</button>
+        <button class="btn btn-blue" id="btn-confirm" onclick="saveMov(true)" style="font-size:12px; padding:6px 14px;">Confirmar ✓</button>
       </div>
     </div>
   </div>
@@ -711,7 +715,7 @@
   }
 
   function deleteMovement(mid) {
-    const mov = _allMovements.find(m => m.id === mid);
+    const mov = _allMovements.find(m => (m.id || m._id) === mid);
     if (!mov) return;
 
     const desc = `${mov.date} · ${mov.type} · $${parseFloat(mov.amount).toLocaleString('es-MX', {minimumFractionDigits:2})} · ${mov.concept || ''}`;
@@ -725,7 +729,7 @@
   }
 
   function _doDeleteMovement(mid) {
-    const mov = _allMovements.find(m => m.id === mid);
+    const mov = _allMovements.find(m => (m.id || m._id) === mid);
     if (!mov) return;
 
     // Revertir el saldo de la cuenta si el movimiento estaba confirmado
@@ -735,9 +739,12 @@
       window.parent.runBatchedWrites(balOps).catch(e => console.warn('[finanzas] error al revertir saldo:', e.message));
     }
 
-    // Soft delete — marcar como anulado en objeto local Y en DB_STATE del padre
+    // Soft delete — marcar como anulado en _allMovements, DBm Y DB_STATE del padre
     mov.status   = 'anulado';
     mov.eliminado = true;
+    // DBm puede tener una referencia diferente al mismo movimiento (si fue reemplazado por saveMov)
+    const dbmMov = DBm.find(m => (m.id || m._id) === mid);
+    if (dbmMov && dbmMov !== mov) { dbmMov.status = 'anulado'; dbmMov.eliminado = true; }
     if (window.parent?.DB_STATE?.accounting_movements) {
       const liveM = window.parent.DB_STATE.accounting_movements.find(m => (m.id || m._id) === mid);
       if (liveM) { liveM.status = 'anulado'; liveM.eliminado = true; }
