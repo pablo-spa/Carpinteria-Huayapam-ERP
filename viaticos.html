@@ -578,28 +578,38 @@ function renderList() {
 }
 
 function saveViaje() {
-  const db = window.DB.get();
-  
+  const desc = document.getElementById('f-desc').value.trim();
+  if (!desc) {
+    document.getElementById('f-desc').focus();
+    toast('Escribe una descripción para el viaje.', 'warn');
+    return;
+  }
+
   const v = {
     id: crypto.randomUUID(),
     worker_ids: [],
     project_id: document.getElementById('f-project').value.trim(),
-    descripcion: document.getElementById('f-desc').value.trim(),
+    descripcion: desc,
     fecha_salida: document.getElementById('f-salida').value,
     fecha_regreso_est: document.getElementById('f-regreso').value,
     tipo: document.getElementById('f-type').value,
-    estado: 'activo'
+    estado: 'activo',
+    creado: new Date().toISOString().slice(0, 10)
   };
-  
-  db.viajes = db.viajes || [];
-  db.viajes.push(v);
-  window.DB.save(db);
 
-  if (window.parent && window.parent.setDocumentInFirebase) {
+  // Actualizar DB_STATE directamente (window.DB.save no es fiable para inserciones)
+  dbStatePush('viajes', v);
+
+  // Persistir en Firestore
+  if (window.parent?.setDocumentInFirebase) {
     window.parent.setDocumentInFirebase('viajes', v.id, v);
   }
 
+  // Limpiar form
+  document.getElementById('f-desc').value = '';
+
   showView('list');
+  toast('Viaje creado.', 'ok');
 }
 
 function openDetalle(id) {

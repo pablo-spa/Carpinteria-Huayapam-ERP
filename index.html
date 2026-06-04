@@ -589,9 +589,11 @@
 
   function saveMenu() {
     localStorage.setItem('erp_menu_layout', JSON.stringify(menuLayout));
+    if (window.saveUserPrefs) window.saveUserPrefs();
   }
   function saveFavorites() {
     localStorage.setItem('erp_favorites', JSON.stringify(favorites));
+    if (window.saveUserPrefs) window.saveUserPrefs();
   }
 
   function toggleFavorite(id) {
@@ -935,6 +937,7 @@
     const newTheme = isDark ? 'light' : 'dark';
     localStorage.setItem('erp_theme', newTheme);
     applyTheme(newTheme);
+    if (window.saveUserPrefs) window.saveUserPrefs();
   };
 
   async function renderWelcomeNotifications() {
@@ -1368,6 +1371,39 @@
         window.DB_STATE = state;
         window.DB_STATE_LOADED = true;
         document.getElementById('db-loading-overlay').style.display = 'none';
+
+        // ── Preferencias de usuario desde Firestore ─────────────────────────
+        // Guarda en users/{email}.prefs para que persistan entre dispositivos
+        window.saveUserPrefs = async () => {
+          if (!window.CURRENT_USER?.email) return;
+          const prefs = {
+            theme:      localStorage.getItem('erp_theme') || 'light',
+            favorites:  localStorage.getItem('erp_favorites') || '[]',
+            menuLayout: localStorage.getItem('erp_menu_layout') || '[]',
+          };
+          try {
+            const userDoc = state.users.find(u => u.email === user.email);
+            await setDoc(doc(db, 'users', user.email), {
+              ...(userDoc || { email: user.email, role }),
+              prefs
+            });
+          } catch(e) { console.warn('[prefs] No se pudo guardar:', e.message); }
+        };
+
+        // Cargar prefs guardadas en Firestore y aplicarlas
+        try {
+          const userDocSnap = await getDoc(doc(db, 'users', user.email)).catch(() => null);
+          if (userDocSnap?.exists()) {
+            const prefs = userDocSnap.data().prefs;
+            if (prefs?.theme) {
+              localStorage.setItem('erp_theme', prefs.theme);
+              applyTheme(prefs.theme);
+            }
+            if (prefs?.favorites)  localStorage.setItem('erp_favorites',   prefs.favorites);
+            if (prefs?.menuLayout) localStorage.setItem('erp_menu_layout', prefs.menuLayout);
+            loadMenu(); // re-render con prefs cargadas
+          }
+        } catch(e) { console.warn('[prefs] No se pudo cargar:', e.message); }
 
         // Carga bajo demanda: se llama desde db.js cuando un módulo pide una colección no cargada
         window.cargar_coleccion = async (col) => {
