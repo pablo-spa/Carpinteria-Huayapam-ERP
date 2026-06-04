@@ -846,7 +846,7 @@ function renderDetalles() {
   }
 }
 
-function addAnticipo() {
+async function addAnticipo() {
   const m = parseFloat(document.getElementById('fa-monto').value);
   if(!m || m<=0) { alert('Ingresa un monto válido.'); return; }
   const recibe = document.getElementById('fa-recibe').value.trim();
