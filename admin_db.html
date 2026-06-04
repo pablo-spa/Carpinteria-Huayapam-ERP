@@ -86,7 +86,23 @@
   let currentTable = null;
 
   // Colecciones reales en Firestore (suppliers no existe — proveedores están en contacts con tipo='proveedor')
-  const KNOWN_COLLECTIONS = ['contacts', 'inventory', 'projects', 'quotations', 'orders', 'purchase_orders', 'accounting_movements', 'account_balances', 'settings', 'users', 'workers', 'attendance', 'attendance_logs', 'worker_loans', 'viajes', 'anticipos_viaticos', 'gastos_viaticos', 'wood', 'expense_categories', 'production_logs', 'systemEvents', 'piece_types', 'concept_categories', 'concept_units', 'inventory_brands', 'inventory_locations', 'bank_accounts', 'wood_types', 'wood_formats', 'wood_quality', 'wood_locations', 'actividades_trabajo', 'worker_roles', 'viatico_categories', 'inventory_salidas'];
+  // Solo colecciones que realmente existen en Firestore
+  const KNOWN_COLLECTIONS = [
+    // Core
+    'projects', 'quotations', 'contacts', 'workers', 'users', 'settings', 'config_params',
+    // Inventario y compras
+    'inventory', 'inventory_salidas', 'purchase_orders',
+    // Contabilidad
+    'accounting_movements', 'account_balances', 'expense_categories',
+    // RRHH y producción
+    'attendance_logs', 'production_logs', 'worker_loans',
+    // Viáticos
+    'viajes', 'anticipos_viaticos', 'gastos_viaticos',
+    // Madera (legacy)
+    'wood',
+    // Listas particionadas (solo lectura de metadatos)
+    'contacts_lists', 'inventory_lists', 'accounting_by_month',
+  ];
 
   function renderTables() {
     const list = document.getElementById('table-list');
