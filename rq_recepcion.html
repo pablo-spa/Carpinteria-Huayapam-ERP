@@ -53,9 +53,8 @@ async function init() {
   const orders = await window.DB.query('purchase_orders');
   const pending  = orders.filter(o => o.id && !o._init && o.status === 'Comprado');
   const recibidos = orders
-    .filter(o => o.id && !o._init && o.status === 'Recibido')
-    .sort((a, b) => new Date(b.fechaRecepcion||b.date) - new Date(a.fechaRecepcion||a.date))
-    .slice(0, 30);
+    .filter(o => o.id && !o._init && o.status !== 'Comprado')
+    .sort((a, b) => new Date(b.createdAt||b.fechaRecepcion||b.date) - new Date(a.createdAt||a.fechaRecepcion||a.date));
   const container = document.getElementById('main-list');
   container.innerHTML = '';
 
@@ -103,7 +102,7 @@ async function init() {
     const histDiv = document.createElement('div');
     histDiv.innerHTML = `
       <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;">
-        Historial de Recepciones (${recibidos.length})
+        Todas las órdenes (${recibidos.length})
       </div>
       ${recibidos.map(o => {
         const itemsHtml = (o.items||[]).map(i =>

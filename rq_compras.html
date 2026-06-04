@@ -677,8 +677,9 @@ function renderOrders() {
     .filter(o => o.status === 'Autorizado' || (o.manual === true && !['Comprado','Recibido','Entregado'].includes(o.status)))
     .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
 
+  const activeIds = new Set([...confirmados, ...autorizados].map(o => o.id));
   const historial = all
-    .filter(o => ['Comprado','Recibido','Entregado'].includes(o.status))
+    .filter(o => !activeIds.has(o.id))
     .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
 
   const cont = document.getElementById('orders-list');

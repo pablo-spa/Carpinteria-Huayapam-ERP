@@ -138,11 +138,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 </style>
 
 <div class="main">
-  <div class="tabs">
-    <div class="tab act" onclick="setTab('pending')">Por Autorizar</div>
-    <div class="tab" onclick="setTab('authorized')">Autorizados</div>
-    <div class="tab" onclick="setTab('all')">Todos</div>
-  </div>
   <div id="orders-list"></div>
 </div>
 
@@ -151,24 +146,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <script src="db.js"></script>
 <script>
   let ALL_ORDERS = [];
-  let currentTab = 'pending';
 
   async function init() {
     const orders = await window.DB.query('purchase_orders');
     const fallback = await window.DB.query('orders');
     ALL_ORDERS = orders.length ? orders : fallback;
     ALL_ORDERS = ALL_ORDERS.filter(o => o.id && !o._init);
-    render();
-  }
-
-  function setTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('act'));
-    document.querySelectorAll('.tab').forEach(t => {
-      if ((tab === 'pending'    && t.textContent === 'Por Autorizar') ||
-          (tab === 'authorized' && t.textContent === 'Autorizados') ||
-          (tab === 'all'        && t.textContent === 'Todos')) t.classList.add('act');
-    });
     render();
   }
 
@@ -181,99 +164,99 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     ).join('') + '</div>';
   }
 
+  const PILL_MAP = {'Pedido':'pill-amber','Solicitado':'pill-amber','Confirmado':'pill-blue','Autorizado':'pill-green','Comprado':'pill-green','Recibido':'pill-green','Cancelado':'pill-red'};
+  const fmt = n => '$'+parseFloat(n).toLocaleString('es-MX',{minimumFractionDigits:2});
+
+  function projLabel(o, d) {
+    const p = (d.projects||[]).find(p => p.id === o.projectId || (p.codigo||p.code) === o.project);
+    return p ? `${p.codigo||p.code} – ${p.nombre||p.name}` : (o.project || 'Stock General');
+  }
+
+  // Ficha con tabla de precios (visible para admin/compras/contabilidad)
+  function fichaConPrecios(o, d, withActions) {
+    const items = o.items || [];
+    const allPriced = items.every(i => parseFloat(i.price) > 0);
+    const total = items.reduce((s,i) => s + (parseFloat(i.qty)||0)*(parseFloat(i.price)||0), 0);
+    const canApprove = allPriced && withActions;
+    const pill = PILL_MAP[o.status] || 'pill-gray';
+    return `
+      <div class="ficha" id="card-${o.id}" ${!withActions?'style="opacity:.75;"':''}>
+        <div class="ficha-hdr"><span class="ficha-folio">${o.folio||o.id}</span><span class="pill ${pill}">${o.status}</span></div>
+        <div class="ficha-meta">
+          <span>📁 ${projLabel(o,d)}</span>
+          ${o.requester?`<span>👤 ${o.requester}</span>`:''}
+          ${o.date?`<span>📅 ${o.date}</span>`:''}
+          ${o.cuentaPago?`<span>🏦 ${o.cuentaPago}</span>`:''}
+          ${o.notes?`<span>📝 ${o.notes}</span>`:''}
+        </div>
+        ${statusFlow(o.status)}
+        <table style="width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:13px;">
+          <thead><tr style="border-bottom:2px solid var(--crust);">
+            <th style="text-align:left;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Concepto</th>
+            <th style="text-align:left;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Proveedor</th>
+            <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Cant.</th>
+            <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">P. Unit.</th>
+            <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Subtotal</th>
+          </tr></thead>
+          <tbody>
+          ${items.map(i => {
+            const sub = (parseFloat(i.qty)||0)*(parseFloat(i.price)||0);
+            const ps = parseFloat(i.price)>0?fmt(i.price):`<span style="color:var(--amber);font-size:11px;">Sin precio</span>`;
+            return `<tr style="border-top:1px solid var(--crust);">
+              <td style="padding:6px;font-weight:600;">${i.name||i.code||'—'} <span style="color:var(--subtext);font-size:11px;">(${i.unit||'pza'})</span></td>
+              <td style="padding:6px;color:var(--subtext);font-size:12px;">${i.provider||o.provider||'—'}</td>
+              <td style="padding:6px;text-align:right;">${i.qty}</td>
+              <td style="padding:6px;text-align:right;">${ps}</td>
+              <td style="padding:6px;text-align:right;font-weight:600;">${sub>0?fmt(sub):'—'}</td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+        ${allPriced&&total>0?`<div class="ficha-total"><span>Total:</span><span>${fmt(total)}</span></div>`:''}
+        ${withActions ? `
+        <div class="ficha-actions">
+          <button class="btn btn-red"  onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
+          <button class="btn btn-gray" onclick="act('${o.id}','Pedido')">↩ Re-Cotizar</button>
+          <button class="btn btn-green" style="${canApprove?'':'opacity:.4;pointer-events:none;'}"
+            onclick="act('${o.id}','Autorizado')">✓ Autorizar${allPriced&&total>0?' '+fmt(total):' (faltan precios)'}</button>
+        </div>` : ''}
+      </div>`;
+  }
+
+  function secHdr(label, count) {
+    return `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;">${label}${count!=null?' ('+count+')':''}</div>`;
+  }
+
   function render() {
     const list = document.getElementById('orders-list');
     const d = window.DB.get();
+    list.innerHTML = '';
 
-    let filtered;
-    if (currentTab === 'pending')         filtered = ALL_ORDERS.filter(o => o.status === 'Confirmado');
-    else if (currentTab === 'authorized') filtered = ALL_ORDERS.filter(o => ['Autorizado','Comprado','Recibido'].includes(o.status));
-    else                                  filtered = ALL_ORDERS;
-    filtered = [...filtered].sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
+    const sorted = [...ALL_ORDERS].sort((a,b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
+    const pending = sorted.filter(o => o.status === 'Confirmado');
+    const rest    = sorted.filter(o => o.status !== 'Confirmado');
 
-    const pending = ALL_ORDERS.filter(o => o.status === 'Confirmado');
     document.getElementById('hdr-count').textContent =
       pending.length ? `${pending.length} pedido(s) esperando autorización` : 'Sin pedidos pendientes';
 
-    const emptyLabels = {
-      pending:    ['✅', 'Sin pedidos pendientes', 'No hay pedidos esperando autorización.'],
-      authorized: ['📋', 'Sin pedidos autorizados', 'Los pedidos autorizados aparecerán aquí.'],
-      all:        ['📭', 'Sin pedidos registrados', 'Aún no hay pedidos en el sistema.'],
-    };
-    if (!filtered.length) {
-      const [icon, title, sub] = emptyLabels[currentTab] || emptyLabels.all;
-      list.innerHTML = `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;
+    if (!sorted.length) {
+      list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Sin pedidos registrados</div></div>`;
       return;
     }
 
-    list.innerHTML = filtered.map(o => {
-      const proj = d.projects.find(p => p.id === o.projectId || (p.codigo||p.code) === o.project) || null;
-      const projLabel = proj ? `${proj.code} – ${proj.name}` : (o.project || 'Sin proyecto');
+    // Sección 1: Accionables
+    list.insertAdjacentHTML('beforeend', secHdr('⏳ Por Autorizar', pending.length));
+    if (pending.length) {
+      pending.forEach(o => list.insertAdjacentHTML('beforeend', fichaConPrecios(o, d, true)));
+    } else {
+      list.insertAdjacentHTML('beforeend', `<div style="color:var(--subtext);text-align:center;padding:20px;background:var(--mantle);border-radius:12px;border:1px solid var(--crust);margin-bottom:14px;">Sin pedidos esperando autorización.</div>`);
+    }
 
-      const statusMap = {
-        'Pedido':      ['badge-pending',    'Solicitado'],
-        'Solicitado':  ['badge-pending',    'Solicitado'],
-        'Confirmado':  ['badge-confirmed',  'Confirmado'],
-        'Autorizado':  ['badge-authorized', 'Autorizado'],
-        'Comprado':    ['badge-authorized', 'Comprado'],
-        'Recibido':    ['badge-authorized', 'Recibido'],
-        'Cancelado':   ['',                 'Cancelado'],
-      };
-      const [badgeClass, badgeLabel] = statusMap[o.status] || ['', o.status || 'Sin estado'];
-
-      const items = o.items || [];
-      const allPriced = items.every(i => parseFloat(i.price) > 0);
-      const total = items.reduce((s, i) => s + (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0), 0);
-      const canApprove = allPriced && o.status === 'Confirmado';
-      const isPending  = o.status === 'Confirmado';
-
-      const fmt = n => '$'+parseFloat(n).toLocaleString('es-MX',{minimumFractionDigits:2});
-      return `
-        <div class="ficha" id="card-${o.id}">
-          <div class="ficha-hdr">
-            <span class="ficha-folio">${o.folio || o.id}</span>
-            <span class="pill ${badgeClass}">${badgeLabel}</span>
-          </div>
-          <div class="ficha-meta">
-            <span>📁 ${projLabel}</span>
-            ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
-            ${o.date ? `<span>📅 ${o.date}</span>` : ''}
-            ${o.provider ? `<span>🏪 ${o.provider}</span>` : ''}
-            ${o.notes ? `<span>📝 ${o.notes}</span>` : ''}
-          </div>
-          ${statusFlow(o.status)}
-          <table style="width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:13px;">
-            <thead><tr style="border-bottom:2px solid var(--crust);">
-              <th style="text-align:left;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Concepto</th>
-              <th style="text-align:left;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Proveedor</th>
-              <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Cant.</th>
-              <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">P. Unit.</th>
-              <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Subtotal</th>
-            </tr></thead>
-            <tbody>
-            ${items.map(i => {
-              const sub = (parseFloat(i.qty)||0) * (parseFloat(i.price)||0);
-              const priceStr = parseFloat(i.price) > 0 ? fmt(i.price) : `<span style="color:var(--amber);font-size:11px;">⚠ Sin precio</span>`;
-              return `<tr style="border-top:1px solid var(--crust);">
-                <td style="padding:6px;font-weight:600;">${i.name||i.code||'—'} <span style="color:var(--subtext);font-size:11px;">(${i.unit||'pza'})</span></td>
-                <td style="padding:6px;color:var(--subtext);font-size:12px;">${i.provider||o.provider||'—'}</td>
-                <td style="padding:6px;text-align:right;">${i.qty}</td>
-                <td style="padding:6px;text-align:right;">${priceStr}</td>
-                <td style="padding:6px;text-align:right;font-weight:600;">${sub>0?fmt(sub):'—'}</td>
-              </tr>`;
-            }).join('')}
-            </tbody>
-          </table>
-          ${allPriced && total > 0 ? `<div class="ficha-total"><span>Total:</span><span>${fmt(total)}</span></div>` : ''}
-          ${isPending ? `
-          <div class="ficha-actions">
-            <button class="btn btn-red"  onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>
-            <button class="btn btn-gray" onclick="act('${o.id}','Pedido')">↩ Re-Cotizar</button>
-            <button class="btn btn-green" style="${canApprove?'':'opacity:.4;pointer-events:none;'}"
-              onclick="act('${o.id}','Autorizado')">✓ Autorizar${allPriced&&total>0?' '+fmt(total):' (faltan precios)'}</button>
-          </div>` : ''}
-        </div>`;
-    }).join('');
+    // Sección 2: Todas las demás (read-only)
+    if (rest.length) {
+      list.insertAdjacentHTML('beforeend', secHdr('Todas las órdenes', rest.length));
+      rest.forEach(o => list.insertAdjacentHTML('beforeend', fichaConPrecios(o, d, false)));
+    }
   }
 
   async function act(id, newStatus) {
