@@ -7,46 +7,22 @@
 <title>ERP Carpintería Huayapam</title>
 <style>
   :root {
-    /* Catppuccin Latte */
-    --base: #eff1f5;
-    --mantle: #e6e9ef;
-    --crust: #dce0e8;
-    --surface0: #ccd0da;
-    --surface1: #bcc0cc;
-    --text: #4c4f69;
-    --subtext: #8c8fa1;
-    --green: #40a02b;
-    --brand: #1e66f5;
+    --sidebar-w: 260px;
     --nav-active-bg: rgba(64, 160, 43, 0.12);
     --nav-active-text: #40a02b;
-    --sidebar-w: 260px;
-    --radius: 10px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      /* Catppuccin Mocha */
-      --base: #1e1e2e;
-      --mantle: #181825;
-      --crust: #11111b;
-      --surface0: #313244;
-      --surface1: #45475a;
-      --text: #cdd6f4;
-      --subtext: #a6adc8;
-      --green: #a6da95;
-      --brand: #8caaee;
-      --nav-active-bg: rgba(166, 218, 149, 0.15);
-      --nav-active-text: #a6da95;
-    }
   }
 
-  body { 
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
-    background: var(--base); 
-    color: var(--text); 
-    height: 100vh; 
-    display: flex; 
-    overflow: hidden; 
-    margin: 0; 
+  /* Layout raíz: sidebar + contenido lado a lado, sin scroll de página */
+  body {
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  body.dark-mode {
+    --nav-active-bg: rgba(166, 218, 149, 0.15);
+    --nav-active-text: #a6da95;
   }
 
   /* SIDEBAR */
@@ -332,11 +308,13 @@
   </div>
   <!-- SIDEBAR -->
   <aside>
-    <div class="sidebar-header" onclick="goHome()" style="cursor:pointer;" title="Ir al inicio">
-      <div class="logo-icon">🪵</div>
-      <div class="logo-text">
-        <strong>Carpintería Huayapam</strong>
-        <span>Sistema de Gestión</span>
+    <div class="sidebar-header">
+      <div onclick="goHome()" style="cursor:pointer; display:flex; align-items:center; gap:12px; flex:1;" title="Ir al inicio">
+        <div class="logo-icon">🪵</div>
+        <div class="logo-text">
+          <strong>Carpintería Huayapam</strong>
+          <span>Sistema de Gestión</span>
+        </div>
       </div>
     </div>
 
@@ -344,12 +322,19 @@
       <!-- Dynamic menu goes here -->
     </div>
 
-    <div class="user-profile">
-      <div class="avatar" id="current-user-avatar">AD</div>
-      <div class="user-info">
-        <div class="name" id="current-user-name">Administración</div>
-        <div class="role" id="current-user-role">Administrador</div>
+    <div class="user-profile" style="flex-direction:column; gap:12px; align-items:stretch; padding-bottom:24px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="avatar" id="current-user-avatar">AD</div>
+        <div class="user-info">
+          <div class="name" id="current-user-name">Administración</div>
+          <div class="role" id="current-user-role">Administrador</div>
+        </div>
       </div>
+      <button id="theme-toggle" class="btn btn-dark" onclick="toggleGlobalTheme()" style="width:100%; display:flex; justify-content:center; gap:8px;">
+        <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <span>Modo Oscuro / Claro</span>
+      </button>
     </div>
   </aside>
 
@@ -430,6 +415,18 @@
       <h2 style="margin:0; color:var(--text);">Error de Conexión a Base de Datos</h2>
       <p id="firebase-error-msg" style="color:var(--subtext); max-width:400px; line-height:1.5;">No se pudo cargar la información. Es posible que se haya agotado la cuota de lecturas diarias o no tengas internet.</p>
       <button class="btn-back" onclick="window.location.reload()" style="padding:10px 20px; background:var(--blue); color:#fff; border-color:var(--blue);">Reintentar Conexión</button>
+    </div>
+
+    <!-- Modal de Confirmación Global -->
+    <div id="global-confirm-overlay" style="display:none; position:absolute; inset:0; background:rgba(var(--mantle-rgb, 24,24,37), 0.6); backdrop-filter:blur(2px); z-index:10000; align-items:center; justify-content:center;">
+      <div style="background:var(--base); padding:24px; border-radius:var(--radius-lg); max-width:400px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.2); border:1px solid var(--crust);">
+        <h3 id="g-confirm-title" style="margin:0 0 12px; font-size:18px; color:var(--text);">Confirmar</h3>
+        <p id="g-confirm-msg" style="margin:0 0 24px; color:var(--subtext); font-size:14px; line-height:1.5;"></p>
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+          <button class="btn btn-ghost" onclick="document.getElementById('global-confirm-overlay').style.display='none'">Cancelar</button>
+          <button id="g-confirm-btn" class="btn btn-blue">Aceptar</button>
+        </div>
+      </div>
     </div>
 
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
@@ -901,6 +898,9 @@
              frame.contentDocument.querySelectorAll('input, select, textarea').forEach(b => b.disabled = true);
           }
        }
+       // ── Asegurar que el iframe herede el tema actual al terminar de cargar ──
+       const isDark = document.body.classList.contains('dark-mode');
+       frame.contentDocument.body.classList.toggle('dark-mode', isDark);
     };
   }
 
@@ -908,6 +908,34 @@
     document.getElementById('welcome').style.display = 'flex';
     document.getElementById('frame-wrapper').style.display = 'none';
   }
+
+  // ── LÓGICA DE TEMA GLOBAL (CLARO/OSCURO) ──
+  function applyTheme(theme) {
+    const isDark = theme === 'dark';
+    if (isDark) {
+      document.body.classList.add('dark-mode');
+      document.getElementById('theme-icon-sun').style.display = 'block';
+      document.getElementById('theme-icon-moon').style.display = 'none';
+    } else {
+      document.body.classList.remove('dark-mode');
+      document.getElementById('theme-icon-sun').style.display = 'none';
+      document.getElementById('theme-icon-moon').style.display = 'block';
+    }
+    
+    // Aplicar al iframe si hay un módulo abierto
+    const frame = document.getElementById('main-frame');
+    if (frame && frame.contentDocument && frame.contentDocument.body) {
+      frame.contentDocument.body.classList.toggle('dark-mode', isDark);
+    }
+  }
+
+  // Función global para que cualquier iframe pueda cambiar el tema
+  window.toggleGlobalTheme = function() {
+    const isDark = document.body.classList.contains('dark-mode');
+    const newTheme = isDark ? 'light' : 'dark';
+    localStorage.setItem('erp_theme', newTheme);
+    applyTheme(newTheme);
+  };
 
   async function renderWelcomeNotifications() {
     const role = window.CURRENT_USER_ROLE || 'ninguno';
@@ -970,10 +998,18 @@
       </div>`).join('');
     cont.innerHTML = `<div id="welcome-alerts-title">Pendientes</div>${html}`;
   }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar tema al cargar la página
+    const savedTheme = localStorage.getItem('erp_theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+
+  });
   </script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, getDoc, doc, setDoc, deleteDoc, writeBatch, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -993,8 +1029,9 @@
     const auth = getAuth(app);
     window.db = db;
     
-    // Colecciones esenciales — se cargan al inicio (mínimo para que la app funcione)
-    const collectionsToLoad = ['contacts', 'projects', 'settings', 'users', 'workers'];
+    // Colecciones esenciales al inicio.
+    // contacts e inventory se cargan desde listas particionadas (23 reads en lugar de 2325).
+    const collectionsToLoad = ['projects', 'settings', 'users', 'workers'];
     // Resto de colecciones — se cargan bajo demanda cuando un módulo las necesita
     window._col_pendiente = {};  // flag para evitar solicitudes duplicadas
 
@@ -1051,6 +1088,25 @@
           state[col] = snaps[i].docs.map(d => ({ _id: d.id, ...d.data() }));
         });
 
+        // Cargar contacts desde listas particionadas (3 reads en lugar de 797)
+        try {
+          const [cliSnap, proSnap, trabSnap] = await Promise.all([
+            getDoc(doc(db, 'contacts_lists', 'clientes')),
+            getDoc(doc(db, 'contacts_lists', 'proveedores')),
+            getDoc(doc(db, 'contacts_lists', 'trabajadores')),
+          ]);
+          state.contacts = [
+            ...(cliSnap.exists()  ? cliSnap.data().list  || [] : []),
+            ...(proSnap.exists()  ? proSnap.data().list  || [] : []),
+            ...(trabSnap.exists() ? trabSnap.data().list || [] : []),
+          ];
+          console.log(`[DB] ✓ contacts: ${state.contacts.length} contactos (3 reads)`);
+        } catch(e) {
+          console.warn('[DB] contacts_lists no disponible, cargando colección original:', e.code);
+          const fallback = await getDocs(collection(db, 'contacts')).catch(() => ({ docs: [] }));
+          state.contacts = fallback.docs.map(d => ({ _id: d.id, ...d.data() }));
+        }
+
         // Setup the role if not the main programmer
         if (role === 'none') {
             const userRec = state.users.find(u => u.email === user.email);
@@ -1071,22 +1127,238 @@
         window.deleteUserFromFirebase = async (userEmail) => {
             await deleteDoc(doc(db, "users", userEmail));
         };
-        window.deleteDocumentFromFirebase = async (col, docId) => {
-            await deleteDoc(doc(db, col, docId));
+        // ── Helpers para escribir en listas particionadas ──────────────────────
+        function contactListId(tipo) {
+          return tipo === 'trabajador' ? 'trabajadores' : tipo === 'proveedor' ? 'proveedores' : 'clientes';
+        }
+
+        async function writeContactList(tipo) {
+          const listId   = contactListId(tipo);
+          const list     = (window.DB_STATE?.contacts || []).filter(c => (c.tipo || 'cliente') === tipo);
+          await setDoc(doc(db, 'contacts_lists', listId), { list });
+        }
+
+        async function writeInventoryList(category) {
+          const list = (window.DB_STATE?.inventory || []).filter(i => (i.category || 'General') === category);
+          await setDoc(doc(db, 'inventory_lists', category), { list });
+        }
+
+        // Escribe un movimiento en su lista mensual (accounting_by_month/{YYYY-MM})
+        async function writeAccountingMonthList(ym, plainData, docId) {
+          if (!ym) return;
+          if (!window.DB_STATE._acc_months) window.DB_STATE._acc_months = {};
+          const list = window.DB_STATE._acc_months[ym] ? [...window.DB_STATE._acc_months[ym]] : [];
+          const idx = list.findIndex(x => (x.id || x._id) === docId);
+          if (idx >= 0) list[idx] = plainData;
+          else list.push(plainData);
+          window.DB_STATE._acc_months[ym] = list;
+          await setDoc(doc(db, 'accounting_by_month', ym), { list, month: ym, count: list.length });
+        }
+
+        // Carga un mes específico desde accounting_by_month (1 read); cachea en _acc_months
+        window.loadAccountingMonth = async (ym) => {
+          if (!window.DB_STATE) return [];
+          if (!window.DB_STATE._acc_months) window.DB_STATE._acc_months = {};
+          if (window.DB_STATE._acc_months[ym]) return window.DB_STATE._acc_months[ym];
+          const snap = await getDoc(doc(db, 'accounting_by_month', ym)).catch(() => null);
+          const list = (snap && snap.exists()) ? (snap.data().list || []) : [];
+          window.DB_STATE._acc_months[ym] = list;
+          console.log(`[DB] ✓ accounting_by_month/${ym}: ${list.length} movimientos`);
+          return list;
         };
-        window.setDocumentInFirebase = async (col, docId, data) => {
-            try {
-                // JSON round-trip convierte objetos cross-realm (de iframes) a objetos planos del realm padre
-                const plainData = JSON.parse(JSON.stringify(data));
-                await setDoc(doc(db, col, docId), plainData);
-            } catch(e) {
-                console.error(`[Firestore] Error writing ${col}/${docId}:`, e.message);
-                throw e;
+
+        window.deleteDocumentFromFirebase = async (col, docId) => {
+          if (col === 'contacts') {
+            const c = (window.DB_STATE?.contacts || []).find(x => (x.id || x._id) === docId);
+            if (c && window.DB_STATE?.contacts) {
+              window.DB_STATE.contacts = window.DB_STATE.contacts.filter(x => (x.id || x._id) !== docId);
+              await writeContactList(c.tipo || 'cliente');
             }
+            return;
+          }
+          if (col === 'inventory') {
+            const item = (window.DB_STATE?.inventory || []).find(x => (x.id || x._id) === docId);
+            if (item && window.DB_STATE?.inventory) {
+              window.DB_STATE.inventory = window.DB_STATE.inventory.filter(x => (x.id || x._id) !== docId);
+              await writeInventoryList(item.category || 'General');
+            }
+            return;
+          }
+          await deleteDoc(doc(db, col, docId));
+        };
+
+        window.setDocumentInFirebase = async (col, docId, data) => {
+          try {
+            const plainData = JSON.parse(JSON.stringify(data));
+
+            if (col === 'contacts') {
+              // Actualizar en DB_STATE y reescribir la lista del tipo correspondiente
+              if (window.DB_STATE?.contacts) {
+                const idx = window.DB_STATE.contacts.findIndex(x => (x.id || x._id) === docId);
+                if (idx >= 0) window.DB_STATE.contacts[idx] = plainData;
+                else window.DB_STATE.contacts.push(plainData);
+              }
+              await writeContactList(plainData.tipo || 'cliente');
+              return;
+            }
+
+            if (col === 'inventory') {
+              if (window.DB_STATE?.inventory) {
+                const idx = window.DB_STATE.inventory.findIndex(x => (x.id || x._id) === docId);
+                if (idx >= 0) window.DB_STATE.inventory[idx] = plainData;
+                else window.DB_STATE.inventory.push(plainData);
+              }
+              await writeInventoryList(plainData.category || 'General');
+              return;
+            }
+
+            if (col === 'accounting_movements') {
+              // Escribir doc individual + actualizar lista mensual
+              const ym = (plainData.date || '').slice(0, 7);
+              await Promise.all([
+                setDoc(doc(db, col, docId), plainData),
+                writeAccountingMonthList(ym, plainData, docId),
+              ]);
+              return;
+            }
+
+            await setDoc(doc(db, col, docId), plainData);
+          } catch(e) {
+            console.error(`[Firestore] Error writing ${col}/${docId}:`, e.message);
+            throw e;
+          }
         };
         
         window.deleteDocumentInFirebase = async (col, docId) => {
             await deleteDoc(doc(db, col, docId));
+        };
+
+        // Global UI Confirm Modal
+        window.showConfirm = function(title, msg, btnText, btnClass, onConfirm) {
+          document.getElementById('g-confirm-title').textContent = title;
+          document.getElementById('g-confirm-msg').innerHTML = msg.replace(/\n/g, '<br>');
+          const btn = document.getElementById('g-confirm-btn');
+          btn.textContent = btnText || 'Aceptar';
+          btn.className = 'btn ' + (btnClass || 'btn-blue');
+          btn.onclick = () => {
+            document.getElementById('global-confirm-overlay').style.display = 'none';
+            if (onConfirm) onConfirm();
+          };
+          document.getElementById('global-confirm-overlay').style.display = 'flex';
+        };
+
+        window.incrementFieldInFirebase = async (col, docId, field, amount, extraUpdates = {}) => {
+          // 1. Actualización en memoria local para que la UI responda de inmediato
+          if (window.DB_STATE && window.DB_STATE[col]) {
+            const item = window.DB_STATE[col].find(x => (x.id || x._id) === docId);
+            if (item) {
+              if (typeof item[field] === 'number') item[field] += amount;
+              Object.assign(item, extraUpdates);
+              // Si es inventario, también debemos actualizar su respectiva partición
+              if (col === 'inventory') await writeInventoryList(item.category || 'General');
+            }
+          }
+          
+          // 2. Instrucción atómica hacia Firestore
+          await updateDoc(doc(db, col, docId), {
+            [field]: increment(amount),
+            ...extraUpdates
+          });
+        };
+
+        window.runBatchedWrites = async (operations) => {
+          try {
+            const batch = writeBatch(db);
+            const updateContactLists = new Set();
+            const updateInventoryLists = new Set();
+            const updateAccountingMonths = new Map();
+
+            operations.forEach(op => {
+              const docRef = doc(db, op.col, op.id);
+
+              if (op.type === 'set') {
+                const plainData = JSON.parse(JSON.stringify(op.data));
+                
+                if (op.col === 'contacts') {
+                  if (window.DB_STATE?.contacts) {
+                    const idx = window.DB_STATE.contacts.findIndex(x => (x.id || x._id) === op.id);
+                    if (idx >= 0) window.DB_STATE.contacts[idx] = plainData;
+                    else window.DB_STATE.contacts.push(plainData);
+                  }
+                  updateContactLists.add(plainData.tipo || 'cliente');
+                } else if (op.col === 'inventory') {
+                  if (window.DB_STATE?.inventory) {
+                    const idx = window.DB_STATE.inventory.findIndex(x => (x.id || x._id) === op.id);
+                    if (idx >= 0) window.DB_STATE.inventory[idx] = plainData;
+                    else window.DB_STATE.inventory.push(plainData);
+                  }
+                  updateInventoryLists.add(plainData.category || 'General');
+                } else if (op.col === 'accounting_movements') {
+                  batch.set(docRef, plainData); // Escribir doc individual
+                  const ym = (plainData.date || '').slice(0, 7);
+                  if (ym) {
+                    if (!window.DB_STATE._acc_months) window.DB_STATE._acc_months = {};
+                    const list = window.DB_STATE._acc_months[ym] ? [...window.DB_STATE._acc_months[ym]] : [];
+                    const idx = list.findIndex(x => (x.id || x._id) === op.id);
+                    if (idx >= 0) list[idx] = plainData;
+                    else list.push(plainData);
+                    window.DB_STATE._acc_months[ym] = list;
+                    updateAccountingMonths.set(ym, list);
+                  }
+                  return; // Salta el set final porque ya se escribió en este bloque
+                }
+                
+                batch.set(docRef, plainData);
+              } else if (op.type === 'delete') {
+                if (op.col === 'contacts') {
+                  const c = (window.DB_STATE?.contacts || []).find(x => (x.id || x._id) === op.id);
+                  if (c && window.DB_STATE?.contacts) {
+                    window.DB_STATE.contacts = window.DB_STATE.contacts.filter(x => (x.id || x._id) !== op.id);
+                    updateContactLists.add(c.tipo || 'cliente');
+                  }
+                } else if (op.col === 'inventory') {
+                  const item = (window.DB_STATE?.inventory || []).find(x => (x.id || x._id) === op.id);
+                  if (item && window.DB_STATE?.inventory) {
+                    window.DB_STATE.inventory = window.DB_STATE.inventory.filter(x => (x.id || x._id) !== op.id);
+                    updateInventoryLists.add(item.category || 'General');
+                  }
+                }
+                batch.delete(docRef);
+              } else if (op.type === 'increment') {
+                if (op.col === 'inventory') {
+                  const item = (window.DB_STATE?.inventory || []).find(x => (x.id || x._id) === op.id);
+                  if (item && window.DB_STATE?.inventory) { 
+                    item[op.field] += op.amount; 
+                    if (op.extraUpdates) Object.assign(item, op.extraUpdates);
+                    updateInventoryLists.add(item.category || 'General'); 
+                  }
+                }
+                // Enviar la instrucción matemática atómica
+                batch.update(docRef, { [op.field]: increment(op.amount), ...(op.extraUpdates || {}) });
+              }
+            });
+
+            // Actualizar listas particionadas de forma atómica dentro del batch
+            updateContactLists.forEach(tipo => {
+              const listId = tipo === 'trabajador' ? 'trabajadores' : tipo === 'proveedor' ? 'proveedores' : 'clientes';
+              const list = (window.DB_STATE?.contacts || []).filter(c => (c.tipo || 'cliente') === tipo);
+              batch.set(doc(db, 'contacts_lists', listId), { list });
+            });
+
+            updateInventoryLists.forEach(category => {
+              const list = (window.DB_STATE?.inventory || []).filter(i => (i.category || 'General') === category);
+              batch.set(doc(db, 'inventory_lists', category), { list });
+            });
+
+            updateAccountingMonths.forEach((list, ym) => {
+              batch.set(doc(db, 'accounting_by_month', ym), { list, month: ym, count: list.length });
+            });
+
+            await batch.commit();
+          } catch(e) {
+            console.error('[Firestore] Error en runBatchedWrites:', e);
+            throw e;
+          }
         };
         
         // Show role/user
@@ -1102,18 +1374,54 @@
           if (!window.DB_STATE) return;
           if (window.DB_STATE[col] !== undefined) return; // ya cargada
           if (window._col_pendiente[col]) {
-            // Esperar a que termine la solicitud en vuelo
             while (window._col_pendiente[col]) await new Promise(r => setTimeout(r, 50));
             return;
           }
           window._col_pendiente[col] = true;
           try {
-            const snap = await getDocs(collection(db, col)).catch(e => {
-              console.warn(`[DB] No se pudo cargar "${col}": ${e.code}`);
-              return { docs: [] };
-            });
-            window.DB_STATE[col] = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-            console.log(`[DB] ✓ "${col}" cargado: ${window.DB_STATE[col].length} docs`);
+            if (col === 'contacts') {
+              // Cargar desde listas particionadas (3 reads)
+              const [cli, pro, trab] = await Promise.all([
+                getDoc(doc(db, 'contacts_lists', 'clientes')),
+                getDoc(doc(db, 'contacts_lists', 'proveedores')),
+                getDoc(doc(db, 'contacts_lists', 'trabajadores')),
+              ]);
+              window.DB_STATE.contacts = [
+                ...(cli.exists()  ? cli.data().list  || [] : []),
+                ...(pro.exists()  ? pro.data().list  || [] : []),
+                ...(trab.exists() ? trab.data().list || [] : []),
+              ];
+              console.log(`[DB] ✓ contacts: ${window.DB_STATE.contacts.length} (3 reads)`);
+            } else if (col === 'inventory') {
+              // Cargar desde listas por categoría (~20 reads)
+              const snap = await getDocs(collection(db, 'inventory_lists')).catch(() => ({ docs: [] }));
+              window.DB_STATE.inventory = snap.docs.flatMap(d => d.data().list || []);
+              console.log(`[DB] ✓ inventory: ${window.DB_STATE.inventory.length} (${snap.docs?.length ?? 0} categorías)`);
+            } else if (col === 'accounting_movements') {
+              // Cargar últimos 3 meses desde listas mensuales (3 reads)
+              const now = new Date();
+              const months = [0, 1, 2].map(i => {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+              });
+              if (!window.DB_STATE._acc_months) window.DB_STATE._acc_months = {};
+              const snaps = await Promise.all(months.map(m => getDoc(doc(db, 'accounting_by_month', m)).catch(() => null)));
+              const movs = [];
+              months.forEach((m, i) => {
+                const list = (snaps[i] && snaps[i].exists()) ? (snaps[i].data().list || []) : [];
+                window.DB_STATE._acc_months[m] = list;
+                movs.push(...list);
+              });
+              window.DB_STATE.accounting_movements = movs;
+              console.log(`[DB] ✓ accounting_movements: ${movs.length} movimientos (últimos 3 meses, 3 reads)`);
+            } else {
+              const snap = await getDocs(collection(db, col)).catch(e => {
+                console.warn(`[DB] No se pudo cargar "${col}": ${e.code}`);
+                return { docs: [] };
+              });
+              window.DB_STATE[col] = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+              console.log(`[DB] ✓ "${col}" cargado: ${window.DB_STATE[col].length} docs`);
+            }
           } finally {
             window._col_pendiente[col] = false;
           }
