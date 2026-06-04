@@ -144,7 +144,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const cont = document.getElementById('pedidos-activos');
     if (!pedidos.length) { cont.innerHTML = ''; return; }
 
-    let html = `<div class="sec-lbl">Pendientes de Confirmar (${pedidos.length})</div>`;
+    let html = `<div class="sec-lbl">Pedidos Enviados (${pedidos.length})</div>`;
     pedidos.forEach(o => {
       const items = (o.items||[]).map(i => `<li>${i.qty} ${i.unit} — ${i.name||i.code}</li>`).join('');
       html += `

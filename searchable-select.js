@@ -59,7 +59,8 @@ const SearchableSelect = (() => {
         border-radius: 10px;
         box-shadow: 0 8px 24px rgba(0,0,0,.12);
         z-index: 9999; overflow: hidden;
-        display: none; flex-direction: column; max-height: 280px;
+        display: none; flex-direction: column; max-height: 300px;
+        min-width: 280px;
       }
       .ss-opt[data-value="__new__"] { color: var(--blue, #1e66f5); font-weight: 700; }
       .ss-dropdown.open { display: flex; }
@@ -83,7 +84,7 @@ const SearchableSelect = (() => {
         padding: 9px 14px; font-size: 13px;
         color: var(--text, #4c4f69); cursor: pointer;
         border-bottom: 1px solid var(--crust, #dce0e8);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        white-space: normal; word-break: break-word; line-height: 1.4;
       }
       .ss-opt:last-child { border-bottom: none; }
       .ss-opt:hover, .ss-opt.focused { background: var(--surface0, #ccd0da); }
@@ -230,6 +231,7 @@ const SearchableSelect = (() => {
         select.value = value;
       }
       trigger.value = value ? text : '';
+      trigger.title = value ? text : '';
       trigger.placeholder = select.options[0]?.text || '— Seleccionar —';
       close();
       // Dispatch change event so onchange handlers fire
@@ -238,9 +240,12 @@ const SearchableSelect = (() => {
 
     function reposition() {
       const rect = trigger.getBoundingClientRect();
+      const w = Math.max(rect.width, 280);
+      // Don't overflow viewport right edge
+      const left = Math.min(rect.left, window.innerWidth - w - 8);
       dropdown.style.top   = (rect.bottom + 4) + 'px';
-      dropdown.style.left  = rect.left + 'px';
-      dropdown.style.width = rect.width + 'px';
+      dropdown.style.left  = left + 'px';
+      dropdown.style.width = w + 'px';
     }
 
     function open() {
@@ -296,7 +301,9 @@ const SearchableSelect = (() => {
     const origValueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
     select._ssSync = () => {
       const sel = select.options[select.selectedIndex];
-      trigger.value = sel && sel.value ? sel.textContent.trim() : '';
+      const txt = sel && sel.value ? sel.textContent.trim() : '';
+      trigger.value = txt;
+      trigger.title = txt;
     };
 
     // Public API: call select._ssSync() or select._ssRefresh() after updating options
