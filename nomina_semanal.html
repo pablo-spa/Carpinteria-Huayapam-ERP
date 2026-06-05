@@ -6,22 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nómina Semanal — Carpintería Huayapam</title>
 <style>
-/* ── Config panel ── */
-.cfg-panel {
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 12px 24px; display: none; gap: 20px; flex-wrap: wrap; align-items: flex-start;
-}
-.cfg-panel.open { display: flex; }
-.cfg-block { display: flex; flex-direction: column; gap: 6px; }
-.cfg-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); }
-.cfg-note  { font-size: 12px; color: var(--subtext); }
-.rate-toggle { display: flex; gap: 4px; }
-.rtbtn {
-  cursor: pointer; border: 1px solid var(--crust); border-radius: var(--radius);
-  background: var(--base); color: var(--subtext); font-size: 13px; font-weight: 700;
-  padding: 6px 12px; font-family: inherit;
-}
-.rtbtn.on { background: var(--amber); border-color: var(--amber); color: #fff; }
 
 /* ── Header ── */
 .header {
@@ -205,12 +189,10 @@
 .warn-chip { background: var(--red-bg); color: var(--red-text); }
 .sob-row td { background: var(--green-bg); font-weight: 700; }
 
-/* ── Imprimir ── */
-.print-toggle { display: flex; gap: 4px; margin-bottom: 12px; }
-.ptbtn { cursor: pointer; padding: 7px 14px; border-radius: var(--radius); font-size: 13px; font-weight: 700; color: var(--subtext); background: var(--base); border: 1px solid var(--crust); font-family: inherit; }
-.ptbtn.on { background: var(--mantle); color: var(--text); border-color: var(--surface0); }
-.print-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-.preview-scroll { max-height: 600px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+/* ── PDF previews ── */
+.pdf-tab-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--crust); }
+.pdf-tab-desc { font-size: 13px; color: var(--subtext); }
+.preview-scroll { max-height: 580px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 
 /* ── Receipt preview ── */
 .rec-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 14px; }
@@ -266,29 +248,6 @@
 <body>
 <div id="print-area"></div>
 
-<!-- Config panel -->
-<div class="cfg-panel" id="cfg-panel">
-  <div class="cfg-block">
-    <div class="cfg-label">Modo horas extra</div>
-    <div style="font-size:13px;font-weight:700;color:var(--amber-text)">Modo B — Por semana</div>
-    <div class="cfg-note">Las horas extra empiezan después de cubrir las 45h semanales. Una falta crea un déficit que debe recuperarse antes de contar horas extra.</div>
-  </div>
-  <div class="cfg-block">
-    <div class="cfg-label">Sábado</div>
-    <div class="rate-toggle">
-      <button class="rtbtn on" id="sat15" onclick="setCfg('sat',1.5)">×1.5</button>
-      <button class="rtbtn"    id="sat20" onclick="setCfg('sat',2)">×2</button>
-    </div>
-  </div>
-  <div class="cfg-block">
-    <div class="cfg-label">Domingo / Festivo</div>
-    <div class="rate-toggle">
-      <button class="rtbtn"    id="sun15" onclick="setCfg('sun',1.5)">×1.5</button>
-      <button class="rtbtn on" id="sun20" onclick="setCfg('sun',2)">×2</button>
-    </div>
-  </div>
-</div>
-
 <!-- Header -->
 <div class="header">
   <div class="header-top">
@@ -305,14 +264,14 @@
     </div>
     <div class="hdr-right">
       <span class="badge" id="hdr-badge">0 / —</span>
-      <button class="gear-btn" id="gear-btn" onclick="togCfg()" title="Configuración de horas extra">⚙</button>
       <div class="hdr-total"><div class="lbl">Total nómina</div><div class="val" id="hdr-total">$0</div></div>
     </div>
   </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('nomina',this)">👷 Nómina</button>
     <button class="tab"        onclick="showTab('efectivo',this)">💵 Efectivo</button>
-    <button class="tab"        onclick="showTab('imprimir',this)">🖨 Imprimir</button>
+    <button class="tab"        onclick="showTab('resumen',this)">📊 Resumen general</button>
+    <button class="tab"        onclick="showTab('recibos',this)">📄 Recibos individuales</button>
   </div>
 </div>
 
@@ -355,17 +314,22 @@
     </div>
   </div>
 
-  <!-- ── IMPRIMIR ── -->
-  <div id="tab-imprimir" class="tab-pane">
-    <div class="print-toggle">
-      <button class="ptbtn on" id="pt-resumen"  onclick="showPrint('resumen',this)">Resumen general</button>
-      <button class="ptbtn"    id="pt-recibos"  onclick="showPrint('recibos',this)">Recibos individuales</button>
+  <!-- ── RESUMEN GENERAL ── -->
+  <div id="tab-resumen" class="tab-pane">
+    <div class="pdf-tab-header">
+      <div class="pdf-tab-desc">Tabla de todos los trabajadores con totales, horas y descuentos de la semana.</div>
+      <button class="btn btn-blue" onclick="impResumen()">📄 Generar PDF</button>
     </div>
-    <div class="print-actions">
-      <button class="btn btn-blue" id="btn-imp-res" onclick="impResumen()">📄 Generar PDF — Resumen</button>
-      <button class="btn btn-blue" id="btn-imp-rec" onclick="impRecibos()" style="display:none">📄 Generar PDF — Recibos</button>
+    <div class="preview-scroll" id="preview-resumen"></div>
+  </div>
+
+  <!-- ── RECIBOS INDIVIDUALES ── -->
+  <div id="tab-recibos" class="tab-pane">
+    <div class="pdf-tab-header">
+      <div class="pdf-tab-desc">Un recibo por trabajador con desglose de asistencia, conceptos y línea de firma.</div>
+      <button class="btn btn-blue" onclick="impRecibos()">📄 Generar PDF</button>
     </div>
-    <div class="preview-scroll" id="preview-area"></div>
+    <div class="preview-scroll" id="preview-recibos"></div>
   </div>
 
 </div>
@@ -378,34 +342,12 @@
     <div class="fstat"><span class="lbl">Extras</span><span class="val" id="f-extras" style="color:var(--amber)">$0</span></div>
     <div class="fstat"><span class="lbl">Descuentos</span><span class="val" id="f-descs" style="color:var(--red)">$0</span></div>
   </div>
-  <div style="display:flex;gap:8px;">
-    <button class="btn btn-dark" onclick="impResumen()" title="PDF con todos los trabajadores">📄 Resumen</button>
-    <button class="btn btn-dark" onclick="impRecibos()" title="Recibo individual por trabajador">📄 Recibos</button>
-  </div>
+  <button class="btn btn-dark" onclick="showTab('resumen', document.querySelectorAll('.tab')[2])">📄 PDF</button>
 </div>
 
 <script src="db.js"></script>
 <script>
 const CFG = { satRate:1.5, sunRate:2 };
-
-function setCfg(tipo, val) {
-  if (tipo==='sat') {
-    CFG.satRate = val;
-    document.getElementById('sat15').classList.toggle('on', val===1.5);
-    document.getElementById('sat20').classList.toggle('on', val===2);
-  } else {
-    CFG.sunRate = val;
-    document.getElementById('sun15').classList.toggle('on', val===1.5);
-    document.getElementById('sun20').classList.toggle('on', val===2);
-  }
-  WORKERS.forEach(w => refreshCard(w.id));
-}
-function togCfg() {
-  const p=document.getElementById('cfg-panel');
-  const g=document.getElementById('gear-btn');
-  p.classList.toggle('open');
-  g.classList.toggle('on', p.classList.contains('open'));
-}
 
 const DENS = [
   {id:'b1000',val:1000,label:'$1,000',cls:'den-b1000'},
@@ -1209,7 +1151,9 @@ function updateFooter(){
   document.getElementById('hdr-total').textContent=tf;
   document.getElementById('ef-nom').textContent=tf;
   updEfDiff();
-  buildPreview();
+  const activeTab = document.querySelector('.tab-pane.active')?.id;
+  if (activeTab==='tab-resumen') buildResumenPreview();
+  else if (activeTab==='tab-recibos') buildRecibosPreview();
 }
 
 function showTab(name,btn){
@@ -1217,6 +1161,8 @@ function showTab(name,btn){
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(btn) btn.classList.add('active');
+  if(name==='resumen') buildResumenPreview();
+  if(name==='recibos') buildRecibosPreview();
 }
 
 const BCOL={1000:{bg:'#e0ccf8',tc:'#3d006b'},500:{bg:'#cce0f8',tc:'#003070'},
@@ -1299,134 +1245,121 @@ function calcDist(){
   document.getElementById('dist-card').style.display='';
 }
 
-let printMode='resumen';
-function showPrint(mode,btn){
-  printMode=mode;
-  document.querySelectorAll('.ptbtn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('btn-imp-res').style.display=mode==='resumen'?'':'none';
-  document.getElementById('btn-imp-rec').style.display=mode==='recibos'?'':'none';
-  buildPreview();
+function buildResumenPreview() {
+  const {sat,fri} = weekDates(weekOffset);
+  const semStr = `${fmtS(sat)} – ${fmtS(fri)} ${fri.getFullYear()}`;
+  const area = document.getElementById('preview-resumen');
+  if (!area) return;
+
+  const rows = WORKERS.map(w => {
+    const s = S[w.id]; const r = calcW(w);
+    const hrsEx   = r.hExt_all > 0 ? `+${r.hExt_all.toFixed(1)}h` : '—';
+    const corrStr = r.bonoPay !== 0 ? `${r.bonoPay > 0 ? '+' : ''}$${r.bonoPay.toLocaleString('es-MX')}` : '—';
+    const vacStr  = (r.nVac > 0 || s.diasVacExtra > 0) ? `${r.nVac + s.diasVacExtra}d` : '—';
+    const prestDetail = (PRESTAMOS[w.id]||[]).reduce((arr,p,i) => { if(s.prestAplic[i]) arr.push(`−$${s.prestMonto[i]}`); return arr; }, []).join(', ') || '—';
+    const verified = s.verificado ? '<span style="color:var(--green-text)">✓</span>' : '';
+    return `<tr>
+      <td style="padding:6px 8px;border:1px solid var(--crust);">${w.n} ${w.ape} ${verified}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:right;">$${w.base.toLocaleString('es-MX')}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;">${r.hNorm.toFixed(1)}h</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--red-text);">${r.nFalta || '—'}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--amber-text);">${hrsEx}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;">${corrStr}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;">${vacStr}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--red-text);">${prestDetail}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-weight:800;">$${r.total.toLocaleString('es-MX')}</td>
+    </tr>`;
+  }).join('');
+
+  area.innerHTML = `
+    <div style="background:var(--mantle);border:1px solid var(--crust);border-radius:var(--radius-lg);padding:14px;">
+      <div style="text-align:center;margin-bottom:12px;">
+        <div style="font-size:15px;font-weight:900;">Carpintería Huayapam</div>
+        <div style="font-size:12px;color:var(--subtext);margin-top:3px;">Resumen de Nómina · ${semStr}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:var(--base);">
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:left;font-size:10px;color:var(--subtext);text-transform:uppercase;">Nombre</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-size:10px;color:var(--subtext);text-transform:uppercase;">Base/Sem</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Hrs Norm.</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Faltas</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Hrs Extra</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Correc.</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Vac.</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Desc/Prést</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-size:10px;color:var(--subtext);text-transform:uppercase;">Total</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr style="background:var(--green-bg);">
+          <td colspan="8" style="padding:7px 8px;border:1px solid var(--crust);font-weight:900;color:var(--green-text);">TOTAL — ${WORKERS.length} trabajadores</td>
+          <td style="padding:7px 8px;border:1px solid var(--crust);font-weight:900;color:var(--green-text);">$${totalNomina().toLocaleString('es-MX')}</td>
+        </tr></tfoot>
+      </table>
+    </div>`;
 }
 
-function buildPreview(){
-  const {mon,fri}=weekDates(weekOffset);
-  const semStr=`${fmtS(mon)} – ${fmtS(fri)} ${fri.getFullYear()}`;
-  const dates=dayDates(weekOffset);
-  const area=document.getElementById('preview-area');
+function buildRecibosPreview() {
+  const {sat, fri} = weekDates(weekOffset);
+  const semStr = `${fmtS(sat)} – ${fmtS(fri)} ${fri.getFullYear()}`;
+  const dates  = dayDates(weekOffset);
+  const area   = document.getElementById('preview-recibos');
+  if (!area) return;
 
-  if(printMode==='resumen'){
-    const rows=WORKERS.map(w=>{
-      const s=S[w.id];const r=calcW(w);
-      const hrsStr=`${r.hNorm.toFixed(1)}h`;
-      const hrsEx = r.hExt_all>0 ? `+${r.hExt_all.toFixed(1)}h` : '—';
-      const corrStr = r.bonoPay !== 0 ? `$${r.bonoPay.toLocaleString('es-MX')}` : '—';
-      const vacStr=(r.nVac>0||s.diasVacExtra>0)?`${(r.nVac+s.diasVacExtra)}d`:'—';
-      const prestDetail=(PRESTAMOS[w.id]||[]).reduce((arr,p,i)=>{if(s.prestAplic[i])arr.push(`−$${s.prestMonto[i]}`);return arr;},[]).join(', ')||'—';
-      
-      const prestSaldoAbierto = (PRESTAMOS[w.id]||[]).reduce((acc, p) => acc + p.saldo, 0);
-      const prestSaldoStr = prestSaldoAbierto > 0 ? `$${prestSaldoAbierto.toLocaleString('es-MX')}` : '—';
-      
+  const cards = WORKERS.map(w => {
+    const s = S[w.id]; const r = calcW(w); const t = tarifa(w);
+    const hasActivity = s.dias.some(d => d.st !== 'libre');
+
+    const diasRows = DIA_ORDER.map(di => {
+      const d = s.dias[di]; const dt = dates[di];
+      let stLbl = '', hLbl = '—';
+      if      (d.st==='trabajo') { stLbl = `<span style="color:var(--green-text)">✓</span>`; hLbl = `${+d.hrs||0}h`; }
+      else if (d.st==='falta')   { stLbl = `<span style="color:var(--red-text)">✗ Falta</span>`; }
+      else if (d.st==='vac')     { stLbl = `<span style="color:var(--blue-text)">☀ Vac.</span>`; hLbl = '9h'; }
+      else { return ''; }
+      const ent = d.horaEnt ? d.horaEnt.substring(0,5) : (d.st==='trabajo' ? '—' : '');
+      const sal = d.horaSal ? d.horaSal.substring(0,5) : (d.st==='trabajo' ? '—' : '');
       return `<tr>
-        <td>${w.n} ${w.ape}</td>
-        <td>$${w.base.toLocaleString('es-MX')}</td>
-        <td>${hrsStr}</td>
-        <td>${hrsEx}</td>
-        <td>${corrStr}</td>
-        <td>${vacStr}</td>
-        <td>${prestDetail}</td>
-        <td style="color:#555;">${prestSaldoStr}</td>
-        <td><b>$${r.total.toLocaleString('es-MX')}</b></td>
+        <td style="padding:4px 8px;border:1px solid var(--crust);">${DIAS_N[di]} <span style="font-size:10px;color:var(--subtext)">${dt.toLocaleDateString('es-MX',{day:'numeric',month:'short'})}</span></td>
+        <td style="padding:4px 8px;border:1px solid var(--crust);">${stLbl}</td>
+        <td style="padding:4px 8px;border:1px solid var(--crust);text-align:center;">${ent}</td>
+        <td style="padding:4px 8px;border:1px solid var(--crust);text-align:center;">${sal}</td>
+        <td style="padding:4px 8px;border:1px solid var(--crust);text-align:right;font-weight:700;">${hLbl}</td>
       </tr>`;
-    }).join('');
-    area.innerHTML=`
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;">
-        <div style="text-align:center;margin-bottom:10px;">
-          <div style="font-size:15px;font-weight:900;">Carpintería Huayapam</div>
-          <div style="font-size:12px;color:var(--muted)">Resumen General de Nómina · ${semStr}</div>
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead><tr style="background:var(--bg);">
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Nombre</th>
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Base</th>
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Normal</th>
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Extra</th>
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Correc.</th>
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Vac.</th>
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Desc/Prést</th>
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Saldo Prést.</th>
-            <th style="padding:6px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Total sobre</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-          <tfoot><tr style="background:var(--green-bg);">
-            <td colspan="8" style="padding:7px 8px;border:1px solid var(--border-strong);font-weight:900;color:var(--green-text);">TOTAL — ${WORKERS.length} trabajadores</td>
-            <td style="padding:7px 8px;border:1px solid var(--border-strong);font-weight:900;color:var(--green-text);">$${totalNomina().toLocaleString('es-MX')}</td>
-          </tr></tfoot>
-        </table>
-      </div>`;
-  } else {
-    // Recibos individuales
-    const cards=WORKERS.filter(w=>calcW(w).total>0).map(w=>{
-      const s=S[w.id]; const r=calcW(w); const t=tarifa(w);
-      const diasRows=DIA_ORDER.map((di)=>{
-        const d=s.dias[di];
-        const dt=dates[di];
-        let stLbl, hLbl='—';
-        if(d.st==='trabajo'){stLbl=`<span style="color:var(--green-text)">✓</span>`;hLbl=`${+d.hrs||0}h`;}
-        else if(d.st==='falta'){stLbl=`<span style="color:var(--red-text)">✗</span>`;}
-        else if(d.st==='vac'){stLbl=`<span style="color:var(--blue-text)">☀</span>`;hLbl='9h';}
-        else{stLbl=`<span style="color:var(--hint)">—</span>`;}
-        return `<tr>
-          <td style="padding:3px 8px;border:1px solid var(--border)">${DIAS_S[di]}<div style="font-size:10px;color:var(--muted)">${fmtS(dt)}</div></td>
-          <td style="padding:3px 8px;border:1px solid var(--border);text-align:center;">8:00</td>
-          <td style="padding:3px 8px;border:1px solid var(--border);text-align:center;">18:00</td>
-          <td style="padding:3px 8px;border:1px solid var(--border);text-align:right">${stLbl} ${hLbl}</td>
-        </tr>`;
-      }).join('');
+    }).filter(Boolean).join('');
 
-      let concepts=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Horas normales (${r.hNorm.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right">$${Math.round(r.basePay-r.hVacExtra*t).toLocaleString('es-MX')}</td></tr>`;
-      if(r.nVac>0) concepts+=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Vacaciones pag. (${r.nVac}d)</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right;color:var(--green-text)">incl.</td></tr>`;
-      if(s.diasVacExtra>0) concepts+=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Vac. extra (${s.diasVacExtra}d)</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right;color:var(--green-text)">+$${Math.round(r.hVacExtra*t).toLocaleString('es-MX')}</td></tr>`;
-      if(r.hExt15>0) concepts+=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Extra ×1.5 (${r.hExt15.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right;color:var(--amber-text)">+$${Math.round(r.ext15Pay).toLocaleString('es-MX')}</td></tr>`;
-      if(r.hExt2c>0) concepts+=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Extra ×2 (${r.hExt2c.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right;color:var(--amber-text)">+$${Math.round(r.ext2Pay).toLocaleString('es-MX')}</td></tr>`;
-      if(r.hSat>0) concepts+=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Sábado (${r.hSat}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right;color:var(--amber-text)">+$${Math.round(r.satPay).toLocaleString('es-MX')}</td></tr>`;
-      if(r.hSun>0) concepts+=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Domingo (${r.hSun}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right;color:var(--amber-text)">+$${Math.round(r.sunPay).toLocaleString('es-MX')}</td></tr>`;
-      if(r.bonoPay!==0) concepts+=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Corrección: ${s.nota||'No desc.'}</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right;color:var(--${r.bonoPay>0?'green':'red'}-text)">${r.bonoPay>0?'+':''} $${r.bonoPay.toLocaleString('es-MX')}</td></tr>`;
-      
-      const prestamosWorker = PRESTAMOS[w.id]||[];
-      if (prestamosWorker.length>0) {
-          concepts += `<tr><td colspan="2" style="padding-top:10px; padding-bottom:4px; font-weight:700; font-size:11px; color:var(--muted); text-transform:uppercase;">Préstamos y Descuentos</td></tr>`;
-          prestamosWorker.forEach((p,i)=>{
-              if(s.prestAplic[i]) {
-                concepts+=`<tr><td style="padding:4px 0;border-bottom:1px solid var(--border)">Abono: ${p.desc}</td><td style="padding:4px 0;border-bottom:1px solid var(--border);text-align:right;color:var(--red-text)">−$${s.prestMonto[i].toLocaleString('es-MX')}</td></tr>`;
-              }
-              const restSaldo = p.saldo - (s.prestAplic[i] ? s.prestMonto[i] : 0);
-              if (restSaldo > 0) {
-                 concepts+=`<tr><td style="padding:2px 0 6px; font-size:11px; color:var(--muted);">↳ Saldo restante: $${restSaldo.toLocaleString('es-MX')}</td><td></td></tr>`;
-              }
-          });
-      }
+    let conc = `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);">Horas normales (${r.hNorm.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;">$${Math.round(r.basePay-r.hVacExtra*t).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hExt15>0) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--amber-text)">Extra ×1.5 (${r.hExt15.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--amber-text)">+$${Math.round(r.ext15Pay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hExt2c>0) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--amber-text)">Extra ×2 (${r.hExt2c.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--amber-text)">+$${Math.round(r.ext2Pay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hSat>0)   conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--amber-text)">Sábado (${r.hSat}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--amber-text)">+$${Math.round(r.satPay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hSun>0)   conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--amber-text)">Domingo (${r.hSun}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--amber-text)">+$${Math.round(r.sunPay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.bonoPay!==0) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);">Corrección: ${s.nota||'—'}</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--${r.bonoPay>0?'green':'red'}-text)">${r.bonoPay>0?'+':''}$${r.bonoPay.toLocaleString('es-MX')}</td></tr>`;
+    (PRESTAMOS[w.id]||[]).forEach((p,i) => {
+      if (s.prestAplic[i]) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--red-text)">Abono: ${p.desc}</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--red-text)">−$${s.prestMonto[i].toLocaleString('es-MX')}</td></tr>`;
+    });
 
-      return `<div class="rec-card">
-        <div class="rec-hdr">
-          <div><div class="rec-emp">Carpintería Huayapam</div><div class="rec-worker">${w.n} ${w.ape} · ${w.cat} · ${w.id}</div></div>
-          <div class="rec-sem">Recibo de Nómina<br>${semStr}</div>
-        </div>
-        <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:12px;">
-          <tr>
-            <th style="background:var(--bg);padding:4px 8px;border:1px solid var(--border-strong);text-align:left;font-size:11px;color:var(--muted);">Día</th>
-            <th style="background:var(--bg);padding:4px 8px;border:1px solid var(--border-strong);text-align:center;font-size:11px;color:var(--muted);">Entrada</th>
-            <th style="background:var(--bg);padding:4px 8px;border:1px solid var(--border-strong);text-align:center;font-size:11px;color:var(--muted);">Salida</th>
-            <th style="background:var(--bg);padding:4px 8px;border:1px solid var(--border-strong);text-align:right;font-size:11px;color:var(--muted);">Total</th>
-          </tr>
-          ${diasRows}
-        </table>
-        <table class="rec-conceptos">${concepts}</table>
-        <div class="rec-total">PAGO TOTAL: $${r.total.toLocaleString('es-MX')}</div>
-      </div>`;
-    }).join('');
-    area.innerHTML=cards||`<div style="text-align:center;padding:20px;color:var(--hint);">No hay trabajadores con pago esta semana</div>`;
-  }
+    return `<div class="rec-card" style="opacity:${hasActivity?1:0.5};">
+      <div class="rec-hdr">
+        <div><div class="rec-emp">Carpintería Huayapam</div><div class="rec-worker">${w.n} ${w.ape}</div></div>
+        <div class="rec-sem">Recibo de Nómina<br><span style="font-weight:400;font-size:11px;">${semStr}</span></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;">
+        <thead><tr style="background:var(--base);">
+          <th style="padding:4px 8px;border:1px solid var(--crust);text-align:left;font-size:10px;color:var(--subtext);">Día</th>
+          <th style="padding:4px 8px;border:1px solid var(--crust);font-size:10px;color:var(--subtext);">Estado</th>
+          <th style="padding:4px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);">Entrada</th>
+          <th style="padding:4px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);">Salida</th>
+          <th style="padding:4px 8px;border:1px solid var(--crust);text-align:right;font-size:10px;color:var(--subtext);">Hrs</th>
+        </tr></thead>
+        <tbody>${diasRows||'<tr><td colspan="5" style="padding:6px;text-align:center;color:var(--subtext);font-size:11px;">Sin registros</td></tr>'}</tbody>
+      </table>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">${conc}</table>
+      <div style="font-size:13px;font-weight:900;text-align:right;border-top:1px solid var(--crust);margin-top:6px;padding-top:6px;">
+        Total: $${r.total.toLocaleString('es-MX')}
+      </div>
+    </div>`;
+  }).join('');
+
+  area.innerHTML = cards || `<div style="text-align:center;padding:20px;color:var(--subtext);">No hay trabajadores.</div>`;
 }
 
 const PDF_BASE_CSS = `
@@ -1436,7 +1369,8 @@ const PDF_BASE_CSS = `
 `;
 
 function _printWindow(html) {
-  const w = window.open('', '_blank');
+  const opener = (window.parent && window.parent !== window) ? window.parent : window;
+  const w = opener.open('', '_blank');
   if (!w) { alert('Permite las ventanas emergentes para generar el PDF.'); return; }
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${PDF_BASE_CSS}</style></head><body>${html}</body></html>`);
   w.document.close();
@@ -1451,7 +1385,7 @@ function impResumen() {
   const hoy     = new Date().toLocaleDateString('es-MX', {day:'numeric', month:'long', year:'numeric'});
 
   const rows = WORKERS.map(w => {
-    const s = S[w.id]; const r = calcW(w); const t = tarifa(w);
+    const s = S[w.id]; const r = calcW(w);
     const hExtStr   = r.hExt_all > 0 ? `+${r.hExt_all.toFixed(1)}h` : '—';
     const faltaStr  = r.nFalta > 0 ? String(r.nFalta) : '—';
     const corrStr   = r.bonoPay !== 0 ? `${r.bonoPay > 0 ? '+' : ''}$${r.bonoPay.toLocaleString('es-MX')}` : '—';
@@ -1460,7 +1394,6 @@ function impResumen() {
     const verif     = s.verificado ? '✓' : '';
     return `<tr>
       <td style="padding:5px 7px;border:1px solid #ccc;">${w.n} ${w.ape}</td>
-      <td style="padding:5px 7px;border:1px solid #ccc;color:#555;">${w.cat||'—'}</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:right;">$${w.base.toLocaleString('es-MX')}</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;">${r.hNorm.toFixed(1)}h</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#800000;">${faltaStr}</td>
@@ -1486,7 +1419,6 @@ function impResumen() {
       <thead>
         <tr style="background:#f2f2f2;">
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:left;">Nombre</th>
-          <th style="padding:5px 7px;border:1px solid #ccc;text-align:left;">Puesto</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:right;">Base/Sem</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Hrs Norm.</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Faltas</th>
@@ -1500,7 +1432,7 @@ function impResumen() {
       <tbody>${rows}</tbody>
       <tfoot>
         <tr style="background:#d4edda;">
-          <td colspan="8" style="padding:6px 7px;border:1px solid #ccc;font-weight:900;text-align:right;">
+          <td colspan="7" style="padding:6px 7px;border:1px solid #ccc;font-weight:900;text-align:right;">
             TOTAL NÓMINA — ${WORKERS.length} trabajadores
           </td>
           <td style="padding:6px 7px;border:1px solid #ccc;font-weight:900;text-align:right;font-size:13px;">
