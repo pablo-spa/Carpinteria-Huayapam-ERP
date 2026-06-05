@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ERP Carpintería Huayapam</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
     --sidebar-w: 260px;
@@ -355,36 +356,36 @@
         <div id="welcome-alerts-title">Pendientes</div>
       </div>
 
-      <div class="module-grid" id="welcome-module-grid">
-        <div class="module-card" data-file="produccion_diaria.html" onclick="openModule('produccion_diaria.html','Registro del Día')">
+      <div class="module-grid">
+        <div class="module-card" onclick="openModule('produccion_diaria.html','Registro del Día')">
           <div class="mc-icon">🔨</div>
           <div class="mc-text"><strong>Trabajos del Día</strong><span>Asistencia, horas y actividades del día.</span></div>
         </div>
-        <div class="module-card" data-file="cotizacion.html" onclick="openModule('cotizacion.html','Nueva Cotización')">
+        <div class="module-card" onclick="openModule('cotizacion.html','Nueva Cotización')">
           <div class="mc-icon">📋</div>
           <div class="mc-text"><strong>Cotización</strong><span>Presupuestos con desglose de materiales y mano de obra.</span></div>
         </div>
-        <div class="module-card" data-file="finanzas.html" onclick="openModule('finanzas.html','Contabilidad / Movimientos')">
+        <div class="module-card" onclick="openModule('finanzas.html','Contabilidad / Movimientos')">
           <div class="mc-icon">💰</div>
           <div class="mc-text"><strong>Contabilidad</strong><span>Libro mayor, ingresos, gastos y transferencias.</span></div>
         </div>
-        <div class="module-card" data-file="proyectos.html" onclick="openModule('proyectos.html','Proyectos Activos')">
+        <div class="module-card" onclick="openModule('proyectos.html','Proyectos Activos')">
           <div class="mc-icon">📁</div>
           <div class="mc-text"><strong>Proyectos</strong><span>Seguimiento de obras y cronogramas.</span></div>
         </div>
-        <div class="module-card" data-file="almacen_inventario.html" onclick="openModule('almacen_inventario.html','Inventario General')">
+        <div class="module-card" onclick="openModule('almacen_inventario.html','Inventario General')">
           <div class="mc-icon">📦</div>
           <div class="mc-text"><strong>Inventario</strong><span>Control de stock, insumos y herramientas.</span></div>
         </div>
-        <div class="module-card" data-file="control_madera.html" onclick="openModule('control_madera.html','Almacén de Madera')">
+        <div class="module-card" onclick="openModule('control_madera.html','Almacén de Madera')">
           <div class="mc-icon">🪵</div>
           <div class="mc-text"><strong>Almacén de Madera</strong><span>Catálogo de tablas por pieza individual.</span></div>
         </div>
-        <div class="module-card" data-file="rq_compras.html" onclick="openModule('rq_compras.html','Compras')">
+        <div class="module-card" onclick="openModule('rq_compras.html','Compras')">
           <div class="mc-icon">🛒</div>
           <div class="mc-text"><strong>Compras</strong><span>Órdenes de compra, proveedores y precios.</span></div>
         </div>
-        <div class="module-card" data-file="nomina_semanal.html" onclick="openModule('nomina_semanal.html','Nómina Semanal')">
+        <div class="module-card" onclick="openModule('nomina_semanal.html','Nómina Semanal')">
           <div class="mc-icon">💵</div>
           <div class="mc-text"><strong>Nómina</strong><span>Cálculo de pagos semanales al personal.</span></div>
         </div>
@@ -458,15 +459,32 @@
     if(!desc) { alert("Por favor describe el problema."); return; }
     
     const btn = document.getElementById('bug-submit-btn');
-    btn.textContent = 'Enviando...'; btn.disabled = true;
+    btn.textContent = 'Capturando pantalla...'; btn.disabled = true;
     
     const frame = document.getElementById('main-frame');
     const page = frame.getAttribute('data-loaded') || 'Workspace Principal';
     const user = window.CURRENT_USER ? window.CURRENT_USER.email : 'Usuario Desconocido';
     
+    let capturaData = null;
+    const modal = document.getElementById('bug-modal');
+    const isFrameActive = document.getElementById('frame-wrapper').style.display !== 'none';
+    const targetEl = (isFrameActive && frame.contentDocument && frame.contentDocument.body) ? frame.contentDocument.body : document.body;
+    
+    try {
+      modal.style.display = 'none'; // Ocultar el modal para que no estorbe en la foto
+      await new Promise(r => setTimeout(r, 50)); // Dar tiempo a que desaparezca visualmente
+      if (window.html2canvas) {
+        const canvas = await html2canvas(targetEl, { scale: 0.7, useCORS: true });
+        capturaData = canvas.toDataURL('image/jpeg', 0.5); // Comprimir para que no pese mucho
+      }
+    } catch(e) { console.warn("Error tomando captura:", e); }
+    
+    modal.style.display = 'flex';
+    btn.textContent = 'Enviando Reporte...';
+
     const bugData = {
       id: crypto.randomUUID(), descripcion: desc, pagina: page, usuario: user,
-      fecha: new Date().toISOString(), estado: 'abierto', user_agent: navigator.userAgent
+      fecha: new Date().toISOString(), estado: 'abierto', user_agent: navigator.userAgent, captura: capturaData
     };
     
     try {
@@ -621,6 +639,15 @@
       });
     });
 
+    // Siempre refrescar html/label de cada item con la definición actual del código
+    // (evita que íconos o labels viejos persistan en localStorage)
+    menuLayout.forEach(cat => {
+      cat.items.forEach(item => {
+        const fresh = allItemsMap[item.id];
+        if (fresh) { item.html = fresh.html; item.label = fresh.label; item.file = fresh.file; }
+      });
+    });
+
     // 3. Cargar favoritos (lista ordenada de IDs)
     try {
       favorites = JSON.parse(localStorage.getItem('erp_favorites') || '[]');
@@ -659,27 +686,6 @@
     renderMenu();
   }
 
-  function canAccessFile(file) {
-    const role = window.CURRENT_USER_ROLE;
-    if (!role || role === 'programador') return true;
-    const sec = SECTION_MAP[file];
-    if (!sec) return true;
-    if (!window.PERMISOS || !window.PERMISOS[sec]) return true;
-    const access = window.PERMISOS[sec][role];
-    return access && access !== 'none';
-  }
-
-  function canAccessItem(item) {
-    return canAccessFile(item.file);
-  }
-
-  function filterWelcomeCards() {
-    document.querySelectorAll('#welcome-module-grid .module-card[data-file]').forEach(card => {
-      const file = card.getAttribute('data-file');
-      card.style.display = canAccessFile(file) ? '' : 'none';
-    });
-  }
-
   function renderMenu() {
     const container = document.getElementById('sidebar-content');
     container.innerHTML = '';
@@ -700,7 +706,6 @@
       favorites.forEach((id, iIdx) => {
         const item = allItemsMap[id];
         if (!item) return;
-        if (!canAccessItem(item)) return;
         const iDiv = document.createElement('div');
         iDiv.className = 'nav-item' + (item.file === currentFile ? ' active' : '');
         iDiv.innerHTML = item.html;
@@ -743,7 +748,6 @@
       list.addEventListener('drop', handleDropIntoList);
 
       cat.items.forEach((item, iIdx) => {
-        if (!canAccessItem(item)) return;
         const iDiv = document.createElement('div');
         iDiv.className = 'nav-item' + (item.file === currentFile ? ' active' : '');
         iDiv.id = item.id;
@@ -1483,8 +1487,7 @@
             }
             if (prefs?.favorites)  localStorage.setItem('erp_favorites',   prefs.favorites);
             if (prefs?.menuLayout) localStorage.setItem('erp_menu_layout', prefs.menuLayout);
-            // No llamar loadMenu() aquí — PERMISOS aún no está listo.
-            // El loadMenu() definitivo (líneas abajo) lo hace con permisos ya cargados.
+            loadMenu(); // re-render con prefs cargadas
           }
         } catch(e) { console.warn('[prefs] No se pudo cargar:', e.message); }
 
@@ -1575,9 +1578,8 @@
            window.PERMISOS = perms;
         } catch(e) { console.error("Error loading permissions", e); }
         
-        // Render menu after state completes (PERMISOS y CURRENT_USER_ROLE ya están listos)
+        // Render menu after state completes
         loadMenu();
-        filterWelcomeCards();
         renderWelcomeNotifications();
       } else {
         window.CURRENT_USER = null;
