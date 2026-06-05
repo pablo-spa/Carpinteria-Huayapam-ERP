@@ -146,7 +146,7 @@ td { color: var(--text); }
 
       <div class="form-row">
         <div class="form-group">
-          <label>Viático diario por persona <span style="font-weight:400;color:var(--subtext);">($/persona/día — para calcular presupuesto)</span></label>
+          <label>Viático de comida por persona <span style="font-weight:400;color:var(--subtext);">($/persona/día — solo alimentación)</span></label>
           <input type="number" id="f-viatico-dia" class="form-control" placeholder="0" step="50" min="0">
         </div>
         <div class="form-group"></div>
@@ -187,7 +187,7 @@ td { color: var(--text); }
         </div>
         <div id="d-workers" style="font-size:14px; font-weight:600;"></div>
         <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-          <label style="font-size:12px; font-weight:700; color:var(--subtext); white-space:nowrap;">Viático/día por persona:</label>
+          <label style="font-size:12px; font-weight:700; color:var(--subtext); white-space:nowrap;">Comida/día por persona:</label>
           <input type="number" id="d-viatico-dia" class="form-control" min="0" step="50" placeholder="0"
             style="width:110px; font-size:13px;"
             onchange="saveViaticoDia(this.value)">
@@ -1346,20 +1346,20 @@ function renderBudgetPanel(totalAntPagado) {
 
   const color = pendiente > 0 ? 'var(--amber)' : 'var(--green)';
   const msg   = pendiente > 0
-    ? `⚠ Faltan ${formatMoney(pendiente)} por entregar según el regreso programado`
-    : `✓ Anticipos cubiertos para ${dias} día${dias>1?'s':''} de viaje`;
+    ? `⚠ Faltan ${formatMoney(pendiente)} de comida por entregar según el regreso programado`
+    : `✓ Anticipos de comida cubiertos para ${dias} día${dias>1?'s':''} de viaje`;
 
   panel.style.display = 'block';
   panel.innerHTML = `
     <div class="card" style="border-left:4px solid ${color};padding:14px 18px;">
       <div style="font-size:12px;font-weight:800;color:var(--subtext);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">
-        Presupuesto de Viáticos
+        Presupuesto de Comida
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:12px;">
         <div><div style="font-size:11px;color:var(--subtext);">Días programados</div><div style="font-size:20px;font-weight:800;">${dias}</div></div>
         <div><div style="font-size:11px;color:var(--subtext);">Trabajadores</div><div style="font-size:20px;font-weight:800;">${nWorkers}</div></div>
-        <div><div style="font-size:11px;color:var(--subtext);">Tarifa/persona/día</div><div style="font-size:20px;font-weight:800;">${formatMoney(diario)}</div></div>
-        <div><div style="font-size:11px;color:var(--subtext);">Presupuesto total</div><div style="font-size:20px;font-weight:800;">${formatMoney(presupuesto)}</div></div>
+        <div><div style="font-size:11px;color:var(--subtext);">Comida/persona/día</div><div style="font-size:20px;font-weight:800;">${formatMoney(diario)}</div></div>
+        <div><div style="font-size:11px;color:var(--subtext);">Total comida estimado</div><div style="font-size:20px;font-weight:800;">${formatMoney(presupuesto)}</div></div>
         <div><div style="font-size:11px;color:var(--subtext);">Anticipos dados</div><div style="font-size:20px;font-weight:800;color:var(--blue-text);">${formatMoney(dado)}</div></div>
       </div>
       <div style="font-size:13px;font-weight:700;color:${color};padding:8px 12px;background:${color}18;border-radius:8px;">${msg}</div>
