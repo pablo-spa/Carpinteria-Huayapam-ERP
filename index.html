@@ -331,6 +331,7 @@
           <div class="name" id="current-user-name">Administración</div>
           <div class="role" id="current-user-role">Administrador</div>
         </div>
+        <button onclick="toggleBugModal()" title="Reportar un problema" style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--red-bg);color:var(--red);border:1px solid rgba(201,54,74,.25);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .15s;" onmouseover="this.style.background='var(--red)';this.style.color='#fff'" onmouseout="this.style.background='var(--red-bg)';this.style.color='var(--red)'">🐞</button>
       </div>
       <button id="theme-toggle" class="btn btn-dark" onclick="toggleGlobalTheme()" style="width:100%; display:flex; justify-content:center; gap:8px;">
         <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -434,7 +435,6 @@
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
     <!-- BUG REPORTER GLOBAL -->
-    <button id="bug-fab" onclick="toggleBugModal()" style="position:fixed;bottom:24px;left:24px;width:48px;height:48px;border-radius:50%;background:var(--red);color:white;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,.2);border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:center;transition:transform .2s;" title="Reportar un Problema">🐞</button>
     <div id="bug-modal" style="display:none;position:fixed;bottom:80px;left:24px;width:340px;background:var(--mantle);border:1px solid var(--crust);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:10000;flex-direction:column;overflow:hidden;font-family:inherit;">
       <div style="background:var(--red);color:white;padding:12px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;">
         Reportar un Problema
