@@ -169,6 +169,15 @@ td { color: var(--text); }
           <span id="d-badge" class="badge">ACTIVO</span>
         </div>
         <div id="d-meta" style="color:var(--subtext); font-size:14px; margin-bottom:10px;"></div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+          <label style="font-size:12px; font-weight:700; color:var(--subtext); white-space:nowrap;">📅 Salida:</label>
+          <input type="date" id="d-fecha-salida" class="form-control" style="width:140px; font-size:13px;"
+            onchange="saveFechaSalida(this.value)">
+          <label style="font-size:12px; font-weight:700; color:var(--subtext); white-space:nowrap;">Regreso:</label>
+          <input type="date" id="d-fecha-regreso" class="form-control" style="width:140px; font-size:13px;"
+            onchange="saveFechaRegreso(this.value)">
+          <span id="d-dias-badge" style="font-size:12px; font-weight:700; background:var(--surface0); padding:3px 10px; border-radius:99px; white-space:nowrap;"></span>
+        </div>
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
           <label style="font-size:12px; font-weight:700; color:var(--subtext); white-space:nowrap;">Proyecto:</label>
           <select id="d-project-sel" class="form-control" style="flex:1; max-width:340px; font-size:13px;"
@@ -643,9 +652,17 @@ function openDetalle(id) {
   document.getElementById('d-badge').textContent = currentViaje.estado.toUpperCase();
   document.getElementById('d-badge').className = 'badge badge-' + currentViaje.estado;
   
-  document.getElementById('d-meta').innerHTML = `<strong>${currentViaje.descripcion||'Sin descripción'}</strong> &nbsp;&bull;&nbsp; 📅 ${formatDateDMM(currentViaje.fecha_salida)} → ${formatDateDMM(currentViaje.fecha_regreso_real || currentViaje.fecha_regreso_est)}`;
+  document.getElementById('d-meta').innerHTML = `<strong>${currentViaje.descripcion||'Sin descripción'}</strong>`;
   document.getElementById('d-workers').textContent = `Personal: ${getWorkerNames(db, currentViaje.worker_ids)}`;
-  
+
+  // Llenar fechas editables
+  const isCerrado = currentViaje.estado === 'cerrado';
+  const salidaEl = document.getElementById('d-fecha-salida');
+  const regresoEl = document.getElementById('d-fecha-regreso');
+  if (salidaEl) { salidaEl.value = currentViaje.fecha_salida || ''; salidaEl.disabled = isCerrado; }
+  if (regresoEl) { regresoEl.value = currentViaje.fecha_regreso_est || currentViaje.fecha_regreso_real || ''; regresoEl.disabled = isCerrado; }
+  _updateDiasBadge();
+
   const notaEl = document.getElementById('d-nota-cierre');
   if (currentViaje.nota_cierre) {
     notaEl.innerHTML = `Nota de cierre: ${currentViaje.nota_cierre} <button onclick="editNotaCierre()" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:6px;" title="Editar/Eliminar Nota">✏️</button>`;
@@ -653,11 +670,10 @@ function openDetalle(id) {
   } else {
     notaEl.style.display = 'none';
   }
-  
-  const isCerrado = currentViaje.estado === 'cerrado';
+
   document.getElementById('form-anticipo').style.display = isCerrado ? 'none' : 'grid';
   document.getElementById('form-gasto').style.display = isCerrado ? 'none' : 'grid';
-  
+
   document.getElementById('btn-cerrar-viaje').style.display = isCerrado ? 'none' : 'inline-flex';
   document.getElementById('btn-reabrir-viaje').style.display = isCerrado ? 'inline-flex' : 'none';
 
@@ -1247,7 +1263,49 @@ function saveViaticoDia(val) {
     window.DB.save(db);
     if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
   }
-  renderBudgetPanel(); // recalcular
+  renderBudgetPanel();
+}
+
+function saveFechaSalida(val) {
+  if (!currentViaje || !val) return;
+  currentViaje.fecha_salida = val;
+  const db = window.DB.get();
+  const v = (db.viajes||[]).find(x => x.id === currentViajeId);
+  if (v) {
+    v.fecha_salida = val;
+    window.DB.save(db);
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+  }
+  _updateDiasBadge();
+  renderBudgetPanel();
+  if (currentViaje.estado === 'activo') checkAndMarkTripAttendance(currentViaje);
+}
+
+function saveFechaRegreso(val) {
+  if (!currentViaje || !val) return;
+  currentViaje.fecha_regreso_est = val;
+  const db = window.DB.get();
+  const v = (db.viajes||[]).find(x => x.id === currentViajeId);
+  if (v) {
+    v.fecha_regreso_est = val;
+    window.DB.save(db);
+    if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('viajes', v.id, v);
+  }
+  _updateDiasBadge();
+  renderBudgetPanel();
+  if (currentViaje.estado === 'activo') checkAndMarkTripAttendance(currentViaje);
+  toast('Fecha de regreso actualizada.', 'ok');
+}
+
+function _updateDiasBadge() {
+  const badge = document.getElementById('d-dias-badge');
+  if (!badge || !currentViaje) return;
+  const salida  = currentViaje.fecha_salida;
+  const regreso = currentViaje.fecha_regreso_est || currentViaje.fecha_regreso_real;
+  if (!salida || !regreso) { badge.textContent = ''; return; }
+  const ms   = new Date(regreso+'T12:00:00') - new Date(salida+'T12:00:00');
+  const dias = Math.max(1, Math.round(ms / 86400000) + 1);
+  badge.textContent = `${dias} día${dias>1?'s':''}`;
 }
 
 // ── Panel de presupuesto de viáticos ─────────────────────────────────────
