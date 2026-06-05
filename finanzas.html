@@ -1277,6 +1277,49 @@
 
   initData();
 
+  function exportarCSV() {
+    const term  = document.getElementById('f-search').value.toLowerCase();
+    const typeF = document.getElementById('f-type').value;
+    const catF  = document.getElementById('f-cat').value;
+
+    const rows = [...DBm]
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+      .filter(m => {
+        if (!m.id && !m._id) return false;
+        if (m.eliminado) return false;
+        if (currentAccFilter !== 'ALL' && m.account !== currentAccFilter && m.destAccount !== currentAccFilter) return false;
+        if (typeF && m.type !== typeF) return false;
+        if (catF) {
+          if (catF === 'pending' && m.category && m.category !== '') return false;
+          if (catF !== 'pending' && m.category !== catF) return false;
+        }
+        const c = m.concept || '';
+        if (term && !c.toLowerCase().includes(term) && !(m.amount || '').toString().includes(term)) return false;
+        return true;
+      });
+
+    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['Fecha', 'Tipo', 'Cuenta', 'Concepto', 'Categoría', 'Monto', 'Beneficiario', 'Estado', 'Proyecto', 'Notas'];
+    const lines  = [header.map(esc).join(',')];
+    rows.forEach(m => {
+      const cuenta = m.type === 'Transferencia' ? `${m.account} → ${m.destAccount}` : (m.account || '');
+      lines.push([
+        m.date || '', m.type || '', cuenta, m.concept || '',
+        m.category || '', m.amount ?? '', m.entity || '',
+        m.status || '', m.projectId || '', m.notes || ''
+      ].map(esc).join(','));
+    });
+
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `finanzas_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`${rows.length} movimientos exportados.`);
+  }
+
 function toast(msg, type='ok') {
   const el = document.createElement('div');
   el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;

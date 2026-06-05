@@ -182,3 +182,8 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .badge-red,   .chip-red,   .pill-red    { background: var(--red-bg);    color: var(--red-text);   border-color: rgba(210,15,57,0.2); }
 .badge-purple,.chip-purple,.pill-purple { background: var(--purple-bg); color: var(--purple);     border-color: rgba(136,57,239,0.2); }
 .badge-gray,  .chip-gray,  .pill-gray   { background: var(--surface0);  color: var(--subtext);    border-color: var(--crust); }
+/* Aliases semánticos para estados de viaje, madera, pedidos */
+.badge-activo, .badge-confirmed, .badge-authorized, .badge-pagado, .badge-done, .badge-seco  { background: var(--green-bg);  color: var(--green-text); border-color: rgba(64,160,43,0.2); }
+.badge-cerrado, .badge-cancelled { background: var(--surface0); color: var(--subtext); border-color: var(--crust); }
+.badge-pending, .badge-pedido, .badge-borrador, .badge-quoted { background: var(--amber-bg); color: var(--amber-text); border-color: rgba(223,142,29,0.2); }
+.badge-verde, .badge-aire { background: var(--blue-bg); color: var(--blue-text); border-color: rgba(30,102,245,0.2); }
