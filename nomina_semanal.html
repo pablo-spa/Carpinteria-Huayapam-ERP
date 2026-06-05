@@ -362,8 +362,8 @@
       <button class="ptbtn"    id="pt-recibos"  onclick="showPrint('recibos',this)">Recibos individuales</button>
     </div>
     <div class="print-actions">
-      <button class="btn btn-blue" id="btn-imp-res" onclick="impResumen()">🖨 Imprimir resumen</button>
-      <button class="btn btn-dark" id="btn-imp-rec" onclick="impRecibos()" style="display:none">🖨 Imprimir recibos</button>
+      <button class="btn btn-blue" id="btn-imp-res" onclick="impResumen()">📄 Generar PDF — Resumen</button>
+      <button class="btn btn-blue" id="btn-imp-rec" onclick="impRecibos()" style="display:none">📄 Generar PDF — Recibos</button>
     </div>
     <div class="preview-scroll" id="preview-area"></div>
   </div>
@@ -378,7 +378,10 @@
     <div class="fstat"><span class="lbl">Extras</span><span class="val" id="f-extras" style="color:var(--amber)">$0</span></div>
     <div class="fstat"><span class="lbl">Descuentos</span><span class="val" id="f-descs" style="color:var(--red)">$0</span></div>
   </div>
-  <button class="btn btn-dark" onclick="showTab('imprimir',document.querySelectorAll('.tab')[2])">🖨 Imprimir</button>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-dark" onclick="impResumen()" title="PDF con todos los trabajadores">📄 Resumen</button>
+    <button class="btn btn-dark" onclick="impRecibos()" title="Recibo individual por trabajador">📄 Recibos</button>
+  </div>
 </div>
 
 <script src="db.js"></script>
@@ -1426,13 +1429,211 @@ function buildPreview(){
   }
 }
 
-function impResumen(){
-  showPrint('resumen', document.getElementById('pt-resumen'));
-  setTimeout(()=>window.print(), 100);
+const PDF_BASE_CSS = `
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; background:#fff; }
+  @page { size: letter; margin: 15mm 14mm; }
+`;
+
+function _printWindow(html) {
+  const w = window.open('', '_blank');
+  if (!w) { alert('Permite las ventanas emergentes para generar el PDF.'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${PDF_BASE_CSS}</style></head><body>${html}</body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => { w.print(); }, 400);
 }
-function impRecibos(){
-  showPrint('recibos', document.getElementById('pt-recibos'));
-  setTimeout(()=>window.print(), 100);
+
+function impResumen() {
+  const {mon,fri,sat} = weekDates(weekOffset);
+  const semStr  = `${fmtS(sat)} – ${fmtS(fri)} ${fri.getFullYear()}`;
+  const semNum  = `Semana ${weekNum(mon)} — ${fri.getFullYear()}`;
+  const hoy     = new Date().toLocaleDateString('es-MX', {day:'numeric', month:'long', year:'numeric'});
+
+  const rows = WORKERS.map(w => {
+    const s = S[w.id]; const r = calcW(w); const t = tarifa(w);
+    const hExtStr   = r.hExt_all > 0 ? `+${r.hExt_all.toFixed(1)}h` : '—';
+    const faltaStr  = r.nFalta > 0 ? String(r.nFalta) : '—';
+    const corrStr   = r.bonoPay !== 0 ? `${r.bonoPay > 0 ? '+' : ''}$${r.bonoPay.toLocaleString('es-MX')}` : '—';
+    const prestDesc = (PRESTAMOS[w.id]||[]).reduce((sum,p,i) => sum + (s.prestAplic[i] ? s.prestMonto[i] : 0), 0);
+    const descStr   = prestDesc > 0 ? `−$${prestDesc.toLocaleString('es-MX')}` : '—';
+    const verif     = s.verificado ? '✓' : '';
+    return `<tr>
+      <td style="padding:5px 7px;border:1px solid #ccc;">${w.n} ${w.ape}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;color:#555;">${w.cat||'—'}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:right;">$${w.base.toLocaleString('es-MX')}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;">${r.hNorm.toFixed(1)}h</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#800000;">${faltaStr}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#7a5000;">${hExtStr}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;">${corrStr}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#800000;">${descStr}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:right;font-weight:900;">$${r.total.toLocaleString('es-MX')}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#1a7a50;">${verif}</td>
+    </tr>`;
+  }).join('');
+
+  const totalN = totalNomina();
+
+  const html = `
+  <div style="padding:0 0 24px;">
+    <div style="text-align:center; border-bottom:2px solid #222; padding-bottom:10px; margin-bottom:14px;">
+      <div style="font-size:18px;font-weight:900;letter-spacing:.02em;">Carpintería Huayapam</div>
+      <div style="font-size:13px;font-weight:700;margin-top:3px;">Resumen General de Nómina</div>
+      <div style="font-size:11px;color:#555;margin-top:4px;">${semNum} &nbsp;·&nbsp; ${semStr} &nbsp;·&nbsp; Generado: ${hoy}</div>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead>
+        <tr style="background:#f2f2f2;">
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:left;">Nombre</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:left;">Puesto</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:right;">Base/Sem</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Hrs Norm.</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Faltas</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Hrs Extra</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Corrección</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Descuentos</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:right;">Total</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">OK</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr style="background:#d4edda;">
+          <td colspan="8" style="padding:6px 7px;border:1px solid #ccc;font-weight:900;text-align:right;">
+            TOTAL NÓMINA — ${WORKERS.length} trabajadores
+          </td>
+          <td style="padding:6px 7px;border:1px solid #ccc;font-weight:900;text-align:right;font-size:13px;">
+            $${totalN.toLocaleString('es-MX')}
+          </td>
+          <td style="border:1px solid #ccc;"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style="display:flex;justify-content:space-between;margin-top:36px;gap:40px;">
+      <div style="flex:1;border-top:1px solid #333;padding-top:5px;text-align:center;font-size:11px;color:#555;">Elaborado por</div>
+      <div style="flex:1;border-top:1px solid #333;padding-top:5px;text-align:center;font-size:11px;color:#555;">Autorizado por</div>
+    </div>
+  </div>`;
+
+  _printWindow(html);
+}
+
+function impRecibos() {
+  const {mon,fri,sat} = weekDates(weekOffset);
+  const semStr = `${fmtS(sat)} – ${fmtS(fri)} ${fri.getFullYear()}`;
+  const semNum = `Semana ${weekNum(mon)} — ${fri.getFullYear()}`;
+  const dates  = dayDates(weekOffset);
+
+  const recibos = WORKERS.filter(w => calcW(w).total > 0).map(w => {
+    const s = S[w.id]; const r = calcW(w); const t = tarifa(w);
+
+    // Tabla de días (solo los que tienen algo que mostrar)
+    const diasRows = DIA_ORDER.map(di => {
+      const d = s.dias[di]; const dt = dates[di];
+      if (d.st === 'libre') return '';
+      const stLbl = { trabajo:'Trabajó', falta:'Falta', vac:'Vacaciones', retardo:'Retardo' }[d.st] || d.st;
+      const stColor = { trabajo:'#1a7a50', falta:'#800000', vac:'#1a4a8a', retardo:'#7a5000' }[d.st] || '#333';
+      const entrada = d.horaEnt ? d.horaEnt.substring(0,5) : (d.st==='trabajo' ? '—' : '');
+      const salida  = d.horaSal ? d.horaSal.substring(0,5) : (d.st==='trabajo' ? '—' : '');
+      const hrsStr  = d.st==='trabajo' ? `${(+d.hrs||0).toFixed(1)}h` : (d.st==='vac' ? '9h' : '—');
+      return `<tr>
+        <td style="padding:4px 7px;border:1px solid #ddd;">${DIAS_N[di]}</td>
+        <td style="padding:4px 7px;border:1px solid #ddd;color:#777;">${dt.toLocaleDateString('es-MX',{day:'numeric',month:'short'})}</td>
+        <td style="padding:4px 7px;border:1px solid #ddd;color:${stColor};font-weight:700;">${stLbl}</td>
+        <td style="padding:4px 7px;border:1px solid #ddd;text-align:center;">${entrada}</td>
+        <td style="padding:4px 7px;border:1px solid #ddd;text-align:center;">${salida}</td>
+        <td style="padding:4px 7px;border:1px solid #ddd;text-align:right;font-weight:700;">${hrsStr}</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+    // Conceptos
+    let conc = `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Horas normales (${r.hNorm.toFixed(1)}h × $${t.toFixed(0)}/h)</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;">$${Math.round(r.basePay - r.hVacExtra*t).toLocaleString('es-MX')}</td></tr>`;
+    if (r.nVac > 0)      conc += `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Vacaciones pagadas (${r.nVac} d)</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;color:#1a7a50;">incl.</td></tr>`;
+    if (s.diasVacExtra>0)conc += `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Días vac. extra (${s.diasVacExtra} d)</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;color:#1a7a50;">+$${Math.round(r.hVacExtra*t).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hExt15 > 0)    conc += `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Horas extra ×1.5 (${r.hExt15.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;color:#7a5000;">+$${Math.round(r.ext15Pay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hExt2c > 0)    conc += `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Horas extra ×2 (${r.hExt2c.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;color:#7a5000;">+$${Math.round(r.ext2Pay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hSat > 0)      conc += `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Sábado (${r.hSat}h × ×${CFG.satRate})</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;color:#7a5000;">+$${Math.round(r.satPay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hSun > 0)      conc += `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Domingo (${r.hSun}h × ×${CFG.sunRate})</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;color:#7a5000;">+$${Math.round(r.sunPay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.bonoPay !== 0) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Corrección: ${s.nota||'—'}</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;color:${r.bonoPay>0?'#1a7a50':'#800000'};">${r.bonoPay>0?'+':''}$${r.bonoPay.toLocaleString('es-MX')}</td></tr>`;
+    (PRESTAMOS[w.id]||[]).forEach((p,i) => {
+      if (s.prestAplic[i]) {
+        const restSaldo = p.saldo - s.prestMonto[i];
+        conc += `<tr><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;">Abono préstamo: ${p.desc}</td><td style="padding:4px 0;border-bottom:1px solid #e0e0e0;text-align:right;color:#800000;">−$${s.prestMonto[i].toLocaleString('es-MX')}</td></tr>`;
+        if (restSaldo > 0) conc += `<tr><td colspan="2" style="padding:2px 0 5px;font-size:10px;color:#999;">↳ Saldo restante: $${restSaldo.toLocaleString('es-MX')}</td></tr>`;
+      }
+    });
+
+    return `<div style="page-break-after:always; padding:0 0 20px;">
+      <!-- Encabezado -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #222;padding-bottom:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:16px;font-weight:900;">Carpintería Huayapam</div>
+          <div style="font-size:11px;color:#555;margin-top:2px;">Recibo de Nómina Semanal</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;font-weight:700;">${semStr}</div>
+          <div style="font-size:10px;color:#777;">${semNum}</div>
+        </div>
+      </div>
+
+      <!-- Info trabajador -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;background:#f8f8f8;border-radius:4px;padding:8px 10px;">
+        <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#777;margin-bottom:2px;">Trabajador</div><b>${w.n} ${w.ape}</b></div>
+        <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#777;margin-bottom:2px;">Puesto</div>${w.cat||'—'}</div>
+        <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#777;margin-bottom:2px;">Salario base</div>$${w.base.toLocaleString('es-MX')}/sem</div>
+      </div>
+
+      <!-- Asistencia -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#777;margin-bottom:5px;">Asistencia</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px;">
+        <thead><tr style="background:#f2f2f2;">
+          <th style="padding:4px 7px;border:1px solid #ddd;text-align:left;">Día</th>
+          <th style="padding:4px 7px;border:1px solid #ddd;text-align:left;">Fecha</th>
+          <th style="padding:4px 7px;border:1px solid #ddd;text-align:left;">Estado</th>
+          <th style="padding:4px 7px;border:1px solid #ddd;text-align:center;">Entrada</th>
+          <th style="padding:4px 7px;border:1px solid #ddd;text-align:center;">Salida</th>
+          <th style="padding:4px 7px;border:1px solid #ddd;text-align:right;">Horas</th>
+        </tr></thead>
+        <tbody>${diasRows||'<tr><td colspan="6" style="padding:7px;text-align:center;color:#999;">Sin registros esta semana</td></tr>'}</tbody>
+        <tfoot><tr style="background:#f2f2f2;">
+          <td colspan="5" style="padding:4px 7px;border:1px solid #ddd;font-weight:700;text-align:right;">Total horas normales</td>
+          <td style="padding:4px 7px;border:1px solid #ddd;text-align:right;font-weight:700;">${r.hNorm.toFixed(1)}h</td>
+        </tfoot>
+      </table>
+
+      <!-- Conceptos -->
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#777;margin-bottom:5px;">Desglose de Pago</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px;">
+        <tbody>${conc}</tbody>
+      </table>
+
+      <!-- Total -->
+      <div style="font-size:15px;font-weight:900;text-align:right;border-top:2px solid #222;padding-top:6px;margin-bottom:24px;">
+        Total a recibir: &nbsp; $${r.total.toLocaleString('es-MX')}
+      </div>
+
+      <!-- Firmas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:10px;">
+        <div style="border-top:1px solid #333;padding-top:5px;text-align:center;font-size:10px;color:#777;">
+          Firma del Trabajador<br><br>
+          <span style="font-size:11px;color:#333;font-weight:700;">${w.n} ${w.ape}</span>
+        </div>
+        <div style="border-top:1px solid #333;padding-top:5px;text-align:center;font-size:10px;color:#777;">
+          Firma de la Empresa<br><br>
+          <span style="font-size:11px;color:#333;font-weight:700;">Carpintería Huayapam</span>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // Al último recibo quitarle el page-break
+  if (recibos.length > 0) {
+    recibos[recibos.length - 1] = recibos[recibos.length - 1].replace('page-break-after:always', 'page-break-after:auto');
+  }
+
+  _printWindow(recibos.join('') || '<p style="text-align:center;padding:40px;color:#999;">No hay trabajadores con pago esta semana.</p>');
 }
 
 </script>
