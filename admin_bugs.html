@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="global.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bugs y Reportes</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.main { max-width: 860px; margin: 0 auto; padding: 20px; }
+
+/* Stats bar */
+.stats-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.stat-chip { background: var(--mantle); border: 1px solid var(--crust); border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all .15s; }
+.stat-chip:hover { border-color: var(--blue); }
+.stat-chip.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); }
+.stat-chip.open-chip.active { background: var(--red-bg); border-color: var(--red); color: var(--red-text); }
+.stat-chip.res-chip.active  { background: var(--green-bg); border-color: var(--green); color: var(--green-text); }
+.stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-all  { background: var(--subtext); }
+.dot-open { background: var(--red); }
+.dot-res  { background: var(--green); }
+
+/* Bug cards */
+.bug-list { display: flex; flex-direction: column; gap: 10px; }
+.bug-card {
+  background: var(--mantle);
+  border: 1px solid var(--crust);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .15s;
+}
+.bug-card:hover { border-color: var(--surface1); }
+.bug-card.open { border-left: 3px solid var(--red); }
+.bug-card.resolved { border-left: 3px solid var(--green); opacity: 0.75; }
+
+.bug-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.bug-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.bug-card.open .bug-status-dot  { background: var(--red); }
+.bug-card.resolved .bug-status-dot { background: var(--green); }
+
+.bug-summary { flex: 1; min-width: 0; }
+.bug-desc-preview {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bug-meta { display: flex; gap: 8px; margin-top: 3px; flex-wrap: wrap; align-items: center; }
+.bug-user  { font-size: 11px; color: var(--subtext); font-weight: 600; }
+.bug-page  { font-size: 10px; background: var(--surface0); color: var(--subtext); padding: 1px 6px; border-radius: 4px; font-family: monospace; }
+.bug-date  { font-size: 11px; color: var(--subtext); margin-left: auto; white-space: nowrap; flex-shrink: 0; }
+
+.bug-chevron { font-size: 11px; color: var(--subtext); flex-shrink: 0; transition: transform .2s; }
+.bug-card.expanded .bug-chevron { transform: rotate(180deg); }
+
+/* Expanded body */
+.bug-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--crust); }
+.bug-card.expanded .bug-body { display: block; }
+.bug-full-desc {
+  font-size: 13px; line-height: 1.6; color: var(--text);
+  white-space: pre-wrap; padding: 10px 12px;
+  background: var(--base); border-radius: 6px;
+  border: 1px solid var(--crust); margin-top: 12px;
+}
+.bug-capture { margin-top: 10px; }
+.bug-capture img { max-width: 100%; max-height: 220px; border-radius: 6px; border: 1px solid var(--crust); cursor: zoom-in; }
+.bug-ua { font-size: 10px; color: var(--subtext); margin-top: 8px; word-break: break-all; line-height: 1.4; }
+.bug-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* Empty */
+.empty { text-align: center; padding: 60px 20px; color: var(--subtext); }
+.empty svg { width: 40px; height: 40px; opacity: .4; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">🐞 Bugs y Reportes</div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-ghost" onclick="loadBugs()" style="font-size:12px;">⟳ Actualizar</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="stats-row" id="stats-row"></div>
+  <div class="bug-list" id="bug-list">
+    <div class="empty"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><div>Cargando...</div></div>
+  </div>
+</div>
+
+<script type="module">
+import { collection, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+const db = window.parent.db;
+let allBugs = [];
+let activeFilter = 'todos';
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const now = new Date();
+  const diffH = (now - d) / 3600000;
+  if (diffH < 1) return 'Hace menos de 1 hora';
+  if (diffH < 24) return `Hace ${Math.floor(diffH)}h`;
+  if (diffH < 48) return 'Ayer';
+  return d.toLocaleDateString('es-MX', { day:'numeric', month:'short', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+}
+
+function filtered() {
+  if (activeFilter === 'todos') return allBugs;
+  return allBugs.filter(b => b.estado === activeFilter);
+}
+
+function renderStats() {
+  const nOpen = allBugs.filter(b => b.estado === 'abierto').length;
+  const nRes  = allBugs.filter(b => b.estado === 'resuelto').length;
+  const el = document.getElementById('stats-row');
+  el.innerHTML = `
+    <div class="stat-chip ${activeFilter==='todos'?'active':''}" onclick="setFilter('todos')"><span class="stat-dot dot-all"></span> Todos (${allBugs.length})</div>
+    <div class="stat-chip open-chip ${activeFilter==='abierto'?'active':''}" onclick="setFilter('abierto')"><span class="stat-dot dot-open"></span> Abiertos (${nOpen})</div>
+    <div class="stat-chip res-chip  ${activeFilter==='resuelto'?'active':''}" onclick="setFilter('resuelto')"><span class="stat-dot dot-res"></span> Resueltos (${nRes})</div>
+  `;
+}
+
+function renderList() {
+  const bugs = filtered();
+  const el = document.getElementById('bug-list');
+
+  if (!bugs.length) {
+    const msg = activeFilter === 'abierto' ? 'No hay bugs abiertos 🎉' : 'Sin reportes en esta categoría.';
+    el.innerHTML = `<div class="empty"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><div>${msg}</div></div>`;
+    return;
+  }
+
+  el.innerHTML = bugs.map(b => {
+    const isRes = b.estado === 'resuelto';
+    const preview = (b.descripcion || '').replace(/\n/g, ' ');
+    return `
+    <div class="bug-card ${isRes ? 'resolved' : 'open'}" id="card-${b.id}">
+      <div class="bug-top" onclick="toggleCard('${b.id}')">
+        <span class="bug-status-dot"></span>
+        <div class="bug-summary">
+          <div class="bug-desc-preview">${preview}</div>
+          <div class="bug-meta">
+            <span class="bug-user">👤 ${b.usuario}</span>
+            <span class="bug-page">${b.pagina}</span>
+            <span class="bug-date">${fmtDate(b.fecha)}</span>
+          </div>
+        </div>
+        <span class="bug-chevron">▼</span>
+      </div>
+      <div class="bug-body">
+        <div class="bug-full-desc">${b.descripcion}</div>
+        ${b.captura ? `<div class="bug-capture"><a href="${b.captura}" target="_blank"><img src="${b.captura}"></a></div>` : ''}
+        <div class="bug-ua">💻 ${b.user_agent}</div>
+        <div class="bug-actions">
+          ${!isRes
+            ? `<button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="markResolved('${b.id}')">✓ Marcar solucionado</button>`
+            : `<span style="font-size:12px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:4px;">✓ Solucionado</span>`}
+          <button class="btn" style="font-size:12px;padding:5px 12px;color:var(--red);border-color:var(--crust);" onclick="deleteBug('${b.id}')">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.setFilter = function(f) {
+  activeFilter = f;
+  renderStats();
+  renderList();
+};
+
+window.toggleCard = function(id) {
+  document.getElementById('card-' + id)?.classList.toggle('expanded');
+};
+
+window.loadBugs = async function() {
+  try {
+    const snap = await getDocs(collection(db, 'bugs'));
+    allBugs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allBugs.sort((a, b) => {
+      if (a.estado === 'abierto' && b.estado !== 'abierto') return -1;
+      if (a.estado !== 'abierto' && b.estado === 'abierto') return 1;
+      return new Date(b.fecha) - new Date(a.fecha);
+    });
+    renderStats();
+    renderList();
+  } catch(e) {
+    document.getElementById('bug-list').innerHTML = `<div style="color:var(--red);padding:20px;font-size:13px;">Error al cargar: ${e.message}</div>`;
+  }
+};
+
+window.markResolved = async function(id) {
+  if (!confirm('¿Marcar como resuelto?')) return;
+  try {
+    await updateDoc(doc(db, 'bugs', id), { estado: 'resuelto' });
+    const bug = allBugs.find(b => b.id === id);
+    if (bug) bug.estado = 'resuelto';
+    renderStats();
+    renderList();
+  } catch(e) { alert('Error: ' + e.message); }
+};
+
+window.deleteBug = async function(id) {
+  if (!confirm('¿Eliminar este reporte permanentemente?')) return;
+  try {
+    await deleteDoc(doc(db, 'bugs', id));
+    allBugs = allBugs.filter(b => b.id !== id);
+    renderStats();
+    renderList();
+  } catch(e) { alert('Error: ' + e.message); }
+};
+
+window.loadBugs();
+</script>
+</body>
+</html>
