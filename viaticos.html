@@ -394,12 +394,28 @@ function dbStateRemove(col, id) {
 }
 
 async function init() {
-  // Cargar todas las colecciones necesarias
-  await Promise.all([
-    window.DB.query('viajes'),
-    window.DB.query('anticipos_viaticos'),
-    window.DB.query('gastos_viaticos'),
-  ]);
+  // Esperar que el padre esté listo
+  if (window.parent && window.parent !== window) {
+    let i = 0;
+    while (!window.parent.DB_STATE_LOADED && i++ < 300) await new Promise(r => setTimeout(r, 100));
+  }
+
+  // Usar cargar_coleccion directamente: query() solo llama cargar_coleccion si la
+  // colección es === undefined, pero el padre la inicializa como [] (array vacío),
+  // así que la primera visita nunca cargaba datos de Firestore.
+  if (window.parent?.cargar_coleccion) {
+    await Promise.all([
+      window.parent.cargar_coleccion('viajes'),
+      window.parent.cargar_coleccion('anticipos_viaticos'),
+      window.parent.cargar_coleccion('gastos_viaticos'),
+    ]);
+  } else {
+    await Promise.all([
+      window.DB.query('viajes'),
+      window.DB.query('anticipos_viaticos'),
+      window.DB.query('gastos_viaticos'),
+    ]);
+  }
 
   // Cargar cuentas reales
   const rawBankAccs = await window.DB.query('bank_accounts');
