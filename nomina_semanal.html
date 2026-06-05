@@ -342,7 +342,6 @@
     <div class="fstat"><span class="lbl">Extras</span><span class="val" id="f-extras" style="color:var(--amber)">$0</span></div>
     <div class="fstat"><span class="lbl">Descuentos</span><span class="val" id="f-descs" style="color:var(--red)">$0</span></div>
   </div>
-  <button class="btn btn-dark" onclick="showTab('resumen', document.querySelectorAll('.tab')[2])">📄 PDF</button>
 </div>
 
 <script src="db.js"></script>
@@ -1258,14 +1257,15 @@ function buildResumenPreview() {
     const vacStr  = (r.nVac > 0 || s.diasVacExtra > 0) ? `${r.nVac + s.diasVacExtra}d` : '—';
     const prestDetail = (PRESTAMOS[w.id]||[]).reduce((arr,p,i) => { if(s.prestAplic[i]) arr.push(`−$${s.prestMonto[i]}`); return arr; }, []).join(', ') || '—';
     const verified = s.verificado ? '<span style="color:var(--green-text)">✓</span>' : '';
+    const notaHtml = s.nota ? `<div style="font-size:10px;color:var(--subtext);margin-top:2px;font-style:italic;">↳ ${s.nota}</div>` : '';
     return `<tr>
-      <td style="padding:6px 8px;border:1px solid var(--crust);">${w.n} ${w.ape} ${verified}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);">${w.n} ${w.ape} ${verified}${notaHtml}</td>
       <td style="padding:6px 8px;border:1px solid var(--crust);text-align:right;">$${w.base.toLocaleString('es-MX')}</td>
       <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;">${r.hNorm.toFixed(1)}h</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--red-text);">${r.nFalta || '—'}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--red-text);">${r.nFalta > 0 ? r.nFalta : '—'}</td>
+      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--blue-text);">${vacStr}</td>
       <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--amber-text);">${hrsEx}</td>
       <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;">${corrStr}</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;">${vacStr}</td>
       <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--red-text);">${prestDetail}</td>
       <td style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-weight:800;">$${r.total.toLocaleString('es-MX')}</td>
     </tr>`;
@@ -1279,13 +1279,13 @@ function buildResumenPreview() {
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead><tr style="background:var(--base);">
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:left;font-size:10px;color:var(--subtext);text-transform:uppercase;">Nombre</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:left;font-size:10px;color:var(--subtext);text-transform:uppercase;">Nombre / Nota</th>
           <th style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-size:10px;color:var(--subtext);text-transform:uppercase;">Base/Sem</th>
           <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Hrs Norm.</th>
           <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Faltas</th>
+          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Vac.</th>
           <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Hrs Extra</th>
           <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Correc.</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Vac.</th>
           <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Desc/Prést</th>
           <th style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-size:10px;color:var(--subtext);text-transform:uppercase;">Total</th>
         </tr></thead>
@@ -1388,20 +1388,22 @@ function impResumen() {
     const s = S[w.id]; const r = calcW(w);
     const hExtStr   = r.hExt_all > 0 ? `+${r.hExt_all.toFixed(1)}h` : '—';
     const faltaStr  = r.nFalta > 0 ? String(r.nFalta) : '—';
+    const vacStr    = (r.nVac > 0 || s.diasVacExtra > 0) ? `${r.nVac + s.diasVacExtra}d` : '—';
     const corrStr   = r.bonoPay !== 0 ? `${r.bonoPay > 0 ? '+' : ''}$${r.bonoPay.toLocaleString('es-MX')}` : '—';
     const prestDesc = (PRESTAMOS[w.id]||[]).reduce((sum,p,i) => sum + (s.prestAplic[i] ? s.prestMonto[i] : 0), 0);
     const descStr   = prestDesc > 0 ? `−$${prestDesc.toLocaleString('es-MX')}` : '—';
     const verif     = s.verificado ? '✓' : '';
+    const notaHtml  = s.nota ? `<div style="font-size:10px;color:#777;margin-top:2px;font-style:italic;">↳ ${s.nota}</div>` : '';
     return `<tr>
-      <td style="padding:5px 7px;border:1px solid #ccc;">${w.n} ${w.ape}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;">${w.n} ${w.ape} ${verif}${notaHtml}</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:right;">$${w.base.toLocaleString('es-MX')}</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;">${r.hNorm.toFixed(1)}h</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#800000;">${faltaStr}</td>
+      <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#1a4a8a;">${vacStr}</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#7a5000;">${hExtStr}</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;">${corrStr}</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#800000;">${descStr}</td>
       <td style="padding:5px 7px;border:1px solid #ccc;text-align:right;font-weight:900;">$${r.total.toLocaleString('es-MX')}</td>
-      <td style="padding:5px 7px;border:1px solid #ccc;text-align:center;color:#1a7a50;">${verif}</td>
     </tr>`;
   }).join('');
 
@@ -1418,21 +1420,21 @@ function impResumen() {
     <table style="width:100%;border-collapse:collapse;font-size:11px;">
       <thead>
         <tr style="background:#f2f2f2;">
-          <th style="padding:5px 7px;border:1px solid #ccc;text-align:left;">Nombre</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:left;">Nombre / Nota</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:right;">Base/Sem</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Hrs Norm.</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Faltas</th>
+          <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Vac.</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Hrs Extra</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Corrección</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">Descuentos</th>
           <th style="padding:5px 7px;border:1px solid #ccc;text-align:right;">Total</th>
-          <th style="padding:5px 7px;border:1px solid #ccc;text-align:center;">OK</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
       <tfoot>
         <tr style="background:#d4edda;">
-          <td colspan="7" style="padding:6px 7px;border:1px solid #ccc;font-weight:900;text-align:right;">
+          <td colspan="8" style="padding:6px 7px;border:1px solid #ccc;font-weight:900;text-align:right;">
             TOTAL NÓMINA — ${WORKERS.length} trabajadores
           </td>
           <td style="padding:6px 7px;border:1px solid #ccc;font-weight:900;text-align:right;font-size:13px;">
