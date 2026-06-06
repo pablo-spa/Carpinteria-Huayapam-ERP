@@ -64,7 +64,9 @@
     flex-direction: column;
     gap: 28px;
     scrollbar-width: none;
+    transition: opacity .2s ease;
   }
+  .sidebar-content.loading { opacity: 0; }
   .sidebar-content::-webkit-scrollbar { display: none; }
 
   .category {
@@ -614,11 +616,15 @@
   defaultMenuLayout.forEach(cat => cat.items.forEach(item => { allItemsMap[item.id] = item; }));
 
   function canViewFile(file) {
-    const role = window.CURRENT_USER_ROLE || 'programador';
+    // Mientras el rol no esté determinado (Firebase auth en progreso), ocultar todo
+    if (!window.CURRENT_USER_ROLE) return false;
+    const role = window.CURRENT_USER_ROLE;
     if (role === 'programador') return true;
     const sec = SECTION_MAP[file];
-    if (!sec) return true; // sin mapeo = acceso libre
-    const level = (window.PERMISOS?.[sec]?.[role]) || 'none';
+    if (!sec) return true;
+    // Si PERMISOS aún no cargó, ocultar hasta que lleguen
+    if (!window.PERMISOS) return false;
+    const level = window.PERMISOS[sec]?.[role] || 'none';
     return level !== 'none';
   }
 
@@ -705,6 +711,12 @@
   function renderMenu() {
     const container = document.getElementById('sidebar-content');
     container.innerHTML = '';
+    // Mostrar sidebar solo cuando el rol ya está determinado
+    if (window.CURRENT_USER_ROLE) {
+      container.classList.remove('loading');
+    } else {
+      container.classList.add('loading');
+    }
     const favSet = new Set(favorites);
     const currentFile = document.getElementById('main-frame').getAttribute('data-loaded');
 
