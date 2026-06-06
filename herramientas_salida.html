@@ -426,6 +426,7 @@ function renderWorkerGrid() {
       <div class="w-avatar" style="background:${bg};color:${fg};">${initial}</div>
       <span class="w-label">${name}</span>
       <span style="font-size:9px;color:${bg};font-weight:700;text-align:center;line-height:1;">${w.role||''}</span>
+      <span style="font-size:9px;color:var(--subtext);font-family:monospace;text-align:center;">${w.id}</span>
     </div>`;
   }).join('');
 }
