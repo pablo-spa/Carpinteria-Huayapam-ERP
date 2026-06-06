@@ -156,27 +156,29 @@
     let currentPerms = {};
 
     function init() {
-      // Clone the permissions from parent (or start with empty if not loaded yet)
       if (window.parent && window.parent.PERMISOS) {
         currentPerms = JSON.parse(JSON.stringify(window.parent.PERMISOS));
-      } else {
-        // Initialize with empty structure so the table renders
-        SECTIONS.filter(s => !s.type).forEach(s => {
-          currentPerms[s.id] = {};
-          ROLES.forEach(r => { currentPerms[s.id][r] = r === 'programador' ? 'full' : 'none'; });
-        });
       }
+      // Ensure every section exists and programador always has full access
+      SECTIONS.filter(s => !s.type).forEach(s => {
+        if (!currentPerms[s.id]) currentPerms[s.id] = {};
+        ROLES.forEach(r => {
+          if (r === 'programador') {
+            currentPerms[s.id][r] = 'full';
+          } else if (currentPerms[s.id][r] === undefined) {
+            currentPerms[s.id][r] = 'none';
+          }
+        });
+      });
       renderTable();
     }
 
     function togglePerm(secId, role) {
-      if (role === 'programador') return; // Fixed
-      
+      if (role === 'programador') return;
+      if (!currentPerms[secId]) currentPerms[secId] = {};
       const states = ['full', 'readonly', 'none'];
       const cur = currentPerms[secId][role] || 'none';
-      let nextIdx = (states.indexOf(cur) + 1) % states.length;
-      
-      currentPerms[secId][role] = states[nextIdx];
+      currentPerms[secId][role] = states[(states.indexOf(cur) + 1) % states.length];
       renderTable();
     }
 
@@ -217,6 +219,11 @@
     window.savePermissions = async () => {
       try {
         const data = JSON.parse(JSON.stringify(currentPerms));
+        // Programador always gets full access on save — safety net
+        SECTIONS.filter(s => !s.type).forEach(s => {
+          if (!data[s.id]) data[s.id] = {};
+          data[s.id]['programador'] = 'full';
+        });
         await window.parent.setDocumentInFirebase("config_params", "permisos", data);
         window.parent.PERMISOS = data;
         toast('✓ Permisos guardados correctamente.');
