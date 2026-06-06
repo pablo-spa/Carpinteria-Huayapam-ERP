@@ -299,6 +299,32 @@ let activeWorker = null;
 let timerInterval = null;
 let timerLeft     = TIMEOUT_SEC;
 
+/* ── Colores por puesto ─────────────── */
+// bg, text, border
+const ROLE_PALETTE = [
+  ['#89b4fa','#111','#5a9ef8'],  // blue
+  ['#a6e3a1','#111','#7acc75'],  // green
+  ['#fab387','#111','#f89458'],  // peach
+  ['#cba6f7','#111','#b07ef5'],  // mauve
+  ['#94e2d5','#111','#5ecec0'],  // teal
+  ['#f9e2af','#111','#f5cc6e'],  // yellow
+  ['#f38ba8','#fff','#ef5a7e'],  // red
+  ['#89dceb','#111','#58cce4'],  // sky
+  ['#b4befe','#111','#8a9ff7'],  // lavender
+  ['#f5c2e7','#111','#ef93d3'],  // pink
+  ['#74c7ec','#111','#41aee0'],  // sapphire
+  ['#eba0ac','#111','#e46e7f'],  // maroon
+];
+const roleColorMap = {};
+function roleColor(role) {
+  if (!role) return ROLE_PALETTE[0];
+  if (!roleColorMap[role]) {
+    const idx = Object.keys(roleColorMap).length % ROLE_PALETTE.length;
+    roleColorMap[role] = ROLE_PALETTE[idx];
+  }
+  return roleColorMap[role];
+}
+
 /* ── Clock ──────────────────────────── */
 function tick() {
   const now = new Date();
@@ -358,11 +384,16 @@ let hiddenRoles = new Set(JSON.parse(localStorage.getItem(CFG_KEY) || '[]'));
 
 function buildRoleChips() {
   allRoles = [...new Set(workers.map(w => w.role || '').filter(Boolean))].sort();
+  // Asignar colores en orden estable (sort garantiza consistencia)
+  allRoles.forEach(r => roleColor(r));
   const el = document.getElementById('cfg-roles');
-  el.innerHTML = allRoles.map(r => `
-    <div class="role-chip${hiddenRoles.has(r) ? '' : ' on'}" data-role="${r}" onclick="toggleRole('${r}')">
-      ${r}
-    </div>`).join('');
+  el.innerHTML = allRoles.map(r => {
+    const [bg, fg] = roleColor(r);
+    const active   = !hiddenRoles.has(r);
+    const style    = active ? `background:${bg};border-color:${bg};color:${fg};` : '';
+    return `<div class="role-chip${active ? ' on' : ''}" data-role="${r}"
+      style="${style}" onclick="toggleRole('${r}')">${r}</div>`;
+  }).join('');
 }
 
 function toggleRole(role) {
@@ -387,11 +418,14 @@ function renderWorkerGrid() {
     return;
   }
   el.innerHTML = visible.map(w => {
-    const name    = displayName(w);
-    const initial = name[0].toUpperCase();
-    return `<div class="w-btn" onclick="loginWorker('${w.id}')">
-      <div class="w-avatar">${initial}</div>
+    const name       = displayName(w);
+    const initial    = name[0].toUpperCase();
+    const [bg, fg, border] = roleColor(w.role || '');
+    return `<div class="w-btn" onclick="loginWorker('${w.id}')"
+      style="border-color:${border}40;">
+      <div class="w-avatar" style="background:${bg};color:${fg};">${initial}</div>
       <span class="w-label">${name}</span>
+      <span style="font-size:9px;color:${bg};font-weight:700;text-align:center;line-height:1;">${w.role||''}</span>
     </div>`;
   }).join('');
 }
@@ -474,9 +508,13 @@ function loginWorker(wId) {
   if (!w) return;
   activeWorker = w;
 
-  const name = displayName(w);
-  document.getElementById('hdr-avatar').textContent = name[0].toUpperCase();
-  document.getElementById('hdr-name').textContent   = name;
+  const name       = displayName(w);
+  const [bg, fg]   = roleColor(w.role || '');
+  const avatar     = document.getElementById('hdr-avatar');
+  avatar.textContent   = name[0].toUpperCase();
+  avatar.style.background = bg;
+  avatar.style.color      = fg;
+  document.getElementById('hdr-name').textContent = name;
 
   document.getElementById('idle-screen').style.display   = 'none';
   document.getElementById('active-screen').classList.add('shown');
