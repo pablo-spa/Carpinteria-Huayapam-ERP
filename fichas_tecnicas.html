@@ -328,7 +328,10 @@ async function load() {
   try {
     if (window.parent?.DB_STATE) window.parent.DB_STATE.fichas_tecnicas = undefined;
     await window.parent.cargar_coleccion('fichas_tecnicas');
-    fichas = (window.parent.DB_STATE?.fichas_tecnicas || []).filter(f => f.id);
+    // cargar_coleccion genérico usa _id; normalizar a id
+    fichas = (window.parent.DB_STATE?.fichas_tecnicas || [])
+      .map(f => ({ ...f, id: f.id || f._id }))
+      .filter(f => f.id);
     fichas.sort((a, b) => {
       const ci = CAT_ORDER.indexOf(a.categoria) - CAT_ORDER.indexOf(b.categoria);
       return ci !== 0 ? ci : (a.titulo || '').localeCompare(b.titulo || '');
@@ -442,8 +445,8 @@ async function saveModal() {
   if (!categoria) { alert('Selecciona una categoría.'); return; }
   if (!driveUrl)  { alert('Pega el link de Google Drive.'); return; }
 
-  const data = { titulo, categoria, driveUrl, descripcion: desc, fecha: new Date().toISOString() };
   const id   = editingId || ('ft_' + Date.now());
+  const data = { id, titulo, categoria, driveUrl, descripcion: desc, fecha: new Date().toISOString() };
 
   try {
     await window.parent.setDocumentInFirebase('fichas_tecnicas', id, data);
