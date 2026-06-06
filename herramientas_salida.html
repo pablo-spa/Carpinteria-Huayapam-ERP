@@ -7,24 +7,75 @@
 <title>Salida de Herramientas</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+body { height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-/* ── Idle screen ───────────────────────── */
+/* ── Scanner input (siempre activo, invisible) ─── */
+#scan-ghost { position: fixed; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; }
+
+/* ════════════════════════════════════════════════
+   IDLE SCREEN
+════════════════════════════════════════════════ */
 .idle-screen {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 28px; padding: 40px;
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; overflow: hidden;
 }
-.idle-icon  { font-size: 72px; opacity: .7; }
-.idle-title { font-size: 28px; font-weight: 800; color: var(--text); text-align: center; }
-.idle-sub   { font-size: 16px; color: var(--subtext); text-align: center; }
 
-.manual-select-wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
-.w-select { padding: 10px 14px; border-radius: 9px; border: 1px solid var(--crust); background: var(--mantle); color: var(--text); font-size: 14px; font-family: inherit; min-width: 200px; outline: none; }
-.w-select:focus { border-color: var(--blue); }
-.btn-enter { padding: 10px 20px; border-radius: 9px; background: var(--blue); color: #111; font-size: 14px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; }
-.btn-enter:hover { opacity: .9; }
+/* Top: clock */
+.idle-top {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28px 20px 20px;
+}
+.clock {
+  font-size: 5rem; font-weight: 800;
+  font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1;
+}
+.date-str { font-size: 1rem; color: var(--subtext); margin-top: 4px; text-transform: capitalize; }
 
-/* ── Active screen ─────────────────────── */
+/* Middle: scan input */
+.scan-bar {
+  width: 100%; max-width: 380px;
+  padding: 12px 22px; font-size: 1.3rem; text-align: center;
+  border: 2px solid var(--surface1); border-radius: 9999px;
+  background: var(--mantle); color: var(--text); outline: none;
+  transition: border-color .2s, box-shadow .2s; font-family: inherit;
+  margin: 8px 0 4px;
+}
+.scan-bar:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(137,180,250,.18); }
+.scan-bar::placeholder { color: var(--subtext); font-size: 1rem; }
+.scan-hint { font-size: .85rem; color: var(--subtext); margin-bottom: 16px; }
+
+/* Bottom: worker grid */
+.worker-grid-wrap {
+  flex: 1; width: 100%; overflow-y: auto;
+  padding: 0 16px 16px;
+}
+.worker-grid-title {
+  font-size: .7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--subtext); margin-bottom: 8px; text-align: center;
+}
+.worker-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px;
+  max-width: 700px; margin: 0 auto;
+}
+.w-btn {
+  background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px;
+  padding: 14px 8px; cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; gap: 7px; transition: all .12s; user-select: none;
+}
+.w-btn:hover  { background: var(--surface0); border-color: var(--blue); }
+.w-btn:active { transform: scale(.96); }
+.w-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--blue); color: #111;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 900; flex-shrink: 0;
+}
+.w-label { font-size: 11px; font-weight: 700; text-align: center; line-height: 1.3; color: var(--text); }
+
+/* ════════════════════════════════════════════════
+   ACTIVE SCREEN
+════════════════════════════════════════════════ */
 .active-screen { flex: 1; display: none; flex-direction: column; overflow: hidden; }
 .active-screen.shown { display: flex; }
 
@@ -32,63 +83,76 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
   background: var(--mantle); border-bottom: 1px solid var(--crust);
   padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
 }
-.worker-badge { display: flex; align-items: center; gap: 10px; }
-.w-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--blue); color: #111; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; flex-shrink: 0; }
-.worker-name { font-size: 16px; font-weight: 800; }
-.worker-sub  { font-size: 11px; color: var(--subtext); margin-top: 1px; }
-.timer-wrap  { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.timer-ring  { width: 38px; height: 38px; position: relative; }
+.hdr-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--blue); color: #111;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 900; flex-shrink: 0;
+}
+.hdr-name  { font-size: 16px; font-weight: 800; }
+.hdr-sub   { font-size: 11px; color: var(--subtext); margin-top: 1px; }
+
+/* Timer ring */
+.timer-ring  { width: 38px; height: 38px; position: relative; flex-shrink: 0; }
 .timer-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
 .timer-ring circle { fill: none; stroke: var(--surface1); stroke-width: 3; }
 .timer-ring .prog  { stroke: var(--blue); stroke-dasharray: 100; stroke-dashoffset: 0; transition: stroke-dashoffset .9s linear, stroke .5s; }
-.timer-ring .num   { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
-.btn-close { padding: 6px 14px; border-radius: 7px; background: var(--surface0); border: 1px solid var(--crust); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.timer-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+
+.btn-close {
+  padding: 6px 14px; border-radius: 7px;
+  background: var(--surface0); border: 1px solid var(--crust);
+  color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
 
 .active-body { flex: 1; display: flex; overflow: hidden; }
 
-/* Left: Mi Caja */
-.caja-panel { width: 260px; flex-shrink: 0; background: var(--mantle); border-right: 1px solid var(--crust); display: flex; flex-direction: column; overflow: hidden; }
+/* Mi Caja panel */
+.caja-panel { width: 240px; flex-shrink: 0; background: var(--mantle); border-right: 1px solid var(--crust); display: flex; flex-direction: column; overflow: hidden; }
 .panel-hdr  { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); flex-shrink: 0; }
 .caja-list  { flex: 1; overflow-y: auto; }
 .caja-item  { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--crust); cursor: pointer; transition: background .1s; }
-.caja-item:hover  { background: rgba(243,139,168,.12); }
+.caja-item:hover  { background: rgba(243,139,168,.1); }
 .caja-item:last-child { border-bottom: none; }
-.ci-icon  { font-size: 18px; flex-shrink: 0; }
+.ci-icon  { font-size: 17px; flex-shrink: 0; }
 .ci-info  { flex: 1; min-width: 0; }
-.ci-name  { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ci-name  { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ci-code  { font-size: 10px; color: var(--subtext); font-family: monospace; }
-.ci-ret   { font-size: 10px; color: var(--red); font-weight: 700; opacity: 0; transition: opacity .1s; }
+.ci-ret   { font-size: 10px; color: var(--red); font-weight: 700; opacity: 0; transition: opacity .1s; flex-shrink: 0; }
 .caja-item:hover .ci-ret { opacity: 1; }
+.caja-empty { padding: 24px 14px; text-align: center; color: var(--subtext); font-size: 12px; }
 
-/* Right: Catálogo */
-.catalogo-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.cat-search-wrap { padding: 10px 14px; border-bottom: 1px solid var(--crust); flex-shrink: 0; display: flex; align-items: center; gap: 8px; background: var(--mantle); }
-.cat-search { flex: 1; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; outline: none; }
+/* Catálogo panel */
+.cat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.cat-search-bar { padding: 10px 14px; border-bottom: 1px solid var(--crust); flex-shrink: 0; background: var(--mantle); }
+.cat-search {
+  width: 100%; padding: 7px 12px; border-radius: 8px;
+  border: 1px solid var(--crust); background: var(--base);
+  color: var(--text); font-size: 13px; font-family: inherit; outline: none;
+}
 .cat-search:focus { border-color: var(--blue); }
-.catalogo-scroll { flex: 1; overflow-y: auto; padding: 12px 14px; }
+.cat-scroll { flex: 1; overflow-y: auto; padding: 12px 14px; }
 
-.cat-group-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); padding: 8px 0 6px; }
-.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.cat-group-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); padding: 6px 0 5px; }
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px; }
 .tool-card {
   background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px;
-  padding: 12px; cursor: pointer; transition: all .12s; display: flex; flex-direction: column; gap: 6px;
-  user-select: none;
+  padding: 12px; cursor: pointer; transition: all .12s; display: flex; flex-direction: column; gap: 5px; user-select: none;
 }
-.tool-card:hover  { background: var(--surface0); transform: translateY(-1px); }
-.tool-card.taken  { opacity: .4; cursor: not-allowed; }
-.tool-card.taken:hover { transform: none; background: var(--mantle); }
-.tool-card.mine   { border-color: var(--red); background: rgba(243,139,168,.08); }
-.tool-card.mine:hover { background: rgba(243,139,168,.18); }
+.tool-card:hover         { background: var(--surface0); transform: translateY(-1px); }
+.tool-card.taken         { opacity: .38; cursor: not-allowed; pointer-events: none; }
+.tool-card.mine          { border-color: var(--red); background: rgba(243,139,168,.08); }
+.tool-card.mine:hover    { background: rgba(243,139,168,.18); }
 
-.tc-icon  { font-size: 22px; }
+.tc-icon  { font-size: 20px; }
 .tc-name  { font-size: 12px; font-weight: 700; line-height: 1.3; }
 .tc-code  { font-size: 10px; color: var(--subtext); font-family: monospace; }
 .tc-badge { font-size: 10px; font-weight: 700; margin-top: 2px; }
-.tc-badge.avail  { color: var(--green); }
-.tc-badge.mine-b { color: var(--red); }
-.tc-badge.taken-b{ color: var(--subtext); }
+.tc-avail  { color: var(--green); }
+.tc-mine   { color: var(--red); }
+.tc-taken  { color: var(--subtext); }
 
-/* Toast grande */
+/* Big toast */
 .big-toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
   background: var(--green); color: #fff; padding: 14px 28px; border-radius: 12px;
@@ -96,75 +160,81 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
   box-shadow: 0 8px 32px rgba(0,0,0,.3); transition: transform .3s ease, opacity .3s ease; opacity: 0;
   max-width: 90vw; text-align: center;
 }
-.big-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.big-toast.show  { transform: translateX(-50%) translateY(0); opacity: 1; }
 .big-toast.error { background: var(--red); }
 
-/* Scanner input (always focused, invisible) */
-#scanner-input { position: fixed; left: -9999px; top: -9999px; opacity: 0; width: 1px; height: 1px; }
-
 @media (max-width: 600px) {
-  .caja-panel { width: 200px; }
-  .tool-grid   { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .caja-panel  { width: 190px; }
+  .tool-grid   { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+  .clock       { font-size: 3.8rem; }
+  .worker-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
 }
 </style>
 </head>
 <body>
 
-<!-- Scanner input siempre activo -->
-<input type="text" id="scanner-input" autocomplete="off" autocorrect="off" autocapitalize="off">
+<!-- Input fantasma siempre escuchando el escáner de gafete -->
+<input type="text" id="scan-ghost" autocomplete="off" autocorrect="off" autocapitalize="off">
 
-<!-- ── Idle Screen ─────────────────────── -->
+<!-- ════════════════════════════════════════
+     IDLE SCREEN
+════════════════════════════════════════ -->
 <div class="idle-screen" id="idle-screen">
-  <div class="idle-icon">🧰</div>
-  <div>
-    <div class="idle-title">Salida de Herramientas</div>
-    <div class="idle-sub" style="margin-top:8px;">Escanea tu gafete o selecciona tu nombre</div>
+
+  <div class="idle-top">
+    <div class="clock"    id="clock">00:00:00</div>
+    <div class="date-str" id="date-str">Cargando...</div>
   </div>
-  <div class="manual-select-wrap">
-    <select id="worker-select" class="w-select">
-      <option value="">— Seleccionar trabajador —</option>
-    </select>
-    <button class="btn-enter" onclick="loginManual()">Entrar</button>
+
+  <!-- Input visible para escáner / teclado -->
+  <input type="text" id="scan-bar" class="scan-bar" placeholder="🪪  Escanea tu gafete" autocomplete="off" spellcheck="false">
+  <div class="scan-hint">o selecciona tu nombre</div>
+
+  <!-- Grilla de trabajadores -->
+  <div class="worker-grid-wrap">
+    <div class="worker-grid-title">Selección rápida</div>
+    <div class="worker-grid" id="worker-grid">
+      <div style="grid-column:1/-1;text-align:center;color:var(--subtext);padding:20px;font-size:13px;">Cargando trabajadores…</div>
+    </div>
   </div>
 </div>
 
-<!-- ── Active Screen ───────────────────── -->
+<!-- ════════════════════════════════════════
+     ACTIVE SCREEN
+════════════════════════════════════════ -->
 <div class="active-screen" id="active-screen">
+
   <div class="active-hdr">
-    <div class="worker-badge">
-      <div class="w-avatar" id="active-avatar">?</div>
-      <div>
-        <div class="worker-name" id="active-name">—</div>
-        <div class="worker-sub" id="active-count">0 herramientas en caja</div>
-      </div>
+    <div class="hdr-avatar" id="hdr-avatar">?</div>
+    <div>
+      <div class="hdr-name" id="hdr-name">—</div>
+      <div class="hdr-sub"  id="hdr-sub">0 herramientas en caja</div>
     </div>
-    <div class="timer-wrap">
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
       <div class="timer-ring">
         <svg viewBox="0 0 36 36">
           <circle cx="18" cy="18" r="15.9"/>
-          <circle cx="18" cy="18" r="15.9" class="prog" id="timer-circle" style="stroke-dasharray: 100; stroke-dashoffset: 0;"/>
+          <circle cx="18" cy="18" r="15.9" class="prog" id="timer-prog"/>
         </svg>
-        <div class="num" id="timer-num">30</div>
+        <div class="timer-num" id="timer-num">30</div>
       </div>
       <button class="btn-close" onclick="logout()">Cerrar sesión</button>
     </div>
   </div>
 
   <div class="active-body">
-    <!-- Mi Caja -->
     <div class="caja-panel">
       <div class="panel-hdr">📦 Mi Caja</div>
       <div class="caja-list" id="caja-list">
-        <div style="padding:20px;text-align:center;color:var(--subtext);font-size:12px;">Sin herramientas</div>
+        <div class="caja-empty">Sin herramientas</div>
       </div>
     </div>
 
-    <!-- Catálogo -->
-    <div class="catalogo-panel">
-      <div class="cat-search-wrap">
+    <div class="cat-panel">
+      <div class="cat-search-bar">
         <input class="cat-search" id="cat-search" placeholder="🔍 Buscar herramienta…" oninput="renderCatalogo()" onfocus="resetTimer()">
       </div>
-      <div class="catalogo-scroll" id="catalogo-scroll"></div>
+      <div class="cat-scroll" id="cat-scroll"></div>
     </div>
   </div>
 </div>
@@ -173,6 +243,7 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 <div class="big-toast" id="big-toast"></div>
 
 <script>
+const TIMEOUT_SEC = 30;
 const CATEGORIAS = [
   { id: 'perforacion',  label: 'Perforación',    icon: '🔩' },
   { id: 'corte',        label: 'Corte',           icon: '🪚' },
@@ -186,118 +257,144 @@ const CATEGORIAS = [
   { id: 'otro',         label: 'Otros',           icon: '🧰' },
 ];
 
-const TIMEOUT_SEC = 30;
-
 let herramientas = [];
-let workers = [];
+let workers      = [];
 let activeWorker = null;
 let timerInterval = null;
-let timerLeft = TIMEOUT_SEC;
+let timerLeft     = TIMEOUT_SEC;
 
-/* ── Init ────────────────────────────── */
+/* ── Clock ──────────────────────────── */
+function tick() {
+  const now = new Date();
+  const clk = document.getElementById('clock');
+  const dt  = document.getElementById('date-str');
+  if (clk) clk.textContent = now.toLocaleTimeString('es-MX', { hour12: false });
+  if (dt)  dt.textContent  = now.toLocaleDateString('es-MX',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+  ).replace(/^\w/, c => c.toUpperCase());
+}
+setInterval(tick, 1000);
+tick();
+
+/* ── Init ───────────────────────────── */
 async function init() {
   const p = window.parent;
   if (!p?.cargar_coleccion) { setTimeout(init, 300); return; }
 
-  await Promise.all([
-    p.cargar_coleccion('herramientas'),
-    p.cargar_coleccion('workers'),
-  ]);
+  await p.cargar_coleccion('herramientas');
+  herramientas = (p.DB_STATE?.herramientas || [])
+    .map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id);
 
-  herramientas = (p.DB_STATE?.herramientas || []).map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id);
-  workers      = (p.DB_STATE?.workers      || []).map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id)
-                   .sort((a, b) => (a.nombre || a.name || '').localeCompare(b.nombre || b.name || '', 'es'));
+  // Use contacts (includes workers via migration alias in DB.query)
+  workers = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
+  workers.sort((a, b) => (a.nombre || a.name || '').localeCompare(b.nombre || b.name || '', 'es'));
 
-  const sel = document.getElementById('worker-select');
-  sel.innerHTML = '<option value="">— Seleccionar trabajador —</option>' +
-    workers.map(w => `<option value="${w.id}">${w.nombre || w.name}</option>`).join('');
+  renderWorkerGrid();
 }
 
-/* ── Scanner ─────────────────────────── */
-const scanInput = document.getElementById('scanner-input');
+/* ── Worker grid ────────────────────── */
+function renderWorkerGrid() {
+  const el = document.getElementById('worker-grid');
+  if (!workers.length) {
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--subtext);padding:20px;font-size:13px;">Sin trabajadores registrados</div>';
+    return;
+  }
+  el.innerHTML = workers.map(w => {
+    const name    = w.nombre || w.name || w.givenName || '?';
+    const initial = name[0].toUpperCase();
+    const short   = name.split(' ').slice(0, 2).join(' ');
+    return `<div class="w-btn" onclick="loginWorker('${w.id}')">
+      <div class="w-avatar">${initial}</div>
+      <span class="w-label">${short}</span>
+    </div>`;
+  }).join('');
+}
 
-function keepFocus() {
-  if (document.activeElement !== scanInput &&
-      document.activeElement !== document.getElementById('cat-search')) {
-    scanInput.focus();
+/* ── Scanner ────────────────────────── */
+const ghost   = document.getElementById('scan-ghost');
+const scanBar = document.getElementById('scan-bar');
+
+// Mantener el ghost activo para el escáner físico
+function keepGhostFocus() {
+  const active = document.activeElement;
+  if (active !== scanBar && active !== document.getElementById('cat-search')) {
+    ghost.focus();
   }
 }
-document.addEventListener('click', keepFocus);
-setInterval(keepFocus, 800);
-scanInput.focus();
+document.addEventListener('click', keepGhostFocus);
+setInterval(keepGhostFocus, 800);
+ghost.focus();
 
-let scanBuffer = '';
-let scanTimer  = null;
+// Lector de barras acumula caracteres rápido y dispara al hacer Enter o pausa
+let scanBuf = '', scanTimer = null;
 
-scanInput.addEventListener('input', () => {
+function flushScan() {
+  const code = scanBuf.trim();
+  scanBuf = '';
+  if (code) processScan(code);
+}
+
+ghost.addEventListener('input', () => {
   clearTimeout(scanTimer);
-  scanBuffer += scanInput.value;
-  scanInput.value = '';
-  scanTimer = setTimeout(() => {
-    const code = scanBuffer.trim();
-    scanBuffer  = '';
-    if (code) processScan(code);
-  }, 80);
+  scanBuf += ghost.value;
+  ghost.value = '';
+  scanTimer = setTimeout(flushScan, 80);
+});
+ghost.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { clearTimeout(scanTimer); ghost.value = ''; flushScan(); }
 });
 
-scanInput.addEventListener('keydown', e => {
+// El input visible del idle screen también funciona
+scanBar.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
-    clearTimeout(scanTimer);
-    const code = scanBuffer.trim();
-    scanBuffer  = '';
-    scanInput.value = '';
+    const code = scanBar.value.trim();
+    scanBar.value = '';
     if (code) processScan(code);
   }
 });
+// Cuando el usuario escribe en scan-bar, desactivar ghost para no duplicar
+scanBar.addEventListener('focus', () => clearInterval(null));
 
+/* ── Proceso de scan ────────────────── */
 function processScan(code) {
   resetTimer();
 
-  // Try worker
-  const worker = workers.find(w =>
+  // ¿Es un trabajador?
+  const w = workers.find(w =>
     w.scanCode === code || w.id === code || w.personalId === code || w.codigo === code
   );
-  if (worker) {
+  if (w) {
     if (!activeWorker) {
-      loginWorker(worker);
-    } else if (activeWorker.id !== worker.id) {
-      bigToast('Cierra sesión primero.', true);
+      loginWorker(w.id);
+    } else if (activeWorker.id !== w.id) {
+      bigToast('Cierra tu sesión primero.', true);
     }
     return;
   }
 
-  // Try tool
+  // ¿Es una herramienta?
   if (!activeWorker) {
     bigToast('Escanea tu gafete primero.', true);
     return;
   }
-
-  const tool = herramientas.find(h =>
-    h.codigo === code || h.id === code
-  );
-  if (!tool) {
-    bigToast('Código no reconocido.', true);
-    return;
-  }
-
+  const tool = herramientas.find(h => h.codigo === code || h.id === code);
+  if (!tool) { bigToast('Código no reconocido.', true); return; }
   handleTool(tool);
 }
 
-/* ── Login / Logout ──────────────────── */
-function loginManual() {
-  const wId = document.getElementById('worker-select').value;
-  if (!wId) { bigToast('Selecciona un trabajador.', true); return; }
+/* ── Login / Logout ─────────────────── */
+function loginWorker(wId) {
   const w = workers.find(w => w.id === wId);
-  if (w) loginWorker(w);
-}
-
-function loginWorker(w) {
+  if (!w) return;
   activeWorker = w;
-  document.getElementById('active-avatar').textContent = (w.nombre || w.name || '?')[0].toUpperCase();
-  document.getElementById('active-name').textContent   = w.nombre || w.name;
+
+  const name = w.nombre || w.name || w.givenName || '?';
+  document.getElementById('hdr-avatar').textContent = name[0].toUpperCase();
+  document.getElementById('hdr-name').textContent   = name;
 
   document.getElementById('idle-screen').style.display   = 'none';
   document.getElementById('active-screen').classList.add('shown');
+  document.getElementById('cat-search').value = '';
 
   renderCaja();
   renderCatalogo();
@@ -311,22 +408,18 @@ function logout() {
 
   document.getElementById('idle-screen').style.display = '';
   document.getElementById('active-screen').classList.remove('shown');
-  document.getElementById('cat-search').value = '';
-  document.getElementById('worker-select').value = '';
-  scanInput.focus();
+  scanBar.value = '';
+  ghost.focus();
 }
 
-/* ── Timer ───────────────────────────── */
+/* ── Timer ──────────────────────────── */
 function startTimer() {
   timerLeft = TIMEOUT_SEC;
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
-    timerLeft--;
+    timerLeft = Math.max(0, timerLeft - 1);
     updateTimerUI();
-    if (timerLeft <= 0) {
-      clearInterval(timerInterval);
-      logout();
-    }
+    if (timerLeft <= 0) { clearInterval(timerInterval); logout(); }
   }, 1000);
   updateTimerUI();
 }
@@ -338,25 +431,24 @@ function resetTimer() {
 }
 
 function updateTimerUI() {
-  const pct = (timerLeft / TIMEOUT_SEC) * 100;
-  const circle = document.getElementById('timer-circle');
+  const pct    = (timerLeft / TIMEOUT_SEC) * 100;
+  const circle = document.getElementById('timer-prog');
   circle.style.strokeDashoffset = 100 - pct;
   circle.style.stroke = timerLeft <= 8 ? 'var(--red)' : timerLeft <= 15 ? 'var(--amber)' : 'var(--blue)';
   document.getElementById('timer-num').textContent = timerLeft;
 }
 
-/* ── Tool actions ────────────────────── */
+/* ── Tool actions ───────────────────── */
 function handleTool(tool) {
-  const myTools = herramientas.filter(h => h.assignedTo === activeWorker.id);
+  const myTools  = herramientas.filter(h => h.assignedTo === activeWorker.id);
   const alreadyMine = myTools.some(h => h.id === tool.id);
 
   if (alreadyMine) {
-    // Devolución
     doReturn(tool);
   } else if (tool.assignedTo) {
-    bigToast(`Ya tiene ${workerName(tool.assignedTo)}.`, true);
+    const oName = workerName(tool.assignedTo);
+    bigToast(`La tiene ${oName}.`, true);
   } else {
-    // Préstamo
     doLoan(tool);
   }
 }
@@ -364,11 +456,9 @@ function handleTool(tool) {
 async function doLoan(tool) {
   try {
     const updated = await window.DB.assignTool(tool.id, activeWorker.id, false);
-    const idx = herramientas.findIndex(h => h.id === tool.id);
-    if (idx >= 0) herramientas[idx] = updated;
-    renderCaja();
-    renderCatalogo();
-    bigToast(`✓ ${tool.nombre} — prestada`);
+    updateLocal(tool.id, updated);
+    renderCaja(); renderCatalogo();
+    bigToast(`✓ ${tool.nombre}`);
     resetTimer();
   } catch (e) { bigToast(e.message, true); }
 }
@@ -376,56 +466,53 @@ async function doLoan(tool) {
 async function doReturn(tool) {
   try {
     const updated = await window.DB.assignTool(tool.id, activeWorker.id, true);
-    const idx = herramientas.findIndex(h => h.id === tool.id);
-    if (idx >= 0) herramientas[idx] = updated;
-    renderCaja();
-    renderCatalogo();
+    updateLocal(tool.id, updated);
+    renderCaja(); renderCatalogo();
     bigToast(`↩ ${tool.nombre} — devuelta`);
     resetTimer();
   } catch (e) { bigToast(e.message, true); }
 }
 
-function workerName(id) {
-  const w = workers.find(w => w.id === id);
-  return w ? (w.nombre || w.name) : id;
+function updateLocal(toolId, updated) {
+  const idx = herramientas.findIndex(h => h.id === toolId);
+  if (idx >= 0) herramientas[idx] = updated;
 }
 
-/* ── Render ──────────────────────────── */
-function catIcon(id) {
-  return CATEGORIAS.find(c => c.id === id)?.icon || '🧰';
+function workerName(id) {
+  const w = workers.find(w => w.id === id);
+  return w ? (w.nombre || w.name || w.givenName || id) : id;
 }
-function catLabel(id) {
-  const c = CATEGORIAS.find(c => c.id === id);
-  return c ? `${c.icon} ${c.label}` : '🧰 Otros';
-}
+
+/* ── Render ─────────────────────────── */
+function catIcon(id) { return CATEGORIAS.find(c => c.id === id)?.icon || '🧰'; }
 
 function renderCaja() {
   if (!activeWorker) return;
   const myTools = herramientas.filter(h => h.assignedTo === activeWorker.id);
-  document.getElementById('active-count').textContent = `${myTools.length} herramienta${myTools.length !== 1 ? 's' : ''} en caja`;
+  const n = myTools.length;
+  document.getElementById('hdr-sub').textContent = `${n} herramienta${n !== 1 ? 's' : ''} en caja`;
 
   const el = document.getElementById('caja-list');
-  if (!myTools.length) {
-    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--subtext);font-size:12px;">Sin herramientas</div>';
-    return;
-  }
+  if (!n) { el.innerHTML = '<div class="caja-empty">Sin herramientas</div>'; return; }
+
   el.innerHTML = myTools.map(h => `
-    <div class="caja-item" onclick="doReturn(herramientas.find(x=>x.id==='${h.id}'))" title="Clic para devolver">
+    <div class="caja-item" onclick="doReturn(herramientas.find(x=>x.id==='${h.id}'))" title="Toca para devolver">
       <span class="ci-icon">${catIcon(h.categoria)}</span>
       <div class="ci-info">
         <div class="ci-name">${h.nombre}</div>
         <div class="ci-code">${h.codigo || ''} ${h.tipo === 'personal' ? '🔒' : ''}</div>
       </div>
-      ${h.tipo !== 'personal' ? '<span class="ci-ret">↩ devolver</span>' : '<span class="ci-ret" style="color:var(--subtext)">personal</span>'}
+      ${h.tipo !== 'personal'
+        ? '<span class="ci-ret">↩</span>'
+        : '<span style="font-size:10px;color:var(--subtext);flex-shrink:0;">personal</span>'}
     </div>`).join('');
 }
 
 function renderCatalogo() {
   if (!activeWorker) return;
-  const q = (document.getElementById('cat-search').value || '').toLowerCase();
+  const q     = (document.getElementById('cat-search').value || '').toLowerCase();
   const myIds = new Set(herramientas.filter(h => h.assignedTo === activeWorker.id).map(h => h.id));
 
-  // Only show shared tools (personal ones belong to their assigned worker permanently)
   let list = herramientas.filter(h => {
     if (h.tipo === 'personal' && h.assignedTo && h.assignedTo !== activeWorker.id) return false;
     if (h.estado === 'baja' || h.estado === 'reparacion') return false;
@@ -433,7 +520,6 @@ function renderCatalogo() {
     return true;
   });
 
-  // Group by category
   const groups = {};
   list.forEach(h => {
     const cat = h.categoria || 'otro';
@@ -441,49 +527,42 @@ function renderCatalogo() {
     groups[cat].push(h);
   });
 
-  const el = document.getElementById('catalogo-scroll');
+  const el = document.getElementById('cat-scroll');
   if (!list.length) {
     el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--subtext);">Sin resultados.</div>';
     return;
   }
 
-  el.innerHTML = CATEGORIAS.filter(c => groups[c.id]?.length).map(c => {
-    const items = groups[c.id];
-    return `
-      <div class="cat-group-title">${c.icon} ${c.label}</div>
-      <div class="tool-grid">
-        ${items.map(h => {
-          const isMine  = myIds.has(h.id);
-          const isTaken = !isMine && !!h.assignedTo;
-          let badgeHtml = '';
-          let cardClass = '';
-          if (isMine)       { badgeHtml = '<span class="tc-badge mine-b">↩ toca para devolver</span>'; cardClass = 'mine'; }
-          else if (isTaken) { badgeHtml = `<span class="tc-badge taken-b">Con ${workerName(h.assignedTo)}</span>`; cardClass = 'taken'; }
-          else              { badgeHtml = '<span class="tc-badge avail">Disponible</span>'; }
-
-          const onclick = isTaken ? '' : `onclick="handleTool(herramientas.find(x=>x.id==='${h.id}'));resetTimer()"`;
-          return `
-            <div class="tool-card ${cardClass}" ${onclick} title="${h.nombre}${h.marca ? ' · ' + h.marca : ''}">
-              <span class="tc-icon">${c.icon}</span>
-              <span class="tc-name">${h.nombre}</span>
-              ${h.codigo ? `<span class="tc-code">${h.codigo}</span>` : ''}
-              ${badgeHtml}
-            </div>`;
-        }).join('')}
-      </div>`;
-  }).join('');
+  el.innerHTML = CATEGORIAS.filter(c => groups[c.id]?.length).map(c => `
+    <div class="cat-group-title">${c.icon} ${c.label}</div>
+    <div class="tool-grid">
+      ${groups[c.id].map(h => {
+        const isMine  = myIds.has(h.id);
+        const isTaken = !isMine && !!h.assignedTo;
+        const badge   = isMine  ? `<span class="tc-badge tc-mine">↩ devolver</span>`
+                      : isTaken ? `<span class="tc-badge tc-taken">Con ${workerName(h.assignedTo)}</span>`
+                      :           `<span class="tc-badge tc-avail">Disponible</span>`;
+        const cardCls = isMine ? 'mine' : isTaken ? 'taken' : '';
+        const onclick = isTaken ? '' : `onclick="handleTool(herramientas.find(x=>x.id==='${h.id}'));resetTimer()"`;
+        return `
+          <div class="tool-card ${cardCls}" ${onclick}>
+            <span class="tc-icon">${c.icon}</span>
+            <span class="tc-name">${h.nombre}</span>
+            ${h.codigo ? `<span class="tc-code">${h.codigo}</span>` : ''}
+            ${badge}
+          </div>`;
+      }).join('')}
+    </div>`).join('');
 }
 
-/* ── Toast ───────────────────────────── */
+/* ── Toast ──────────────────────────── */
 let toastTimer = null;
 function bigToast(msg, isError = false) {
   const el = document.getElementById('big-toast');
   el.textContent = msg;
   el.className   = 'big-toast' + (isError ? ' error' : '');
   clearTimeout(toastTimer);
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => el.classList.add('show'));
-  });
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
   toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 

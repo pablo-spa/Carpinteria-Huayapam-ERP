@@ -5,316 +5,302 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reloj Checador - Carpintería Huayapam</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="db.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-  body {
-    font-family: 'Inter', sans-serif;
-    background-color: #1e293b;
-    color: #f8fafc;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-  .clock {
-    font-size: 6rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.05em;
-    margin-bottom: 0.5rem;
-  }
-  .date {
-    font-size: 1.5rem;
-    color: #94a3b8;
-    margin-bottom: 3rem;
-  }
-  .scanner-input {
-    width: 100%;
-    max-width: 400px;
-    padding: 1rem 1.5rem;
-    font-size: 1.5rem;
-    text-align: center;
-    border: 2px solid #334155;
-    border-radius: 9999px;
-    background: #0f172a;
-    color: #f8fafc;
-    outline: none;
-    transition: all 0.2s;
-    margin-bottom: 2rem;
-  }
-  .scanner-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
-  }
-  .scanner-input::placeholder {
-    color: #475569;
-    font-size: 1.25rem;
-  }
-  .status-box {
-    background-color: #334155;
-    border-radius: 1rem;
-    padding: 2rem;
-    width: 90%;
-    max-width: 500px;
-    text-align: center;
-    min-height: 250px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    transition: all 0.3s ease;
-  }
-  .status-box.success { background-color: #064e3b; box-shadow: 0 0 40px rgba(16, 185, 129, 0.3); }
-  .status-box.warning { background-color: #78350f; box-shadow: 0 0 40px rgba(245, 158, 11, 0.3); }
-  .status-box.error { background-color: #7f1d1d; box-shadow: 0 0 40px rgba(239, 68, 68, 0.3); }
-  
-  .worker-name { font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem; }
-  .worker-role { color: #cbd5e1; margin-bottom: 1rem; }
-  .scan-type { font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
-  
-  .idle-content { color: #64748b; font-size: 1.25rem; }
-  .idle-content svg { width: 4rem; height: 4rem; margin: 0 auto 1rem; opacity: 0.5; }
-  
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--base);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  gap: 0;
+}
+
+.clock {
+  font-size: 5.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text);
+}
+
+.date-str {
+  font-size: 1.1rem;
+  color: var(--subtext);
+  margin-top: 6px;
+  margin-bottom: 36px;
+  text-transform: capitalize;
+}
+
+.scan-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 14px 24px;
+  font-size: 1.4rem;
+  text-align: center;
+  border: 2px solid var(--surface1);
+  border-radius: 9999px;
+  background: var(--mantle);
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  margin-bottom: 28px;
+  font-family: inherit;
+}
+.scan-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(137,180,250,.18);
+}
+.scan-input::placeholder { color: var(--subtext); font-size: 1.1rem; }
+
+.status-box {
+  background: var(--mantle);
+  border: 1px solid var(--crust);
+  border-radius: 16px;
+  padding: 28px 32px;
+  width: 90%;
+  max-width: 480px;
+  text-align: center;
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: background .3s, border-color .3s, box-shadow .3s;
+}
+.status-box.success { background: rgba(166,227,161,.08); border-color: var(--green); box-shadow: 0 0 40px rgba(166,227,161,.18); }
+.status-box.warning { background: rgba(249,226,175,.08); border-color: var(--amber); box-shadow: 0 0 40px rgba(249,226,175,.18); }
+.status-box.error   { background: rgba(243,139,168,.08); border-color: var(--red);   box-shadow: 0 0 40px rgba(243,139,168,.18); }
+
+.idle-msg { color: var(--subtext); font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.idle-icon { font-size: 2.8rem; opacity: .5; }
+
+.worker-name { font-size: 1.9rem; font-weight: 700; margin-bottom: 4px; }
+.worker-role { color: var(--subtext); margin-bottom: 14px; font-size: .95rem; }
+.scan-type   { font-size: 1.3rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.scan-detail { font-size: 1rem; opacity: .75; margin-top: 8px; }
 </style>
 </head>
 <body>
 
-  <div class="clock" id="clock">00:00:00</div>
-  <div class="date" id="date">Cargando...</div>
+<div class="clock"  id="clock">00:00:00</div>
+<div class="date-str" id="date-str">Cargando...</div>
 
-  <input type="text" id="scannerInput" class="scanner-input" placeholder="Ingrese ID de Empleado" autofocus autocomplete="off">
+<input type="text" id="scan-input" class="scan-input" placeholder="Escanea tu gafete" autofocus autocomplete="off" spellcheck="false">
 
-  <div class="status-box" id="statusBox">
-    <div class="idle-content" id="idleContent">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-8v4h8v-4zm-4-9h4m-4 4h4" />
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16v10H4z" />
-      </svg>
-      Aproxime su gafete al escáner
-    </div>
-    
-    <div id="activeContent" style="display: none;">
-      <div class="worker-name" id="workerName">Juan Pérez</div>
-      <div class="worker-role" id="workerRole">Maestro B</div>
-      <div class="scan-type" id="scanType">ENTRADA REGISTRADA</div>
-      <div class="mt-2 text-lg opacity-80" id="scanStatus">A tiempo</div>
-    </div>
+<div class="status-box" id="status-box">
+  <div class="idle-msg" id="idle-msg">
+    <span class="idle-icon">🪪</span>
+    Aproxima tu gafete al escáner
   </div>
+  <div id="active-content" style="display:none;">
+    <div class="worker-name"  id="w-name"></div>
+    <div class="worker-role"  id="w-role"></div>
+    <div class="scan-type"    id="s-type"></div>
+    <div class="scan-detail"  id="s-detail"></div>
+  </div>
+</div>
 
 <script>
-  // Update Clock
-  function updateTime() {
-    const now = new Date();
-    document.getElementById('clock').textContent = now.toLocaleTimeString('es-MX', { hour12: false });
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('date').textContent = now.toLocaleDateString('es-MX', options).replace(/^\w/, c => c.toUpperCase());
+/* ── Clock ──────────────────────────────── */
+function tick() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('es-MX', { hour12: false });
+  document.getElementById('date-str').textContent = now.toLocaleDateString('es-MX',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+  ).replace(/^\w/, c => c.toUpperCase());
+}
+setInterval(tick, 1000);
+tick();
+
+/* ── Workers ────────────────────────────── */
+let WORKERS_CACHE = [];
+async function init() {
+  WORKERS_CACHE = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
+}
+document.addEventListener('DOMContentLoaded', init);
+
+/* ── Scanner ────────────────────────────── */
+const input = document.getElementById('scan-input');
+document.addEventListener('click', () => input.focus());
+setInterval(() => { if (document.activeElement !== input) input.focus(); }, 1000);
+
+let resetTimeout;
+input.addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const code = input.value.trim();
+    input.value = '';
+    if (code) await processScan(code);
   }
-  setInterval(updateTime, 1000);
-  updateTime();
+});
 
-  let WORKERS_CACHE = [];
-  
-  async function init() {
-     const workers = await window.DB.query("contacts", { tipo: "trabajador", activo: true });
-     WORKERS_CACHE = workers;
-  }
-  
-  document.addEventListener('DOMContentLoaded', init);
+/* ── Scan logic ─────────────────────────── */
+async function processScan(code) {
+  const worker = WORKERS_CACHE.find(w => w.scanCode === code || w.id === code || w.personalId === code);
+  if (!worker) { showStatus('error', 'CÓDIGO NO RECONOCIDO', '', '', 'Empleado no encontrado'); return; }
 
-  // Keep focus on hidden input
-  const input = document.getElementById('scannerInput');
-  document.addEventListener('click', () => { input.focus(); });
-  setInterval(() => { if (document.activeElement !== input) input.focus(); }, 1000);
+  const now      = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const timeStr  = now.toLocaleTimeString('es-MX', { hour12: false });
 
-  // DB logic
-  let resetTimeout;
-  
-  input.addEventListener('keydown', async (e) => {
-    if (e.key === 'Enter') {
-      const code = input.value.trim();
-      input.value = '';
-      if (code) await processScan(code);
-    }
-  });
+  const logs = await window.DB.query('attendance_logs', { workerId: worker.id, fecha: todayStr });
+  const db   = window.DB.get();
 
-  async function processScan(code) {
-    const worker = WORKERS_CACHE.find(w => w.scanCode === code || w.id === code || w.personalId === code);
-    if (!worker) { showStatus('error', 'CÓDIGO NO RECONOCIDO', 'Empleado no encontrado', ''); return; }
+  const rawCfg = db.settings;
+  const cfg = Array.isArray(rawCfg) ? (rawCfg.find(x => x._id === 'main') || rawCfg[0] || {}) : (rawCfg || {});
+  const horaEntrada    = cfg.horaEntrada        || '08:00';
+  const minutosRetardo = cfg.minutosRetardo      ?? 15;
+  const minutosFalta   = cfg.minutosFalta        ?? 60;
+  const horaSalida     = cfg.horaSalida          || '17:30';
+  const tolSalidaMin   = cfg.toleranciaSalidaMin ?? 15;
+  const tolAntesSalida = 5;
+  const descansoMin    = cfg.tiempoDescansoMin   ?? 30;
 
-    const now      = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const timeStr  = now.toLocaleTimeString('es-MX', { hour12: false }); // HH:MM:SS exacto
+  const pendingEntry = logs.find(l => !l.hora_salida);
 
-    const logs = await window.DB.query("attendance_logs", { workerId: worker.id, fecha: todayStr });
-    const db   = window.DB.get();
+  /* SALIDA */
+  if (logs.length > 0 && pendingEntry) {
+    const log  = pendingEntry;
+    const exitMins         = now.getHours() * 60 + now.getMinutes();
+    const [hSal, mSal]     = horaSalida.split(':').map(Number);
+    const officialExitMins = hSal * 60 + mSal;
+    const diffFromExit     = exitMins - officialExitMins;
 
-    // DB_STATE.settings puede ser array [{_id:'main',...}] o ya un objeto plano
-    const rawCfg = db.settings;
-    const cfg = Array.isArray(rawCfg) ? (rawCfg.find(x=>x._id==='main')||rawCfg[0]||{}) : (rawCfg||{});
-    const horaEntrada       = cfg.horaEntrada        || '08:00';
-    const minutosRetardo    = cfg.minutosRetardo      ?? 15;
-    const minutosFalta      = cfg.minutosFalta        ?? 60;
-    const horaSalida        = cfg.horaSalida          || '17:30';
-    const tolSalidaMin      = cfg.toleranciaSalidaMin ?? 15;  // gracia después de salida
-    const tolAntesSalida    = 5;                              // gracia antes de salida
-    const descansoMin       = cfg.tiempoDescansoMin   ?? 30;  // descuento comida
+    const entradaEfectiva     = log.hora_entrada_efectiva || log.hora_entrada || horaEntrada;
+    const [hEE, mEE]          = entradaEfectiva.substring(0, 5).split(':').map(Number);
+    const entradaEfectivaMins = hEE * 60 + mEE;
 
-    // ── SALIDA ─────────────────────────────────────────────────────────
-    const pendingEntry = logs.find(l => !l.hora_salida);
-    if (logs.length > 0 && pendingEntry) {
-      const log = pendingEntry;
+    let horasNormal = 0, horasExtra = 0, salidaEfectiva = '';
 
-      // Tiempo actual en minutos del día
-      const exitMins         = now.getHours() * 60 + now.getMinutes();
-      const [hSal, mSal]     = horaSalida.split(':').map(Number);
-      const officialExitMins = hSal * 60 + mSal;
-      const diffFromExit     = exitMins - officialExitMins;
-
-      // Hora de entrada efectiva guardada en el registro de entrada
-      const entradaEfectiva    = log.hora_entrada_efectiva || log.hora_entrada || horaEntrada;
-      const [hEE, mEE]         = entradaEfectiva.substring(0, 5).split(':').map(Number);
-      const entradaEfectivaMins = hEE * 60 + mEE;
-
-      let horasNormal = 0, horasExtra = 0, salidaEfectiva = '';
-
-      if (diffFromExit > tolSalidaMin) {
-        // Salida tarde → hay tiempo extra desde la hora oficial de salida
-        salidaEfectiva = timeStr.substring(0, 5);
-        horasExtra     = diffFromExit / 60;
-        horasNormal    = Math.max(0, (officialExitMins - entradaEfectivaMins - descansoMin)) / 60;
-      } else if (diffFromExit >= -tolAntesSalida) {
-        // Dentro del margen (hasta 5 min antes o 15 min después) → turno normal
-        salidaEfectiva = horaSalida;
-        horasNormal    = Math.max(0, (officialExitMins - entradaEfectivaMins - descansoMin)) / 60;
-      } else {
-        // Salió antes del margen → se cuentan las horas reales (jornada incompleta)
-        salidaEfectiva = timeStr.substring(0, 5);
-        horasNormal    = Math.max(0, (exitMins - entradaEfectivaMins - descansoMin)) / 60;
-      }
-
-      horasNormal = Math.round(horasNormal * 100) / 100;
-      horasExtra  = Math.round(horasExtra  * 100) / 100;
-
-      const updatedLog = {
-        ...log,
-        hora_salida:          timeStr,          // hora exacta registrada
-        hora_salida_efectiva: salidaEfectiva,   // hora para nómina
-        tipo:                 'salida',
-        estado:               log.status || 'trabajo',
-        horasNormal,
-        horasExtra,
-        horasDoble:           0,
-        horasTotales:         horasNormal + horasExtra,
-        retardoMin:           log.retardoMin || 0,
-        descansoMin,
-      };
-
-      if (window.parent?.setDocumentInFirebase)
-        window.parent.setDocumentInFirebase('attendance_logs', log.id, updatedLog);
-      if (window.parent?.DB_STATE?.attendance_logs) {
-        const idx = window.parent.DB_STATE.attendance_logs.findIndex(l => l.id === log.id);
-        if (idx !== -1) window.parent.DB_STATE.attendance_logs[idx] = updatedLog;
-      }
-
-      const hrsLabel = horasExtra > 0
-        ? `${horasNormal.toFixed(1)}h normales + ${horasExtra.toFixed(1)}h extra`
-        : `${horasNormal.toFixed(1)} hrs trabajadas`;
-      showStatus('success', 'SALIDA REGISTRADA', worker.name || worker.givenName, worker.role, hrsLabel);
-
-    } else if (logs.length > 0) {
-      // Ya existe entrada Y salida → ya terminó su turno
-      showStatus('warning', 'TURNO COMPLETO', worker.name || worker.givenName, worker.role, 'Ya registraste entrada y salida hoy');
-
+    if (diffFromExit > tolSalidaMin) {
+      salidaEfectiva = timeStr.substring(0, 5);
+      horasExtra     = diffFromExit / 60;
+      horasNormal    = Math.max(0, (officialExitMins - entradaEfectivaMins - descansoMin)) / 60;
+    } else if (diffFromExit >= -tolAntesSalida) {
+      salidaEfectiva = horaSalida;
+      horasNormal    = Math.max(0, (officialExitMins - entradaEfectivaMins - descansoMin)) / 60;
     } else {
-      // ── ENTRADA ──────────────────────────────────────────────────────
-      const [hE, mE]       = horaEntrada.split(':').map(Number);
-      const oficialStartMs = new Date().setHours(hE, mE, 0, 0);
-      const diffMins       = Math.floor((now - oficialStartMs) / 60000);
-
-      let statusTxt = 'trabajo', statusClass = 'success', retardoMin = 0;
-      let entradaEfectiva = horaEntrada; // por defecto: hora oficial
-      let detalle = '';
-
-      if (diffMins <= 0) {
-        // Llegó antes del inicio → hora efectiva = hora oficial (no se adelanta el conteo)
-        statusTxt = 'trabajo'; statusClass = 'success';
-        entradaEfectiva = horaEntrada;
-        detalle = `${Math.abs(diffMins)} min antes del inicio`;
-      } else if (diffMins <= minutosRetardo) {
-        // Dentro de tolerancia → hora efectiva = hora oficial
-        statusTxt = 'trabajo'; statusClass = 'success';
-        entradaEfectiva = horaEntrada;
-        detalle = 'A tiempo';
-      } else {
-        // Llegó tarde (más allá de la tolerancia) → siempre se registra como retardo.
-        // La falta solo se genera si NO llegan en todo el día (eso lo maneja nómina/RH).
-        // Si llegó muy tarde (> minutosFalta) se marca alerta_rh para revisión.
-        statusTxt = 'retardo'; statusClass = 'warning';
-        retardoMin = diffMins;
-        entradaEfectiva = timeStr.substring(0, 5);
-        detalle = diffMins > minutosFalta
-          ? `Retardo muy largo: ${diffMins} min — revisar con RH`
-          : `Retardo de ${diffMins} min`;
-      }
-
-      const newCheckin = {
-        id:                      crypto.randomUUID(),
-        workerId:                worker.id,
-        fecha:                   todayStr,
-        hora_entrada:            timeStr,        // hora exacta del scan
-        hora_entrada_efectiva:   entradaEfectiva, // hora para cálculo de nómina
-        tipo:                    'entrada',
-        registrado_por:          'reloj',
-        status:                  statusTxt,
-        retardoMin,
-        alerta_rh:               retardoMin > minutosFalta, // bandera para revisión de RH
-      };
-
-      if (window.parent?.setDocumentInFirebase)
-        window.parent.setDocumentInFirebase('attendance_logs', newCheckin.id, newCheckin);
-      if (window.parent?.DB_STATE) {
-        if (!window.parent.DB_STATE.attendance_logs) window.parent.DB_STATE.attendance_logs = [];
-        window.parent.DB_STATE.attendance_logs.push(newCheckin);
-      }
-
-      showStatus(statusClass, 'ENTRADA REGISTRADA', worker.name || worker.givenName, worker.role, detalle);
+      salidaEfectiva = timeStr.substring(0, 5);
+      horasNormal    = Math.max(0, (exitMins - entradaEfectivaMins - descansoMin)) / 60;
     }
-  }
 
-  function showStatus(typeClass, title, name, role, status="") {
-    const box = document.getElementById('statusBox');
-    const idle = document.getElementById('idleContent');
-    const active = document.getElementById('activeContent');
-    
-    box.className = `status-box ${typeClass}`;
-    idle.style.display = 'none';
-    active.style.display = 'block';
-    
-    if (typeClass === 'error' && !name) {
-      document.getElementById('workerName').textContent = 'ERROR';
-      document.getElementById('workerRole').textContent = title;
-      document.getElementById('scanType').textContent = '';
-      document.getElementById('scanStatus').textContent = '';
+    horasNormal = Math.round(horasNormal * 100) / 100;
+    horasExtra  = Math.round(horasExtra  * 100) / 100;
+
+    const updatedLog = {
+      ...log,
+      hora_salida:          timeStr,
+      hora_salida_efectiva: salidaEfectiva,
+      tipo:                 'salida',
+      estado:               log.status || 'trabajo',
+      horasNormal,
+      horasExtra,
+      horasDoble:           0,
+      horasTotales:         horasNormal + horasExtra,
+      retardoMin:           log.retardoMin || 0,
+      descansoMin,
+    };
+
+    if (window.parent?.setDocumentInFirebase)
+      window.parent.setDocumentInFirebase('attendance_logs', log.id, updatedLog);
+    if (window.parent?.DB_STATE?.attendance_logs) {
+      const idx = window.parent.DB_STATE.attendance_logs.findIndex(l => l.id === log.id);
+      if (idx !== -1) window.parent.DB_STATE.attendance_logs[idx] = updatedLog;
+    }
+
+    const hrsLabel = horasExtra > 0
+      ? `${horasNormal.toFixed(1)}h normales + ${horasExtra.toFixed(1)}h extra`
+      : `${horasNormal.toFixed(1)} hrs trabajadas`;
+    showStatus('success', 'SALIDA REGISTRADA', worker.name || worker.givenName, worker.role, hrsLabel);
+
+  } else if (logs.length > 0) {
+    showStatus('warning', 'TURNO COMPLETO', worker.name || worker.givenName, worker.role, 'Ya registraste entrada y salida hoy');
+
+  } else {
+    /* ENTRADA */
+    const [hE, mE]       = horaEntrada.split(':').map(Number);
+    const oficialStartMs = new Date().setHours(hE, mE, 0, 0);
+    const diffMins       = Math.floor((now - oficialStartMs) / 60000);
+
+    let statusTxt = 'trabajo', statusClass = 'success', retardoMin = 0;
+    let entradaEfectiva = horaEntrada;
+    let detalle = '';
+
+    if (diffMins <= 0) {
+      entradaEfectiva = horaEntrada;
+      detalle = `${Math.abs(diffMins)} min antes del inicio`;
+    } else if (diffMins <= minutosRetardo) {
+      entradaEfectiva = horaEntrada;
+      detalle = 'A tiempo';
     } else {
-      document.getElementById('workerName').textContent = name;
-      document.getElementById('workerRole').textContent = role;
-      document.getElementById('scanType').textContent = title;
-      document.getElementById('scanStatus').textContent = status;
+      statusTxt = 'retardo'; statusClass = 'warning';
+      retardoMin = diffMins;
+      entradaEfectiva = timeStr.substring(0, 5);
+      detalle = diffMins > minutosFalta
+        ? `Retardo muy largo: ${diffMins} min — revisar con RH`
+        : `Retardo de ${diffMins} min`;
     }
 
-    clearTimeout(resetTimeout);
-    resetTimeout = setTimeout(() => {
-      box.className = 'status-box';
-      idle.style.display = 'block';
-      active.style.display = 'none';
-    }, 4000);
+    const newCheckin = {
+      id:                    crypto.randomUUID(),
+      workerId:              worker.id,
+      fecha:                 todayStr,
+      hora_entrada:          timeStr,
+      hora_entrada_efectiva: entradaEfectiva,
+      tipo:                  'entrada',
+      registrado_por:        'reloj',
+      status:                statusTxt,
+      retardoMin,
+      alerta_rh:             retardoMin > minutosFalta,
+    };
+
+    if (window.parent?.setDocumentInFirebase)
+      window.parent.setDocumentInFirebase('attendance_logs', newCheckin.id, newCheckin);
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.attendance_logs) window.parent.DB_STATE.attendance_logs = [];
+      window.parent.DB_STATE.attendance_logs.push(newCheckin);
+    }
+
+    showStatus(statusClass, 'ENTRADA REGISTRADA', worker.name || worker.givenName, worker.role, detalle);
+  }
+}
+
+/* ── UI ─────────────────────────────────── */
+function showStatus(type, title, name, role, detail = '') {
+  const box    = document.getElementById('status-box');
+  const idle   = document.getElementById('idle-msg');
+  const active = document.getElementById('active-content');
+
+  box.className = 'status-box ' + type;
+  idle.style.display   = 'none';
+  active.style.display = 'block';
+
+  if (type === 'error' && !name) {
+    document.getElementById('w-name').textContent   = 'ERROR';
+    document.getElementById('w-role').textContent   = '';
+    document.getElementById('s-type').textContent   = title;
+    document.getElementById('s-detail').textContent = detail;
+  } else {
+    document.getElementById('w-name').textContent   = name;
+    document.getElementById('w-role').textContent   = role || '';
+    document.getElementById('s-type').textContent   = title;
+    document.getElementById('s-detail').textContent = detail;
   }
 
+  clearTimeout(resetTimeout);
+  resetTimeout = setTimeout(() => {
+    box.className = 'status-box';
+    idle.style.display   = 'block';
+    active.style.display = 'none';
+  }, 4000);
+}
 </script>
 </body>
 </html>
