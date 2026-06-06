@@ -244,8 +244,13 @@
         <a class="btn btn-dark" id="btn-drive" href="#" target="_blank" style="font-size:12px;padding:5px 10px;">↗ Abrir en Drive</a>
       </div>
     </div>
-    <div class="viewer-body" id="viewer-body" style="display:none;">
-      <iframe id="pdf-frame" title="Vista previa PDF" allow="autoplay"></iframe>
+    <div class="viewer-body" id="viewer-body" style="display:none; flex-direction:column;">
+      <div id="drive-warning" style="display:none; background:#fffbea; border-bottom:1px solid #e8d96a; padding:10px 16px; font-size:12px; color:#5a4a00; align-items:center; gap:10px; flex-shrink:0;">
+        <span style="font-size:16px;">⚠️</span>
+        <span><strong>Error de acceso (403).</strong> El PDF no está compartido públicamente. En Google Drive: <strong>Compartir → Cualquiera con el link → Lector</strong>.</span>
+        <a id="drive-warning-link" href="#" target="_blank" style="margin-left:auto; white-space:nowrap; color:#5a4a00; font-weight:700; text-decoration:underline; flex-shrink:0;">Abrir en Drive ↗</a>
+      </div>
+      <iframe id="pdf-frame" title="Vista previa PDF" allow="autoplay" style="flex:1; min-height:0;" onload="checkFrameLoad(this)"></iframe>
     </div>
     <div class="viewer-empty" id="viewer-empty">
       <div class="viewer-empty-icon">📋</div>
@@ -282,7 +287,7 @@
     <div class="field">
       <label>Link de Google Drive *</label>
       <input type="text" id="f-drive" placeholder="https://drive.google.com/file/d/.../view">
-      <div class="hint">Pega el link para compartir del PDF en Google Drive. El archivo debe ser visible para "cualquiera con el link".</div>
+      <div class="hint">⚠️ El archivo <strong>debe</strong> estar compartido como <strong>"Cualquiera con el link → Lector"</strong> en Google Drive, de lo contrario aparecerá un error 403 en el visor.</div>
     </div>
 
     <div class="field">
@@ -405,6 +410,8 @@ function selectFicha(id) {
   document.getElementById('viewer-cat').innerHTML     = `<span class="cat-pill">${CAT_ICONS[f.categoria] || '📄'} ${f.categoria || ''}</span>`;
 
   const embedUrl = toDriveEmbed(f.driveUrl);
+  document.getElementById('drive-warning').style.display = 'none';
+  document.getElementById('drive-warning-link').href     = f.driveUrl || '#';
   document.getElementById('pdf-frame').src        = embedUrl;
   document.getElementById('btn-drive').href       = f.driveUrl || '#';
 
@@ -477,6 +484,20 @@ function toast(msg) {
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2800);
+}
+
+// ── Detectar error 403 en el iframe de Drive ─────────────────────────
+function checkFrameLoad(iframe) {
+  try {
+    // Si Drive devuelve 403, la URL del iframe queda en about:blank o carga una
+    // página de error. Intentamos leer el título del documento cargado.
+    const title = iframe.contentDocument?.title || '';
+    const is403 = title.includes('403') || title.toLowerCase().includes('error') || title.toLowerCase().includes('zugriff');
+    document.getElementById('drive-warning').style.display = is403 ? 'flex' : 'none';
+  } catch(e) {
+    // Cross-origin: no podemos leer el título, pero si llegamos aquí el frame cargó algo
+    document.getElementById('drive-warning').style.display = 'none';
+  }
 }
 
 // ── Cerrar modal con Escape ───────────────────────────────────────────
