@@ -503,6 +503,40 @@ window.DB = {
     }
     saveDB(d);
   },
+  assignTool: async (toolId, workerId, isReturn) => {
+    if (window.parent?.cargar_coleccion && window.parent?.DB_STATE &&
+        !window.parent.DB_STATE.herramientas) {
+      await window.parent.cargar_coleccion('herramientas');
+    }
+    const tools = window.parent?.DB_STATE?.herramientas || [];
+    const tool  = tools.find(t => (t.id || t._id) === toolId);
+    if (!tool) throw new Error('Herramienta no encontrada: ' + toolId);
+    const docId = tool.id || tool._id;
+    const updated = { ...tool, id: docId, assignedTo: isReturn ? null : workerId };
+    const idx = tools.findIndex(t => (t.id || t._id) === toolId);
+    if (idx >= 0 && window.parent?.DB_STATE?.herramientas) {
+      window.parent.DB_STATE.herramientas[idx] = updated;
+    }
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('herramientas', docId, updated);
+    }
+    const log = {
+      id: crypto.randomUUID(),
+      toolId: docId,
+      toolNombre: tool.nombre || '',
+      workerId,
+      tipo: isReturn ? 'devolucion' : 'prestamo',
+      fecha: new Date().toISOString(),
+    };
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.tool_logs) window.parent.DB_STATE.tool_logs = [];
+      window.parent.DB_STATE.tool_logs.unshift(log);
+    }
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase('tool_logs', log.id, log);
+    }
+    return updated;
+  },
   updateQuote: (quote) => {
     const d = getDB();
     if (!d.quotations) d.quotations = [];

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="global.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salida de Herramientas</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ── Idle screen ───────────────────────── */
+.idle-screen {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 28px; padding: 40px;
+}
+.idle-icon  { font-size: 72px; opacity: .7; }
+.idle-title { font-size: 28px; font-weight: 800; color: var(--text); text-align: center; }
+.idle-sub   { font-size: 16px; color: var(--subtext); text-align: center; }
+
+.manual-select-wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.w-select { padding: 10px 14px; border-radius: 9px; border: 1px solid var(--crust); background: var(--mantle); color: var(--text); font-size: 14px; font-family: inherit; min-width: 200px; outline: none; }
+.w-select:focus { border-color: var(--blue); }
+.btn-enter { padding: 10px 20px; border-radius: 9px; background: var(--blue); color: #111; font-size: 14px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; }
+.btn-enter:hover { opacity: .9; }
+
+/* ── Active screen ─────────────────────── */
+.active-screen { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+.active-screen.shown { display: flex; }
+
+.active-hdr {
+  background: var(--mantle); border-bottom: 1px solid var(--crust);
+  padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.worker-badge { display: flex; align-items: center; gap: 10px; }
+.w-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--blue); color: #111; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; flex-shrink: 0; }
+.worker-name { font-size: 16px; font-weight: 800; }
+.worker-sub  { font-size: 11px; color: var(--subtext); margin-top: 1px; }
+.timer-wrap  { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.timer-ring  { width: 38px; height: 38px; position: relative; }
+.timer-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.timer-ring circle { fill: none; stroke: var(--surface1); stroke-width: 3; }
+.timer-ring .prog  { stroke: var(--blue); stroke-dasharray: 100; stroke-dashoffset: 0; transition: stroke-dashoffset .9s linear, stroke .5s; }
+.timer-ring .num   { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+.btn-close { padding: 6px 14px; border-radius: 7px; background: var(--surface0); border: 1px solid var(--crust); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+.active-body { flex: 1; display: flex; overflow: hidden; }
+
+/* Left: Mi Caja */
+.caja-panel { width: 260px; flex-shrink: 0; background: var(--mantle); border-right: 1px solid var(--crust); display: flex; flex-direction: column; overflow: hidden; }
+.panel-hdr  { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); flex-shrink: 0; }
+.caja-list  { flex: 1; overflow-y: auto; }
+.caja-item  { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--crust); cursor: pointer; transition: background .1s; }
+.caja-item:hover  { background: rgba(243,139,168,.12); }
+.caja-item:last-child { border-bottom: none; }
+.ci-icon  { font-size: 18px; flex-shrink: 0; }
+.ci-info  { flex: 1; min-width: 0; }
+.ci-name  { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ci-code  { font-size: 10px; color: var(--subtext); font-family: monospace; }
+.ci-ret   { font-size: 10px; color: var(--red); font-weight: 700; opacity: 0; transition: opacity .1s; }
+.caja-item:hover .ci-ret { opacity: 1; }
+
+/* Right: Catálogo */
+.catalogo-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.cat-search-wrap { padding: 10px 14px; border-bottom: 1px solid var(--crust); flex-shrink: 0; display: flex; align-items: center; gap: 8px; background: var(--mantle); }
+.cat-search { flex: 1; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; outline: none; }
+.cat-search:focus { border-color: var(--blue); }
+.catalogo-scroll { flex: 1; overflow-y: auto; padding: 12px 14px; }
+
+.cat-group-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); padding: 8px 0 6px; }
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.tool-card {
+  background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px;
+  padding: 12px; cursor: pointer; transition: all .12s; display: flex; flex-direction: column; gap: 6px;
+  user-select: none;
+}
+.tool-card:hover  { background: var(--surface0); transform: translateY(-1px); }
+.tool-card.taken  { opacity: .4; cursor: not-allowed; }
+.tool-card.taken:hover { transform: none; background: var(--mantle); }
+.tool-card.mine   { border-color: var(--red); background: rgba(243,139,168,.08); }
+.tool-card.mine:hover { background: rgba(243,139,168,.18); }
+
+.tc-icon  { font-size: 22px; }
+.tc-name  { font-size: 12px; font-weight: 700; line-height: 1.3; }
+.tc-code  { font-size: 10px; color: var(--subtext); font-family: monospace; }
+.tc-badge { font-size: 10px; font-weight: 700; margin-top: 2px; }
+.tc-badge.avail  { color: var(--green); }
+.tc-badge.mine-b { color: var(--red); }
+.tc-badge.taken-b{ color: var(--subtext); }
+
+/* Toast grande */
+.big-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--green); color: #fff; padding: 14px 28px; border-radius: 12px;
+  font-size: 16px; font-weight: 800; z-index: 9999; pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,.3); transition: transform .3s ease, opacity .3s ease; opacity: 0;
+  max-width: 90vw; text-align: center;
+}
+.big-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.big-toast.error { background: var(--red); }
+
+/* Scanner input (always focused, invisible) */
+#scanner-input { position: fixed; left: -9999px; top: -9999px; opacity: 0; width: 1px; height: 1px; }
+
+@media (max-width: 600px) {
+  .caja-panel { width: 200px; }
+  .tool-grid   { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+}
+</style>
+</head>
+<body>
+
+<!-- Scanner input siempre activo -->
+<input type="text" id="scanner-input" autocomplete="off" autocorrect="off" autocapitalize="off">
+
+<!-- ── Idle Screen ─────────────────────── -->
+<div class="idle-screen" id="idle-screen">
+  <div class="idle-icon">🧰</div>
+  <div>
+    <div class="idle-title">Salida de Herramientas</div>
+    <div class="idle-sub" style="margin-top:8px;">Escanea tu gafete o selecciona tu nombre</div>
+  </div>
+  <div class="manual-select-wrap">
+    <select id="worker-select" class="w-select">
+      <option value="">— Seleccionar trabajador —</option>
+    </select>
+    <button class="btn-enter" onclick="loginManual()">Entrar</button>
+  </div>
+</div>
+
+<!-- ── Active Screen ───────────────────── -->
+<div class="active-screen" id="active-screen">
+  <div class="active-hdr">
+    <div class="worker-badge">
+      <div class="w-avatar" id="active-avatar">?</div>
+      <div>
+        <div class="worker-name" id="active-name">—</div>
+        <div class="worker-sub" id="active-count">0 herramientas en caja</div>
+      </div>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-ring">
+        <svg viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.9"/>
+          <circle cx="18" cy="18" r="15.9" class="prog" id="timer-circle" style="stroke-dasharray: 100; stroke-dashoffset: 0;"/>
+        </svg>
+        <div class="num" id="timer-num">30</div>
+      </div>
+      <button class="btn-close" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="active-body">
+    <!-- Mi Caja -->
+    <div class="caja-panel">
+      <div class="panel-hdr">📦 Mi Caja</div>
+      <div class="caja-list" id="caja-list">
+        <div style="padding:20px;text-align:center;color:var(--subtext);font-size:12px;">Sin herramientas</div>
+      </div>
+    </div>
+
+    <!-- Catálogo -->
+    <div class="catalogo-panel">
+      <div class="cat-search-wrap">
+        <input class="cat-search" id="cat-search" placeholder="🔍 Buscar herramienta…" oninput="renderCatalogo()" onfocus="resetTimer()">
+      </div>
+      <div class="catalogo-scroll" id="catalogo-scroll"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="big-toast" id="big-toast"></div>
+
+<script>
+const CATEGORIAS = [
+  { id: 'perforacion',  label: 'Perforación',    icon: '🔩' },
+  { id: 'corte',        label: 'Corte',           icon: '🪚' },
+  { id: 'lijado',       label: 'Lijado',          icon: '📋' },
+  { id: 'cepillado',    label: 'Cepillado',       icon: '🪵' },
+  { id: 'medicion',     label: 'Medición',        icon: '📐' },
+  { id: 'sujecion',     label: 'Sujeción',        icon: '🔧' },
+  { id: 'router',       label: 'Router / Fresado',icon: '⚙️' },
+  { id: 'ensamble',     label: 'Ensamble / Mano', icon: '🔨' },
+  { id: 'acabado',      label: 'Acabado',         icon: '🎨' },
+  { id: 'otro',         label: 'Otros',           icon: '🧰' },
+];
+
+const TIMEOUT_SEC = 30;
+
+let herramientas = [];
+let workers = [];
+let activeWorker = null;
+let timerInterval = null;
+let timerLeft = TIMEOUT_SEC;
+
+/* ── Init ────────────────────────────── */
+async function init() {
+  const p = window.parent;
+  if (!p?.cargar_coleccion) { setTimeout(init, 300); return; }
+
+  await Promise.all([
+    p.cargar_coleccion('herramientas'),
+    p.cargar_coleccion('workers'),
+  ]);
+
+  herramientas = (p.DB_STATE?.herramientas || []).map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id);
+  workers      = (p.DB_STATE?.workers      || []).map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id)
+                   .sort((a, b) => (a.nombre || a.name || '').localeCompare(b.nombre || b.name || '', 'es'));
+
+  const sel = document.getElementById('worker-select');
+  sel.innerHTML = '<option value="">— Seleccionar trabajador —</option>' +
+    workers.map(w => `<option value="${w.id}">${w.nombre || w.name}</option>`).join('');
+}
+
+/* ── Scanner ─────────────────────────── */
+const scanInput = document.getElementById('scanner-input');
+
+function keepFocus() {
+  if (document.activeElement !== scanInput &&
+      document.activeElement !== document.getElementById('cat-search')) {
+    scanInput.focus();
+  }
+}
+document.addEventListener('click', keepFocus);
+setInterval(keepFocus, 800);
+scanInput.focus();
+
+let scanBuffer = '';
+let scanTimer  = null;
+
+scanInput.addEventListener('input', () => {
+  clearTimeout(scanTimer);
+  scanBuffer += scanInput.value;
+  scanInput.value = '';
+  scanTimer = setTimeout(() => {
+    const code = scanBuffer.trim();
+    scanBuffer  = '';
+    if (code) processScan(code);
+  }, 80);
+});
+
+scanInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    clearTimeout(scanTimer);
+    const code = scanBuffer.trim();
+    scanBuffer  = '';
+    scanInput.value = '';
+    if (code) processScan(code);
+  }
+});
+
+function processScan(code) {
+  resetTimer();
+
+  // Try worker
+  const worker = workers.find(w =>
+    w.scanCode === code || w.id === code || w.personalId === code || w.codigo === code
+  );
+  if (worker) {
+    if (!activeWorker) {
+      loginWorker(worker);
+    } else if (activeWorker.id !== worker.id) {
+      bigToast('Cierra sesión primero.', true);
+    }
+    return;
+  }
+
+  // Try tool
+  if (!activeWorker) {
+    bigToast('Escanea tu gafete primero.', true);
+    return;
+  }
+
+  const tool = herramientas.find(h =>
+    h.codigo === code || h.id === code
+  );
+  if (!tool) {
+    bigToast('Código no reconocido.', true);
+    return;
+  }
+
+  handleTool(tool);
+}
+
+/* ── Login / Logout ──────────────────── */
+function loginManual() {
+  const wId = document.getElementById('worker-select').value;
+  if (!wId) { bigToast('Selecciona un trabajador.', true); return; }
+  const w = workers.find(w => w.id === wId);
+  if (w) loginWorker(w);
+}
+
+function loginWorker(w) {
+  activeWorker = w;
+  document.getElementById('active-avatar').textContent = (w.nombre || w.name || '?')[0].toUpperCase();
+  document.getElementById('active-name').textContent   = w.nombre || w.name;
+
+  document.getElementById('idle-screen').style.display   = 'none';
+  document.getElementById('active-screen').classList.add('shown');
+
+  renderCaja();
+  renderCatalogo();
+  startTimer();
+}
+
+function logout() {
+  activeWorker = null;
+  clearInterval(timerInterval);
+  timerInterval = null;
+
+  document.getElementById('idle-screen').style.display = '';
+  document.getElementById('active-screen').classList.remove('shown');
+  document.getElementById('cat-search').value = '';
+  document.getElementById('worker-select').value = '';
+  scanInput.focus();
+}
+
+/* ── Timer ───────────────────────────── */
+function startTimer() {
+  timerLeft = TIMEOUT_SEC;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerLeft--;
+    updateTimerUI();
+    if (timerLeft <= 0) {
+      clearInterval(timerInterval);
+      logout();
+    }
+  }, 1000);
+  updateTimerUI();
+}
+
+function resetTimer() {
+  if (!activeWorker) return;
+  timerLeft = TIMEOUT_SEC;
+  updateTimerUI();
+}
+
+function updateTimerUI() {
+  const pct = (timerLeft / TIMEOUT_SEC) * 100;
+  const circle = document.getElementById('timer-circle');
+  circle.style.strokeDashoffset = 100 - pct;
+  circle.style.stroke = timerLeft <= 8 ? 'var(--red)' : timerLeft <= 15 ? 'var(--amber)' : 'var(--blue)';
+  document.getElementById('timer-num').textContent = timerLeft;
+}
+
+/* ── Tool actions ────────────────────── */
+function handleTool(tool) {
+  const myTools = herramientas.filter(h => h.assignedTo === activeWorker.id);
+  const alreadyMine = myTools.some(h => h.id === tool.id);
+
+  if (alreadyMine) {
+    // Devolución
+    doReturn(tool);
+  } else if (tool.assignedTo) {
+    bigToast(`Ya tiene ${workerName(tool.assignedTo)}.`, true);
+  } else {
+    // Préstamo
+    doLoan(tool);
+  }
+}
+
+async function doLoan(tool) {
+  try {
+    const updated = await window.DB.assignTool(tool.id, activeWorker.id, false);
+    const idx = herramientas.findIndex(h => h.id === tool.id);
+    if (idx >= 0) herramientas[idx] = updated;
+    renderCaja();
+    renderCatalogo();
+    bigToast(`✓ ${tool.nombre} — prestada`);
+    resetTimer();
+  } catch (e) { bigToast(e.message, true); }
+}
+
+async function doReturn(tool) {
+  try {
+    const updated = await window.DB.assignTool(tool.id, activeWorker.id, true);
+    const idx = herramientas.findIndex(h => h.id === tool.id);
+    if (idx >= 0) herramientas[idx] = updated;
+    renderCaja();
+    renderCatalogo();
+    bigToast(`↩ ${tool.nombre} — devuelta`);
+    resetTimer();
+  } catch (e) { bigToast(e.message, true); }
+}
+
+function workerName(id) {
+  const w = workers.find(w => w.id === id);
+  return w ? (w.nombre || w.name) : id;
+}
+
+/* ── Render ──────────────────────────── */
+function catIcon(id) {
+  return CATEGORIAS.find(c => c.id === id)?.icon || '🧰';
+}
+function catLabel(id) {
+  const c = CATEGORIAS.find(c => c.id === id);
+  return c ? `${c.icon} ${c.label}` : '🧰 Otros';
+}
+
+function renderCaja() {
+  if (!activeWorker) return;
+  const myTools = herramientas.filter(h => h.assignedTo === activeWorker.id);
+  document.getElementById('active-count').textContent = `${myTools.length} herramienta${myTools.length !== 1 ? 's' : ''} en caja`;
+
+  const el = document.getElementById('caja-list');
+  if (!myTools.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--subtext);font-size:12px;">Sin herramientas</div>';
+    return;
+  }
+  el.innerHTML = myTools.map(h => `
+    <div class="caja-item" onclick="doReturn(herramientas.find(x=>x.id==='${h.id}'))" title="Clic para devolver">
+      <span class="ci-icon">${catIcon(h.categoria)}</span>
+      <div class="ci-info">
+        <div class="ci-name">${h.nombre}</div>
+        <div class="ci-code">${h.codigo || ''} ${h.tipo === 'personal' ? '🔒' : ''}</div>
+      </div>
+      ${h.tipo !== 'personal' ? '<span class="ci-ret">↩ devolver</span>' : '<span class="ci-ret" style="color:var(--subtext)">personal</span>'}
+    </div>`).join('');
+}
+
+function renderCatalogo() {
+  if (!activeWorker) return;
+  const q = (document.getElementById('cat-search').value || '').toLowerCase();
+  const myIds = new Set(herramientas.filter(h => h.assignedTo === activeWorker.id).map(h => h.id));
+
+  // Only show shared tools (personal ones belong to their assigned worker permanently)
+  let list = herramientas.filter(h => {
+    if (h.tipo === 'personal' && h.assignedTo && h.assignedTo !== activeWorker.id) return false;
+    if (h.estado === 'baja' || h.estado === 'reparacion') return false;
+    if (q && !(h.nombre||'').toLowerCase().includes(q) && !(h.codigo||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  // Group by category
+  const groups = {};
+  list.forEach(h => {
+    const cat = h.categoria || 'otro';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(h);
+  });
+
+  const el = document.getElementById('catalogo-scroll');
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--subtext);">Sin resultados.</div>';
+    return;
+  }
+
+  el.innerHTML = CATEGORIAS.filter(c => groups[c.id]?.length).map(c => {
+    const items = groups[c.id];
+    return `
+      <div class="cat-group-title">${c.icon} ${c.label}</div>
+      <div class="tool-grid">
+        ${items.map(h => {
+          const isMine  = myIds.has(h.id);
+          const isTaken = !isMine && !!h.assignedTo;
+          let badgeHtml = '';
+          let cardClass = '';
+          if (isMine)       { badgeHtml = '<span class="tc-badge mine-b">↩ toca para devolver</span>'; cardClass = 'mine'; }
+          else if (isTaken) { badgeHtml = `<span class="tc-badge taken-b">Con ${workerName(h.assignedTo)}</span>`; cardClass = 'taken'; }
+          else              { badgeHtml = '<span class="tc-badge avail">Disponible</span>'; }
+
+          const onclick = isTaken ? '' : `onclick="handleTool(herramientas.find(x=>x.id==='${h.id}'));resetTimer()"`;
+          return `
+            <div class="tool-card ${cardClass}" ${onclick} title="${h.nombre}${h.marca ? ' · ' + h.marca : ''}">
+              <span class="tc-icon">${c.icon}</span>
+              <span class="tc-name">${h.nombre}</span>
+              ${h.codigo ? `<span class="tc-code">${h.codigo}</span>` : ''}
+              ${badgeHtml}
+            </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+}
+
+/* ── Toast ───────────────────────────── */
+let toastTimer = null;
+function bigToast(msg, isError = false) {
+  const el = document.getElementById('big-toast');
+  el.textContent = msg;
+  el.className   = 'big-toast' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => el.classList.add('show'));
+  });
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

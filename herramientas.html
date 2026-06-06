@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="global.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herramientas — Carpintería Huayapam</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.hdr-title { font-size: 17px; font-weight: 800; }
+
+.tabs { display: flex; gap: 4px; padding: 0 20px; border-bottom: 1px solid var(--crust); background: var(--mantle); }
+.tab-btn { padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: all .15s; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+.tab-panel { display: none; padding: 16px 20px; }
+.tab-panel.active { display: block; }
+
+/* Filters bar */
+.filters-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; min-width: 200px; flex: 1; max-width: 320px; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; margin-left: 6px; }
+.f-select { padding: 6px 10px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; }
+.f-select:focus { border-color: var(--blue); }
+
+/* Table */
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px; overflow: hidden; }
+.tbl-wrap { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; }
+.tbl tbody tr:hover { background: var(--surface0); cursor: pointer; }
+.tbl tr:last-child td { border-bottom: none; }
+
+.pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.pill-personal   { background: rgba(137,180,250,.15); color: var(--blue); }
+.pill-compartida { background: rgba(203,166,247,.15); color: var(--mauve, #cba6f7); }
+.pill-buena      { background: rgba(166,227,161,.15); color: var(--green); }
+.pill-desgaste   { background: rgba(249,226,175,.15); color: var(--yellow, #f9e2af); }
+.pill-reparacion { background: rgba(250,179,135,.15); color: var(--peach, #fab387); }
+.pill-baja       { background: rgba(243,139,168,.15); color: var(--red); }
+
+.code-chip { font-family: monospace; font-size: 11px; font-weight: 700; padding: 2px 6px; background: var(--surface0); border-radius: 4px; color: var(--subtext); }
+
+/* Cajas tab */
+.caja-wrap { display: grid; grid-template-columns: 260px 1fr; gap: 16px; }
+@media (max-width: 700px) { .caja-wrap { grid-template-columns: 1fr; } }
+.caja-sidebar { background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px; overflow: hidden; }
+.caja-sidebar-hdr { padding: 12px 14px; border-bottom: 1px solid var(--crust); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); }
+.worker-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--crust); transition: background .1s; }
+.worker-item:hover { background: var(--surface0); }
+.worker-item.selected { background: var(--blue); color: #fff; }
+.worker-item:last-child { border-bottom: none; }
+.w-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--surface1); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+.worker-item.selected .w-avatar { background: rgba(255,255,255,.2); }
+.w-count { margin-left: auto; font-size: 11px; font-weight: 800; background: rgba(255,255,255,.15); padding: 1px 6px; border-radius: 10px; }
+.caja-detail { display: flex; flex-direction: column; gap: 14px; }
+.caja-section { background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px; overflow: hidden; }
+.caja-section-hdr { padding: 10px 14px; border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; }
+.caja-section-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); }
+.tool-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; }
+.tool-row:last-child { border-bottom: none; }
+.tool-icon { font-size: 16px; flex-shrink: 0; }
+.tool-info { flex: 1; min-width: 0; }
+.tool-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tool-sub { font-size: 11px; color: var(--subtext); margin-top: 1px; }
+.empty-state { text-align: center; padding: 32px 16px; color: var(--subtext); font-size: 13px; }
+
+/* Historial */
+.log-tipo-prestamo   { color: var(--red); font-weight: 700; }
+.log-tipo-devolucion { color: var(--green); font-weight: 700; }
+.log-tipo-asignacion { color: var(--blue); font-weight: 700; }
+.log-tipo-baja       { color: var(--subtext); font-weight: 700; }
+
+/* Modal */
+.modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 400; align-items: center; justify-content: center; }
+.modal-backdrop.open { display: flex; }
+.modal-box { background: var(--base); border: 1px solid var(--crust); border-radius: 14px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; padding: 24px; }
+.modal-title { font-size: 17px; font-weight: 800; margin-bottom: 18px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-grid .full { grid-column: 1 / -1; }
+.form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); margin-bottom: 5px; display: block; }
+.form-input { padding: 8px 10px; border-radius: 7px; border: 1px solid var(--crust); background: var(--mantle); color: var(--text); font-family: inherit; width: 100%; font-size: 13px; }
+.form-input:focus { outline: none; border-color: var(--blue); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+.btn { padding: 8px 16px; border-radius: 7px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-primary { background: var(--blue); color: #111; }
+.btn-ghost   { background: var(--surface0); color: var(--text); border: 1px solid var(--crust); }
+.btn-danger  { background: var(--red); color: #fff; }
+.btn-sm      { padding: 4px 10px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">🧰 Herramientas</div>
+  <button class="btn btn-primary" onclick="openModal()">+ Nueva herramienta</button>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('catalogo',this)">Catálogo</button>
+  <button class="tab-btn" onclick="switchTab('cajas',this)">Cajas</button>
+  <button class="tab-btn" onclick="switchTab('historial',this)">Historial</button>
+</div>
+
+<!-- ── TAB: Catálogo ─────────────────────────────────── -->
+<div id="tab-catalogo" class="tab-panel active">
+  <div class="filters-bar">
+    <div class="search-box">🔍 <input id="search" placeholder="Buscar herramienta…" oninput="render()"></div>
+    <select id="fil-cat"    class="f-select" onchange="render()"><option value="">Todas las categorías</option></select>
+    <select id="fil-tipo"   class="f-select" onchange="render()">
+      <option value="">Tipo: todos</option>
+      <option value="personal">Personal</option>
+      <option value="compartida">Compartida</option>
+    </select>
+    <select id="fil-estado" class="f-select" onchange="render()">
+      <option value="">Estado: todos</option>
+      <option value="buena">Buena</option>
+      <option value="desgaste">Desgaste</option>
+      <option value="reparacion">Reparación</option>
+      <option value="baja">Baja</option>
+    </select>
+    <select id="fil-worker" class="f-select" onchange="render()"><option value="">Todos los trabajadores</option></select>
+  </div>
+
+  <div class="card">
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Asignado a</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr><td colspan="7" class="empty-state">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB: Cajas ────────────────────────────────────── -->
+<div id="tab-cajas" class="tab-panel">
+  <div class="caja-wrap">
+    <div class="caja-sidebar">
+      <div class="caja-sidebar-hdr">Trabajadores</div>
+      <div id="worker-list"></div>
+    </div>
+    <div class="caja-detail" id="caja-detail">
+      <div class="empty-state" style="padding-top:60px;">Selecciona un trabajador para ver su caja.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB: Historial ────────────────────────────────── -->
+<div id="tab-historial" class="tab-panel">
+  <div class="filters-bar">
+    <select id="fil-log-worker" class="f-select" onchange="renderHistorial()"><option value="">Todos los trabajadores</option></select>
+    <select id="fil-log-tipo"   class="f-select" onchange="renderHistorial()">
+      <option value="">Todos los movimientos</option>
+      <option value="prestamo">Préstamo</option>
+      <option value="devolucion">Devolución</option>
+      <option value="asignacion">Asignación</option>
+      <option value="baja">Baja</option>
+    </select>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Herramienta</th>
+            <th>Trabajador</th>
+            <th>Movimiento</th>
+          </tr>
+        </thead>
+        <tbody id="log-body">
+          <tr><td colspan="4" class="empty-state">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal ─────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modal-title">Nueva herramienta</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-grid">
+      <div class="full">
+        <label class="form-label">Nombre *</label>
+        <input class="form-input" id="f-nombre" placeholder="Ej: Taladro Bosch 750W" oninput="autoCategoria()">
+      </div>
+      <div>
+        <label class="form-label">Código / Barcode</label>
+        <input class="form-input" id="f-codigo" placeholder="HER-001">
+      </div>
+      <div>
+        <label class="form-label">Marca / Modelo</label>
+        <input class="form-input" id="f-marca" placeholder="Ej: Bosch 750W">
+      </div>
+      <div>
+        <label class="form-label">Categoría</label>
+        <select class="form-input" id="f-categoria"></select>
+      </div>
+      <div>
+        <label class="form-label">Tipo</label>
+        <select class="form-input" id="f-tipo" onchange="toggleAssignedTo()">
+          <option value="compartida">Compartida (pool)</option>
+          <option value="personal">Personal (asignada a trabajador)</option>
+        </select>
+      </div>
+      <div id="row-assigned">
+        <label class="form-label">Asignada a</label>
+        <select class="form-input" id="f-assigned"><option value="">— Sin asignar —</option></select>
+      </div>
+      <div>
+        <label class="form-label">Estado</label>
+        <select class="form-input" id="f-estado">
+          <option value="buena">Buena</option>
+          <option value="desgaste">Desgaste</option>
+          <option value="reparacion">En reparación</option>
+          <option value="baja">Baja</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Costo ($)</label>
+        <input class="form-input" id="f-costo" type="number" placeholder="0">
+      </div>
+      <div>
+        <label class="form-label">Fecha de compra</label>
+        <input class="form-input" id="f-fecha" type="date">
+      </div>
+      <div class="full">
+        <label class="form-label">Notas</label>
+        <input class="form-input" id="f-notas" placeholder="Número de serie, observaciones…">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" id="btn-delete" style="margin-right:auto;display:none;" onclick="deleteTool()">Eliminar</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTool()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIAS = [
+  { id: 'perforacion',  label: 'Perforación',    icon: '🔩', keys: ['taladro','broca','berbiquí','berbiqui','mandril','atornillador'] },
+  { id: 'corte',        label: 'Corte',           icon: '🪚', keys: ['sierra','serrucho','segueta','caladora','cutter','formón','formon','escoplo','navaja','bisturí','bisturi','hoja'] },
+  { id: 'lijado',       label: 'Lijado',          icon: '📋', keys: ['lijadora','lija','orbital','banda'] },
+  { id: 'cepillado',    label: 'Cepillado',       icon: '🪵', keys: ['cepillo','garlopa','rabot','cepilladora'] },
+  { id: 'medicion',     label: 'Medición',        icon: '📐', keys: ['escuadra','metro','cinta','nivel','calibrador','vernier','transportador','regla','compás','compas'] },
+  { id: 'sujecion',     label: 'Sujeción',        icon: '🔧', keys: ['prensa','grampa','grapa','tornillo','engrapadora','clavadora','pistola clavar','compresor','bomba'] },
+  { id: 'router',       label: 'Router / Fresado',icon: '⚙️', keys: ['router','ruteadora','fresadora','fresa','ingletadora','tupi','trompo'] },
+  { id: 'ensamble',     label: 'Ensamble / Mano', icon: '🔨', keys: ['martillo','mazo','maza','destornillador','llave','allen','desarmador','cautín','cautin','alicate','pinza'] },
+  { id: 'acabado',      label: 'Acabado',         icon: '🎨', keys: ['pistola pintura','aerógrafo','aerografo','soplete','barniz','brocha','rodillo'] },
+  { id: 'otro',         label: 'Otros',           icon: '🧰', keys: [] },
+];
+
+function detectCategoria(nombre) {
+  const n = (nombre || '').toLowerCase();
+  for (const c of CATEGORIAS) {
+    if (c.keys.some(k => n.includes(k))) return c.id;
+  }
+  return 'otro';
+}
+
+let herramientas = [];
+let workers = [];
+let logs = [];
+let selectedWorker = null;
+
+async function init() {
+  const p = window.parent;
+  if (!p?.cargar_coleccion) { setTimeout(init, 300); return; }
+
+  await Promise.all([
+    p.cargar_coleccion('herramientas'),
+    p.cargar_coleccion('workers'),
+    p.cargar_coleccion('tool_logs'),
+  ]);
+
+  herramientas = (p.DB_STATE?.herramientas || []).map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id);
+  workers      = (p.DB_STATE?.workers      || []).map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id);
+  logs         = (p.DB_STATE?.tool_logs    || []).map(l => ({ ...l, id: l.id || l._id })).filter(l => l.id);
+
+  logs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+  populateFilters();
+  populateCategoriaSelect();
+  populateAssignedSelect();
+  render();
+  renderWorkerList();
+  renderHistorial();
+}
+
+function populateFilters() {
+  const cats = [...new Set(herramientas.map(h => h.categoria).filter(Boolean))];
+  const catSel = document.getElementById('fil-cat');
+  catSel.innerHTML = '<option value="">Todas las categorías</option>' +
+    CATEGORIAS.filter(c => cats.includes(c.id) || c.id === 'otro').map(c =>
+      `<option value="${c.id}">${c.icon} ${c.label}</option>`
+    ).join('');
+
+  const wSel  = document.getElementById('fil-worker');
+  const wSel2 = document.getElementById('fil-log-worker');
+  const opts  = '<option value="">Todos los trabajadores</option>' +
+    workers.map(w => `<option value="${w.id}">${w.nombre || w.name || w.id}</option>`).join('');
+  wSel.innerHTML  = opts;
+  wSel2.innerHTML = opts;
+}
+
+function populateCategoriaSelect() {
+  document.getElementById('f-categoria').innerHTML =
+    CATEGORIAS.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+}
+
+function populateAssignedSelect() {
+  document.getElementById('f-assigned').innerHTML =
+    '<option value="">— Sin asignar —</option>' +
+    workers.map(w => `<option value="${w.id}">${w.nombre || w.name}</option>`).join('');
+}
+
+function autoCategoria() {
+  const nombre = document.getElementById('f-nombre').value;
+  const cat = detectCategoria(nombre);
+  document.getElementById('f-categoria').value = cat;
+}
+
+function toggleAssignedTo() {
+  const tipo = document.getElementById('f-tipo').value;
+  document.getElementById('row-assigned').style.display = tipo === 'personal' ? '' : 'none';
+}
+
+function workerName(id) {
+  if (!id) return '—';
+  const w = workers.find(w => w.id === id);
+  return w ? (w.nombre || w.name || id) : id;
+}
+
+function catLabel(id) {
+  const c = CATEGORIAS.find(c => c.id === id);
+  return c ? `${c.icon} ${c.label}` : (id || '—');
+}
+
+function estadoPill(e) {
+  const map = { buena: 'Buena', desgaste: 'Desgaste', reparacion: 'Reparación', baja: 'Baja' };
+  return `<span class="pill pill-${e || 'buena'}">${map[e] || e || '—'}</span>`;
+}
+
+function render() {
+  const q      = document.getElementById('search').value.toLowerCase();
+  const cat    = document.getElementById('fil-cat').value;
+  const tipo   = document.getElementById('fil-tipo').value;
+  const estado = document.getElementById('fil-estado').value;
+  const wId    = document.getElementById('fil-worker').value;
+
+  let list = herramientas.filter(h => {
+    if (q      && !(h.nombre||'').toLowerCase().includes(q) && !(h.codigo||'').toLowerCase().includes(q)) return false;
+    if (cat    && h.categoria !== cat) return false;
+    if (tipo   && h.tipo !== tipo) return false;
+    if (estado && h.estado !== estado) return false;
+    if (wId    && h.assignedTo !== wId) return false;
+    return true;
+  });
+
+  list.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+
+  const tbody = document.getElementById('tbl-body');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No hay herramientas.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(h => `
+    <tr onclick="openModal('${h.id}')">
+      <td><span class="code-chip">${h.codigo || '—'}</span></td>
+      <td><strong>${h.nombre || '—'}</strong>${h.marca ? `<br><span style="font-size:11px;color:var(--subtext)">${h.marca}</span>` : ''}</td>
+      <td>${catLabel(h.categoria)}</td>
+      <td><span class="pill pill-${h.tipo || 'compartida'}">${h.tipo === 'personal' ? 'Personal' : 'Compartida'}</span></td>
+      <td>${estadoPill(h.estado)}</td>
+      <td>${h.assignedTo ? workerName(h.assignedTo) : '<span style="color:var(--subtext)">Disponible</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('${h.id}')">Editar</button></td>
+    </tr>`).join('');
+}
+
+/* ── Cajas tab ─────────────────────────── */
+function renderWorkerList() {
+  const el = document.getElementById('worker-list');
+  if (!workers.length) {
+    el.innerHTML = '<div class="empty-state">Sin trabajadores.</div>';
+    return;
+  }
+
+  el.innerHTML = workers.map(w => {
+    const count = herramientas.filter(h => h.assignedTo === w.id).length;
+    const initial = (w.nombre || w.name || '?')[0].toUpperCase();
+    return `<div class="worker-item${selectedWorker === w.id ? ' selected' : ''}" onclick="selectWorker('${w.id}')">
+      <div class="w-avatar">${initial}</div>
+      <span style="font-size:13px;font-weight:600;">${w.nombre || w.name}</span>
+      ${count ? `<span class="w-count">${count}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function selectWorker(wId) {
+  selectedWorker = wId;
+  renderWorkerList();
+  renderCaja(wId);
+}
+
+function renderCaja(wId) {
+  const w = workers.find(w => w.id === wId);
+  if (!w) return;
+
+  const personal   = herramientas.filter(h => h.tipo === 'personal'   && h.assignedTo === wId);
+  const prestados  = herramientas.filter(h => h.tipo === 'compartida' && h.assignedTo === wId);
+
+  const toolRow = (h, showReturn) => `
+    <div class="tool-row">
+      <span class="tool-icon">${catLabel(h.categoria).split(' ')[0]}</span>
+      <div class="tool-info">
+        <div class="tool-name">${h.nombre || '—'}</div>
+        <div class="tool-sub">${h.codigo || ''} ${h.marca ? '· ' + h.marca : ''} ${estadoPill(h.estado)}</div>
+      </div>
+      ${showReturn ? `<button class="btn btn-ghost btn-sm" onclick="returnTool('${h.id}','${wId}')">Devolver</button>` : ''}
+    </div>`;
+
+  document.getElementById('caja-detail').innerHTML = `
+    <div style="font-size:16px;font-weight:800;padding:4px 0;">${w.nombre || w.name}</div>
+
+    <div class="caja-section">
+      <div class="caja-section-hdr">
+        <span class="caja-section-title">🔒 Herramientas personales (${personal.length})</span>
+        <button class="btn btn-ghost btn-sm" onclick="openAsignModal('${wId}')">+ Asignar</button>
+      </div>
+      ${personal.length ? personal.map(h => toolRow(h, false)).join('') : '<div class="empty-state">Sin herramientas personales.</div>'}
+    </div>
+
+    <div class="caja-section">
+      <div class="caja-section-hdr">
+        <span class="caja-section-title">🔄 Préstamos activos (${prestados.length})</span>
+      </div>
+      ${prestados.length ? prestados.map(h => toolRow(h, true)).join('') : '<div class="empty-state">Sin préstamos activos.</div>'}
+    </div>`;
+}
+
+async function returnTool(toolId, wId) {
+  if (!confirm('¿Registrar devolución?')) return;
+  try {
+    await window.DB.assignTool(toolId, wId, true);
+    const idx = herramientas.findIndex(h => h.id === toolId);
+    if (idx >= 0) herramientas[idx].assignedTo = null;
+    renderCaja(wId);
+    render();
+    toast('✓ Devolución registrada.');
+  } catch (e) { toast('Error: ' + e.message, 'warn'); }
+}
+
+/* ── Modal asignación directa ──────────── */
+function openAsignModal(wId) {
+  const disponibles = herramientas.filter(h => h.tipo === 'compartida' && !h.assignedTo);
+  if (!disponibles.length) { toast('No hay herramientas disponibles para asignar.', 'warn'); return; }
+
+  const sel = prompt('Ingresa el código de la herramienta a asignar como personal:\n\n' +
+    disponibles.map(h => `${h.codigo || h.id.slice(0,8)} — ${h.nombre}`).join('\n'));
+  if (!sel) return;
+
+  const tool = herramientas.find(h => h.codigo === sel || h.id === sel);
+  if (!tool) { toast('Herramienta no encontrada.', 'warn'); return; }
+
+  (async () => {
+    const updated = { ...tool, tipo: 'personal', assignedTo: wId };
+    await window.parent.setDocumentInFirebase('herramientas', tool.id, updated);
+    const idx = herramientas.findIndex(h => h.id === tool.id);
+    if (idx >= 0) herramientas[idx] = updated;
+
+    const log = { id: crypto.randomUUID(), toolId: tool.id, toolNombre: tool.nombre, workerId: wId, tipo: 'asignacion', fecha: new Date().toISOString() };
+    await window.parent.setDocumentInFirebase('tool_logs', log.id, log);
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.tool_logs) window.parent.DB_STATE.tool_logs = [];
+      window.parent.DB_STATE.tool_logs.unshift(log);
+    }
+    logs.unshift(log);
+
+    renderCaja(wId);
+    render();
+    toast('✓ Herramienta asignada.');
+  })();
+}
+
+/* ── Historial tab ─────────────────────── */
+function renderHistorial() {
+  const wId  = document.getElementById('fil-log-worker').value;
+  const tipo = document.getElementById('fil-log-tipo').value;
+
+  let list = logs.filter(l => {
+    if (wId  && l.workerId !== wId) return false;
+    if (tipo && l.tipo !== tipo) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('log-body');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">Sin registros.</td></tr>`;
+    return;
+  }
+
+  const labels = { prestamo: '📤 Préstamo', devolucion: '📥 Devolución', asignacion: '🔒 Asignación', baja: '🗑 Baja' };
+
+  tbody.innerHTML = list.slice(0, 200).map(l => `
+    <tr>
+      <td>${fmtDate(l.fecha)}</td>
+      <td>${l.toolNombre || toolNombre(l.toolId)}</td>
+      <td>${workerName(l.workerId)}</td>
+      <td><span class="log-tipo-${l.tipo}">${labels[l.tipo] || l.tipo}</span></td>
+    </tr>`).join('');
+}
+
+function toolNombre(toolId) {
+  const h = herramientas.find(h => h.id === toolId);
+  return h ? h.nombre : (toolId || '—');
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: '2-digit' }) +
+         ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ── Modal CRUD ────────────────────────── */
+function openModal(id) {
+  const modal = document.getElementById('modal');
+  const tool  = id ? herramientas.find(h => h.id === id) : null;
+
+  document.getElementById('modal-title').textContent = tool ? 'Editar herramienta' : 'Nueva herramienta';
+  document.getElementById('edit-id').value        = tool?.id || '';
+  document.getElementById('f-nombre').value       = tool?.nombre     || '';
+  document.getElementById('f-codigo').value       = tool?.codigo     || '';
+  document.getElementById('f-marca').value        = tool?.marca      || '';
+  document.getElementById('f-categoria').value    = tool?.categoria  || 'otro';
+  document.getElementById('f-tipo').value         = tool?.tipo       || 'compartida';
+  document.getElementById('f-assigned').value     = tool?.assignedTo || '';
+  document.getElementById('f-estado').value       = tool?.estado     || 'buena';
+  document.getElementById('f-costo').value        = tool?.costo      || '';
+  document.getElementById('f-fecha').value        = tool?.fecha_compra || '';
+  document.getElementById('f-notas').value        = tool?.notas      || '';
+
+  document.getElementById('btn-delete').style.display = tool ? '' : 'none';
+  toggleAssignedTo();
+  modal.classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+async function saveTool() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio.', 'warn'); return; }
+
+  const editId = document.getElementById('edit-id').value;
+  const tipo   = document.getElementById('f-tipo').value;
+  let codigo   = document.getElementById('f-codigo').value.trim();
+
+  if (!codigo) {
+    const max = herramientas.reduce((m, h) => {
+      const n = parseInt((h.codigo || '').replace(/\D/g, '')) || 0;
+      return Math.max(m, n);
+    }, 0);
+    codigo = 'HER-' + String(max + 1).padStart(3, '0');
+  }
+
+  const data = {
+    id:           editId || crypto.randomUUID(),
+    nombre,
+    codigo,
+    marca:        document.getElementById('f-marca').value.trim(),
+    categoria:    document.getElementById('f-categoria').value,
+    tipo,
+    assignedTo:   tipo === 'personal' ? (document.getElementById('f-assigned').value || null) : (editId ? (herramientas.find(h=>h.id===editId)?.assignedTo || null) : null),
+    estado:       document.getElementById('f-estado').value,
+    costo:        parseFloat(document.getElementById('f-costo').value) || 0,
+    fecha_compra: document.getElementById('f-fecha').value,
+    notas:        document.getElementById('f-notas').value.trim(),
+  };
+
+  try {
+    await window.parent.setDocumentInFirebase('herramientas', data.id, data);
+    if (!window.parent.DB_STATE.herramientas) window.parent.DB_STATE.herramientas = [];
+    const idx = herramientas.findIndex(h => h.id === data.id);
+    if (idx >= 0) { herramientas[idx] = data; window.parent.DB_STATE.herramientas[idx] = data; }
+    else          { herramientas.push(data); window.parent.DB_STATE.herramientas.push(data); }
+
+    if (!editId) {
+      const log = { id: crypto.randomUUID(), toolId: data.id, toolNombre: data.nombre, workerId: data.assignedTo || '', tipo: 'asignacion', fecha: new Date().toISOString() };
+      if (data.assignedTo) {
+        await window.parent.setDocumentInFirebase('tool_logs', log.id, log);
+        logs.unshift(log);
+      }
+    }
+
+    populateFilters();
+    populateAssignedSelect();
+    render();
+    renderWorkerList();
+    if (selectedWorker) renderCaja(selectedWorker);
+    closeModal();
+    toast('✓ Guardado correctamente.');
+  } catch (e) { toast('Error: ' + e.message, 'warn'); }
+}
+
+async function deleteTool() {
+  const id = document.getElementById('edit-id').value;
+  if (!id) return;
+  if (!confirm('¿Eliminar esta herramienta? Esta acción no se puede deshacer.')) return;
+  try {
+    await window.parent.deleteDocumentFromFirebase('herramientas', id);
+    herramientas = herramientas.filter(h => h.id !== id);
+    if (window.parent.DB_STATE?.herramientas) {
+      window.parent.DB_STATE.herramientas = window.parent.DB_STATE.herramientas.filter(h => (h.id||h._id) !== id);
+    }
+    populateFilters();
+    render();
+    renderWorkerList();
+    if (selectedWorker) renderCaja(selectedWorker);
+    closeModal();
+    toast('✓ Herramienta eliminada.');
+  } catch (e) { toast('Error: ' + e.message, 'warn'); }
+}
+
+/* ── Tabs ──────────────────────────────── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'historial') renderHistorial();
+}
+
+/* ── Toast ─────────────────────────────── */
+function toast(msg, type = 'ok') {
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--red)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
