@@ -50,6 +50,16 @@
 
 /* ── Main ── */
 .main { max-width: 1200px; margin: 0 auto; padding: 24px 24px 110px; }
+
+/* ── PDF Modal (slide-in panel) ── */
+.pdf-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:300; align-items:stretch; justify-content:flex-end; }
+.pdf-panel { width:100%; max-width:870px; background:var(--base); height:100%; display:flex; flex-direction:column; box-shadow:-6px 0 32px rgba(0,0,0,.18); animation:pdfSlideIn .25s ease; overflow:hidden; }
+@keyframes pdfSlideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
+.pdf-hdr { padding:14px 20px; border-bottom:1px solid var(--crust); display:flex; justify-content:space-between; align-items:center; background:var(--mantle); flex-shrink:0; }
+.pdf-hdr-title { font-weight:800; font-size:16px; color:var(--text); }
+.pdf-hdr-sub { font-size:12px; color:var(--subtext); margin-top:2px; }
+.pdf-body { flex:1; overflow:hidden; background:#666; }
+.pdf-body iframe { width:100%; height:100%; border:none; }
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
 .sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); padding: 12px 0 8px; border-bottom: 1px solid var(--crust); margin-bottom: 8px; }
@@ -318,7 +328,7 @@
   <div id="tab-resumen" class="tab-pane">
     <div class="pdf-tab-header">
       <div class="pdf-tab-desc">Tabla de todos los trabajadores con totales, horas y descuentos de la semana.</div>
-      <button class="btn btn-blue" onclick="impResumen()">📄 Generar PDF</button>
+      <button class="btn btn-blue" onclick="impResumen()">👁 Vista Previa / PDF</button>
     </div>
     <div class="preview-scroll" id="preview-resumen"></div>
   </div>
@@ -327,7 +337,7 @@
   <div id="tab-recibos" class="tab-pane">
     <div class="pdf-tab-header">
       <div class="pdf-tab-desc">Un recibo por trabajador con desglose de asistencia, conceptos y línea de firma.</div>
-      <button class="btn btn-blue" onclick="impRecibos()">📄 Generar PDF</button>
+      <button class="btn btn-blue" onclick="impRecibos()">👁 Vista Previa / PDF</button>
     </div>
     <div class="preview-scroll" id="preview-recibos"></div>
   </div>
@@ -341,6 +351,25 @@
     <div class="fstat"><span class="lbl">Total</span><span class="val" id="f-total" style="color:var(--green)">$0</span></div>
     <div class="fstat"><span class="lbl">Extras</span><span class="val" id="f-extras" style="color:var(--amber)">$0</span></div>
     <div class="fstat"><span class="lbl">Descuentos</span><span class="val" id="f-descs" style="color:var(--red)">$0</span></div>
+  </div>
+</div>
+
+<!-- PDF Preview Modal -->
+<div class="pdf-modal" id="pdf-modal" onclick="if(event.target===this)closePdfModal()">
+  <div class="pdf-panel">
+    <div class="pdf-hdr">
+      <div>
+        <div class="pdf-hdr-title" id="pdf-modal-title">Vista Previa</div>
+        <div class="pdf-hdr-sub" id="pdf-modal-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-dark" onclick="closePdfModal()">✕ Cerrar</button>
+        <button class="btn btn-green" onclick="printFromModal()">🖨 Imprimir / Guardar PDF</button>
+      </div>
+    </div>
+    <div class="pdf-body">
+      <iframe id="pdf-modal-frame" title="Vista previa PDF"></iframe>
+    </div>
   </div>
 </div>
 
@@ -1368,14 +1397,21 @@ const PDF_BASE_CSS = `
   @page { size: letter; margin: 15mm 14mm; }
 `;
 
-function _printWindow(html) {
-  const opener = (window.parent && window.parent !== window) ? window.parent : window;
-  const w = opener.open('', '_blank');
-  if (!w) { alert('Permite las ventanas emergentes para generar el PDF.'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${PDF_BASE_CSS}</style></head><body>${html}</body></html>`);
-  w.document.close();
-  w.focus();
-  setTimeout(() => { w.print(); }, 400);
+function _showPdfModal(title, sub, bodyHtml, css) {
+  document.getElementById('pdf-modal-title').textContent = title;
+  document.getElementById('pdf-modal-sub').textContent   = sub || '';
+  const fullDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${css || PDF_BASE_CSS}</style></head><body>${bodyHtml}</body></html>`;
+  document.getElementById('pdf-modal-frame').srcdoc = fullDoc;
+  document.getElementById('pdf-modal').style.display = 'flex';
+}
+
+function closePdfModal() {
+  document.getElementById('pdf-modal').style.display = 'none';
+  document.getElementById('pdf-modal-frame').srcdoc = '';
+}
+
+function printFromModal() {
+  document.getElementById('pdf-modal-frame').contentWindow?.print();
 }
 
 function impResumen() {
@@ -1451,7 +1487,8 @@ function impResumen() {
     </div>
   </div>`;
 
-  _printWindow(html);
+  const {mon, fri} = weekDates(weekOffset);
+  _showPdfModal('Resumen General de Nómina', `Semana ${weekNum(mon)} — ${fri.getFullYear()}`, html);
 }
 
 function impRecibos() {
@@ -1683,14 +1720,7 @@ function impRecibos() {
     </div>`;
   });
 
-  const fullCSS = PDF_BASE_CSS + CSS;
-  const opener  = (window.parent && window.parent !== window) ? window.parent : window;
-  const w       = opener.open('', '_blank');
-  if (!w) { alert('Permite las ventanas emergentes para generar el PDF.'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${fullCSS}</style></head><body>${recibos.join('')}</body></html>`);
-  w.document.close();
-  w.focus();
-  setTimeout(() => { w.print(); }, 400);
+  _showPdfModal('Recibos Individuales', `${WORKERS.length} trabajadores · ${semStr}`, recibos.join('') || '<p style="text-align:center;padding:60px;color:#999;">Sin trabajadores esta semana.</p>', PDF_BASE_CSS + CSS);
 }
 
 </script>

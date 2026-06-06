@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="global.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fichas Técnicas — Carpintería Huayapam</title>
+<style>
+
+/* ── Layout dos paneles ── */
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Panel izquierdo ── */
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--crust);
+  background: var(--mantle);
+  overflow: hidden;
+}
+
+.sidebar-hdr {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--crust);
+  flex-shrink: 0;
+}
+
+.sidebar-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-wrap {
+  position: relative;
+}
+.search-wrap input {
+  padding-left: 30px;
+  height: 34px;
+  font-size: 13px;
+  background: var(--base);
+}
+.search-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--subtext);
+  pointer-events: none;
+}
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.cat-group { padding: 0; }
+.cat-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--subtext);
+  padding: 10px 16px 4px;
+}
+
+.ficha-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background .12s;
+  border-left: 3px solid transparent;
+}
+.ficha-item:hover { background: var(--surface0); }
+.ficha-item.active {
+  background: var(--blue-bg);
+  border-left-color: var(--blue);
+}
+.ficha-item-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  opacity: .8;
+}
+.ficha-item-body { flex: 1; min-width: 0; }
+.ficha-item-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ficha-item-desc {
+  font-size: 11px;
+  color: var(--subtext);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--subtext);
+  font-size: 13px;
+}
+
+/* ── Panel derecho ── */
+.viewer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--base);
+}
+
+.viewer-hdr {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--crust);
+  background: var(--mantle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+}
+.viewer-hdr-info { flex: 1; min-width: 0; }
+.viewer-title { font-size: 16px; font-weight: 800; color: var(--text); }
+.viewer-meta  { font-size: 12px; color: var(--subtext); margin-top: 3px; display: flex; align-items: center; gap: 8px; }
+.viewer-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+.viewer-body { flex: 1; overflow: hidden; }
+.viewer-body iframe { width: 100%; height: 100%; border: none; }
+
+.viewer-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--subtext);
+  gap: 12px;
+}
+.viewer-empty-icon { font-size: 48px; opacity: .3; }
+.viewer-empty-text { font-size: 14px; font-weight: 600; }
+.viewer-empty-sub  { font-size: 12px; }
+
+/* ── Modal nueva/editar ficha ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--base);
+  border: 1px solid var(--crust);
+  border-radius: 14px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-title { font-size: 17px; font-weight: 800; color: var(--text); }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; }
+.field input, .field select, .field textarea {
+  padding: 9px 12px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--mantle);
+  color: var(--text); font-size: 13px; font-family: inherit;
+  height: auto;
+}
+.field textarea { resize: vertical; min-height: 72px; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); outline: none; }
+.hint { font-size: 11px; color: var(--subtext); margin-top: 3px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+
+/* category pill */
+.cat-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;
+}
+
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Panel izquierdo -->
+  <div class="sidebar">
+    <div class="sidebar-hdr">
+      <div class="sidebar-title">
+        <span>📋 Fichas Técnicas</span>
+        <button class="btn btn-blue" id="btn-nueva" style="font-size:12px;padding:5px 10px;" onclick="openModal()">+ Nueva</button>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Buscar ficha..." oninput="renderList()">
+      </div>
+    </div>
+    <div class="sidebar-list" id="ficha-list">
+      <div class="sidebar-empty">Cargando fichas...</div>
+    </div>
+  </div>
+
+  <!-- Panel derecho -->
+  <div class="viewer" id="viewer">
+    <div class="viewer-hdr" id="viewer-hdr" style="display:none;">
+      <div class="viewer-hdr-info">
+        <div class="viewer-title" id="viewer-title"></div>
+        <div class="viewer-meta">
+          <span id="viewer-cat"></span>
+          <span id="viewer-desc" style="color:var(--hint);font-style:italic;"></span>
+        </div>
+      </div>
+      <div class="viewer-actions">
+        <button class="btn btn-dark" id="btn-edit" style="font-size:12px;padding:5px 10px;" onclick="editCurrent()">✏️ Editar</button>
+        <button class="btn" id="btn-delete" style="font-size:12px;padding:5px 10px;color:var(--red);border-color:var(--crust);" onclick="deleteCurrent()">🗑</button>
+        <a class="btn btn-dark" id="btn-drive" href="#" target="_blank" style="font-size:12px;padding:5px 10px;">↗ Abrir en Drive</a>
+      </div>
+    </div>
+    <div class="viewer-body" id="viewer-body" style="display:none;">
+      <iframe id="pdf-frame" title="Vista previa PDF" allow="autoplay"></iframe>
+    </div>
+    <div class="viewer-empty" id="viewer-empty">
+      <div class="viewer-empty-icon">📋</div>
+      <div class="viewer-empty-text">Selecciona una ficha para verla</div>
+      <div class="viewer-empty-sub">Los PDFs se muestran directamente desde Google Drive</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal nueva/editar ficha -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Nueva Ficha Técnica</div>
+
+    <div class="field">
+      <label>Título *</label>
+      <input type="text" id="f-titulo" placeholder="Ej: Sierra de Mesa — Manual de Operación">
+    </div>
+
+    <div class="field">
+      <label>Categoría *</label>
+      <select id="f-categoria">
+        <option value="">— Seleccionar —</option>
+        <option value="Maquinaria">🔧 Maquinaria</option>
+        <option value="Materiales">🪵 Materiales</option>
+        <option value="Procesos">⚙️ Procesos</option>
+        <option value="Seguridad">🦺 Seguridad</option>
+        <option value="Productos">🪑 Productos</option>
+        <option value="Otros">📄 Otros</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Link de Google Drive *</label>
+      <input type="text" id="f-drive" placeholder="https://drive.google.com/file/d/.../view">
+      <div class="hint">Pega el link para compartir del PDF en Google Drive. El archivo debe ser visible para "cualquiera con el link".</div>
+    </div>
+
+    <div class="field">
+      <label>Descripción (opcional)</label>
+      <textarea id="f-desc" placeholder="Breve descripción del contenido del documento..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-dark" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-blue" onclick="saveModal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+
+const CAT_ICONS = {
+  'Maquinaria': '🔧', 'Materiales': '🪵', 'Procesos': '⚙️',
+  'Seguridad': '🦺', 'Productos': '🪑', 'Otros': '📄'
+};
+const CAT_ORDER = ['Maquinaria', 'Materiales', 'Procesos', 'Seguridad', 'Productos', 'Otros'];
+
+let fichas    = [];
+let currentId = null;
+let editingId = null;
+let canEdit   = false;
+
+// ── Util: convertir URL de Drive a embed ──────────────────────────────
+function toDriveEmbed(url) {
+  if (!url) return '';
+  const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?#]+)/);
+  if (m1) return `https://drive.google.com/file/d/${m1[1]}/preview`;
+  const m2 = url.match(/[?&]id=([^&#]+)/);
+  if (m2) return `https://drive.google.com/file/d/${m2[1]}/preview`;
+  if (/^[A-Za-z0-9_-]{20,}$/.test(url.trim()))
+    return `https://drive.google.com/file/d/${url.trim()}/preview`;
+  return url;
+}
+
+// ── Carga ─────────────────────────────────────────────────────────────
+async function load() {
+  try {
+    if (window.parent?.DB_STATE) window.parent.DB_STATE.fichas_tecnicas = undefined;
+    await window.parent.cargar_coleccion('fichas_tecnicas');
+    fichas = (window.parent.DB_STATE?.fichas_tecnicas || []).filter(f => f.id);
+    fichas.sort((a, b) => {
+      const ci = CAT_ORDER.indexOf(a.categoria) - CAT_ORDER.indexOf(b.categoria);
+      return ci !== 0 ? ci : (a.titulo || '').localeCompare(b.titulo || '');
+    });
+  } catch(e) {
+    fichas = [];
+    console.error('Error cargando fichas:', e);
+  }
+
+  const role = window.parent?.CURRENT_USER_ROLE || 'programador';
+  canEdit = ['programador', 'admin', 'gerencia'].includes(role);
+  document.getElementById('btn-nueva').style.display  = canEdit ? '' : 'none';
+
+  renderList();
+}
+
+// ── Render lista ─────────────────────────────────────────────────────
+function renderList() {
+  const q   = document.getElementById('search-input').value.toLowerCase();
+  const el  = document.getElementById('ficha-list');
+  const vis = fichas.filter(f => !q || (f.titulo||'').toLowerCase().includes(q) || (f.descripcion||'').toLowerCase().includes(q));
+
+  if (!vis.length) {
+    el.innerHTML = `<div class="sidebar-empty">${q ? 'Sin resultados para "'+q+'"' : 'No hay fichas. Agrega una con el botón +.'}</div>`;
+    return;
+  }
+
+  // Agrupar por categoría
+  const groups = {};
+  vis.forEach(f => {
+    const cat = f.categoria || 'Otros';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(f);
+  });
+
+  let html = '';
+  CAT_ORDER.forEach(cat => {
+    if (!groups[cat]) return;
+    html += `<div class="cat-group">
+      <div class="cat-title">${CAT_ICONS[cat] || '📄'} ${cat}</div>`;
+    groups[cat].forEach(f => {
+      const active = f.id === currentId ? ' active' : '';
+      html += `<div class="ficha-item${active}" onclick="selectFicha('${f.id}')">
+        <div class="ficha-item-icon">${CAT_ICONS[f.categoria] || '📄'}</div>
+        <div class="ficha-item-body">
+          <div class="ficha-item-title">${f.titulo || 'Sin título'}</div>
+          ${f.descripcion ? `<div class="ficha-item-desc">${f.descripcion}</div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+// ── Seleccionar ficha ─────────────────────────────────────────────────
+function selectFicha(id) {
+  currentId = id;
+  const f   = fichas.find(x => x.id === id);
+  if (!f) return;
+
+  renderList(); // actualiza el active
+
+  document.getElementById('viewer-hdr').style.display   = '';
+  document.getElementById('viewer-body').style.display  = '';
+  document.getElementById('viewer-empty').style.display = 'none';
+
+  document.getElementById('viewer-title').textContent = f.titulo || 'Sin título';
+  document.getElementById('viewer-desc').textContent  = f.descripcion || '';
+  document.getElementById('viewer-cat').innerHTML     = `<span class="cat-pill">${CAT_ICONS[f.categoria] || '📄'} ${f.categoria || ''}</span>`;
+
+  const embedUrl = toDriveEmbed(f.driveUrl);
+  document.getElementById('pdf-frame').src        = embedUrl;
+  document.getElementById('btn-drive').href       = f.driveUrl || '#';
+
+  const canAct = canEdit;
+  document.getElementById('btn-edit').style.display   = canAct ? '' : 'none';
+  document.getElementById('btn-delete').style.display = canAct ? '' : 'none';
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────
+function openModal(ficha) {
+  editingId = ficha?.id || null;
+  document.getElementById('modal-title').textContent = ficha ? 'Editar Ficha' : 'Nueva Ficha Técnica';
+  document.getElementById('f-titulo').value    = ficha?.titulo      || '';
+  document.getElementById('f-categoria').value = ficha?.categoria   || '';
+  document.getElementById('f-drive').value     = ficha?.driveUrl    || '';
+  document.getElementById('f-desc').value      = ficha?.descripcion || '';
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-titulo').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null;
+}
+
+function editCurrent() {
+  const f = fichas.find(x => x.id === currentId);
+  if (f) openModal(f);
+}
+
+async function saveModal() {
+  const titulo    = document.getElementById('f-titulo').value.trim();
+  const categoria = document.getElementById('f-categoria').value;
+  const driveUrl  = document.getElementById('f-drive').value.trim();
+  const desc      = document.getElementById('f-desc').value.trim();
+
+  if (!titulo)    { alert('El título es obligatorio.'); return; }
+  if (!categoria) { alert('Selecciona una categoría.'); return; }
+  if (!driveUrl)  { alert('Pega el link de Google Drive.'); return; }
+
+  const data = { titulo, categoria, driveUrl, descripcion: desc, fecha: new Date().toISOString() };
+  const id   = editingId || ('ft_' + Date.now());
+
+  try {
+    await window.parent.setDocumentInFirebase('fichas_tecnicas', id, data);
+    closeModal();
+    await load();
+    selectFicha(id);
+    toast('Ficha guardada.');
+  } catch(e) { alert('Error al guardar: ' + e.message); }
+}
+
+async function deleteCurrent() {
+  const f = fichas.find(x => x.id === currentId);
+  if (!f || !confirm(`¿Eliminar "${f.titulo}"? Esta acción no se puede deshacer.`)) return;
+  try {
+    await window.parent.deleteDocumentFromFirebase('fichas_tecnicas', currentId);
+    currentId = null;
+    document.getElementById('viewer-hdr').style.display   = 'none';
+    document.getElementById('viewer-body').style.display  = 'none';
+    document.getElementById('viewer-empty').style.display = 'flex';
+    await load();
+    toast('Ficha eliminada.');
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999;background:var(--green);color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ── Cerrar modal con Escape ───────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+load();
+</script>
+</body>
+</html>
