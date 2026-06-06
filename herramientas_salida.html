@@ -282,17 +282,29 @@ async function init() {
   const p = window.parent;
   if (!p?.cargar_coleccion) { setTimeout(init, 300); return; }
 
-  await p.cargar_coleccion('herramientas');
+  await Promise.all([
+    p.cargar_coleccion('herramientas'),
+    p.cargar_coleccion('workers'),
+  ]);
+
   herramientas = (p.DB_STATE?.herramientas || [])
     .map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id);
 
-  // contacts via DB.query incluye alias de workers (ver db.js migration alias)
-  await p.cargar_coleccion('contacts');
-  const todos = await window.DB.query('contacts', { tipo: 'trabajador' });
-  // fallback: si contacts vacío, usar workers directamente
-  workers = todos.length ? todos : (p.DB_STATE?.workers || []).map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id);
-  workers.sort((a, b) => (a.nombre || a.name || '').localeCompare(b.nombre || b.name || '', 'es'));
+  workers = (p.DB_STATE?.workers || [])
+    .map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id);
 
+  // Fallback: intentar contacts si workers está vacío
+  if (!workers.length) {
+    await p.cargar_coleccion('contacts');
+    workers = (p.DB_STATE?.contacts || [])
+      .map(w => ({ ...w, id: w.id || w._id }))
+      .filter(w => w.id && w.tipo === 'trabajador');
+  }
+
+  workers.sort((a, b) =>
+    (a.nombre || a.name || a.givenName || '')
+      .localeCompare(b.nombre || b.name || b.givenName || '', 'es')
+  );
   renderWorkerGrid();
 }
 
