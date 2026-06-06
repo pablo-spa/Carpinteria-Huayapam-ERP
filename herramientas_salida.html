@@ -164,6 +164,31 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column;
 .big-toast.show  { transform: translateX(-50%) translateY(0); opacity: 1; }
 .big-toast.error { background: var(--red); }
 
+/* Config panel */
+.grid-header { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
+.btn-cfg {
+  background: none; border: 1px solid var(--crust); border-radius: 6px;
+  color: var(--subtext); cursor: pointer; padding: 3px 8px; font-size: 13px;
+  font-family: inherit; transition: all .12s;
+}
+.btn-cfg:hover { background: var(--surface0); color: var(--text); }
+
+.cfg-panel {
+  display: none; background: var(--mantle); border: 1px solid var(--crust);
+  border-radius: 10px; padding: 14px 16px; margin: 0 auto 12px;
+  max-width: 560px; width: calc(100% - 32px);
+}
+.cfg-panel.open { display: block; }
+.cfg-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); margin-bottom: 10px; }
+.cfg-roles { display: flex; flex-wrap: wrap; gap: 7px; }
+.role-chip {
+  display: flex; align-items: center; gap: 5px; padding: 4px 10px;
+  border-radius: 20px; border: 1px solid var(--crust); background: var(--base);
+  font-size: 12px; font-weight: 600; cursor: pointer; user-select: none; color: var(--subtext);
+  transition: all .12s;
+}
+.role-chip.on { background: var(--blue); border-color: var(--blue); color: #111; }
+
 @media (max-width: 600px) {
   .caja-panel  { width: 190px; }
   .tool-grid   { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
@@ -193,7 +218,17 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column;
 
   <!-- Grilla de trabajadores -->
   <div class="worker-grid-wrap">
-    <div class="worker-grid-title">Selección rápida</div>
+    <div class="grid-header">
+      <div class="worker-grid-title" style="margin:0;">Selección rápida</div>
+      <button class="btn-cfg" onclick="toggleCfg()" title="Filtrar por puesto">⚙ Filtrar</button>
+    </div>
+
+    <!-- Panel de configuración de roles -->
+    <div class="cfg-panel" id="cfg-panel">
+      <div class="cfg-title">Mostrar puestos</div>
+      <div class="cfg-roles" id="cfg-roles"></div>
+    </div>
+
     <div class="worker-grid" id="worker-grid">
       <div style="grid-column:1/-1;text-align:center;color:var(--subtext);padding:20px;font-size:13px;">Cargando trabajadores…</div>
     </div>
@@ -301,27 +336,62 @@ async function init() {
       .filter(w => w.id && w.tipo === 'trabajador');
   }
 
-  workers.sort((a, b) =>
-    (a.nombre || a.name || a.givenName || '')
-      .localeCompare(b.nombre || b.name || b.givenName || '', 'es')
-  );
+  workers.sort((a, b) => displayName(a).localeCompare(displayName(b), 'es'));
+  buildRoleChips();
   renderWorkerGrid();
+}
+
+/* ── Nombre para mostrar ────────────── */
+function displayName(w) {
+  // name es "ApellidoP ApellidoM Nombre" — recomponer como "Nombre ApellidoP"
+  const given = w.givenName || '';
+  const parts  = (w.name || '').split(' ');
+  const apPat  = parts[0] || '';
+  if (given && apPat) return `${given} ${apPat}`;
+  return w.nombre || w.name || w.givenName || '?';
+}
+
+/* ── Config de roles (localStorage) ── */
+const CFG_KEY = 'herr_roles_hidden';
+let allRoles   = [];
+let hiddenRoles = new Set(JSON.parse(localStorage.getItem(CFG_KEY) || '[]'));
+
+function buildRoleChips() {
+  allRoles = [...new Set(workers.map(w => w.role || '').filter(Boolean))].sort();
+  const el = document.getElementById('cfg-roles');
+  el.innerHTML = allRoles.map(r => `
+    <div class="role-chip${hiddenRoles.has(r) ? '' : ' on'}" data-role="${r}" onclick="toggleRole('${r}')">
+      ${r}
+    </div>`).join('');
+}
+
+function toggleRole(role) {
+  if (hiddenRoles.has(role)) hiddenRoles.delete(role);
+  else hiddenRoles.add(role);
+  localStorage.setItem(CFG_KEY, JSON.stringify([...hiddenRoles]));
+  buildRoleChips();
+  renderWorkerGrid();
+}
+
+function toggleCfg() {
+  document.getElementById('cfg-panel').classList.toggle('open');
 }
 
 /* ── Worker grid ────────────────────── */
 function renderWorkerGrid() {
   const el = document.getElementById('worker-grid');
-  if (!workers.length) {
-    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--subtext);padding:20px;font-size:13px;">Sin trabajadores registrados</div>';
+  const visible = workers.filter(w => !hiddenRoles.has(w.role || ''));
+
+  if (!visible.length) {
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--subtext);padding:20px;font-size:13px;">Sin trabajadores visibles — revisa la configuración ⚙</div>';
     return;
   }
-  el.innerHTML = workers.map(w => {
-    const name    = w.nombre || w.name || w.givenName || '?';
+  el.innerHTML = visible.map(w => {
+    const name    = displayName(w);
     const initial = name[0].toUpperCase();
-    const short   = name.split(' ').slice(0, 2).join(' ');
     return `<div class="w-btn" onclick="loginWorker('${w.id}')">
       <div class="w-avatar">${initial}</div>
-      <span class="w-label">${short}</span>
+      <span class="w-label">${name}</span>
     </div>`;
   }).join('');
 }
@@ -404,7 +474,7 @@ function loginWorker(wId) {
   if (!w) return;
   activeWorker = w;
 
-  const name = w.nombre || w.name || w.givenName || '?';
+  const name = displayName(w);
   document.getElementById('hdr-avatar').textContent = name[0].toUpperCase();
   document.getElementById('hdr-name').textContent   = name;
 
