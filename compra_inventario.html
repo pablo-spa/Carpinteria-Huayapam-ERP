@@ -117,6 +117,20 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
 .toast { background: var(--text); color: var(--base); padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; box-shadow: 0 4px 16px rgba(0,0,0,.2); animation: slideIn .2s; }
 .toast.green { background: var(--green); }
 @keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+/* Modal overlay */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9000; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:var(--mantle); border:1px solid var(--crust); border-radius:16px; padding:28px; width:460px; max-width:90vw; display:flex; flex-direction:column; gap:18px; }
+.modal-title { font-size:16px; font-weight:800; color:var(--text); }
+.modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.modal-grid .span2 { grid-column:1/-1; }
+.modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+
+/* Item type badges */
+.item-badge { display:inline-block; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
+.item-badge.herr { background:var(--amber-bg); color:var(--amber); }
+.item-badge.new  { background:var(--blue-bg);  color:var(--blue); }
 </style>
 </head>
 <body>
@@ -318,45 +332,147 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
   </div>
 </div>
 
+<!-- Modal: Nueva herramienta -->
+<div class="modal-overlay" id="modal-herr">
+  <div class="modal-box">
+    <div class="modal-title">🔧 Nueva Herramienta</div>
+    <div class="modal-grid">
+      <div class="field span2"><label>Nombre</label><input type="text" id="herr-nombre" placeholder="Ej. Taladro de Impacto 18V"></div>
+      <div class="field"><label>Marca</label><input type="text" id="herr-marca" placeholder="DeWalt, Makita…"></div>
+      <div class="field"><label>Categoría</label>
+        <select id="herr-cat">
+          <option value="perforacion">Perforación</option>
+          <option value="corte">Corte</option>
+          <option value="lijado">Lijado</option>
+          <option value="cepillado">Cepillado</option>
+          <option value="medicion">Medición</option>
+          <option value="sujecion">Sujeción</option>
+          <option value="router">Router / Ruteado</option>
+          <option value="ensamble">Ensamble</option>
+          <option value="acabado">Acabado</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="field"><label>Tipo</label>
+        <select id="herr-tipo">
+          <option value="compartida">Compartida (taller)</option>
+          <option value="personal">Personal (asignada)</option>
+        </select>
+      </div>
+      <div class="field"><label>Estado</label>
+        <select id="herr-estado">
+          <option value="nueva">Nueva</option>
+          <option value="buena">Buena</option>
+          <option value="mantenimiento">Necesita mantenimiento</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-herr')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitNuevaHerr()">Agregar a OC</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nuevo concepto de inventario -->
+<div class="modal-overlay" id="modal-inv">
+  <div class="modal-box">
+    <div class="modal-title">✦ Nuevo Concepto de Inventario</div>
+    <div class="modal-grid">
+      <div class="field span2"><label>Nombre del material</label><input type="text" id="inv-nombre" placeholder="Ej. Tornillo Cabeza plana 1½""></div>
+      <div class="field"><label>Categoría</label><select id="inv-cat"></select></div>
+      <div class="field"><label>Marca</label><select id="inv-brand"></select></div>
+      <div class="field"><label>Unidad</label>
+        <select id="inv-unit">
+          <option value="pza">pza</option><option value="caja">caja</option><option value="m2">m2</option>
+          <option value="ml">ml</option><option value="lt">lt</option><option value="gln">gln</option>
+          <option value="par">par</option><option value="kg">kg</option><option value="lote">lote</option>
+        </select>
+      </div>
+      <div class="field"><label>Costo unitario</label><input type="number" id="inv-costo" min="0" step="any" placeholder="0.00"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-inv')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitNuevoConcepto()">Agregar a OC</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let items = [];
 let nextId = 1;
 let INV_DB = [];
+let HERR_DB = [];
+let CAT_DB  = [];
+let BRAND_DB= [];
 let PROJ_DB = [];
 
 document.getElementById('fecha').value = new Date().toISOString().slice(0, 10);
 
 async function loadDBData() {
-  INV_DB = await window.DB.query('inventory');
-  PROJ_DB = (await window.DB.query('projects')).filter(p => !p._init && !(p.archivado||p.archived) && (p.codigo||p.code) && (p.nombre||p.name));
+  const [proveedoresRaw, projRaw, catsRaw, brandsRaw] = await Promise.all([
+    window.DB.query('contacts', { tipo: 'proveedor' }),
+    window.DB.query('projects'),
+    window.DB.query('concept_categories'),
+    window.DB.query('inventory_brands'),
+  ]);
 
-  // Populate proveedor from contacts
-  const proveedores = (await window.DB.query('contacts', { tipo: 'proveedor' })).filter(c => !c._init);
+  // Load inventory and herramientas directly from parent cache (force refresh)
+  const p = window.parent;
+  if (p?.cargar_coleccion && p?.DB_STATE) {
+    if (!p.DB_STATE.inventory)    await p.cargar_coleccion('inventory');
+    if (!p.DB_STATE.herramientas) await p.cargar_coleccion('herramientas');
+  }
+  INV_DB   = (p?.DB_STATE?.inventory    || await window.DB.query('inventory')).filter(i => !i._init);
+  HERR_DB  = (p?.DB_STATE?.herramientas || []).map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id && h.nombre);
+  PROJ_DB  = projRaw.filter(pr => !pr._init && !(pr.archivado||pr.archived) && (pr.codigo||pr.code) && (pr.nombre||pr.name));
+  CAT_DB   = (catsRaw[0]?.list || []).map(x => typeof x === 'string' ? { name: x } : x);
+  BRAND_DB = brandsRaw.filter(b => b.name && !b._init);
+
+  // Populate proveedor
+  const proveedores = proveedoresRaw.filter(c => !c._init);
   const pSel = document.getElementById('proveedor');
   const firstOpt = pSel.options[0];
   pSel.innerHTML = '';
   pSel.appendChild(firstOpt);
-  proveedores.forEach(p => {
+  proveedores.forEach(pv => {
     const o = document.createElement('option');
-    o.value = (p.nombre||p.name) || p.givenName;
-    o.textContent = (p.nombre||p.name) || p.givenName;
+    o.value = (pv.nombre||pv.name) || pv.givenName;
+    o.textContent = (pv.nombre||pv.name) || pv.givenName;
     pSel.appendChild(o);
   });
   const otroOpt = document.createElement('option');
   otroOpt.value = 'otro'; otroOpt.textContent = 'Otro proveedor…';
   pSel.appendChild(otroOpt);
 
-  // Populate add-mat
+  // Populate add-mat: inventory items + herramientas groups
   const matSel = document.getElementById('add-mat');
-  matSel.innerHTML = '<option value="">— Buscar en catálogo —</option>' +
-    INV_DB.filter(i => !i._init && i.code && i.name).map(i =>
-      `<option value="${i.id}" data-u="${i.unit||'pza'}" data-p="${i.cost||0}" data-s="${i.stock||0}" data-code="${i.code}">${i.code} – ${i.name} (Stock: ${i.stock||0})</option>`
-    ).join('') + '<option value="otro">Otro (especificar manual)…</option>';
+  let invOpts = INV_DB.filter(i => i.code && i.name).map(i =>
+    `<option value="${i.id}" data-u="${i.unit||'pza'}" data-p="${i.cost||0}" data-s="${i.stock||0}" data-code="${i.code}">${i.code} – ${i.name} (Stock: ${i.stock||0})</option>`
+  ).join('');
+
+  let herrOpts = HERR_DB.map(h =>
+    `<option value="herr-${h.id}" data-herr-id="${h.id}" data-p="${h.costo||0}" data-u="pza" data-s="N/A">${h.nombre}${h.marca ? ' ('+h.marca+')' : ''}</option>`
+  ).join('');
+
+  matSel.innerHTML =
+    '<option value="">— Buscar en catálogo —</option>' +
+    (invOpts ? `<optgroup label="Materiales / Inventario">${invOpts}</optgroup>` : '') +
+    (herrOpts ? `<optgroup label="Herramientas">${herrOpts}</optgroup>` : '') +
+    '<optgroup label="Agregar nuevo">' +
+      '<option value="nueva-herramienta">🔧 Nueva herramienta (sin registro previo)…</option>' +
+      '<option value="nuevo-concepto">✦ Nuevo material de inventario…</option>' +
+    '</optgroup>';
+
+  // Populate modal selects for new concept
+  document.getElementById('inv-cat').innerHTML = CAT_DB.map(c => `<option value="${c.name}">${c.name}</option>`).join('') || '<option value="">— sin categorías —</option>';
+  const brandOpts = '<option value="">— Sin marca —</option>' + BRAND_DB.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('inv-brand').innerHTML = brandOpts;
 
   // Populate add-proj
   const projSel = document.getElementById('add-proj');
   projSel.innerHTML = '<option value="ALMACEN">Stock Almacén</option>' +
-    PROJ_DB.map(p => `<option value="${(p.codigo||p.code)}">${(p.codigo||p.code)} — ${(p.nombre||p.name)}</option>`).join('');
+    PROJ_DB.map(pr => `<option value="${(pr.codigo||pr.code)}">${(pr.codigo||pr.code)} — ${(pr.nombre||pr.name)}</option>`).join('');
 }
 
 document.addEventListener('DOMContentLoaded', loadDBData);
@@ -425,11 +541,14 @@ function checkNewUnit(sel) {
 
 function onMatSelect() {
   const sel = document.getElementById('add-mat');
+  const v   = sel.value;
+  if (v === 'nueva-herramienta') { openModal('modal-herr'); sel.value = ''; return; }
+  if (v === 'nuevo-concepto')    { openModal('modal-inv');  sel.value = ''; return; }
   const opt = sel.options[sel.selectedIndex];
-  if(opt) {
-      if (opt.dataset.u) document.getElementById('add-unit').value = opt.dataset.u;
-      if (opt.dataset.p) document.getElementById('add-price').value = opt.dataset.p;
-      document.getElementById('add-qty').focus();
+  if (opt) {
+    if (opt.dataset.u) document.getElementById('add-unit').value = opt.dataset.u;
+    if (opt.dataset.p) document.getElementById('add-price').value = opt.dataset.p;
+    document.getElementById('add-qty').focus();
   }
 }
 
@@ -444,24 +563,81 @@ function addItem() {
   if (!sel.value) { toast('Selecciona el material del catálogo', false); return; }
   if (!qty) { toast('La cantidad es obligatoria', false); return; }
 
-  let name, invId, invCode;
-  if (sel.value === 'otro') {
-    name = prompt('Ingresa nombre descriptivo:') || 'Extra';
+  let name, invId, invCode, isHerramienta = false, herrId = null;
+
+  if (sel.value.startsWith('herr-')) {
+    const hid = opt.dataset.herrId;
+    const h   = HERR_DB.find(x => x.id === hid);
+    name = opt.textContent.trim();
     invId = null; invCode = null;
+    isHerramienta = true; herrId = hid;
+    if (h?.costo && !isNaN(parseFloat(document.getElementById('add-price').value)) === false) {
+      document.getElementById('add-price').value = h.costo;
+    }
   } else {
     name = opt.textContent.split(' (Stock:')[0];
     invId = sel.value;
     invCode = opt.dataset.code || null;
   }
 
-  const stockBefore = opt.dataset.s !== undefined ? opt.dataset.s : '?';
-  items.push({ id: nextId++, matId: sel.value, invId, invCode, name, qty, proj, unit: unit||'pza', price: isNaN(price)?0:price, stockBefore });
+  const stockBefore = (isHerramienta) ? 'N/A' : (opt.dataset.s !== undefined ? opt.dataset.s : '?');
+  items.push({ id: nextId++, matId: sel.value, invId, invCode, name, qty, proj,
+               unit: unit||'pza', price: isNaN(price)?0:price, stockBefore,
+               isHerramienta, herrId });
 
   sel.value = '';
   document.getElementById('add-qty').value = '';
   document.getElementById('add-unit').value = '';
   document.getElementById('add-price').value = '';
   render(); toast('Renglón agregado', true);
+}
+
+/* ── Modal helpers ──────────────────────────────── */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function submitNuevaHerr() {
+  const nombre = document.getElementById('herr-nombre').value.trim();
+  if (!nombre) { alert('Ingresa el nombre de la herramienta'); return; }
+  const qty   = parseFloat(document.getElementById('add-qty').value) || 1;
+  const price = parseFloat(document.getElementById('add-price').value) || 0;
+  const proj  = document.getElementById('add-proj').value;
+  const marca = document.getElementById('herr-marca').value.trim();
+  const cat   = document.getElementById('herr-cat').value;
+  const tipo  = document.getElementById('herr-tipo').value;
+  const estado= document.getElementById('herr-estado').value;
+
+  items.push({ id: nextId++, matId: 'nueva-herramienta', invId: null, invCode: null,
+    name: nombre + (marca ? ` (${marca})` : ''), qty, proj, unit: 'pza', price,
+    stockBefore: 'N/A', isHerramienta: true, herrId: null,
+    newHerrData: { nombre, marca, categoria: cat, tipo, estado, costo: price } });
+
+  closeModal('modal-herr');
+  document.getElementById('herr-nombre').value = '';
+  document.getElementById('herr-marca').value  = '';
+  render(); toast('Herramienta agregada a OC', true);
+}
+
+function submitNuevoConcepto() {
+  const nombre = document.getElementById('inv-nombre').value.trim();
+  if (!nombre) { alert('Ingresa el nombre del material'); return; }
+  const qty    = parseFloat(document.getElementById('add-qty').value) || 1;
+  const price  = parseFloat(document.getElementById('inv-costo').value) || parseFloat(document.getElementById('add-price').value) || 0;
+  const proj   = document.getElementById('add-proj').value;
+  const cat    = document.getElementById('inv-cat').value;
+  const brandId= document.getElementById('inv-brand').value;
+  const unit   = document.getElementById('inv-unit').value;
+  const brand  = BRAND_DB.find(b => b.id === brandId);
+
+  items.push({ id: nextId++, matId: 'nuevo-concepto', invId: null, invCode: null,
+    name: nombre + (brand ? ` (${brand.name})` : ''), qty, proj, unit, price,
+    stockBefore: '0', isNuevoConcepto: true,
+    newConceptData: { nombre, categoria: cat, brandId: brandId||null, brandName: brand?.name||'', unit, costo: price } });
+
+  closeModal('modal-inv');
+  document.getElementById('inv-nombre').value = '';
+  document.getElementById('inv-costo').value  = '';
+  render(); toast('Nuevo concepto agregado', true);
 }
 
 function removeItem(id) { items = items.filter(i => i.id !== id); render(); }
@@ -482,46 +658,51 @@ function render() {
   if (items.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--subtext);">Sin movimientos. Utiliza el buscador para agregar producto.</td></tr>`;
   } else {
-    tbody.innerHTML = items.map(item => `
-      <tr>
-        <td><span style="font-weight:700;color:var(--text)">${item.name}</span></td>
-        <td>
-           <select onchange="updateItem(${item.id},'proj',this.value)">
-               <option value="ALMACEN" ${item.proj==='ALMACEN'?'selected':''}>Almacén General (Stock)</option>
-               <option value="PRY-168" ${item.proj==='PRY-168'?'selected':''}>PRY-168 (Cocina)</option>
-               <option value="PRY-169" ${item.proj==='PRY-169'?'selected':''}>PRY-169 (Closets)</option>
-           </select>
-        </td>
+    const projOpts = [{ v:'ALMACEN', l:'Almacén General (Stock)' }]
+      .concat(PROJ_DB.map(p => ({ v: p.codigo||p.code, l: `${p.codigo||p.code} — ${p.nombre||p.name}` })));
+    const projSel = v => projOpts.map(o => `<option value="${o.v}" ${v===o.v?'selected':''}>${o.l}</option>`).join('');
+
+    tbody.innerHTML = items.map(item => {
+      const badge = item.isHerramienta
+        ? `<span class="item-badge herr">🔧 Herramienta</span>`
+        : item.isNuevoConcepto
+          ? `<span class="item-badge new">✦ Nuevo</span>`
+          : '';
+      return `<tr>
+        <td><span style="font-weight:700;color:var(--text)">${item.name}</span>${badge}</td>
+        <td><select onchange="updateItem(${item.id},'proj',this.value)">${projSel(item.proj)}</select></td>
         <td><input type="number" value="${item.qty}" min="0" step="any" onchange="updateItem(${item.id},'qty',this.value)"></td>
         <td style="color:var(--subtext);font-weight:600;">${item.unit}</td>
         <td class="num-right"><input type="number" value="${item.price}" min="0" step="any" onchange="updateItem(${item.id},'price',this.value)" style="text-align:right;"></td>
         <td class="num-right" id="sub-${item.id}" style="font-weight:700;">${fmt(item.qty * item.price)}</td>
-        <td>${stockPill(item.stockBefore)}</td>
+        <td>${item.isHerramienta ? '<span style="color:var(--subtext);font-size:11px;">N/A</span>' : stockPill(item.stockBefore)}</td>
         <td><button class="del-btn" onclick="removeItem(${item.id})">✕</button></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
   updateSummary(); renderStockPreview();
 }
 
 function renderStockPreview() {
   const card = document.getElementById('stock-preview-card');
-  if (items.length === 0) { card.style.display = 'none'; return; }
+  const invItems = items.filter(i => !i.isHerramienta);
+  if (invItems.length === 0) { card.style.display = 'none'; return; }
   card.style.display = '';
   const panel = document.getElementById('stock-panel');
   const isExt = document.getElementById('estado-global').value === 'usado';
   const verb = isExt ? "descontará" : "ingresará";
 
-  panel.innerHTML = items.map(item => {
+  panel.innerHTML = invItems.map(item => {
     const before = parseInt(item.stockBefore);
     const after  = isNaN(before) ? '?' : before + (item.qty * (isExt ? -1 : 1));
     return `
     <div class="stock-row">
       <div>
-        <div class="stock-name">${item.name}</div>
+        <div class="stock-name">${item.name}${item.isNuevoConcepto ? ' <span style="font-size:11px;color:var(--blue);">(nuevo concepto)</span>' : ''}</div>
         <div class="stock-detail">Se ${verb} ${item.qty} ${item.unit}</div>
       </div>
       <div class="stock-numbers">
-        <span class="stock-before">${isNaN(before)?'?':before} ${item.unit}</span>
+        <span class="stock-before">${isNaN(before)?'0':before} ${item.unit}</span>
         <span class="stock-arrow">→</span>
         <span class="stock-after" style="${isExt ? 'color:var(--red)' : ''}">${after} ${item.unit}</span>
       </div>
@@ -572,40 +753,94 @@ async function confirmar() {
     registradoEn: new Date().toISOString(),
   };
 
-  try {
-    if (window.parent?.runBatchedWrites) {
-      const batchOps = [];
+  const setDoc = window.parent?.setDocumentInFirebase;
 
-      items.forEach(i => {
-        if (i.invCode) {
-          const invItem = INV_DB.find(x => x.code === i.invCode);
-          if (invItem && invItem.id) {
-            if (estado === 'pedido' || estado === 'entaller') {
-              const extraUpdates = { lastPurchaseDate: fecha };
-              if (i.price > 0 && invItem.cost !== i.price) {
-                extraUpdates.cost = i.price;
-                extraUpdates.priceHistory = invItem.priceHistory ? [...invItem.priceHistory] : [];
-                extraUpdates.priceHistory.push({ date: fecha, price: i.price });
-              }
-              batchOps.push({ type: 'increment', col: 'inventory', id: invItem.id, field: 'stock', amount: i.qty, extraUpdates });
-            } else if (estado === 'usado') {
-              batchOps.push({ type: 'increment', col: 'inventory', id: invItem.id, field: 'stock', amount: -i.qty });
-            }
+  try {
+    // ── 1. Save movement record ─────────────────────────────────────────
+    if (setDoc) await setDoc('inventory_movements', mov.id, mov);
+
+    // ── 2. Handle herramienta items ─────────────────────────────────────
+    const herrPromises = items.filter(i => i.isHerramienta).map(async i => {
+      const isPurchase = estado === 'pedido' || estado === 'entaller';
+      if (!isPurchase) return; // no op for extractions
+
+      if (i.herrId) {
+        // Existing herramienta: update cost + fecha_compra
+        const existing = HERR_DB.find(h => h.id === i.herrId);
+        if (existing && setDoc) {
+          const updated = { ...existing, costo: i.price, fecha_compra: fecha, lastPurchaseDate: fecha };
+          await setDoc('herramientas', i.herrId, updated);
+          if (window.parent?.DB_STATE?.herramientas) {
+            const idx = window.parent.DB_STATE.herramientas.findIndex(h => h.id === i.herrId);
+            if (idx >= 0) window.parent.DB_STATE.herramientas[idx] = updated;
           }
         }
+      } else if (i.newHerrData) {
+        // New herramienta: create entry in herramientas collection
+        const newId  = crypto.randomUUID();
+        const herDoc = {
+          id: newId, ...i.newHerrData,
+          costo: i.price, fecha_compra: fecha,
+          assignedTo: null, notas: '',
+        };
+        if (setDoc) await setDoc('herramientas', newId, herDoc);
+        if (window.parent?.DB_STATE) {
+          if (!window.parent.DB_STATE.herramientas) window.parent.DB_STATE.herramientas = [];
+          window.parent.DB_STATE.herramientas.push(herDoc);
+        }
+        // Update mov item with new ID so the log is accurate
+        i.herrId = newId;
+      }
+    });
+    await Promise.all(herrPromises);
+
+    // ── 3. Handle new inventory concepts ────────────────────────────────
+    const conceptPromises = items.filter(i => i.isNuevoConcepto && (estado === 'pedido' || estado === 'entaller')).map(async i => {
+      const d = i.newConceptData;
+      const newId = crypto.randomUUID();
+      const newDoc = {
+        id: newId,
+        name: d.nombre, category: d.categoria,
+        brand: d.brandId || '', brandName: d.brandName || '',
+        unit: d.unit, cost: d.costo, stock: i.qty,
+        lastPurchaseDate: fecha,
+        priceHistory: [{ date: fecha, price: d.costo }],
+        code: '', details: '',
+      };
+      if (setDoc) await setDoc('inventory', newId, newDoc);
+      if (window.parent?.DB_STATE?.inventory) window.parent.DB_STATE.inventory.push(newDoc);
+      INV_DB.push(newDoc);
+      i.invId = newId; // mark as handled so batchOps skips it
+    });
+    await Promise.all(conceptPromises);
+
+    // ── 4. Update stock for existing inventory items ─────────────────────
+    if (window.parent?.runBatchedWrites) {
+      const batchOps = [];
+      items.filter(i => !i.isHerramienta && !i.isNuevoConcepto).forEach(i => {
+        if (!i.invCode) return;
+        const invItem = INV_DB.find(x => x.code === i.invCode);
+        if (!invItem?.id) return;
+        if (estado === 'pedido' || estado === 'entaller') {
+          const extraUpdates = { lastPurchaseDate: fecha };
+          if (i.price > 0 && invItem.cost !== i.price) {
+            extraUpdates.cost = i.price;
+            extraUpdates.priceHistory = [...(invItem.priceHistory || []), { date: fecha, price: i.price }];
+          }
+          batchOps.push({ type: 'increment', col: 'inventory', id: invItem.id, field: 'stock', amount: i.qty, extraUpdates });
+        } else if (estado === 'usado') {
+          batchOps.push({ type: 'increment', col: 'inventory', id: invItem.id, field: 'stock', amount: -i.qty });
+        }
       });
-      await window.parent.runBatchedWrites(batchOps);
+      if (batchOps.length) await window.parent.runBatchedWrites(batchOps);
     } else {
       const promises = [];
-      items.forEach(i => {
+      items.filter(i => !i.isHerramienta && !i.isNuevoConcepto).forEach(i => {
         if (!i.invCode) return;
         if (estado === 'pedido' || estado === 'entaller') promises.push(window.DB.logInventoryPurchase(i.invCode, i.qty, i.price, fecha));
         else if (estado === 'usado') promises.push(window.DB.updateInventoryStock(i.invCode, -i.qty));
       });
       await Promise.all(promises);
-    }
-
-    if (window.parent?.DB_STATE) {
     }
 
     toast('✓ Movimiento guardado correctamente.', true);
