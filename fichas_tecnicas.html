@@ -146,8 +146,8 @@
 .viewer-meta  { font-size: 12px; color: var(--subtext); margin-top: 3px; display: flex; align-items: center; gap: 8px; }
 .viewer-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
-.viewer-body { flex: 1; overflow: hidden; }
-.viewer-body iframe { width: 100%; height: 100%; border: none; }
+.viewer-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.viewer-body iframe { width: 100%; flex: 1; border: none; min-height: 0; }
 
 .viewer-empty {
   flex: 1;
@@ -401,19 +401,24 @@ function selectFicha(id) {
 
   renderList(); // actualiza el active
 
-  document.getElementById('viewer-hdr').style.display   = '';
-  document.getElementById('viewer-body').style.display  = '';
-  document.getElementById('viewer-empty').style.display = 'none';
+  document.getElementById('viewer-hdr').style.display        = 'flex';
+  document.getElementById('viewer-body').style.display       = 'flex';
+  document.getElementById('viewer-body').style.flexDirection = 'column';
+  document.getElementById('viewer-empty').style.display      = 'none';
 
   document.getElementById('viewer-title').textContent = f.titulo || 'Sin título';
   document.getElementById('viewer-desc').textContent  = f.descripcion || '';
   document.getElementById('viewer-cat').innerHTML     = `<span class="cat-pill">${CAT_ICONS[f.categoria] || '📄'} ${f.categoria || ''}</span>`;
 
-  const embedUrl = toDriveEmbed(f.driveUrl);
+  // Limpiar iframe primero para forzar recarga (evita caché de 403)
+  const frame = document.getElementById('pdf-frame');
+  frame.src = '';
   document.getElementById('drive-warning').style.display = 'none';
   document.getElementById('drive-warning-link').href     = f.driveUrl || '#';
-  document.getElementById('pdf-frame').src        = embedUrl;
-  document.getElementById('btn-drive').href       = f.driveUrl || '#';
+  document.getElementById('btn-drive').href              = f.driveUrl || '#';
+
+  const embedUrl = toDriveEmbed(f.driveUrl);
+  setTimeout(() => { frame.src = embedUrl; }, 50);
 
   const canAct = canEdit;
   document.getElementById('btn-edit').style.display   = canAct ? '' : 'none';
