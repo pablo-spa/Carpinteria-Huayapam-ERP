@@ -285,8 +285,11 @@ async function init() {
   herramientas = (p.DB_STATE?.herramientas || [])
     .map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id);
 
-  // Use contacts (includes workers via migration alias in DB.query)
-  workers = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
+  // contacts via DB.query incluye alias de workers (ver db.js migration alias)
+  await p.cargar_coleccion('contacts');
+  const todos = await window.DB.query('contacts', { tipo: 'trabajador' });
+  // fallback: si contacts vacío, usar workers directamente
+  workers = todos.length ? todos : (p.DB_STATE?.workers || []).map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id);
   workers.sort((a, b) => (a.nombre || a.name || '').localeCompare(b.nombre || b.name || '', 'es'));
 
   renderWorkerGrid();

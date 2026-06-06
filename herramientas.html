@@ -8,8 +8,8 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.hdr-title { font-size: 17px; font-weight: 800; }
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 10px 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hdr-title { font-size: 15px; font-weight: 800; flex-shrink: 0; margin-right: 4px; }
 
 .tabs { display: flex; gap: 4px; padding: 0 20px; border-bottom: 1px solid var(--crust); background: var(--mantle); }
 .tab-btn { padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: all .15s; }
@@ -19,12 +19,14 @@
 .tab-panel { display: none; padding: 16px 20px; }
 .tab-panel.active { display: block; }
 
-/* Filters bar */
+/* Filters — in the header */
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 7px; padding: 5px 10px; flex: 1; min-width: 140px; max-width: 260px; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 12px; margin-left: 5px; }
+.f-select { padding: 5px 8px; background: var(--base); border: 1px solid var(--crust); border-radius: 7px; font-size: 11px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; max-width: 130px; }
+.f-select:focus { border-color: var(--blue); color: var(--text); }
+.hdr-gap { flex: 1; }
+/* Historial filter row */
 .filters-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; min-width: 200px; flex: 1; max-width: 320px; }
-.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; margin-left: 6px; }
-.f-select { padding: 6px 10px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; }
-.f-select:focus { border-color: var(--blue); }
 
 /* Table */
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px; overflow: hidden; }
@@ -98,7 +100,23 @@
 
 <div class="hdr">
   <div class="hdr-title">🧰 Herramientas</div>
-  <button class="btn btn-primary" onclick="openModal()">+ Nueva herramienta</button>
+  <div class="search-box">🔍 <input id="search" placeholder="Buscar…" oninput="render()"></div>
+  <select id="fil-cat"    class="f-select" onchange="render()"><option value="">Categoría</option></select>
+  <select id="fil-tipo"   class="f-select" onchange="render()">
+    <option value="">Tipo</option>
+    <option value="personal">Personal</option>
+    <option value="compartida">Compartida</option>
+  </select>
+  <select id="fil-estado" class="f-select" onchange="render()">
+    <option value="">Estado</option>
+    <option value="buena">Buena</option>
+    <option value="desgaste">Desgaste</option>
+    <option value="reparacion">Reparación</option>
+    <option value="baja">Baja</option>
+  </select>
+  <select id="fil-worker" class="f-select" onchange="render()"><option value="">Trabajador</option></select>
+  <div class="hdr-gap"></div>
+  <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nueva</button>
 </div>
 
 <div class="tabs">
@@ -109,24 +127,6 @@
 
 <!-- ── TAB: Catálogo ─────────────────────────────────── -->
 <div id="tab-catalogo" class="tab-panel active">
-  <div class="filters-bar">
-    <div class="search-box">🔍 <input id="search" placeholder="Buscar herramienta…" oninput="render()"></div>
-    <select id="fil-cat"    class="f-select" onchange="render()"><option value="">Todas las categorías</option></select>
-    <select id="fil-tipo"   class="f-select" onchange="render()">
-      <option value="">Tipo: todos</option>
-      <option value="personal">Personal</option>
-      <option value="compartida">Compartida</option>
-    </select>
-    <select id="fil-estado" class="f-select" onchange="render()">
-      <option value="">Estado: todos</option>
-      <option value="buena">Buena</option>
-      <option value="desgaste">Desgaste</option>
-      <option value="reparacion">Reparación</option>
-      <option value="baja">Baja</option>
-    </select>
-    <select id="fil-worker" class="f-select" onchange="render()"><option value="">Todos los trabajadores</option></select>
-  </div>
-
   <div class="card">
     <div class="tbl-wrap">
       <table class="tbl">
@@ -653,6 +653,15 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
+  // Mostrar filtros de catálogo solo en el tab catálogo
+  const showFilters = id === 'catalogo';
+  ['search', 'fil-cat', 'fil-tipo', 'fil-estado', 'fil-worker'].forEach(elId => {
+    const el = document.getElementById(elId);
+    if (el) el.closest('.search-box, .f-select') && (el.parentElement.style.display = showFilters ? '' : 'none');
+  });
+  document.querySelectorAll('.hdr .search-box, .hdr .f-select').forEach(el => {
+    el.style.display = showFilters ? '' : 'none';
+  });
   if (id === 'historial') renderHistorial();
 }
 
