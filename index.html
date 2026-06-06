@@ -611,6 +611,15 @@
   const allItemsMap = {};
   defaultMenuLayout.forEach(cat => cat.items.forEach(item => { allItemsMap[item.id] = item; }));
 
+  function canViewFile(file) {
+    const role = window.CURRENT_USER_ROLE || 'programador';
+    if (role === 'programador') return true;
+    const sec = SECTION_MAP[file];
+    if (!sec) return true; // sin mapeo = acceso libre
+    const level = (window.PERMISOS?.[sec]?.[role]) || 'none';
+    return level !== 'none';
+  }
+
   function loadMenu() {
     // 1. Cargar orden de secciones guardado (sin cat-favoritos — lo manejamos aparte)
     const saved = localStorage.getItem('erp_menu_layout');
@@ -711,6 +720,7 @@
       favorites.forEach((id, iIdx) => {
         const item = allItemsMap[id];
         if (!item) return;
+        if (!canViewFile(item.file)) return;
         const iDiv = document.createElement('div');
         iDiv.className = 'nav-item' + (item.file === currentFile ? ' active' : '');
         iDiv.innerHTML = item.html;
@@ -742,6 +752,10 @@
 
     // ── Secciones normales ─────────────────────────────────────────────
     menuLayout.forEach((cat, cIdx) => {
+      // Ocultar categorías donde el usuario no tiene acceso a ningún item
+      const visibles = cat.items.filter(item => canViewFile(item.file));
+      if (visibles.length === 0) return;
+
       const cDiv = document.createElement('div');
       cDiv.className = 'category';
       cDiv.innerHTML = `<div class="category-title">${cat.title}</div>`;
@@ -753,6 +767,7 @@
       list.addEventListener('drop', handleDropIntoList);
 
       cat.items.forEach((item, iIdx) => {
+        if (!canViewFile(item.file)) return;
         const iDiv = document.createElement('div');
         iDiv.className = 'nav-item' + (item.file === currentFile ? ' active' : '');
         iDiv.id = item.id;

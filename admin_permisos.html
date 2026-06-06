@@ -68,6 +68,7 @@
     .perm-toggle.disabled {
       cursor: not-allowed;
       opacity: 0.6;
+      pointer-events: none;
     }
 
     .perm-full {
@@ -192,29 +193,37 @@
         } else {
           html += `<tr>`;
           html += `<td class="section-name">${s.label}</td>`;
-          
+
           ROLES.forEach(r => {
             const state = currentPerms[s.id]?.[r] || 'none';
             let label = 'No';
             let cssClass = 'perm-none';
-            if (state === 'full') { label = 'Completo'; cssClass = 'perm-full'; }
+            if (state === 'full')     { label = 'Completo';     cssClass = 'perm-full'; }
             if (state === 'readonly') { label = 'Solo Lectura'; cssClass = 'perm-readonly'; }
-            
-            const disabled = (r === 'programador') ? 'disabled' : '';
-            
+
+            const isDisabled = (r === 'programador');
             html += `<td style="text-align:center;">
-              <span class="perm-toggle ${cssClass} ${disabled}" onclick="togglePerm('${s.id}', '${r}')">${label}</span>
+              <span class="perm-toggle ${cssClass}${isDisabled ? ' disabled' : ''}"
+                data-sec="${s.id}" data-role="${r}">${label}</span>
             </td>`;
           });
-          
+
           html += `</tr>`;
         }
       });
-      
+
       tbody.innerHTML = html;
     }
 
-    window.togglePerm = togglePerm;
+    // Event delegation — más confiable que onclick inline en innerHTML
+    document.getElementById('perm-body').addEventListener('click', e => {
+      const span = e.target.closest('.perm-toggle:not(.disabled)');
+      if (!span) return;
+      const secId = span.dataset.sec;
+      const role  = span.dataset.role;
+      if (!secId || !role) return;
+      togglePerm(secId, role);
+    });
 
     window.savePermissions = async () => {
       try {
