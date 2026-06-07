@@ -309,10 +309,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           <span class="${esHerramienta?'':'active-mat'}" onclick="setTipoRow(this.closest('tr'),'material')">📦 Material</span>
           <span class="${esHerramienta?'active-herr':''}" onclick="setTipoRow(this.closest('tr'),'herramienta')">🔧 Herramienta</span>
         </div>
-        <select class="i-sel" data-searchable data-allow-new onchange="handleConceptChange(this)"
-          style="${esHerramienta?'display:none':''}">
-          ${buildInvOptions(code)}
-        </select>
+        <div class="i-sel-wrap" style="${esHerramienta?'display:none':''}">
+          <select class="i-sel" data-searchable data-allow-new onchange="handleConceptChange(this)">
+            ${buildInvOptions(code)}
+          </select>
+        </div>
         <input type="text" class="i-custom"
           placeholder="${esHerramienta ? 'Nombre de la herramienta…' : 'Descripción del material'}"
           value="${name}"
@@ -328,35 +329,31 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     if (!esHerramienta) SearchableSelect.init(tr.querySelector('.i-sel'));
   }
 
-  // SS wraps <select> in a .ss-wrap div — we must hide/show the wrapper, not the select itself
-  function ssContainer(sel) {
-    return (sel.parentElement?.classList.contains('ss-wrap') ? sel.parentElement : sel);
-  }
-
   function setTipoRow(tr, tipo) {
-    const toggle  = tr.querySelector('.tipo-toggle');
-    const iSel    = tr.querySelector('.i-sel');
-    const iCustom = tr.querySelector('.i-custom');
-    const spans   = toggle.querySelectorAll('span');
+    const toggle   = tr.querySelector('.tipo-toggle');
+    const selWrap  = tr.querySelector('.i-sel-wrap');
+    const iSel     = tr.querySelector('.i-sel');
+    const iCustom  = tr.querySelector('.i-custom');
+    const unitSel  = tr.querySelector('.i-unit');
+    const spans    = toggle.querySelectorAll('span');
 
     if (tipo === 'herramienta') {
       spans[0].className = '';
       spans[1].className = 'active-herr';
-      ssContainer(iSel).style.display = 'none';
+      selWrap.style.display = 'none';
       iCustom.style.display = 'block';
       iCustom.placeholder = 'Nombre de la herramienta…';
       iCustom.value = '';
+      unitSel.disabled = false;
+      unitSel.style.opacity = '';
       tr.dataset.custom = '1';
       tr.dataset.esHerramienta = '1';
     } else {
       spans[0].className = 'active-mat';
       spans[1].className = '';
-      if (!iSel._ssInit) {
-        SearchableSelect.init(iSel);
-      } else {
-        ssContainer(iSel).style.display = '';
-        iSel._ssSync?.();
-      }
+      selWrap.style.display = '';
+      if (!iSel._ssInit) SearchableSelect.init(iSel);
+      else iSel._ssSync?.();
       iCustom.style.display = 'none';
       tr.dataset.custom = '0';
       tr.dataset.esHerramienta = '0';

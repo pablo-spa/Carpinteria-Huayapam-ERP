@@ -248,9 +248,11 @@ function addNewItemRow(data = {}) {
       <!-- Concepto -->
       <div class="f-field">
         <label class="ni-concepto-label">${isHerr ? 'Herramienta (nombre)' : 'Concepto'}</label>
-        <select class="ni-concepto" data-searchable data-allow-new onchange="handleConceptChange('${rowId}',this)" style="${isHerr?'display:none':''}">
-          ${buildConceptOpts(data.code||'')}
-        </select>
+        <div class="ni-concepto-wrap" style="${isHerr?'display:none':''}">
+          <select class="ni-concepto" data-searchable data-allow-new onchange="handleConceptChange('${rowId}',this)">
+            ${buildConceptOpts(data.code||'')}
+          </select>
+        </div>
         <div class="ni-concepto-nuevo" style="display:${showCustomConcept}; margin-top:${isHerr?'0':'4px'};">
           <input type="text" class="ni-concepto-txt" placeholder="${isHerr ? 'Nombre de la herramienta (ej. Taladro DeWalt 18V)' : 'Nombre del concepto nuevo'}" value="${data.conceptoPendiente?.nombre||data.herrNombre||''}">
           <span class="new-badge">${isHerr ? '🔧 Herramienta nueva' : '✦ Nuevo — pendiente aprobación'}</span>
@@ -297,27 +299,23 @@ function addNewItemRow(data = {}) {
   updPendingNotice();
 }
 
-// SS wraps <select> in a .ss-wrap div — hide/show the wrapper, not the select itself
-function ssContainer(sel) {
-  return (sel.parentElement?.classList.contains('ss-wrap') ? sel.parentElement : sel);
-}
-
 function setTipo(rowId, tipo) {
-  const row      = document.getElementById(rowId);
-  const toggle   = document.getElementById(`tipo-${rowId}`);
-  const hint     = row.querySelector('.ni-herr-hint');
-  const concSel  = row.querySelector('.ni-concepto');
-  const concNuevo= row.querySelector('.ni-concepto-nuevo');
-  const concTxt  = row.querySelector('.ni-concepto-txt');
-  const concLbl  = row.querySelector('.ni-concepto-label');
-  const unitSel  = row.querySelector('.ni-unit');
-  const spans    = toggle.querySelectorAll('span');
+  const row       = document.getElementById(rowId);
+  const toggle    = document.getElementById(`tipo-${rowId}`);
+  const hint      = row.querySelector('.ni-herr-hint');
+  const concWrap  = row.querySelector('.ni-concepto-wrap');
+  const concSel   = row.querySelector('.ni-concepto');
+  const concNuevo = row.querySelector('.ni-concepto-nuevo');
+  const concTxt   = row.querySelector('.ni-concepto-txt');
+  const concLbl   = row.querySelector('.ni-concepto-label');
+  const unitSel   = row.querySelector('.ni-unit');
+  const spans     = toggle.querySelectorAll('span');
 
   if (tipo === 'herramienta') {
     spans[0].className = '';
     spans[1].className = 'active-herr';
     hint.style.display = '';
-    ssContainer(concSel).style.display = 'none';
+    concWrap.style.display = 'none';
     concNuevo.style.display = 'block';
     concTxt.placeholder = 'Nombre de la herramienta (ej. Taladro DeWalt 18V)';
     concTxt.value = '';
@@ -329,14 +327,11 @@ function setTipo(rowId, tipo) {
     spans[0].className = 'active-mat';
     spans[1].className = '';
     hint.style.display = 'none';
+    concWrap.style.display = '';
     concNuevo.style.display = 'none';
     concLbl.textContent = 'Concepto';
-    if (!concSel._ssInit) {
-      SearchableSelect.init(concSel);
-    } else {
-      ssContainer(concSel).style.display = '';
-      concSel._ssSync?.();
-    }
+    if (!concSel._ssInit) SearchableSelect.init(concSel);
+    else concSel._ssSync?.();
   }
   updPendingNotice();
 }
