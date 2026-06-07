@@ -190,7 +190,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             const sub = (parseFloat(i.qty)||0)*(parseFloat(i.price)||0);
             const ps = parseFloat(i.price)>0?fmt(i.price):`<span style="color:var(--amber);font-size:11px;">Sin precio</span>`;
             return `<tr style="border-top:1px solid var(--crust);">
-              <td style="padding:6px;font-weight:600;">${i.name||i.code||'—'} <span style="color:var(--subtext);font-size:11px;">(${i.unit||'pza'})</span></td>
+              <td style="padding:6px;font-weight:600;">${i.name||i.code||'—'}${i.esHerramienta?'&nbsp;<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(223,142,29,0.15);color:var(--amber);">🔧 Herramienta</span>':''} <span style="color:var(--subtext);font-size:11px;">(${i.unit||'pza'})</span></td>
               <td style="padding:6px;color:var(--subtext);font-size:12px;">${i.provider||o.provider||'—'}</td>
               <td style="padding:6px;text-align:right;">${i.qty}</td>
               <td style="padding:6px;text-align:right;">${ps}</td>

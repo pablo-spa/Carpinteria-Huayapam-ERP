@@ -45,6 +45,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .items-table input, .items-table select { padding: 7px 8px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
 .items-table input:focus, .items-table select:focus { outline: none; border-color: var(--blue); }
 .rm-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 4px 8px; }
+.tipo-toggle { display:inline-flex; border-radius:6px; overflow:hidden; border:1px solid var(--crust); cursor:pointer; font-size:11px; font-weight:700; margin-bottom:5px; }
+.tipo-toggle span { padding:3px 9px; background:var(--surface0); color:var(--subtext); transition:.15s; }
+.tipo-toggle span.active-mat  { background:var(--blue-bg);  color:var(--blue); }
+.tipo-toggle span.active-herr { background:var(--amber-bg); color:var(--amber); }
+.herr-badge { display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:4px; background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); margin-left:5px; vertical-align:middle; }
 </style>
 </head>
 <body>
@@ -145,7 +150,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     pedidos.forEach(o => {
       const itemsHtml = (o.items||[]).map(i => `
         <div class="ficha-item">
-          <span class="ficha-item-name">${i.name||i.code||'—'}</span>
+          <span class="ficha-item-name">${i.name||i.code||'—'}${i.esHerramienta?'<span class="herr-badge">🔧</span>':''}</span>
           <span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}</span>
         </div>`).join('');
       html += `
@@ -292,18 +297,26 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     return UNITS.map(u => `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
   }
 
-  function addRow(code='', name='', qty=1, unit='pza') {
+  function addRow(code='', name='', qty=1, unit='pza', esHerramienta=false) {
     const tbody = document.getElementById('itemsList');
     const tr = document.createElement('tr');
-    tr.dataset.custom = (!code || !INV.find(i => i.code === code)) ? '1' : '0';
+    tr.dataset.custom = (esHerramienta || !code || !INV.find(i => i.code === code)) ? '1' : '0';
+    tr.dataset.esHerramienta = esHerramienta ? '1' : '0';
 
     tr.innerHTML = `
       <td>
-        <select class="i-sel" data-searchable onchange="handleConceptChange(this)">
+        <div class="tipo-toggle">
+          <span class="${esHerramienta?'':'active-mat'}" onclick="setTipoRow(this.closest('tr'),'material')">📦 Material</span>
+          <span class="${esHerramienta?'active-herr':''}" onclick="setTipoRow(this.closest('tr'),'herramienta')">🔧 Herramienta</span>
+        </div>
+        <select class="i-sel" data-searchable data-allow-new onchange="handleConceptChange(this)"
+          style="${esHerramienta?'display:none':''}">
           ${buildInvOptions(code)}
         </select>
-        <input type="text" class="i-custom" placeholder="Descripción del material"
-          value="${name}" style="display:${tr.dataset.custom==='1' && name ? 'block':'none'}; margin-top:4px;">
+        <input type="text" class="i-custom"
+          placeholder="${esHerramienta ? 'Nombre de la herramienta…' : 'Descripción del material'}"
+          value="${name}"
+          style="display:${(tr.dataset.custom==='1' && name) || esHerramienta ? 'block':'none'}; margin-top:4px;">
       </td>
       <td><input type="number" class="i-qty" value="${qty}" min="0.01" step="any" style="width:80px;"></td>
       <td>
@@ -312,7 +325,34 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       <td><button class="rm-btn" onclick="this.closest('tr').remove()">✕</button></td>
     `;
     tbody.appendChild(tr);
-    SearchableSelect.init(tr.querySelector('.i-sel'));
+    if (!esHerramienta) SearchableSelect.init(tr.querySelector('.i-sel'));
+  }
+
+  function setTipoRow(tr, tipo) {
+    const toggle  = tr.querySelector('.tipo-toggle');
+    const iSel    = tr.querySelector('.i-sel');
+    const iCustom = tr.querySelector('.i-custom');
+    const spans   = toggle.querySelectorAll('span');
+
+    if (tipo === 'herramienta') {
+      spans[0].className = '';
+      spans[1].className = 'active-herr';
+      iSel.style.display = 'none';
+      iCustom.style.display = 'block';
+      iCustom.placeholder = 'Nombre de la herramienta…';
+      iCustom.value = '';
+      tr.dataset.custom = '1';
+      tr.dataset.esHerramienta = '1';
+    } else {
+      spans[0].className = 'active-mat';
+      spans[1].className = '';
+      iSel.style.display = '';
+      iCustom.style.display = 'none';
+      tr.dataset.custom = '0';
+      tr.dataset.esHerramienta = '0';
+      if (!iSel._ssInit) SearchableSelect.init(iSel);
+      else iSel._ssSync?.();
+    }
   }
 
   function handleConceptChange(sel) {
@@ -321,19 +361,29 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const unitSel = tr.querySelector('.i-unit');
 
     if (sel.value === '_new') {
+      const typed = sel.dataset.allowNewText || '';
       sel.value = '';
       if (sel._ssSync) sel._ssSync();
       customInput.style.display = 'block';
+      if (typed) customInput.value = typed;
       customInput.focus();
       tr.dataset.custom = '1';
+      unitSel.disabled = false;
+      unitSel.style.opacity = '';
     } else if (sel.value) {
       const opt = sel.options[sel.selectedIndex];
-      unitSel.value = opt.dataset.unit || 'pza';
+      if (opt?.dataset?.unit) {
+        unitSel.value = opt.dataset.unit;
+        unitSel.disabled = true;
+        unitSel.style.opacity = '.6';
+      }
       customInput.style.display = 'none';
       tr.dataset.custom = '0';
     } else {
       customInput.style.display = 'none';
       tr.dataset.custom = '0';
+      unitSel.disabled = false;
+      unitSel.style.opacity = '';
     }
   }
 
@@ -350,16 +400,20 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       const qty   = parseFloat(tr.querySelector('.i-qty').value) || 0;
       const unit  = tr.querySelector('.i-unit').value;
 
+      const esHerr = tr.dataset.esHerramienta === '1';
       let code = sel.value;
       let name = '';
-      if (code && code !== '_new') {
+      if (esHerr) {
+        name = custom?.value.trim() || '';
+        code = '';
+      } else if (code && code !== '_new') {
         const inv = INV.find(i => i.code === code);
         name = inv ? inv.name : sel.options[sel.selectedIndex]?.text || code;
       } else {
         name = custom?.value.trim() || '';
         code = '';
       }
-      if ((name || code) && qty > 0) items.push({ code, name, qty, unit, price: 0 });
+      if ((name || code) && qty > 0) items.push({ code, name, qty, unit, price: 0, esHerramienta: esHerr || undefined });
     });
 
     if (!items.length) return alert('Agrega al menos un material.');

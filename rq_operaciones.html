@@ -126,7 +126,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           <div id="items-view-${o.id}" class="ficha-items">
             ${(o.items||[]).map(i => `
               <div class="ficha-item">
-                <span class="ficha-item-name">${i.name || i.code || '—'}</span>
+                <span class="ficha-item-name">${i.name || i.code || '—'}${i.esHerramienta?'&nbsp;<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(223,142,29,0.15);color:var(--amber);">🔧 Herramienta</span>':''}</span>
                 <span class="ficha-item-qty">${i.qty} ${i.unit || 'pza'}</span>
               </div>`).join('')}
           </div>
@@ -170,7 +170,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           const projLabel = proj ? `${proj.code||proj.codigo} – ${proj.name||proj.nombre}` : (o.project || 'Stock');
           const pill = PMAP[o.status] || 'pill-gray';
           const itemsHtml = (o.items||[]).map(i =>
-            `<div class="ficha-item"><span class="ficha-item-name">${i.name||i.code}</span><span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}</span></div>`
+            `<div class="ficha-item"><span class="ficha-item-name">${i.name||i.code}${i.esHerramienta?'&nbsp;<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(223,142,29,0.15);color:var(--amber);">🔧</span>':''}</span><span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}</span></div>`
           ).join('');
           return `<div class="ficha" style="opacity:.65;">
             <div class="ficha-hdr"><span class="ficha-folio">${o.folio||o.id}</span><span class="pill ${pill}">${o.status}</span></div>
@@ -192,10 +192,17 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   }
 
   function editRow(ordId, idx, item) {
-    return `<tr id="erow-${ordId}-${idx}">
+    const herrAttr = item.esHerramienta ? 'data-herr="1"' : '';
+    const herrBadge = item.esHerramienta
+      ? `<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(223,142,29,0.15);color:var(--amber);margin-left:4px;">🔧</span>`
+      : '';
+    return `<tr id="erow-${ordId}-${idx}" ${herrAttr}>
       <td style="padding:4px 4px;">
-        <input type="text" value="${(item.name||item.code||'').replace(/"/g,'&quot;')}"
-          style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
+        <div style="display:flex;align-items:center;gap:4px;">
+          <input type="text" value="${(item.name||item.code||'').replace(/"/g,'&quot;')}"
+            style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
+          ${herrBadge}
+        </div>
       </td>
       <td style="padding:4px 4px;">
         <input type="number" value="${item.qty||1}" min="0.01" step="any"
@@ -245,7 +252,8 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
         const name = inputs[0]?.value.trim();
         const qty  = parseFloat(inputs[1]?.value) || 0;
         const unit = inputs[2]?.value.trim() || 'pza';
-        if (name && qty > 0) newItems.push({ name, qty, unit, price: 0, code: '' });
+        const esHerr = tr.dataset.herr === '1';
+        if (name && qty > 0) newItems.push({ name, qty, unit, price: 0, code: '', esHerramienta: esHerr || undefined });
       });
       if (!newItems.length) { alert('Agrega al menos un renglón antes de confirmar.'); return; }
       order.items = newItems;
