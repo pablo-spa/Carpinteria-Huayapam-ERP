@@ -297,6 +297,11 @@ function addNewItemRow(data = {}) {
   updPendingNotice();
 }
 
+// SS wraps <select> in a .ss-wrap div — hide/show the wrapper, not the select itself
+function ssContainer(sel) {
+  return (sel.parentElement?.classList.contains('ss-wrap') ? sel.parentElement : sel);
+}
+
 function setTipo(rowId, tipo) {
   const row      = document.getElementById(rowId);
   const toggle   = document.getElementById(`tipo-${rowId}`);
@@ -312,7 +317,7 @@ function setTipo(rowId, tipo) {
     spans[0].className = '';
     spans[1].className = 'active-herr';
     hint.style.display = '';
-    concSel.style.display = 'none';
+    ssContainer(concSel).style.display = 'none';
     concNuevo.style.display = 'block';
     concTxt.placeholder = 'Nombre de la herramienta (ej. Taladro DeWalt 18V)';
     concTxt.value = '';
@@ -324,12 +329,12 @@ function setTipo(rowId, tipo) {
     spans[0].className = 'active-mat';
     spans[1].className = '';
     hint.style.display = 'none';
-    concSel.style.display = '';
     concNuevo.style.display = 'none';
     concLbl.textContent = 'Concepto';
     if (!concSel._ssInit) {
       SearchableSelect.init(concSel);
     } else {
+      ssContainer(concSel).style.display = '';
       concSel._ssSync?.();
     }
   }

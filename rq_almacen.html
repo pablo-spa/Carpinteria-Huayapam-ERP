@@ -328,6 +328,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     if (!esHerramienta) SearchableSelect.init(tr.querySelector('.i-sel'));
   }
 
+  // SS wraps <select> in a .ss-wrap div — we must hide/show the wrapper, not the select itself
+  function ssContainer(sel) {
+    return (sel.parentElement?.classList.contains('ss-wrap') ? sel.parentElement : sel);
+  }
+
   function setTipoRow(tr, tipo) {
     const toggle  = tr.querySelector('.tipo-toggle');
     const iSel    = tr.querySelector('.i-sel');
@@ -337,7 +342,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     if (tipo === 'herramienta') {
       spans[0].className = '';
       spans[1].className = 'active-herr';
-      iSel.style.display = 'none';
+      ssContainer(iSel).style.display = 'none';
       iCustom.style.display = 'block';
       iCustom.placeholder = 'Nombre de la herramienta…';
       iCustom.value = '';
@@ -346,12 +351,15 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     } else {
       spans[0].className = 'active-mat';
       spans[1].className = '';
-      iSel.style.display = '';
+      if (!iSel._ssInit) {
+        SearchableSelect.init(iSel);
+      } else {
+        ssContainer(iSel).style.display = '';
+        iSel._ssSync?.();
+      }
       iCustom.style.display = 'none';
       tr.dataset.custom = '0';
       tr.dataset.esHerramienta = '0';
-      if (!iSel._ssInit) SearchableSelect.init(iSel);
-      else iSel._ssSync?.();
     }
   }
 
