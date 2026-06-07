@@ -58,6 +58,10 @@
 .new-item-row { background: var(--base); border: 1px solid var(--crust); border-radius: var(--radius); padding: 10px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px; position: relative; }
 .new-item-top { display: grid; grid-template-columns: 2fr 2fr 80px 90px; gap: 8px; align-items: end; }
 .new-item-bot { display: grid; grid-template-columns: 1fr 30px; gap: 8px; align-items: end; }
+.tipo-toggle { display:inline-flex; border-radius:6px; overflow:hidden; border:1px solid var(--crust); cursor:pointer; font-size:11px; font-weight:700; }
+.tipo-toggle span { padding:4px 10px; background:var(--surface0); color:var(--subtext); transition:.15s; }
+.tipo-toggle span.active-mat  { background:var(--blue-bg);  color:var(--blue); }
+.tipo-toggle span.active-herr { background:var(--amber-bg); color:var(--amber); }
 @media (max-width: 700px) {
   .new-item-top { grid-template-columns: 1fr 1fr; }
   .new-item-bot { grid-template-columns: 1fr 30px; }
@@ -219,31 +223,42 @@ function hideNewOrderForm() {
 }
 
 function addNewItemRow(data = {}) {
-  const rowId = `nr-${++newRowCount}`;
-  const cont  = document.getElementById('no-items-list');
-  const div   = document.createElement('div');
+  const rowId   = `nr-${++newRowCount}`;
+  const cont    = document.getElementById('no-items-list');
+  const div     = document.createElement('div');
   div.className = 'new-item-row';
   div.id        = rowId;
 
-  const showCustomConcept  = data.conceptoPendiente ? 'block' : 'none';
+  const isHerr    = data.esHerramienta || false;
+  const showCustomConcept  = (data.conceptoPendiente || isHerr) ? 'block' : 'none';
   const showCustomSupplier = data.proveedorPendiente ? 'block' : 'none';
+  const unitLocked = (data.code && !data.conceptoPendiente && !isHerr) ? 'true' : 'false';
 
   div.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+      <div class="tipo-toggle" id="tipo-${rowId}">
+        <span class="${isHerr ? '' : 'active-mat'}" onclick="setTipo('${rowId}','material')">📦 Material</span>
+        <span class="${isHerr ? 'active-herr' : ''}" onclick="setTipo('${rowId}','herramienta')">🔧 Herramienta</span>
+      </div>
+      <span class="ni-herr-hint" style="font-size:11px; color:var(--amber); display:${isHerr?'':'none'}">
+        Solicitud de herramienta — no afecta inventario
+      </span>
+    </div>
     <div class="new-item-top">
       <!-- Concepto -->
       <div class="f-field">
-        <label>Concepto</label>
-        <select class="ni-concepto" data-searchable onchange="handleConceptChange('${rowId}',this)">
+        <label class="ni-concepto-label">${isHerr ? 'Herramienta (nombre)' : 'Concepto'}</label>
+        <select class="ni-concepto" data-searchable data-allow-new onchange="handleConceptChange('${rowId}',this)" style="${isHerr?'display:none':''}">
           ${buildConceptOpts(data.code||'')}
         </select>
-        <div class="ni-concepto-nuevo" style="display:${showCustomConcept}; margin-top:4px;">
-          <input type="text" class="ni-concepto-txt" placeholder="Nombre del concepto nuevo" value="${data.conceptoPendiente?.nombre||''}">
-          <span class="new-badge">✦ Nuevo — pendiente aprobación</span>
+        <div class="ni-concepto-nuevo" style="display:${showCustomConcept}; margin-top:${isHerr?'0':'4px'};">
+          <input type="text" class="ni-concepto-txt" placeholder="${isHerr ? 'Nombre de la herramienta (ej. Taladro DeWalt 18V)' : 'Nombre del concepto nuevo'}" value="${data.conceptoPendiente?.nombre||data.herrNombre||''}">
+          <span class="new-badge">${isHerr ? '🔧 Herramienta nueva' : '✦ Nuevo — pendiente aprobación'}</span>
         </div>
       </div>
       <!-- Proveedor -->
       <div class="f-field">
-        <label>Proveedor</label>
+        <label>Proveedor sugerido</label>
         <select class="ni-proveedor" onchange="handleSupplierChange('${rowId}',this)">
           ${buildSupplierOpts(data.proveedorId||'')}
         </select>
@@ -260,13 +275,15 @@ function addNewItemRow(data = {}) {
       <!-- Unidad -->
       <div class="f-field">
         <label>Unidad</label>
-        <select class="ni-unit">${buildUnitOpts(data.unit||'pza')}</select>
+        <select class="ni-unit" ${unitLocked==='true'?'disabled':''} style="${unitLocked==='true'?'opacity:.6;':''}">
+          ${buildUnitOpts(data.unit||'pza')}
+        </select>
       </div>
     </div>
     <div class="new-item-bot">
-      <!-- Precio -->
+      <!-- Precio estimado -->
       <div class="f-field">
-        <label>Precio Unitario ($)</label>
+        <label>Precio Estimado ($)</label>
         <input type="number" class="ni-price" value="${data.price||''}" min="0" step="any" placeholder="0.00">
       </div>
       <!-- Remove -->
@@ -276,25 +293,79 @@ function addNewItemRow(data = {}) {
     </div>
   `;
   cont.appendChild(div);
-  SearchableSelect.init(div.querySelector('.ni-concepto'));
+  if (!isHerr) SearchableSelect.init(div.querySelector('.ni-concepto'));
+  updPendingNotice();
+}
+
+function setTipo(rowId, tipo) {
+  const row      = document.getElementById(rowId);
+  const toggle   = document.getElementById(`tipo-${rowId}`);
+  const hint     = row.querySelector('.ni-herr-hint');
+  const concSel  = row.querySelector('.ni-concepto');
+  const concNuevo= row.querySelector('.ni-concepto-nuevo');
+  const concTxt  = row.querySelector('.ni-concepto-txt');
+  const concLbl  = row.querySelector('.ni-concepto-label');
+  const unitSel  = row.querySelector('.ni-unit');
+  const spans    = toggle.querySelectorAll('span');
+
+  if (tipo === 'herramienta') {
+    spans[0].className = '';
+    spans[1].className = 'active-herr';
+    hint.style.display = '';
+    concSel.style.display = 'none';
+    concNuevo.style.display = 'block';
+    concTxt.placeholder = 'Nombre de la herramienta (ej. Taladro DeWalt 18V)';
+    concTxt.value = '';
+    concLbl.textContent = 'Herramienta (nombre)';
+    row.querySelector('.new-badge').textContent = '🔧 Herramienta nueva';
+    unitSel.disabled = false;
+    unitSel.style.opacity = '';
+  } else {
+    spans[0].className = 'active-mat';
+    spans[1].className = '';
+    hint.style.display = 'none';
+    concSel.style.display = '';
+    concNuevo.style.display = 'none';
+    concLbl.textContent = 'Concepto';
+    if (!concSel._ssInit) {
+      SearchableSelect.init(concSel);
+    } else {
+      concSel._ssSync?.();
+    }
+  }
   updPendingNotice();
 }
 
 function handleConceptChange(rowId, sel) {
   const row      = document.getElementById(rowId);
   const nuevoDiv = row.querySelector('.ni-concepto-nuevo');
+  const concTxt  = row.querySelector('.ni-concepto-txt');
   const unitSel  = row.querySelector('.ni-unit');
+
   if (sel.value === '_new') {
+    // Pre-fill from the text the user typed in the searchable-select
+    const typed = sel.dataset.allowNewText || '';
     sel.value = '';
     if (sel._ssSync) sel._ssSync();
     nuevoDiv.style.display = 'block';
-    row.querySelector('.ni-concepto-txt').focus();
+    if (typed) concTxt.value = typed;
+    concTxt.focus();
+    // Unit is free for new concepts
+    unitSel.disabled = false;
+    unitSel.style.opacity = '';
   } else if (sel.value) {
     nuevoDiv.style.display = 'none';
     const opt = sel.options[sel.selectedIndex];
-    if (opt.dataset.unit) unitSel.value = opt.dataset.unit;
+    if (opt?.dataset?.unit) {
+      unitSel.value = opt.dataset.unit;
+      // Lock unit to DB value
+      unitSel.disabled = true;
+      unitSel.style.opacity = '.6';
+    }
   } else {
     nuevoDiv.style.display = 'none';
+    unitSel.disabled = false;
+    unitSel.style.opacity = '';
   }
   updPendingNotice();
 }
@@ -335,16 +406,25 @@ function collectItems() {
     const qty   = parseFloat(row.querySelector('.ni-qty')?.value) || 0;
     const unit  = row.querySelector('.ni-unit')?.value || 'pza';
     const price = parseFloat(row.querySelector('.ni-price')?.value) || 0;
+    // Detect tipo via toggle
+    const toggle    = row.querySelector('.tipo-toggle');
+    const esHerr    = toggle?.querySelector('.active-herr') !== null;
 
     if (qty <= 0) return;
 
-    const item = { qty, unit, price };
+    const item = { qty, unit, price, esHerramienta: esHerr };
 
-    if (concNuevo) {
+    if (esHerr) {
       const nombre = concTxt?.value.trim();
       if (!nombre) return;
-      item.code             = '';
-      item.name             = nombre;
+      item.code  = '';
+      item.name  = nombre;
+      item.herrNombre = nombre;
+    } else if (concNuevo) {
+      const nombre = concTxt?.value.trim();
+      if (!nombre) return;
+      item.code              = '';
+      item.name              = nombre;
       item.conceptoPendiente = { nombre, unidad: unit };
     } else {
       item.code = concSel?.value || '';
@@ -510,7 +590,8 @@ function buildItemsTable(o) {
             style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
           <div class="iac-drop" id="iacdrop-${key}"></div>
         </div>
-        ${item.conceptoPendiente ? `
+        ${item.esHerramienta ? `<span class="new-badge" style="background:var(--amber-bg);color:var(--amber);border-color:var(--amber);">🔧 Herramienta</span>` : ''}
+        ${(item.conceptoPendiente && !item.esHerramienta) ? `
           <div class="add-cat-row">
             <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
             <label for="cat-${o.id}-${i}">✦ Agregar al catálogo</label>

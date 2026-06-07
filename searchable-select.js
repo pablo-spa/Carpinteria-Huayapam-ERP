@@ -178,6 +178,8 @@ const SearchableSelect = (() => {
 
     let focusedIdx = -1;
 
+    const allowNew = select.hasAttribute('data-allow-new');
+
     function renderList(query) {
       const opts = getOptions();
       const q = (query || '').trim();
@@ -193,7 +195,7 @@ const SearchableSelect = (() => {
       list.innerHTML = '';
       focusedIdx = -1;
 
-      if (!scored.length) {
+      if (!scored.length && !allowNew) {
         list.innerHTML = `<div class="ss-empty">Sin resultados para "${q}"</div>`;
         return;
       }
@@ -219,6 +221,23 @@ const SearchableSelect = (() => {
         });
         list.appendChild(div);
       });
+
+      // "Use as new" entry when allow-new is enabled and there's a query
+      if (allowNew && q) {
+        const exactMatch = scored.some(o => o.text.toLowerCase() === q.toLowerCase());
+        if (!exactMatch) {
+          const div = document.createElement('div');
+          div.className = 'ss-opt ss-opt-new';
+          div.dataset.value = '__new__';
+          div.innerHTML = `<span style="color:var(--blue);font-weight:700;">✦ Usar "${q}" como nuevo</span>`;
+          div.addEventListener('mousedown', e => {
+            e.preventDefault();
+            select.dataset.allowNewText = q;
+            choose('_new', q);
+          });
+          list.appendChild(div);
+        }
+      }
     }
 
     function choose(value, text) {
@@ -288,7 +307,20 @@ const SearchableSelect = (() => {
       else if (e.key === 'Enter') {
         e.preventDefault();
         const focused = list.querySelector('.ss-opt.focused');
-        if (focused) choose(focused.dataset.value, focused.dataset.text);
+        if (focused) {
+          if (focused.dataset.value === '__new__') {
+            const q = searchInput.value.trim();
+            select.dataset.allowNewText = q;
+            choose('_new', q);
+          } else {
+            choose(focused.dataset.value, focused.dataset.text);
+          }
+        } else if (allowNew && searchInput.value.trim()) {
+          // No focused item: use typed text as new if allow-new
+          const q = searchInput.value.trim();
+          select.dataset.allowNewText = q;
+          choose('_new', q);
+        }
       }
       else if (e.key === 'Escape') close();
     });
