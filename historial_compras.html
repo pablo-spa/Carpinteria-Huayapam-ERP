@@ -13,6 +13,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
 .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
 .badge-done { background: rgba(64,160,43,0.15); color: var(--green); }
+.badge-red  { background: rgba(210,15,57,0.12); color: var(--red); }
 .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; }
 .item-subtext { color: var(--subtext); font-size: 11px; }
 .total-row { display: flex; justify-content: flex-end; font-weight: 700; font-size: 14px; padding-top: 12px; }
@@ -24,7 +25,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="window.history.back()">← Volver</button>
-    <h2>Historial de Compras (Completadas)</h2>
+    <h2>Historial de Compras</h2>
   </div>
   <div class="search-box">
     <span style="color:var(--subtext);font-size:14px;">🔍</span>
@@ -46,7 +47,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   async function loadData() {
     STATE_ORDERS = await window.DB.query("purchase_orders");
     if (!STATE_ORDERS || STATE_ORDERS.length === 0) STATE_ORDERS = window.DB.get().orders || [];
-    STATE_ORDERS = STATE_ORDERS.filter(o => !o._init && ['Comprado', 'Recibido', 'Entregado'].includes(o.status));
+    STATE_ORDERS = STATE_ORDERS.filter(o => !o._init && ['Comprado', 'Recibido', 'Entregado', 'Cancelado'].includes(o.status));
     STATE_ORDERS.sort((a,b) => new Date(b.date) - new Date(a.date));
     const role = window.parent?.CURRENT_USER_ROLE || '';
     canDelete = ['programador','admin','gerencia'].includes(role);
@@ -69,7 +70,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     let html = '';
 
     STATE_ORDERS.forEach(o => {
-       const badge = (o.status === 'Recibido' || o.status === 'Entregado') ? 'badge-done' : 'badge-amber';
+       const badge = (o.status === 'Recibido' || o.status === 'Entregado') ? 'badge-done' : o.status === 'Cancelado' ? 'badge-red' : 'badge-amber';
        let total = 0;
 
        let itmsHtml = `
