@@ -292,21 +292,10 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column;
 
 <script>
 const TIMEOUT_SEC = 30;
-// Íconos para categorías conocidas — se completa con las dinámicas de los datos
-const CAT_ICON_MAP = {
-  'perforación': '🔩', 'perforacion': '🔩',
-  'corte': '🪚',
-  'lijado': '📋',
-  'cepillado': '🪵',
-  'medición': '📐', 'medicion': '📐',
-  'sujeción': '🔧', 'sujecion': '🔧',
-  'router / fresado': '⚙️', 'router': '⚙️',
-  'ensamble / mano': '🔨', 'ensamble': '🔨',
-  'acabado': '🎨',
-  'otros': '🧰', 'otro': '🧰',
-};
+// Íconos cargados de tool_categories en Firestore (admin_listas)
+let CAT_ICON_MAP = {}; // { label → emoji } — se llena en init()
 function catIcon(label) {
-  return CAT_ICON_MAP[(label||'').toLowerCase()] || '🧰';
+  return CAT_ICON_MAP[label] || CAT_ICON_MAP[(label||'').toLowerCase()] || '🧰';
 }
 // Se llena dinámicamente después de cargar herramientas
 let CATEGORIAS = [];
@@ -363,11 +352,23 @@ async function init() {
 
   // Forzar recarga fresca de herramientas — los estados de asignación y
   // categorías cambian con frecuencia y no deben quedar en caché
-  if (p.DB_STATE) delete p.DB_STATE.herramientas;
+  if (p.DB_STATE) {
+    delete p.DB_STATE.herramientas;
+    delete p.DB_STATE.tool_categories;
+  }
   await Promise.all([
     p.cargar_coleccion('herramientas'),
     p.cargar_coleccion('workers'),
+    p.cargar_coleccion('tool_categories'),
   ]);
+
+  // Construir mapa de íconos desde tool_categories (admin_listas)
+  const tcRaw = p.DB_STATE?.tool_categories || [];
+  const tcList = tcRaw[0]?.list || tcRaw.filter(x => typeof x === 'string' || x?.label);
+  tcList.forEach(x => {
+    if (typeof x === 'string') CAT_ICON_MAP[x] = '🧰';
+    else if (x?.label) CAT_ICON_MAP[x.label] = x.icon || '🧰';
+  });
 
   herramientas = (p.DB_STATE?.herramientas || [])
     .map(h => ({ ...h, id: h.id || h._id, categoria: h.categoria || 'Otros' }))

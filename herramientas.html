@@ -298,6 +298,7 @@
 
 <script>
 let CATS = []; // loaded from tool_categories in Firestore
+let CAT_ICONS = {}; // { label → emoji } built alongside CATS
 
 const CAT_KEYWORDS = {
   'Perforación':      ['taladro','broca','berbiquí','berbiqui','mandril','atornillador'],
@@ -343,8 +344,13 @@ async function init() {
   logs         = (p.DB_STATE?.tool_logs    || []).map(l => ({ ...l, id: l.id || l._id })).filter(l => l.id);
 
   const toolCatsRaw = p.DB_STATE?.tool_categories || [];
-  CATS = (toolCatsRaw[0]?.list || toolCatsRaw.filter(x => typeof x === 'string')).filter(Boolean);
-  if (!CATS.length) CATS = ['Perforación','Corte','Lijado','Cepillado','Medición','Sujeción','Router / Fresado','Ensamble / Mano','Acabado','Otro'];
+  const rawList = (toolCatsRaw[0]?.list || toolCatsRaw.filter(x => typeof x === 'string' || x?.label)).filter(Boolean);
+  if (rawList.length) {
+    CATS = rawList.map(x => typeof x === 'string' ? x : (x.label || ''));
+    CAT_ICONS = Object.fromEntries(rawList.map(x => typeof x === 'string' ? [x, '🧰'] : [x.label || '', x.icon || '🧰']));
+  } else {
+    CATS = ['Perforación','Corte','Lijado','Cepillado','Medición','Sujeción','Router / Fresado','Ensamble / Mano','Acabado','Otro'];
+  }
 
   logs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
@@ -402,7 +408,9 @@ function workerName(id) {
 }
 
 function catLabel(cat) {
-  return cat || '—';
+  if (!cat) return '—';
+  const icon = CAT_ICONS[cat] || '';
+  return icon ? `${icon} ${cat}` : cat;
 }
 
 function estadoPill(e) {

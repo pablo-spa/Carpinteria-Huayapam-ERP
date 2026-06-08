@@ -209,7 +209,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     {
       section: 'Herramientas',
       items: [
-        { key: 'tool_categories', col: 'tool_categories', type: 'list',
+        { key: 'tool_categories', col: 'tool_categories', type: 'iconlist',
           name: 'Categorías de Herramientas', desc: 'Clasificación de herramientas por tipo de uso (Corte, Perforación, Medición…)' },
         { key: 'tool_types', col: 'tool_types', type: 'list',
           name: 'Tipos de Herramienta', desc: 'Personal o Compartida — indica a quién pertenece la herramienta' },
@@ -243,12 +243,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     for (const section of LISTS) {
       for (const def of section.items) {
         const raw = d[def.key] || [];
-        if (def.type === 'list') {
+        if (def.type === 'iconlist') {
+          const rawList = raw[0]?.list || raw.filter(x => x?.label || typeof x === 'string');
+          // Migrate: strings → {label, icon}; objects stay as-is
+          STATE[def.key] = rawList.map(x =>
+            typeof x === 'string' ? { label: x, icon: '🧰' } : { label: x.label||x.name||'', icon: x.icon||'🧰' }
+          );
+          const ICON_DEFAULTS = [
+            { label:'Perforación',     icon:'🔩' }, { label:'Corte',        icon:'🪚' },
+            { label:'Lijado',          icon:'📋' }, { label:'Cepillado',    icon:'🪵' },
+            { label:'Medición',        icon:'📐' }, { label:'Sujeción',     icon:'🔧' },
+            { label:'Router / Fresado',icon:'⚙️'  }, { label:'Ensamble / Mano',icon:'🔨' },
+            { label:'Acabado',         icon:'🎨' }, { label:'Otro',         icon:'🧰' },
+          ];
+          if (!STATE[def.key].length) {
+            STATE[def.key] = ICON_DEFAULTS;
+            if (window.parent?.setDocumentInFirebase)
+              window.parent.setDocumentInFirebase(def.col, 'main', { list: ICON_DEFAULTS });
+            if (window.parent?.DB_STATE)
+              window.parent.DB_STATE[def.key] = [{ _id: 'main', list: ICON_DEFAULTS }];
+          }
+        } else if (def.type === 'list') {
           STATE[def.key] = raw[0]?.list || raw.filter(x => typeof x === 'string');
-          // Sembrar defaults si la colección está vacía
           const DEFAULTS = {
             worker_roles: DEFAULT_WORKER_ROLES,
-            tool_categories: ['Perforación','Corte','Lijado','Cepillado','Medición','Sujeción','Router / Fresado','Ensamble / Mano','Acabado','Otro'],
             document_categories: ['Contratos','Planos','Facturas','Permisos y Licencias','Recursos Humanos','Manuales','Garantias','Presupuestos','Otros'],
             tool_types: ['Personal','Compartida'],
             tool_states: ['Nueva','Buena','Mantenimiento','Baja'],
@@ -332,7 +350,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
   // ── Add bar ──────────────────────────────────────────────────────────
   function renderAddBar() {
     const bar = document.getElementById('add-bar');
-    if (currentDef.type === 'list') {
+    if (currentDef.type === 'iconlist') {
+      bar.innerHTML = `
+        <input type="text" id="new-icon" value="🧰" style="width:52px;text-align:center;font-size:18px;padding:6px 8px;border:1px solid var(--crust);border-radius:6px;background:var(--base);color:var(--text);" title="Emoji">
+        <input type="text" id="new-val" placeholder="Nombre de categoría…" style="flex:1;" onkeydown="if(event.key==='Enter') addItem()">
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    } else if (currentDef.type === 'list') {
       bar.innerHTML = `
         <input type="text" id="new-val" placeholder="Nuevo valor…" onkeydown="if(event.key==='Enter') addItem()">
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
@@ -387,7 +410,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       return;
     }
 
-    if (currentDef.type === 'list') {
+    if (currentDef.type === 'iconlist') {
+      container.innerHTML = `
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+          <span style="width:52px;text-align:center;">Emoji</span>
+          <span style="flex:1;">Nombre de Categoría</span>
+          <span style="width:32px;"></span>
+        </div>` +
+        items.map((item, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.icon||'🧰')}"
+            style="width:52px;text-align:center;font-size:18px;padding:6px 8px;"
+            title="Emoji de la categoría"
+            onchange="updateItem(${i}, this.value, 'icon')" onblur="updateItem(${i}, this.value, 'icon')">
+          <input class="item-inp" value="${escHtml(item.label||'')}" style="flex:1;"
+            onchange="updateItem(${i}, this.value, 'label')" onblur="updateItem(${i}, this.value, 'label')">
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
+    } else if (currentDef.type === 'list') {
       container.innerHTML = items.map((val, i) => `
         <div class="item-row">
           <input class="item-inp" value="${escHtml(val)}" onchange="updateItem(${i}, this.value)" onblur="updateItem(${i}, this.value)">
@@ -472,7 +512,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     const val = document.getElementById('new-val')?.value.trim();
     if (!val) return;
 
-    if (currentDef.type === 'list') {
+    if (currentDef.type === 'iconlist') {
+      const icon = document.getElementById('new-icon')?.value.trim() || '🧰';
+      if (STATE[currentDef.key].some(x => x.label === val)) return alert('Ya existe esa categoría.');
+      STATE[currentDef.key].push({ label: val, icon });
+      await saveList();
+      document.getElementById('new-icon').value = '🧰';
+    } else if (currentDef.type === 'list') {
       if (STATE[currentDef.key].includes(val)) return alert('Ya existe ese valor.');
       STATE[currentDef.key].push(val);
       await saveList();
@@ -515,7 +561,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     newVal = newVal.trim();
     if (!newVal) return;
 
-    if (currentDef.type === 'list') {
+    if (currentDef.type === 'iconlist') {
+      STATE[currentDef.key][idx][field] = newVal;
+      await saveList();
+    } else if (currentDef.type === 'list') {
       STATE[currentDef.key][idx] = newVal;
       await saveList();
     } else if (currentDef.type === 'catlist') {
@@ -538,7 +587,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     const label = typeof item === 'string' ? item : (item.nombre || item.name || item.id);
     if (!confirm(`¿Eliminar "${label}"?`)) return;
 
-    if (currentDef.type === 'list') {
+    if (currentDef.type === 'iconlist') {
+      items.splice(idx, 1);
+      await saveList();
+    } else if (currentDef.type === 'list') {
       items.splice(idx, 1);
       await saveList();
     } else if (currentDef.type === 'catlist') {
