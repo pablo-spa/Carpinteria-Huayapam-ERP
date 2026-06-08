@@ -83,6 +83,28 @@
   .stock-badge.warn { background:var(--amber); color:#000; }
 
   .empty-state { text-align:center; color:var(--muted); font-size:13px; padding:20px 0; }
+
+  /* ── Monthly calendar ── */
+  .cal-nav-btn { background:transparent; border:1px solid var(--crust); border-radius:6px; color:var(--subtext); font-size:16px; width:28px; height:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:inherit; transition:.15s; }
+  .cal-nav-btn:hover { background:var(--surface0); color:var(--text); }
+  .cal-legend { display:flex; gap:10px; flex-wrap:wrap; }
+  .cal-leg { font-size:11px; font-weight:700; color:var(--subtext); display:flex; align-items:center; gap:4px; }
+  .cal-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .cal-dow-row { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px; }
+  .cal-dow { text-align:center; font-size:10px; font-weight:800; color:var(--subtext); text-transform:uppercase; padding:4px 0; }
+  .cal-body { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-cell { min-height:80px; background:var(--mantle); border:1px solid var(--crust); border-radius:6px; padding:5px 6px; }
+  .cal-cell.today { border-color:var(--blue); }
+  .cal-cell.other { opacity:.4; }
+  .cal-cell-dd { font-size:13px; font-weight:700; margin-bottom:3px; }
+  .cal-cell.today .cal-cell-dd { color:var(--blue); }
+  .cal-ev { font-size:10px; font-weight:700; padding:1px 5px; border-radius:3px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
+  .cev-b { background:var(--green-bg); color:var(--green-text); }
+  .cev-p { background:var(--amber-bg); color:var(--amber-text); }
+  .cev-c { background:var(--blue-bg); color:var(--blue-text); }
+  .cev-v { background:rgba(139,92,246,.14); color:#7c3aed; }
+  .cev-q { background:rgba(32,159,181,.12); color:var(--teal,#159a8a); }
+  .cev-x { background:var(--surface0); color:var(--subtext); }
 </style>
 </head>
 <body>
@@ -148,6 +170,27 @@
     <div class="panel">
       <div class="p-hdr">Stock Bajo / Crítico <span id="stock-count" style="font-size:11px;color:var(--muted);font-weight:500;"></span></div>
       <div class="p-body" id="inv-stats"></div>
+    </div>
+  </div>
+
+  <!-- Monthly Calendar -->
+  <div class="panel" id="cal-panel">
+    <div class="p-hdr">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+        <span style="font-size:15px; font-weight:800;" id="cal-title">—</span>
+        <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+      </div>
+      <div class="cal-legend">
+        <span class="cal-leg"><span class="cal-dot" style="background:var(--green);"></span>Cumpleaños</span>
+        <span class="cal-leg"><span class="cal-dot" style="background:var(--amber);"></span>Proyectos</span>
+        <span class="cal-leg"><span class="cal-dot" style="background:var(--blue);"></span>Compras</span>
+        <span class="cal-leg"><span class="cal-dot" style="background:#8b5cf6;"></span>Viajes</span>
+        <span class="cal-leg"><span class="cal-dot" style="background:var(--teal,#159a8a);"></span>Cotizaciones</span>
+      </div>
+    </div>
+    <div class="p-body" style="padding:12px 18px;">
+      <div id="cal-grid"></div>
     </div>
   </div>
 </div>
@@ -428,6 +471,117 @@
     document.getElementById('inv-stats').innerHTML = html;
   }
 
+  // ── Monthly Calendar ──────────────────────────────────────────────────────
+  const MONTHS_ES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const DAYS_ES_S = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  let CAL_YEAR = new Date().getFullYear();
+  let CAL_MONTH = new Date().getMonth();
+
+  function calNav(dir) {
+    CAL_MONTH += dir;
+    if (CAL_MONTH < 0)  { CAL_MONTH = 11; CAL_YEAR--; }
+    if (CAL_MONTH > 11) { CAL_MONTH = 0;  CAL_YEAR++; }
+    renderMonthCalendar();
+  }
+
+  async function renderMonthCalendar() {
+    const grid = document.getElementById('cal-grid');
+    const titleEl = document.getElementById('cal-title');
+    if (!grid) return;
+
+    const db = window.DB.get();
+
+    // On-demand collection loading
+    const loadCol = async (col) => {
+      if (window.parent?.cargar_coleccion && window.parent?.DB_STATE?.[col] === undefined)
+        await window.parent.cargar_coleccion(col).catch(() => {});
+    };
+    await Promise.all([loadCol('viajes'), loadCol('purchase_orders'), loadCol('quotations')]);
+    const db2 = window.DB.get();
+
+    const workers    = (db2.workers    || []).filter(w => !w._init && w.birthDate);
+    const projects   = (db2.projects   || []).filter(p => !p._init);
+    const orders     = (db2.purchase_orders || db2.orders || []).filter(o => !o._init && o.date);
+    const viajes     = (db2.viajes     || []).filter(v => !v._init && v.fecha_salida);
+    const quotations = (db2.quotations || []).filter(q => !q._init && (q.createdAt || q.fecha || q.date));
+
+    titleEl.textContent = `${MONTHS_ES_L[CAL_MONTH]} ${CAL_YEAR}`;
+
+    const today    = new Date();
+    const todayISO = today.toISOString().slice(0, 10);
+    const toISO    = d => d.toISOString().slice(0, 10);
+
+    // Compute start of calendar grid (Monday before first day)
+    const firstDay    = new Date(CAL_YEAR, CAL_MONTH, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7; // 0=Mon
+    const startDate   = new Date(firstDay);
+    startDate.setDate(firstDay.getDate() - startOffset);
+
+    // Build event map
+    const evMap = {};
+    const push = (iso, ev) => { if (!evMap[iso]) evMap[iso] = []; evMap[iso].push(ev); };
+
+    workers.forEach(w => {
+      const [, bm, bd] = (w.birthDate || '').split('-').map(Number);
+      if (!bm || !bd) return;
+      push(`${CAL_YEAR}-${String(bm).padStart(2,'0')}-${String(bd).padStart(2,'0')}`,
+        { cls: 'cev-b', text: `🎂 ${(w.nombre || w.name || '?').split(' ')[0]}` });
+    });
+
+    projects.forEach(p => {
+      const code  = p.codigo || p.code || 'Proyecto';
+      const start = (p.fechaInicio || p.startDate || '').slice(0, 10);
+      const end   = (p.fechaFin    || p.endDate   || '').slice(0, 10);
+      if (start) push(start, { cls: 'cev-p', text: `▶ ${code}` });
+      if (end && end !== start) push(end, { cls: 'cev-p', text: `■ ${code}` });
+    });
+
+    orders.forEach(o => {
+      const date = (o.date || '').slice(0, 10);
+      if (date) push(date, { cls: 'cev-c', text: `🛒 ${o.folio || 'Compra'}` });
+    });
+
+    viajes.forEach(v => {
+      const sal = (v.fecha_salida || '').slice(0, 10);
+      const reg = (v.fecha_regreso_real || v.fecha_regreso_est || sal).slice(0, 10);
+      if (!sal) return;
+      const cur = new Date(sal + 'T12:00:00');
+      const end = new Date(reg + 'T12:00:00');
+      while (cur <= end) {
+        const iso = toISO(cur);
+        if (iso >= `${CAL_YEAR}-${String(CAL_MONTH+1).padStart(2,'0')}-01` &&
+            iso <= `${CAL_YEAR}-${String(CAL_MONTH+1).padStart(2,'0')}-31`)
+          push(iso, { cls: 'cev-v', text: `✈ ${v.destino || 'Viaje'}` });
+        cur.setDate(cur.getDate() + 1);
+      }
+    });
+
+    quotations.forEach(q => {
+      const date = (q.createdAt || q.fecha || q.date || '').slice(0, 10);
+      if (date) push(date, { cls: 'cev-q', text: `📋 ${q.folio || q.codigo || 'Cotización'}` });
+    });
+
+    // Grid HTML
+    const lastDay   = new Date(CAL_YEAR, CAL_MONTH + 1, 0).getDate();
+    const totalCells = Math.ceil((startOffset + lastDay) / 7) * 7;
+    const dowHtml = DAYS_ES_S.map(d => `<div class="cal-dow">${d}</div>`).join('');
+    let cells = '';
+    for (let i = 0; i < totalCells; i++) {
+      const d = new Date(startDate); d.setDate(startDate.getDate() + i);
+      const iso = toISO(d);
+      const inMonth = d.getMonth() === CAL_MONTH && d.getFullYear() === CAL_YEAR;
+      const isToday = iso === todayISO;
+      const evs = evMap[iso] || [];
+      const MAX = 3;
+      const evHtml = evs.slice(0, MAX).map(e =>
+        `<div class="cal-ev ${e.cls}" title="${e.text}">${e.text}</div>`
+      ).join('') + (evs.length > MAX ? `<div class="cal-ev cev-x">+${evs.length - MAX}</div>` : '');
+      cells += `<div class="cal-cell${isToday ? ' today' : ''}${!inMonth ? ' other' : ''}">
+        <div class="cal-cell-dd">${d.getDate()}</div>${evHtml}</div>`;
+    }
+    grid.innerHTML = `<div class="cal-dow-row">${dowHtml}</div><div class="cal-body">${cells}</div>`;
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
     // Esperar a que la DB esté lista
     if(window.DB) {
@@ -439,6 +593,7 @@
       });
     }
     renderDashboard();
+    renderMonthCalendar();
     // Recargar cada 5 minutos si el módulo sigue abierto
     setInterval(renderDashboard, 300_000);
   });

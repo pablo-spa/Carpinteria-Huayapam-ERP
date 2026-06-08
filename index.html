@@ -213,6 +213,26 @@
   .w-alert-label { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
   .w-alert-arrow { font-size: 11px; color: var(--subtext); }
 
+  /* ── Weekly calendar widget ── */
+  #week-cal { width: 100%; max-width: 760px; display: none; }
+  .wc-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .wc-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); }
+  .wc-legend { display: flex; gap: 10px; }
+  .wc-leg { font-size: 10px; font-weight: 700; color: var(--subtext); display: flex; align-items: center; gap: 3px; }
+  .wc-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .wc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .wc-day { background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 7px 5px; min-height: 60px; }
+  .wc-day.wc-today { border-color: var(--blue); }
+  .wc-dw { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); margin-bottom: 1px; }
+  .wc-dd { font-size: 16px; font-weight: 800; margin-bottom: 3px; }
+  .wc-today .wc-dd { color: var(--blue); }
+  .wc-ev { font-size: 10px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev-b { background: var(--green-bg); color: var(--green-text); }
+  .ev-p { background: var(--amber-bg); color: var(--amber-text); }
+  .ev-c { background: var(--blue-bg); color: var(--blue-text); }
+  .ev-v { background: rgba(139,92,246,.12); color: #7c3aed; }
+  .ev-x { background: var(--surface0); color: var(--subtext); }
+
   .module-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -357,6 +377,20 @@
       <!-- Notificaciones por rol (se llenan desde JS) -->
       <div id="welcome-alerts">
         <div id="welcome-alerts-title">Pendientes</div>
+      </div>
+
+      <!-- Weekly calendar widget -->
+      <div id="week-cal">
+        <div class="wc-hdr">
+          <div class="wc-title" id="wc-title">Semana</div>
+          <div class="wc-legend">
+            <span class="wc-leg"><span class="wc-dot" style="background:var(--green);"></span>Cumpleaños</span>
+            <span class="wc-leg"><span class="wc-dot" style="background:var(--amber);"></span>Proyectos</span>
+            <span class="wc-leg"><span class="wc-dot" style="background:var(--blue);"></span>Compras</span>
+            <span class="wc-leg"><span class="wc-dot" style="background:#8b5cf6;"></span>Viajes</span>
+          </div>
+        </div>
+        <div class="wc-grid" id="wc-grid"></div>
       </div>
 
       <div class="module-grid">
@@ -1141,6 +1175,84 @@
     cont.innerHTML = `<div id="welcome-alerts-title">Pendientes</div>${html}`;
   }
 
+  function renderWeekCalendar() {
+    const el = document.getElementById('week-cal');
+    const grid = document.getElementById('wc-grid');
+    const titleEl = document.getElementById('wc-title');
+    if (!el || !grid || !window.DB_STATE) return;
+
+    const today = new Date();
+    const dow = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    monday.setHours(0, 0, 0, 0);
+
+    const days = Array.from({length: 7}, (_, i) => {
+      const d = new Date(monday); d.setDate(monday.getDate() + i); return d;
+    });
+
+    const toISO = d => d.toISOString().slice(0, 10);
+    const todayISO = toISO(today);
+    const DAYS_ES  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+    const workers  = (window.DB_STATE.workers  || []).filter(w => !w._init && w.birthDate);
+    const projects = (window.DB_STATE.projects || []).filter(p => !p._init);
+    const orders   = (window.DB_STATE.purchase_orders || []).filter(o => !o._init && o.date);
+    const viajes   = (window.DB_STATE.viajes   || []).filter(v => !v._init && v.fecha_salida);
+
+    let html = '';
+    days.forEach(day => {
+      const iso = toISO(day);
+      const mm = day.getMonth(), dd = day.getDate();
+      const isToday = iso === todayISO;
+      const events = [];
+
+      workers.forEach(w => {
+        const parts = (w.birthDate || '').split('-').map(Number);
+        if (parts[1] - 1 === mm && parts[2] === dd)
+          events.push({ cls: 'ev-b', text: `🎂 ${(w.nombre || w.name || '?').split(' ')[0]}` });
+      });
+
+      projects.forEach(p => {
+        const start = (p.fechaInicio || p.startDate || '').slice(0, 10);
+        const end   = (p.fechaFin    || p.endDate   || '').slice(0, 10);
+        const code  = p.codigo || p.code || 'Proyecto';
+        if (start === iso) events.push({ cls: 'ev-p', text: `▶ ${code}` });
+        else if (end === iso) events.push({ cls: 'ev-p', text: `■ ${code}` });
+      });
+
+      orders.forEach(o => {
+        if ((o.date || '').slice(0,10) === iso)
+          events.push({ cls: 'ev-c', text: `🛒 ${o.folio || 'Compra'}` });
+      });
+
+      viajes.forEach(v => {
+        const sal = (v.fecha_salida || '').slice(0, 10);
+        const reg = (v.fecha_regreso_real || v.fecha_regreso_est || sal).slice(0, 10);
+        if (sal <= iso && iso <= reg)
+          events.push({ cls: 'ev-v', text: `✈ ${v.destino || 'Viaje'}` });
+      });
+
+      const MAX = 3;
+      const evHtml = events.slice(0, MAX).map(e =>
+        `<div class="wc-ev ${e.cls}" title="${e.text}">${e.text}</div>`
+      ).join('') + (events.length > MAX ? `<div class="wc-ev ev-x">+${events.length - MAX}</div>` : '');
+
+      html += `<div class="wc-day${isToday ? ' wc-today' : ''}">
+        <div class="wc-dw">${DAYS_ES[day.getDay()]}</div>
+        <div class="wc-dd">${dd}</div>${evHtml}</div>`;
+    });
+
+    const m1 = days[0], m7 = days[6];
+    const range = m1.getMonth() === m7.getMonth()
+      ? `${m1.getDate()}–${m7.getDate()} de ${MONTHS_ES[m1.getMonth()]} ${m1.getFullYear()}`
+      : `${m1.getDate()} ${MONTHS_ES[m1.getMonth()]} – ${m7.getDate()} ${MONTHS_ES[m7.getMonth()]} ${m7.getFullYear()}`;
+    titleEl.textContent = `Semana del ${range}`;
+    grid.innerHTML = html;
+    el.style.display = '';
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     // Inicializar tema al cargar la página
     const savedTheme = localStorage.getItem('erp_theme');
@@ -1638,6 +1750,7 @@
         // Render menu after state completes
         loadMenu();
         renderWelcomeNotifications();
+        renderWeekCalendar();
       } else {
         window.CURRENT_USER = null;
         document.getElementById("login-screen").style.display = "flex";
