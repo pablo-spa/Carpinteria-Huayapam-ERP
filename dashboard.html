@@ -489,7 +489,9 @@
     const titleEl = document.getElementById('cal-title');
     if (!grid) return;
 
-    const db = window.DB.get();
+    // Show skeleton while loading
+    titleEl.textContent = `${MONTHS_ES_L[CAL_MONTH]} ${CAL_YEAR}`;
+    grid.innerHTML = '<div style="color:var(--subtext);font-size:13px;padding:12px 0;">Cargando…</div>';
 
     // On-demand collection loading
     const loadCol = async (col) => {
