@@ -18,7 +18,7 @@
 /* Order items table */
 .items-tbl { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
 .items-tbl th { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); padding: 4px 6px; border-bottom: 2px solid var(--crust); text-align: left; white-space: nowrap; }
-.items-tbl td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: middle; }
+.items-tbl td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: bottom; }
 .items-tbl tr:last-child td { border-bottom: none; }
 .items-tbl input, .items-tbl select { padding: 6px 8px; border-radius: var(--radius); border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
 .items-tbl input:focus, .items-tbl select:focus { outline: none; border-color: var(--blue); }
@@ -566,6 +566,7 @@ function iacSelect(input, name, unit) {
         for (const opt of unitSel.options) { if (opt.value === unit) { found = true; break; } }
         if (!found) { const o = document.createElement('option'); o.value = unit; o.textContent = unit; unitSel.appendChild(o); }
         unitSel.value = unit;
+        if (unitSel._ssSync) unitSel._ssSync();
       }
     }
   }
@@ -597,7 +598,7 @@ function buildItemsTable(o) {
             style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
           <div class="iac-drop" id="iacdrop-${key}"></div>
         </div>
-        ${item.esHerramienta ? `<span class="new-badge" style="background:var(--amber-bg);color:var(--amber);border-color:var(--amber);">🔧 Herramienta</span>` : ''}
+        ${item.esHerramienta ? `<span style="font-size:10px;font-weight:700;color:var(--amber);">🔧</span>` : ''}
         ${(item.conceptoPendiente && !item.esHerramienta) ? `
           <div class="add-cat-row">
             <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
@@ -607,7 +608,7 @@ function buildItemsTable(o) {
       <td>
         <div style="display:flex;gap:4px;align-items:center;">
           <input type="number" class="iqty" data-order="${o.id}" data-idx="${i}" value="${item.qty}" min="0.01" step="any" style="width:60px;text-align:center;padding:5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
-          <select class="iunit" data-order="${o.id}" data-idx="${i}" style="padding:4px 5px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;">
+          <select class="iunit" data-searchable data-order="${o.id}" data-idx="${i}">
             ${buildUnitOpts(item.unit||'pza')}
           </select>
         </div>
@@ -615,7 +616,7 @@ function buildItemsTable(o) {
       <td>
         ${item.proveedorPendiente
           ? `<div style="font-size:12px;font-weight:600;">${item.proveedorNombre||'—'} <span class="new-badge">✦ Nuevo</span></div>`
-          : `<select class="prov-sel-${o.id}-${i}" style="padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:12px;width:100%;">
+          : `<select class="prov-sel-${o.id}-${i}" data-searchable>
                ${buildSupplierOpts(item.proveedorId||'')}
              </select>`
         }
@@ -667,17 +668,17 @@ function buildActiveCard(o, mode) {
   const accts = ACCOUNTS.length ? ACCOUNTS : ['CAJA','CHU','SATP'];
   const cuentaOpts = accts.map(a => `<option value="${a}">${a}</option>`).join('');
   const actionBtns = isCotizar
-    ? `<button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
+    ? `<button class="btn btn-ghost" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
        <span style="font-size:12px;color:var(--subtext);margin-left:8px;">⏳ Esperando autorización en <strong>Autorizar Pedidos</strong></span>`
     : `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;justify-content:flex-end;">
          <div style="display:flex;align-items:center;gap:6px;margin-right:auto;">
            <label style="font-size:12px;font-weight:700;color:var(--subtext);white-space:nowrap;">Cuenta de pago:</label>
-           <select class="sel-cuenta-pago" style="padding:6px 10px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:700;">
+           <select class="sel-cuenta-pago" data-searchable>
              <option value="">— Seleccionar cuenta —</option>
              ${cuentaOpts}
            </select>
          </div>
-         <button class="btn btn-amber" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
+         <button class="btn btn-ghost" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
          <button class="btn btn-blue"  onclick="act('${o.id}','Comprado')">✓ Marcar Comprado</button>
          <button class="btn btn-green" onclick="act('${o.id}','Recibido')">✓✓ Comprado y Recibido</button>
        </div>`;
@@ -733,7 +734,7 @@ function renderOrders() {
         <span style="font-size:11px;color:var(--amber-text);font-weight:700;background:var(--amber-bg);padding:2px 8px;border-radius:99px;">${confirmados.length} orden${confirmados.length>1?'es':''}</span>
         <div class="sec-hdr-line"></div>
       </div>`);
-    confirmados.forEach(o => cont.appendChild(buildActiveCard(o, 'cotizar')));
+    confirmados.forEach(o => { const c = buildActiveCard(o, 'cotizar'); cont.appendChild(c); SearchableSelect.initAll(c); });
   }
 
   // ── Sección 2: Autorizadas / Por Comprar ──
@@ -744,7 +745,7 @@ function renderOrders() {
     </div>`);
 
   if (autorizados.length) {
-    autorizados.forEach(o => cont.appendChild(buildActiveCard(o, 'comprar')));
+    autorizados.forEach(o => { const c = buildActiveCard(o, 'comprar'); cont.appendChild(c); SearchableSelect.initAll(c); });
   } else {
     cont.insertAdjacentHTML('beforeend', '<div style="color:var(--subtext);text-align:center;padding:32px;background:var(--mantle);border-radius:12px;border:1px solid var(--crust);margin-bottom:14px;">No hay órdenes autorizadas pendientes.</div>');
   }
