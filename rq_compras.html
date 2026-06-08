@@ -255,7 +255,7 @@ function addNewItemRow(data = {}) {
         </div>
         <div class="ni-concepto-nuevo" style="display:${showCustomConcept}; margin-top:${isHerr?'0':'4px'};">
           <input type="text" class="ni-concepto-txt" placeholder="${isHerr ? 'Nombre de la herramienta (ej. Taladro DeWalt 18V)' : 'Nombre del concepto nuevo'}" value="${data.conceptoPendiente?.nombre||data.herrNombre||''}">
-          <span class="new-badge">${isHerr ? '🔧 Herramienta nueva' : '✦ Nuevo — pendiente aprobación'}</span>
+          ${isHerr ? '' : '<span class="new-badge">✦ Nuevo — pendiente aprobación</span>'}
         </div>
       </div>
       <!-- Proveedor -->
@@ -320,7 +320,6 @@ function setTipo(rowId, tipo) {
     concTxt.placeholder = 'Nombre de la herramienta (ej. Taladro DeWalt 18V)';
     concTxt.value = '';
     concLbl.textContent = 'Herramienta (nombre)';
-    row.querySelector('.new-badge').textContent = '🔧 Herramienta nueva';
     unitSel.disabled = false;
     unitSel.style.opacity = '';
   } else {
@@ -386,7 +385,8 @@ function handleSupplierChange(rowId, sel) {
 function updPendingNotice() {
   let pendingCount = 0;
   document.querySelectorAll('#no-items-list .new-item-row').forEach(row => {
-    if (row.querySelector('.ni-concepto-nuevo')?.style.display  !== 'none') pendingCount++;
+    const esHerr = row.querySelector('.tipo-toggle .active-herr') !== null;
+    if (!esHerr && row.querySelector('.ni-concepto-nuevo')?.style.display !== 'none') pendingCount++;
     if (row.querySelector('.ni-proveedor-nuevo')?.style.display !== 'none') pendingCount++;
   });
   const notice = document.getElementById('no-pending-notice');
