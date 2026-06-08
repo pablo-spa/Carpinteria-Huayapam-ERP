@@ -38,9 +38,9 @@
 .inv-table .col-cat { white-space: nowrap; }
 
 /* Responsive: hide columns progressively */
-@media (max-width: 1100px) { .col-brand, .col-loc { display: none; } }
-@media (max-width: 850px)  { .col-date, .col-asig  { display: none; } }
-@media (max-width: 600px)  { .col-cost             { display: none; } }
+@media (max-width: 1100px) { .col-loc  { display: none; } }
+@media (max-width: 850px)  { .col-date { display: none; } }
+@media (max-width: 600px)  { .col-cost { display: none; } }
 
 .pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; }
 .pill-ok  { background: var(--green-bg); color: var(--green); }
@@ -102,11 +102,9 @@
             <th class="col-code">Código</th>
             <th class="col-name">Artículo</th>
             <th class="col-cat">Categoría</th>
-            <th class="col-brand">Marca</th>
             <th>Stock</th>
             <th class="col-date">Últ. Compra</th>
             <th class="col-cost">Costo</th>
-            <th class="col-asig">Asignado</th>
             <th class="col-loc">Ubicación</th>
           </tr>
         </thead>
@@ -193,13 +191,6 @@
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Costo Principal ($)</label>
         <input type="number" id="m-cost" class="modal-input" step="0.01">
       </div>
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Asignado a (Personal)</label>
-        <select id="m-assigned" class="modal-input" data-searchable>
-          <option value="">-- Sin asignar --</option>
-          <!-- Populated worker list -->
-        </select>
-      </div>
     </div>
 
     <!-- Historial y Stock -->
@@ -253,7 +244,6 @@
   }
 
   let STATE_INVENTORY = [];
-  let STATE_WORKERS   = [];
   let STATE_CATS      = []; // [{name, catCode}]
   let STATE_BRANDS    = []; // [{id, name, brandCode}]
 
@@ -267,16 +257,13 @@
         window.parent.cargar_coleccion('concept_categories'),
       ]);
     }
-    const [invData, workersData, , catsRaw, brandsData] = await Promise.all([
+    const [invData, , catsRaw, brandsData] = await Promise.all([
       window.DB.query("inventory"),
-      window.DB.query("contacts", { tipo: "trabajador", activo: true }),
       window.DB.query("inventory_locations"),   // no se usa en este módulo
       window.DB.query("concept_categories"),
       window.DB.query("inventory_brands"),
     ]);
     STATE_INVENTORY = invData;
-    STATE_WORKERS   = workersData;
-    if (!STATE_WORKERS || STATE_WORKERS.length === 0) STATE_WORKERS = window.DB.get().workers || [];
     // concept_categories guardado como doc 'main' con campo list:[{name, catCode}]
     STATE_CATS   = (catsRaw[0]?.list || []).map(x => typeof x === 'string' ? { name: x, catCode: '' } : x);
     // inventory_brands guardado como docs individuales {id, name, brandCode}
@@ -418,14 +405,14 @@
     // ── Category select in header ──────────────────────────────────────
     const hdrCatSel = document.getElementById('cat-select');
     hdrCatSel.innerHTML = '<option value="all">Todas las categorías</option>' +
-      catNames.map(name => `<option value="${name}">${name}</option>`).join('');
+      STATE_CATS.map(c => `<option value="${c.name}">${c.icon ? c.icon + ' ' : ''}${c.name}</option>`).join('');
     hdrCatSel.value = currentFilter;
     if (hdrCatSel._ssInit) hdrCatSel._ssRefresh(); else SearchableSelect.init(hdrCatSel);
     if (hdrCatSel._ssSync) hdrCatSel._ssSync();
 
     // ── Modal selects ────────────────────────────────────────────────
     const catSel = document.getElementById('m-cat');
-    catSel.innerHTML = catNames.map(c => `<option value="${c}">${c}</option>`).join('');
+    catSel.innerHTML = STATE_CATS.map(c => `<option value="${c.name}">${c.icon ? c.icon + ' ' : ''}${c.name}</option>`).join('');
     if (catSel._ssInit) catSel._ssRefresh(); else SearchableSelect.init(catSel);
     const brandSel = document.getElementById('m-brand');
     brandSel.innerHTML =
@@ -438,11 +425,6 @@
     const locSel = document.getElementById('m-loc');
     locSel.innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
     if (locSel._ssInit) locSel._ssRefresh(); else SearchableSelect.init(locSel);
-    document.getElementById('m-assigned').innerHTML = '<option value="">— Sin asignar —</option>' +
-      STATE_WORKERS.map(w => `<option value="${w.id}">${w.name || w.givenName}</option>`).join('');
-    const assignedSel = document.getElementById('m-assigned');
-    if (assignedSel._ssInit) assignedSel._ssRefresh(); else SearchableSelect.init(assignedSel);
-
     // ── Detect unknown categories ────────────────────────────────────
     const catSet = new Set(catNames.map(n => n.toLowerCase().trim()));
     const unknownCats = [...new Set(
@@ -510,7 +492,7 @@
     const items = STATE_INVENTORY.filter(i => !i._init && i.name && i.category?.toLowerCase() !== 'madera');
 
     if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:48px;color:var(--subtext);">Sin productos en inventario</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--subtext);">Sin productos en inventario</td></tr>`;
       applyFilters(); return;
     }
 
@@ -520,9 +502,9 @@
       const pillClass = stockNum === 0 ? 'pill-out' : stockNum <= minNum ? 'pill-low' : 'pill-ok';
       const isLow = stockNum <= minNum;
       const isUnknownCat = i.category && !catSet.has(i.category.toLowerCase().trim());
-      const catBadge = `<span class="cat-badge ${isUnknownCat ? 'unknown' : ''}">${i.category || '—'}</span>`;
-      const worker = i.assignedTo ? STATE_WORKERS.find(w => w.id === i.assignedTo) : null;
-      const assignedTxt = worker ? (worker.name || worker.givenName || '—').split(' ')[0] : '—';
+      const catObj  = STATE_CATS.find(c => c.name === i.category);
+      const catIcon = catObj?.icon || (isUnknownCat ? '⚠️' : '');
+      const catBadge = `<span class="cat-badge ${isUnknownCat ? 'unknown' : ''}">${catIcon ? catIcon + ' ' : ''}${i.category || '—'}</span>`;
       const stockOut = stockNum === 0 ? 'out' : isLow ? 'low' : 'ok';
 
       return `<tr onclick="openModal('${i.id}')"
@@ -530,13 +512,15 @@
           data-stock="${stockOut}"
           data-search="${(i.name+' '+(i.code||'')+' '+(i.category||'')+' '+(i.brand||'')).toLowerCase()}">
         <td class="col-code">${i.code || '—'}</td>
-        <td class="col-name"><div style="font-weight:700;">${i.name}</div>${i.details ? `<div class="td-hint">${i.details}</div>` : ''}</td>
+        <td class="col-name">
+          <div style="font-weight:700;">${i.name}</div>
+          ${i.brand ? `<div class="td-hint">${i.brand}</div>` : ''}
+          ${i.details ? `<div class="td-hint">${i.details}</div>` : ''}
+        </td>
         <td class="col-cat">${catBadge}</td>
-        <td class="col-brand" style="font-size:12px;color:var(--subtext);">${i.brand || '—'}</td>
         <td><span class="pill ${pillClass}">${stockNum}</span><div class="td-hint">Mín: ${minNum}</div></td>
         <td class="col-date" style="font-size:12px;color:var(--subtext);">${i.lastPurchaseDate || '—'}</td>
         <td class="col-cost" style="font-weight:600;">$${(i.cost||0).toFixed(2)}</td>
-        <td class="col-asig" style="font-size:12px;">${assignedTxt}</td>
         <td class="col-loc" style="font-size:12px;color:var(--subtext);">${i.location || '—'}</td>
       </tr>`;
     }).join('');
@@ -591,7 +575,6 @@
     document.getElementById('btn-unlock-stock').style.display = 'block';
     document.getElementById('stock-edit-box').style.display = 'none';
     
-    document.getElementById('m-assigned').value = item.assignedTo || '';
     document.getElementById('m-last-date').textContent = item.lastPurchaseDate || 'Sin registro';
 
     // Price History
@@ -638,10 +621,6 @@
       item.cost = newCost;
     }
     
-    const assigned = document.getElementById('m-assigned').value;
-    if (assigned) item.assignedTo = assigned;
-    else delete item.assignedTo;
-
     // Stock manually changed?
     const sBox = document.getElementById('stock-edit-box').style.display;
     if (sBox !== 'none') {

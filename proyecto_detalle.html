@@ -343,7 +343,7 @@
       const d = window.DB.get();
       if (!projId) { alert('Guarda el proyecto primero.'); return; }
 
-      const allQuotes = (d.quotations || []).filter(q => q.projectId === projId && q.status !== 'Cancelada');
+      const allQuotes = (d.quotations || []).filter(q => q.projectId === projId && q.status !== 'Cancelada' && !q.eliminada);
       if (allQuotes.length === 0) { alert('No hay cotización para este proyecto.'); return; }
 
       // Usar todas las activas; si no hay activas, usar todas las no canceladas
@@ -608,7 +608,7 @@
 
     function syncValorCotizado(d) {
       // Suma total de todas las cotizaciones 'Activa' del proyecto
-      const quotes = (d.quotations || []).filter(q => q.projectId === projId);
+      const quotes = (d.quotations || []).filter(q => q.projectId === projId && !q.eliminada);
       const activas = quotes.filter(q => q.status === 'Activa');
       const total = activas.reduce((s, q) => s + (q.total || 0), 0);
       if (activas.length > 0) {
@@ -924,7 +924,7 @@
       renderViaticos(d);
 
       // Si hay cotizaciones y los campos de horas/materiales están vacíos, calcular automáticamente
-      const hasQuotes = (d.quotations || []).some(q => q.projectId === projId && q.status !== 'Cancelada');
+      const hasQuotes = (d.quotations || []).some(q => q.projectId === projId && q.status !== 'Cancelada' && !q.eliminada);
       const horasVacias = Object.values(projData.horasPorCategoria || {}).every(v => !v);
       if (hasQuotes && horasVacias && !projData.maderaPt && !projData.costoMateriales) {
         calcFromQuotation();

@@ -362,6 +362,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     } else if (currentDef.type === 'catlist') {
       const nextCode = String(Math.max(0, ...STATE[currentDef.key].map(x => parseInt(x.catCode)||0)) + 1).padStart(2,'0');
       bar.innerHTML = `
+        <input type="text" id="new-icon" value="📦" style="width:52px;text-align:center;font-size:18px;padding:6px 8px;border:1px solid var(--crust);border-radius:6px;background:var(--base);color:var(--text);" title="Emoji">
         <input type="text" id="new-val" placeholder="Nombre de categoría…" style="flex:2;" onkeydown="if(event.key==='Enter') addItem()">
         <input type="text" id="new-catcode" value="${nextCode}" maxlength="2" placeholder="00"
           style="width:54px; text-align:center; font-family:monospace; font-weight:700; padding:8px; border:1px solid var(--crust); border-radius:6px; background:var(--base); color:var(--text);">
@@ -436,12 +437,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     } else if (currentDef.type === 'catlist') {
       container.innerHTML = `
         <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+          <span style="width:52px;text-align:center;">Emoji</span>
           <span style="flex:1;">Nombre de Categoría</span>
           <span style="width:60px;text-align:center;">Cód. (2 díg.)</span>
           <span style="width:32px;"></span>
         </div>` +
         items.map((item, i) => `
         <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.icon||'📦')}" style="width:52px;text-align:center;font-size:18px;padding:6px 8px;"
+            onchange="updateItem(${i}, this.value, 'icon')" onblur="updateItem(${i}, this.value, 'icon')">
           <input class="item-inp" value="${escHtml(item.name||'')}" style="flex:1;"
             onchange="updateItem(${i}, this.value, 'name')" onblur="updateItem(${i}, this.value, 'name')">
           <input class="item-inp" value="${escHtml(item.catCode||'')}" maxlength="2" placeholder="00"
@@ -524,8 +528,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       await saveList();
     } else if (currentDef.type === 'catlist') {
       const catCode = String(document.getElementById('new-catcode')?.value || '').padStart(2,'0').slice(0,2);
-      STATE[currentDef.key].push({ name: val, catCode });
+      const icon = document.getElementById('new-icon')?.value.trim() || '📦';
+      STATE[currentDef.key].push({ name: val, catCode, icon });
       await saveCatList();
+      document.getElementById('new-icon').value = '📦';
     } else if (currentDef.type === 'brand') {
       const brandCode = String(document.getElementById('new-brandcode')?.value || '').padStart(3,'0').slice(0,3);
       const id = 'brand-' + Date.now().toString(36);
