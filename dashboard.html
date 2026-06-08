@@ -644,8 +644,16 @@
 
     const shortName = (s, max=22) => s && s.length > max ? s.slice(0, max) + '…' : (s || '');
 
-    // ── Cumpleaños
-    workers.forEach(w => {
+    // ── Cumpleaños — combina workers + contacts(trabajador) para cubrir ambas colecciones
+    const birthdayPeople = [
+      ...workers,
+      ...contacts.filter(c => c.tipo === 'trabajador'),
+    ];
+    const seenBirthIds = new Set();
+    birthdayPeople.forEach(w => {
+      const wid = w.id || w._id || w.nombre || w.name;
+      if (seenBirthIds.has(wid)) return;
+      seenBirthIds.add(wid);
       const bd = w.birthDate || '';
       const parts = bd.split('-').map(Number);
       if (parts.length < 3) return;
