@@ -828,7 +828,8 @@ async function cancelOrder(id) {
   const db = window.DB.get();
   const all = db.purchase_orders || db.orders || [];
   const order = all.find(o => o.id === id);
-  if (!order || !confirm(`¿Cancelar orden ${order.folio}? Se moverá al Historial de Compras.`)) return;
+  if (!order) return;
+  if (!window.confirm(`¿Cancelar orden ${order.folio}?\nSe moverá al Historial de Compras.`)) return;
   order.status = 'Cancelado';
   order.cancelledAt = new Date().toISOString();
   if (window.parent?.setDocumentInFirebase)
@@ -837,7 +838,7 @@ async function cancelOrder(id) {
     const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === id);
     if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
   }
-  toast('Orden cancelada — aparece en Historial de Compras.', 'warn');
+  showToast('Orden cancelada — aparece en Historial de Compras.');
   renderOrders();
 }
 

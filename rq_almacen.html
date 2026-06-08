@@ -221,7 +221,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
   async function cancelOrder(ordId) {
     const order = ORDERS.find(o => o.id === ordId);
-    if (!order || !confirm(`¿Cancelar pedido ${order.folio}? Se moverá al Historial de Compras.`)) return;
+    if (!order || !window.confirm(`¿Cancelar pedido ${order.folio}?\nSe moverá al Historial de Compras.`)) return;
     order.status = 'Cancelado';
     order.cancelledAt = new Date().toISOString();
     if (window.parent?.setDocumentInFirebase)
