@@ -203,20 +203,23 @@
 
 <!-- ── Header ── -->
 <div class="hdr">
-  <div class="hdr-left">
-    <div class="hdr-brand">Carpintería Huayapam · Registro del Día</div>
-    <div class="hdr-date-row">
-      <input type="date" class="date-input" id="fecha" onchange="onDateChange()">
-      <span class="dia-label" id="dia-label"></span>
-    </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <span style="font-size:18px;font-weight:800;">Registro del Día</span>
   </div>
-  <span class="badge" id="hdr-badge">—</span>
-  <button class="btn btn-ghost" onclick="collapseAll()">Colapsar</button>
-  <button class="btn btn-green" id="btn-cerrar" onclick="cerrarDia()">✓ Cerrar día</button>
-  <button class="btn btn-amber" id="btn-reabrir" style="display:none;" onclick="reabrirDia()">↩ Reabrir día</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="btn btn-green" id="btn-cerrar" onclick="cerrarDia()">✓ Cerrar día</button>
+    <button class="btn btn-amber" id="btn-reabrir" style="display:none;" onclick="reabrirDia()">↩ Reabrir día</button>
+  </div>
 </div>
 
-<!-- ── Calendar Strip ── -->
+<!-- ── Calendar Strip + date controls ── -->
+<div style="background:var(--mantle);border-bottom:1px solid var(--crust);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <input type="date" class="date-input" id="fecha" onchange="onDateChange()">
+  <span class="dia-label" id="dia-label"></span>
+  <span class="badge" id="hdr-badge" style="margin-left:auto;">—</span>
+  <button class="btn btn-ghost" onclick="collapseAll()" style="padding:5px 12px;font-size:12px;">Colapsar</button>
+</div>
 <div class="cal-wrap">
   <button class="cal-nav" onclick="navWeek(-1)" title="Semana anterior">‹</button>
   <div class="cal-strip" id="cal-strip"></div>
