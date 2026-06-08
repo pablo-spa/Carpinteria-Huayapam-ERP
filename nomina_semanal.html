@@ -11,31 +11,25 @@
 .header {
   position: sticky; top: 0; z-index: 100;
   background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 12px 24px 0;
+  padding: 14px 24px 0;
 }
-.header-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 12px; }
-.brand { font-size: 11px; color: var(--subtext); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.week-nav { display: flex; align-items: center; gap: 8px; }
+.header-top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-bottom: 12px; }
+.brand { font-size: 18px; font-weight: 800; color: var(--text); white-space: nowrap; }
+.week-nav { display: flex; align-items: center; gap: 6px; margin-left: 4px; }
 .wbtn {
-  cursor: pointer; background: var(--base); border: 1px solid var(--crust);
-  border-radius: var(--radius); color: var(--subtext); font-size: 18px;
-  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-  font-family: inherit;
+  cursor: pointer; background: transparent; border: 1px solid var(--crust);
+  border-radius: var(--radius); color: var(--subtext); font-size: 15px;
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  font-family: inherit; transition: .15s;
 }
-.wbtn:hover { background: var(--surface0); }
-.week-lbl { font-size: 16px; font-weight: 800; }
-.week-sub { font-size: 12px; color: var(--subtext); font-weight: 600; }
-.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.wbtn:hover { background: var(--surface0); color: var(--text); }
+.week-lbl { font-size: 13px; font-weight: 700; }
+.week-sub { font-size: 11px; color: var(--subtext); font-weight: 600; margin-top: 1px; }
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.hdr-total { text-align: right; }
 .hdr-total .lbl { font-size: 10px; text-transform: uppercase; color: var(--subtext); font-weight: 800; letter-spacing: .05em; }
-.hdr-total .val  { font-size: 22px; font-weight: 900; color: var(--green); font-variant-numeric: tabular-nums; }
-.badge { background: var(--green-bg); color: var(--green-text); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 99px; }
-.gear-btn {
-  cursor: pointer; background: var(--base); border: 1px solid var(--crust);
-  border-radius: var(--radius); color: var(--subtext); font-size: 16px;
-  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-}
-.gear-btn:hover { background: var(--surface0); }
-.gear-btn.on { background: var(--amber-bg); border-color: var(--amber); color: var(--amber-text); }
+.hdr-total .val  { font-size: 20px; font-weight: 900; color: var(--green); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.nom-badge { background: var(--green-bg); color: var(--green-text); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 99px; border: 1px solid rgba(62,130,52,.2); white-space: nowrap; }
 
 /* ── Tabs (underline style) ── */
 .tabs { display: flex; gap: 0; padding-bottom: 0; }
@@ -261,9 +255,9 @@
 <!-- Header -->
 <div class="header">
   <div class="header-top">
-    <div style="flex:1;min-width:0;">
-      <div class="brand">Carpintería Huayapam · Nómina Semanal</div>
-      <div class="week-nav" style="margin-top:5px;">
+    <div style="display:flex; align-items:center; gap:16px; flex:1; min-width:0;">
+      <div class="brand">Nómina Semanal</div>
+      <div class="week-nav">
         <button class="wbtn" onclick="chgWeek(-1)">‹</button>
         <div>
           <div class="week-lbl" id="week-lbl">—</div>
@@ -273,7 +267,7 @@
       </div>
     </div>
     <div class="hdr-right">
-      <span class="badge" id="hdr-badge">0 / —</span>
+      <span class="nom-badge" id="hdr-badge">0 / —</span>
       <div class="hdr-total"><div class="lbl">Total nómina</div><div class="val" id="hdr-total">$0</div></div>
     </div>
   </div>
