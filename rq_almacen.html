@@ -41,7 +41,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 /* Items table */
 .items-table { width: 100%; border-collapse: collapse; }
 .items-table th { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid var(--crust); text-align: left; }
-.items-table td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: middle; }
+.items-table td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: bottom; }
 .items-table input, .items-table select { padding: 7px 8px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
 .items-table input:focus, .items-table select:focus { outline: none; border-color: var(--blue); }
 .rm-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 4px 8px; }
@@ -321,12 +321,13 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       </td>
       <td><input type="number" class="i-qty" value="${qty}" min="0.01" step="any" style="width:80px;"></td>
       <td>
-        <select class="i-unit">${buildUnitOptions(unit)}</select>
+        <select class="i-unit" data-searchable>${buildUnitOptions(unit)}</select>
       </td>
       <td><button class="rm-btn" onclick="this.closest('tr').remove()">✕</button></td>
     `;
     tbody.appendChild(tr);
     if (!esHerramienta) SearchableSelect.init(tr.querySelector('.i-sel'));
+    SearchableSelect.init(tr.querySelector('.i-unit'));
   }
 
   function setTipoRow(tr, tipo) {

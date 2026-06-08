@@ -188,7 +188,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
       <div class="row-grid">
         <div class="field">
           <label>Forma de Pago</label>
-          <select id="forma-pago" onchange="onFormaPagoChange()">
+          <select id="forma-pago" data-searchable onchange="onFormaPagoChange()">
             <option value="">— Selecciona —</option>
             <option value="CHU">CHU (cuenta empresa fiscal)</option>
             <option value="SATP">SATP (cuenta operativa carpintería)</option>
@@ -199,7 +199,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
         </div>
         <div class="field">
           <label>Recibido / Operado por</label>
-          <select id="recibe">
+          <select id="recibe" data-searchable>
             <option value="">— Selecciona —</option>
             <option value="compras">Compras (SATP)</option>
             <option value="administracion">Administración / Caja</option>
@@ -245,7 +245,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
       <div class="add-item-row">
         <div class="field" style="flex:2; min-width:200px;">
           <label>Agregar Material</label>
-          <select id="add-mat" onchange="onMatSelect()">
+          <select id="add-mat" data-searchable onchange="onMatSelect()">
             <option value="">— Buscar en catálogo —</option>
             <optgroup label="Tableros">
               <option value="mdf15" data-u="pza" data-p="185" data-s="47">MDF 15mm (2.44×1.22)</option>
@@ -266,7 +266,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
         </div>
         <div class="field" style="flex:1; min-width:140px;">
           <label>Proyecto</label>
-          <select id="add-proj">
+          <select id="add-proj" data-searchable>
             <option value="ALMACEN">Stock Almacén</option>
             <option value="PRY-168">PRY-168</option>
             <option value="PRY-169">PRY-169</option>
@@ -278,7 +278,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
         </div>
         <div class="field" style="flex:0.5; min-width:80px;">
           <label>Unidad</label>
-          <select id="add-unit" onchange="checkNewUnit(this)" style="padding-top:8px; padding-bottom:8px;">
+          <select id="add-unit" data-searchable onchange="checkNewUnit(this)">
             <option value="pza">pza</option>
             <option value="caja">caja</option>
             <option value="m2">m2</option>
@@ -340,7 +340,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
       <div class="field span2"><label>Nombre</label><input type="text" id="herr-nombre" placeholder="Ej. Taladro de Impacto 18V"></div>
       <div class="field"><label>Marca</label><input type="text" id="herr-marca" placeholder="DeWalt, Makita…"></div>
       <div class="field"><label>Categoría</label>
-        <select id="herr-cat">
+        <select id="herr-cat" data-searchable>
           <option value="perforacion">Perforación</option>
           <option value="corte">Corte</option>
           <option value="lijado">Lijado</option>
@@ -354,13 +354,13 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
         </select>
       </div>
       <div class="field"><label>Tipo</label>
-        <select id="herr-tipo">
+        <select id="herr-tipo" data-searchable>
           <option value="compartida">Compartida (taller)</option>
           <option value="personal">Personal (asignada)</option>
         </select>
       </div>
       <div class="field"><label>Estado</label>
-        <select id="herr-estado">
+        <select id="herr-estado" data-searchable>
           <option value="nueva">Nueva</option>
           <option value="buena">Buena</option>
           <option value="mantenimiento">Necesita mantenimiento</option>
@@ -380,10 +380,10 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
     <div class="modal-title">✦ Nuevo Concepto de Inventario</div>
     <div class="modal-grid">
       <div class="field span2"><label>Nombre del material</label><input type="text" id="inv-nombre" placeholder="Ej. Tornillo Cabeza plana 1½""></div>
-      <div class="field"><label>Categoría</label><select id="inv-cat"></select></div>
-      <div class="field"><label>Marca</label><select id="inv-brand"></select></div>
+      <div class="field"><label>Categoría</label><select id="inv-cat" data-searchable></select></div>
+      <div class="field"><label>Marca</label><select id="inv-brand" data-searchable></select></div>
       <div class="field"><label>Unidad</label>
-        <select id="inv-unit">
+        <select id="inv-unit" data-searchable>
           <option value="pza">pza</option><option value="caja">caja</option><option value="m2">m2</option>
           <option value="ml">ml</option><option value="lt">lt</option><option value="gln">gln</option>
           <option value="par">par</option><option value="kg">kg</option><option value="lote">lote</option>
@@ -465,16 +465,23 @@ async function loadDBData() {
       '<option value="nueva-herramienta">🔧 Nueva herramienta (sin registro previo)…</option>' +
       '<option value="nuevo-concepto">✦ Nuevo material de inventario…</option>' +
     '</optgroup>';
+  if (matSel._ssInit) matSel._ssRefresh(); else SearchableSelect.init(matSel);
 
   // Populate modal selects for new concept
-  document.getElementById('inv-cat').innerHTML = CAT_DB.map(c => `<option value="${c.name}">${c.name}</option>`).join('') || '<option value="">— sin categorías —</option>';
+  const invCatSel = document.getElementById('inv-cat');
+  invCatSel.innerHTML = CAT_DB.map(c => `<option value="${c.name}">${c.name}</option>`).join('') || '<option value="">— sin categorías —</option>';
+  if (invCatSel._ssInit) invCatSel._ssRefresh(); else SearchableSelect.init(invCatSel);
+
+  const invBrandSel = document.getElementById('inv-brand');
   const brandOpts = '<option value="">— Sin marca —</option>' + BRAND_DB.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-  document.getElementById('inv-brand').innerHTML = brandOpts;
+  invBrandSel.innerHTML = brandOpts;
+  if (invBrandSel._ssInit) invBrandSel._ssRefresh(); else SearchableSelect.init(invBrandSel);
 
   // Populate add-proj
   const projSel = document.getElementById('add-proj');
   projSel.innerHTML = '<option value="ALMACEN">Stock Almacén</option>' +
     PROJ_DB.map(pr => `<option value="${(pr.codigo||pr.code)}">${(pr.codigo||pr.code)} — ${(pr.nombre||pr.name)}</option>`).join('');
+  if (projSel._ssInit) projSel._ssRefresh(); else SearchableSelect.init(projSel);
 }
 
 document.addEventListener('DOMContentLoaded', loadDBData);

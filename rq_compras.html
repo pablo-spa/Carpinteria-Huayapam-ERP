@@ -116,7 +116,7 @@
   <div class="form-grid">
     <div class="f-field">
       <label>Proyecto</label>
-      <select id="no-proyecto">
+      <select id="no-proyecto" data-searchable>
         <option value="">— Stock General / Sin proyecto —</option>
       </select>
     </div>
@@ -181,6 +181,7 @@ async function init() {
     o.value = cod; o.textContent = `${cod} — ${nom}`;
     pSel.appendChild(o);
   });
+  if (pSel._ssInit) pSel._ssRefresh(); else SearchableSelect.init(pSel);
 
   renderOrders();
 }
@@ -277,7 +278,7 @@ function addNewItemRow(data = {}) {
       <!-- Unidad -->
       <div class="f-field">
         <label>Unidad</label>
-        <select class="ni-unit" ${unitLocked==='true'?'disabled':''} style="${unitLocked==='true'?'opacity:.6;':''}">
+        <select class="ni-unit" data-searchable ${unitLocked==='true'?'disabled':''} style="${unitLocked==='true'?'opacity:.6;':''}">
           ${buildUnitOpts(data.unit||'pza')}
         </select>
       </div>
@@ -297,6 +298,7 @@ function addNewItemRow(data = {}) {
   cont.appendChild(div);
   if (!isHerr) SearchableSelect.init(div.querySelector('.ni-concepto'));
   SearchableSelect.init(div.querySelector('.ni-proveedor'));
+  SearchableSelect.init(div.querySelector('.ni-unit'));
   updPendingNotice();
 }
 

@@ -109,10 +109,11 @@ function addRow() {
       </select>
     </td>
     <td><input type="number" class="i-qty" min="0.01" step="any" placeholder="1"></td>
-    <td><select class="i-unit">${UNITS.map(u => `<option>${u}</option>`).join('')}</select></td>
+    <td><select class="i-unit" data-searchable>${UNITS.map(u => `<option>${u}</option>`).join('')}</select></td>
     <td><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;">✕</button></td>`;
   document.getElementById('itemsList').appendChild(tr);
   SearchableSelect.init(tr.querySelector('.i-sel'));
+  SearchableSelect.init(tr.querySelector('.i-unit'));
 }
 
 function onMatChange(sel) {

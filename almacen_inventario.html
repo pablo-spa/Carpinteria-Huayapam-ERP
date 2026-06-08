@@ -164,7 +164,7 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Categoría</label>
-        <select id="m-cat" class="modal-input" onchange="autoGenCode()"></select>
+        <select id="m-cat" class="modal-input" data-searchable onchange="autoGenCode()"></select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Marca</label>
@@ -172,11 +172,11 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Ubicación</label>
-        <select id="m-loc" class="modal-input"></select>
+        <select id="m-loc" class="modal-input" data-searchable></select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Unidad</label>
-        <select id="m-unit" class="modal-input"></select>
+        <select id="m-unit" class="modal-input" data-searchable></select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Aviso Stock Bajo (Mínimo)</label>
@@ -417,14 +417,20 @@
     catSel.value = currentFilter;
 
     // ── Modal selects ────────────────────────────────────────────────
-    document.getElementById('m-cat').innerHTML = catNames.map(c => `<option value="${c}">${c}</option>`).join('');
+    const catSel = document.getElementById('m-cat');
+    catSel.innerHTML = catNames.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (catSel._ssInit) catSel._ssRefresh(); else SearchableSelect.init(catSel);
     const brandSel = document.getElementById('m-brand');
     brandSel.innerHTML =
       '<option value="">— Sin marca (000) —</option>' +
       STATE_BRANDS.map(b => `<option value="${b.id}">${b.brandCode} — ${b.name}</option>`).join('');
     if (brandSel._ssInit) brandSel._ssRefresh(); else SearchableSelect.init(brandSel);
-    document.getElementById('m-unit').innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
-    document.getElementById('m-loc').innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
+    const unitSel = document.getElementById('m-unit');
+    unitSel.innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
+    if (unitSel._ssInit) unitSel._ssRefresh(); else SearchableSelect.init(unitSel);
+    const locSel = document.getElementById('m-loc');
+    locSel.innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
+    if (locSel._ssInit) locSel._ssRefresh(); else SearchableSelect.init(locSel);
     document.getElementById('m-assigned').innerHTML = '<option value="">— Sin asignar —</option>' +
       STATE_WORKERS.map(w => `<option value="${w.id}">${w.name || w.givenName}</option>`).join('');
     const assignedSel = document.getElementById('m-assigned');
