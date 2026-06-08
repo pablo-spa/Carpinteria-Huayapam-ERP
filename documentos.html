@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="global.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documentos — Carpintería Huayapam</title>
+<style>
+
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--crust);
+  background: var(--mantle);
+  overflow: hidden;
+}
+
+.sidebar-hdr {
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--crust);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-wrap {
+  position: relative;
+}
+.search-wrap input {
+  padding-left: 30px;
+  height: 34px;
+  font-size: 13px;
+  background: var(--base);
+  width: 100%;
+  box-sizing: border-box;
+}
+.search-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--subtext);
+  pointer-events: none;
+}
+
+.cat-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.cat-chip {
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--crust);
+  background: var(--base);
+  color: var(--subtext);
+  transition: all .12s;
+}
+.cat-chip:hover { border-color: var(--surface1); color: var(--text); }
+.cat-chip.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.cat-group { padding: 0; }
+.cat-title {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--subtext);
+  padding: 10px 16px 4px;
+}
+
+.doc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background .12s;
+}
+.doc-item:hover { background: var(--surface0); }
+.doc-item.active {
+  background: var(--blue-bg);
+  border-left-color: var(--blue);
+}
+.doc-item-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  opacity: .8;
+}
+.doc-item-body { flex: 1; min-width: 0; }
+.doc-item-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-item-meta {
+  font-size: 11px;
+  color: var(--subtext);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--subtext);
+  font-size: 13px;
+}
+
+/* ── Viewer ── */
+.viewer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--base);
+}
+
+.viewer-hdr {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--crust);
+  background: var(--mantle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+}
+.viewer-hdr-info { flex: 1; min-width: 0; }
+.viewer-title { font-size: 16px; font-weight: 800; color: var(--text); }
+.viewer-meta  { font-size: 12px; color: var(--subtext); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.viewer-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+.viewer-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.viewer-body iframe { width: 100%; flex: 1; border: none; min-height: 0; }
+
+.viewer-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--subtext);
+  gap: 12px;
+}
+.viewer-empty-icon { font-size: 48px; opacity: .3; }
+.viewer-empty-text { font-size: 14px; font-weight: 600; }
+.viewer-empty-sub  { font-size: 12px; }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--base);
+  border: 1px solid var(--crust);
+  border-radius: 14px;
+  padding: 24px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-title { font-size: 17px; font-weight: 800; color: var(--text); }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; }
+.field input, .field select, .field textarea {
+  padding: 9px 12px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--mantle);
+  color: var(--text); font-size: 13px; font-family: inherit;
+  height: auto;
+}
+.field textarea { resize: vertical; min-height: 72px; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); outline: none; }
+.hint { font-size: 11px; color: var(--subtext); margin-top: 3px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+
+.cat-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;
+  background: var(--blue-bg); color: var(--blue);
+}
+
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-hdr">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:14px; font-weight:800; color:var(--text);">Documentos</span>
+        <button class="btn btn-green" id="btn-nuevo" style="font-size:12px;padding:5px 10px;" onclick="openModal()">+ Agregar</button>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Buscar documento..." oninput="renderList()">
+      </div>
+      <div class="cat-filter" id="cat-filter"></div>
+    </div>
+    <div class="sidebar-list" id="doc-list">
+      <div class="sidebar-empty">Cargando documentos...</div>
+    </div>
+  </div>
+
+  <!-- Viewer -->
+  <div class="viewer" id="viewer">
+    <div class="viewer-hdr" id="viewer-hdr" style="display:none;">
+      <div class="viewer-hdr-info">
+        <div class="viewer-title" id="viewer-title"></div>
+        <div class="viewer-meta">
+          <span id="viewer-cat"></span>
+          <span id="viewer-proyecto" style="color:var(--subtext);"></span>
+          <span id="viewer-desc" style="font-style:italic;"></span>
+        </div>
+      </div>
+      <div class="viewer-actions">
+        <button class="btn btn-dark" id="btn-edit" style="font-size:12px;padding:5px 10px;" onclick="editCurrent()">Editar</button>
+        <button class="btn" id="btn-delete" style="font-size:12px;padding:5px 10px;color:var(--red);border-color:var(--crust);" onclick="deleteCurrent()">🗑</button>
+        <a class="btn btn-dark" id="btn-drive" href="#" target="_blank" style="font-size:12px;padding:5px 10px;">↗ Abrir en Drive</a>
+      </div>
+    </div>
+    <div class="viewer-body" id="viewer-body" style="display:none;">
+      <iframe id="doc-frame" title="Vista previa documento" allow="autoplay" style="flex:1; min-height:0;"></iframe>
+    </div>
+    <div class="viewer-empty" id="viewer-empty">
+      <div class="viewer-empty-icon">📁</div>
+      <div class="viewer-empty-text">Selecciona un documento para verlo</div>
+      <div class="viewer-empty-sub">Los documentos se muestran directamente desde Google Drive</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Agregar Documento</div>
+
+    <div class="field">
+      <label>Título *</label>
+      <input type="text" id="f-titulo" placeholder="Ej: Contrato de trabajo — Juan Pérez">
+    </div>
+
+    <div class="field">
+      <label>Categoría *</label>
+      <select id="f-categoria">
+        <option value="">— Seleccionar —</option>
+        <option value="Contratos">📄 Contratos</option>
+        <option value="Planos">📐 Planos</option>
+        <option value="Facturas">🧾 Facturas</option>
+        <option value="Permisos y Licencias">🏛️ Permisos y Licencias</option>
+        <option value="Recursos Humanos">👷 Recursos Humanos</option>
+        <option value="Manuales">📖 Manuales</option>
+        <option value="Garantías">🔒 Garantías</option>
+        <option value="Presupuestos">💰 Presupuestos</option>
+        <option value="Otros">📁 Otros</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Link de Google Drive *</label>
+      <input type="text" id="f-drive" placeholder="https://drive.google.com/file/d/.../view  o  ID del archivo">
+      <div class="hint">El archivo debe estar compartido con las cuentas del equipo en Google Drive. No es necesario que sea público.</div>
+    </div>
+
+    <div class="field">
+      <label>Proyecto relacionado (opcional)</label>
+      <select id="f-proyecto">
+        <option value="">— Sin proyecto —</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Descripción (opcional)</label>
+      <textarea id="f-desc" placeholder="Breve descripción del contenido..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-dark" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-blue" onclick="saveModal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+
+const CAT_ICONS = {
+  'Contratos':           '📄',
+  'Planos':              '📐',
+  'Facturas':            '🧾',
+  'Permisos y Licencias':'🏛️',
+  'Recursos Humanos':    '👷',
+  'Manuales':            '📖',
+  'Garantías':           '🔒',
+  'Presupuestos':        '💰',
+  'Otros':               '📁',
+};
+const CAT_ORDER = ['Contratos', 'Planos', 'Facturas', 'Permisos y Licencias', 'Recursos Humanos', 'Manuales', 'Garantías', 'Presupuestos', 'Otros'];
+
+let docs       = [];
+let projects   = [];
+let currentId  = null;
+let editingId  = null;
+let canEdit    = false;
+let activeCat  = null;
+
+// ── Util: URL de Drive a embed ────────────────────────────────────────
+function toDriveEmbed(url) {
+  if (!url) return '';
+  const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?#]+)/);
+  if (m1) return `https://drive.google.com/file/d/${m1[1]}/preview`;
+  const m2 = url.match(/[?&]id=([^&#]+)/);
+  if (m2) return `https://drive.google.com/file/d/${m2[1]}/preview`;
+  if (/^[A-Za-z0-9_-]{20,}$/.test(url.trim()))
+    return `https://drive.google.com/file/d/${url.trim()}/preview`;
+  return url;
+}
+
+function toDriveOpen(url) {
+  if (!url) return '#';
+  const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?#]+)/);
+  if (m1) return `https://drive.google.com/file/d/${m1[1]}/view`;
+  return url;
+}
+
+// ── Carga ─────────────────────────────────────────────────────────────
+async function load() {
+  try {
+    if (window.parent?.DB_STATE) window.parent.DB_STATE.documentos = undefined;
+    await window.parent.cargar_coleccion('documentos');
+    docs = (window.parent.DB_STATE?.documentos || [])
+      .map(d => ({ ...d, id: d.id || d._id }))
+      .filter(d => d.id);
+    docs.sort((a, b) => {
+      const ci = CAT_ORDER.indexOf(a.categoria) - CAT_ORDER.indexOf(b.categoria);
+      return ci !== 0 ? ci : (a.titulo || '').localeCompare(b.titulo || '');
+    });
+  } catch(e) {
+    docs = [];
+    console.error('Error cargando documentos:', e);
+  }
+
+  // Proyectos (ya cargados por defecto)
+  projects = (window.parent.DB_STATE?.projects || []);
+
+  const role = window.parent?.CURRENT_USER_ROLE || 'programador';
+  canEdit = ['programador', 'admin', 'gerencia'].includes(role);
+  document.getElementById('btn-nuevo').style.display = canEdit ? '' : 'none';
+
+  renderCatFilter();
+  renderList();
+}
+
+// ── Filtros de categoría ──────────────────────────────────────────────
+function renderCatFilter() {
+  const usedCats = [...new Set(docs.map(d => d.categoria).filter(Boolean))];
+  const el = document.getElementById('cat-filter');
+  if (usedCats.length < 2) { el.innerHTML = ''; return; }
+
+  let html = `<span class="cat-chip${!activeCat ? ' active' : ''}" onclick="setActiveCat(null)">Todos</span>`;
+  CAT_ORDER.filter(c => usedCats.includes(c)).forEach(c => {
+    html += `<span class="cat-chip${activeCat === c ? ' active' : ''}" onclick="setActiveCat('${c}')">${CAT_ICONS[c] || '📁'} ${c}</span>`;
+  });
+  el.innerHTML = html;
+}
+
+function setActiveCat(cat) {
+  activeCat = cat;
+  renderCatFilter();
+  renderList();
+}
+
+// ── Render lista ──────────────────────────────────────────────────────
+function renderList() {
+  const q   = document.getElementById('search-input').value.toLowerCase();
+  const el  = document.getElementById('doc-list');
+  let vis = docs.filter(d => {
+    if (activeCat && d.categoria !== activeCat) return false;
+    if (q && !(
+      (d.titulo||'').toLowerCase().includes(q) ||
+      (d.descripcion||'').toLowerCase().includes(q) ||
+      (d.categoria||'').toLowerCase().includes(q)
+    )) return false;
+    return true;
+  });
+
+  if (!vis.length) {
+    el.innerHTML = `<div class="sidebar-empty">${q || activeCat ? 'Sin resultados.' : 'No hay documentos. Agrega uno con el botón +.'}</div>`;
+    return;
+  }
+
+  const groups = {};
+  vis.forEach(d => {
+    const cat = d.categoria || 'Otros';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(d);
+  });
+
+  let html = '';
+  CAT_ORDER.forEach(cat => {
+    if (!groups[cat]) return;
+    html += `<div class="cat-group"><div class="cat-title">${CAT_ICONS[cat] || '📁'} ${cat}</div>`;
+    groups[cat].forEach(d => {
+      const proyNombre = d.proyectoId ? (projects.find(p => p.id === d.proyectoId)?.nombre || projects.find(p => p.id === d.proyectoId)?.codigo || '') : '';
+      const active = d.id === currentId ? ' active' : '';
+      html += `<div class="doc-item${active}" onclick="selectDoc('${d.id}')">
+        <div class="doc-item-icon">${CAT_ICONS[d.categoria] || '📁'}</div>
+        <div class="doc-item-body">
+          <div class="doc-item-title">${d.titulo || 'Sin título'}</div>
+          <div class="doc-item-meta">${proyNombre ? `📁 ${proyNombre}` : (d.descripcion || '')}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+// ── Seleccionar documento ─────────────────────────────────────────────
+function selectDoc(id) {
+  currentId = id;
+  const d = docs.find(x => x.id === id);
+  if (!d) return;
+
+  renderList();
+
+  document.getElementById('viewer-hdr').style.display   = 'flex';
+  document.getElementById('viewer-body').style.display  = 'flex';
+  document.getElementById('viewer-body').style.flexDirection = 'column';
+  document.getElementById('viewer-empty').style.display = 'none';
+
+  document.getElementById('viewer-title').textContent = d.titulo || 'Sin título';
+  document.getElementById('viewer-cat').innerHTML = `<span class="cat-pill">${CAT_ICONS[d.categoria] || '📁'} ${d.categoria || ''}</span>`;
+  document.getElementById('viewer-desc').textContent = d.descripcion || '';
+
+  const proyNombre = d.proyectoId ? (projects.find(p => p.id === d.proyectoId)?.nombre || projects.find(p => p.id === d.proyectoId)?.codigo || '') : '';
+  document.getElementById('viewer-proyecto').textContent = proyNombre ? `Proyecto: ${proyNombre}` : '';
+
+  const openUrl = toDriveOpen(d.driveUrl);
+  document.getElementById('btn-drive').href = openUrl;
+
+  const frame = document.getElementById('doc-frame');
+  frame.src = '';
+  setTimeout(() => { frame.src = toDriveEmbed(d.driveUrl); }, 50);
+
+  document.getElementById('btn-edit').style.display   = canEdit ? '' : 'none';
+  document.getElementById('btn-delete').style.display = canEdit ? '' : 'none';
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────
+function openModal(doc) {
+  editingId = doc?.id || null;
+  document.getElementById('modal-title').textContent = doc ? 'Editar Documento' : 'Agregar Documento';
+  document.getElementById('f-titulo').value    = doc?.titulo      || '';
+  document.getElementById('f-categoria').value = doc?.categoria   || '';
+  document.getElementById('f-drive').value     = doc?.driveUrl    || '';
+  document.getElementById('f-desc').value      = doc?.descripcion || '';
+
+  // Poblar select de proyectos
+  const sel = document.getElementById('f-proyecto');
+  sel.innerHTML = '<option value="">— Sin proyecto —</option>';
+  projects
+    .filter(p => p.estado !== 'cancelado')
+    .sort((a, b) => (a.nombre || a.codigo || '').localeCompare(b.nombre || b.codigo || ''))
+    .forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.nombre || p.codigo || p.id;
+      if (p.id === doc?.proyectoId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-titulo').focus(), 50);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null;
+}
+
+function editCurrent() {
+  const d = docs.find(x => x.id === currentId);
+  if (d) openModal(d);
+}
+
+async function saveModal() {
+  const titulo     = document.getElementById('f-titulo').value.trim();
+  const categoria  = document.getElementById('f-categoria').value;
+  const driveUrl   = document.getElementById('f-drive').value.trim();
+  const desc       = document.getElementById('f-desc').value.trim();
+  const proyectoId = document.getElementById('f-proyecto').value;
+
+  if (!titulo)    { alert('El título es obligatorio.'); return; }
+  if (!categoria) { alert('Selecciona una categoría.'); return; }
+  if (!driveUrl)  { alert('Pega el link de Google Drive.'); return; }
+
+  const id   = editingId || ('doc_' + Date.now());
+  const data = { id, titulo, categoria, driveUrl, descripcion: desc, proyectoId: proyectoId || null, fecha: new Date().toISOString() };
+
+  try {
+    await window.parent.setDocumentInFirebase('documentos', id, data);
+    closeModal();
+    await load();
+    selectDoc(id);
+    toast('Documento guardado.');
+  } catch(e) { alert('Error al guardar: ' + e.message); }
+}
+
+async function deleteCurrent() {
+  const d = docs.find(x => x.id === currentId);
+  if (!d || !confirm(`¿Eliminar "${d.titulo}"? Esta acción no se puede deshacer.`)) return;
+  try {
+    await window.parent.deleteDocumentFromFirebase('documentos', currentId);
+    currentId = null;
+    document.getElementById('viewer-hdr').style.display   = 'none';
+    document.getElementById('viewer-body').style.display  = 'none';
+    document.getElementById('viewer-empty').style.display = 'flex';
+    await load();
+    toast('Documento eliminado.');
+  } catch(e) { alert('Error al eliminar: ' + e.message); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────
+function toast(msg) {
+  if (window.parent?.showToast) { window.parent.showToast(msg); return; }
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'24px', right:'24px', background:'var(--green)',
+    color:'#fff', padding:'10px 18px', borderRadius:'8px', fontSize:'13px',
+    fontWeight:'700', zIndex:'9999', boxShadow:'0 4px 12px rgba(0,0,0,.2)'
+  });
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', load);
+
+</script>
+</body>
+</html>
