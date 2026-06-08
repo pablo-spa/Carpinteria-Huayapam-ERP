@@ -139,11 +139,10 @@
             <th>Tipo</th>
             <th>Estado</th>
             <th>Asignado a</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="tbl-body">
-          <tr><td colspan="7" class="empty-state">Cargando…</td></tr>
+          <tr><td colspan="6" class="empty-state">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -258,25 +257,29 @@
 </div>
 
 <script>
-const CATEGORIAS = [
-  { id: 'perforacion',  label: 'Perforación',    icon: '🔩', keys: ['taladro','broca','berbiquí','berbiqui','mandril','atornillador'] },
-  { id: 'corte',        label: 'Corte',           icon: '🪚', keys: ['sierra','serrucho','segueta','caladora','cutter','formón','formon','escoplo','navaja','bisturí','bisturi','hoja'] },
-  { id: 'lijado',       label: 'Lijado',          icon: '📋', keys: ['lijadora','lija','orbital','banda'] },
-  { id: 'cepillado',    label: 'Cepillado',       icon: '🪵', keys: ['cepillo','garlopa','rabot','cepilladora'] },
-  { id: 'medicion',     label: 'Medición',        icon: '📐', keys: ['escuadra','metro','cinta','nivel','calibrador','vernier','transportador','regla','compás','compas'] },
-  { id: 'sujecion',     label: 'Sujeción',        icon: '🔧', keys: ['prensa','grampa','grapa','tornillo','engrapadora','clavadora','pistola clavar','compresor','bomba'] },
-  { id: 'router',       label: 'Router / Fresado',icon: '⚙️', keys: ['router','ruteadora','fresadora','fresa','ingletadora','tupi','trompo'] },
-  { id: 'ensamble',     label: 'Ensamble / Mano', icon: '🔨', keys: ['martillo','mazo','maza','destornillador','llave','allen','desarmador','cautín','cautin','alicate','pinza'] },
-  { id: 'acabado',      label: 'Acabado',         icon: '🎨', keys: ['pistola pintura','aerógrafo','aerografo','soplete','barniz','brocha','rodillo'] },
-  { id: 'otro',         label: 'Otros',           icon: '🧰', keys: [] },
-];
+let CATS = []; // loaded from tool_categories in Firestore
+
+const CAT_KEYWORDS = {
+  'Perforación':      ['taladro','broca','berbiquí','berbiqui','mandril','atornillador'],
+  'Corte':            ['sierra','serrucho','segueta','caladora','cutter','formón','formon','escoplo','navaja','bisturí','bisturi','hoja'],
+  'Lijado':           ['lijadora','lija','orbital','banda'],
+  'Cepillado':        ['cepillo','garlopa','rabot','cepilladora'],
+  'Medición':         ['escuadra','metro','cinta','nivel','calibrador','vernier','transportador','regla','compás','compas'],
+  'Sujeción':         ['prensa','grampa','grapa','tornillo','engrapadora','clavadora','pistola clavar','compresor','bomba'],
+  'Router / Fresado': ['router','ruteadora','fresadora','fresa','ingletadora','tupi','trompo'],
+  'Ensamble / Mano':  ['martillo','mazo','maza','destornillador','llave','allen','desarmador','cautín','cautin','alicate','pinza'],
+  'Acabado':          ['pistola pintura','aerógrafo','aerografo','soplete','barniz','brocha','rodillo'],
+};
 
 function detectCategoria(nombre) {
   const n = (nombre || '').toLowerCase();
-  for (const c of CATEGORIAS) {
-    if (c.keys.some(k => n.includes(k))) return c.id;
+  for (const [catName, keys] of Object.entries(CAT_KEYWORDS)) {
+    if (keys.some(k => n.includes(k))) {
+      const match = CATS.find(c => c.toLowerCase() === catName.toLowerCase());
+      if (match) return match;
+    }
   }
-  return 'otro';
+  return CATS.find(c => /otro/i.test(c)) || CATS[CATS.length - 1] || '';
 }
 
 let herramientas = [];
@@ -292,11 +295,16 @@ async function init() {
     p.cargar_coleccion('herramientas'),
     p.cargar_coleccion('workers'),
     p.cargar_coleccion('tool_logs'),
+    p.cargar_coleccion('tool_categories'),
   ]);
 
   herramientas = (p.DB_STATE?.herramientas || []).map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id);
   workers      = (p.DB_STATE?.workers      || []).map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id);
   logs         = (p.DB_STATE?.tool_logs    || []).map(l => ({ ...l, id: l.id || l._id })).filter(l => l.id);
+
+  const toolCatsRaw = p.DB_STATE?.tool_categories || [];
+  CATS = (toolCatsRaw[0]?.list || toolCatsRaw.filter(x => typeof x === 'string')).filter(Boolean);
+  if (!CATS.length) CATS = ['Perforación','Corte','Lijado','Cepillado','Medición','Sujeción','Router / Fresado','Ensamble / Mano','Acabado','Otro'];
 
   logs.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
@@ -309,11 +317,11 @@ async function init() {
 }
 
 function populateFilters() {
-  const cats = [...new Set(herramientas.map(h => h.categoria).filter(Boolean))];
+  const usedCats = new Set(herramientas.map(h => h.categoria).filter(Boolean));
   const catSel = document.getElementById('fil-cat');
   catSel.innerHTML = '<option value="">Todas las categorías</option>' +
-    CATEGORIAS.filter(c => cats.includes(c.id) || c.id === 'otro').map(c =>
-      `<option value="${c.id}">${c.icon} ${c.label}</option>`
+    CATS.filter(c => usedCats.has(c)).map(c =>
+      `<option value="${c}">${c}</option>`
     ).join('');
 
   const wSel  = document.getElementById('fil-worker');
@@ -326,7 +334,7 @@ function populateFilters() {
 
 function populateCategoriaSelect() {
   document.getElementById('f-categoria').innerHTML =
-    CATEGORIAS.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+    CATS.map(c => `<option value="${c}">${c}</option>`).join('');
 }
 
 function populateAssignedSelect() {
@@ -352,9 +360,8 @@ function workerName(id) {
   return w ? (w.nombre || w.name || id) : id;
 }
 
-function catLabel(id) {
-  const c = CATEGORIAS.find(c => c.id === id);
-  return c ? `${c.icon} ${c.label}` : (id || '—');
+function catLabel(cat) {
+  return cat || '—';
 }
 
 function estadoPill(e) {
@@ -394,7 +401,6 @@ function render() {
       <td><span class="pill pill-${h.tipo || 'compartida'}">${h.tipo === 'personal' ? 'Personal' : 'Compartida'}</span></td>
       <td>${estadoPill(h.estado)}</td>
       <td>${h.assignedTo ? workerName(h.assignedTo) : '<span style="color:var(--subtext)">Disponible</span>'}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openModal('${h.id}')">Editar</button></td>
     </tr>`).join('');
 }
 
@@ -432,7 +438,7 @@ function renderCaja(wId) {
 
   const toolRow = (h, showReturn) => `
     <div class="tool-row">
-      <span class="tool-icon">${catLabel(h.categoria).split(' ')[0]}</span>
+      <span class="tool-icon">🔧</span>
       <div class="tool-info">
         <div class="tool-name">${h.nombre || '—'}</div>
         <div class="tool-sub">${h.codigo || ''} ${h.marca ? '· ' + h.marca : ''} ${estadoPill(h.estado)}</div>
@@ -553,7 +559,7 @@ function openModal(id) {
   document.getElementById('f-nombre').value       = tool?.nombre     || '';
   document.getElementById('f-codigo').value       = tool?.codigo     || '';
   document.getElementById('f-marca').value        = tool?.marca      || '';
-  document.getElementById('f-categoria').value    = tool?.categoria  || 'otro';
+  document.getElementById('f-categoria').value    = tool?.categoria  || (CATS.find(c => /otro/i.test(c)) || CATS[0] || '');
   document.getElementById('f-tipo').value         = tool?.tipo       || 'compartida';
   document.getElementById('f-assigned').value     = tool?.assignedTo || '';
   document.getElementById('f-estado').value       = tool?.estado     || 'buena';
