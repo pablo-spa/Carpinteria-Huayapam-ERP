@@ -45,6 +45,7 @@
 .pill-desgaste   { background: rgba(249,226,175,.15); color: var(--yellow, #f9e2af); }
 .pill-reparacion { background: rgba(250,179,135,.15); color: var(--peach, #fab387); }
 .pill-baja       { background: rgba(243,139,168,.15); color: var(--red); }
+.pill-nueva      { background: rgba(137,180,250,.12); color: var(--blue); }
 
 .code-chip { font-family: monospace; font-size: 11px; font-weight: 700; padding: 2px 6px; background: var(--surface0); border-radius: 4px; color: var(--subtext); }
 
@@ -256,6 +257,31 @@
   </div>
 </div>
 
+<!-- ── Confirm Modal ─────────────────────────────────── -->
+<div id="confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;">
+  <div style="background:var(--base);border:1px solid var(--crust);border-radius:14px;width:100%;max-width:380px;padding:24px;" onclick="event.stopPropagation()">
+    <div id="confirm-title" style="font-size:16px;font-weight:800;margin-bottom:6px;"></div>
+    <div id="confirm-msg"   style="font-size:13px;color:var(--subtext);margin-bottom:20px;"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Asign Tool Modal ───────────────────────────────── -->
+<div id="asign-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;">
+  <div style="background:var(--base);border:1px solid var(--crust);border-radius:14px;width:100%;max-width:420px;padding:24px;" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:800;margin-bottom:14px;">Asignar herramienta a trabajador</div>
+    <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--subtext);display:block;margin-bottom:5px;">Herramienta disponible</label>
+    <select id="asign-tool-sel" class="form-input" style="width:100%;margin-bottom:16px;"></select>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-ghost" onclick="closeAsignModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmAsign()">Asignar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let CATS = []; // loaded from tool_categories in Firestore
 
@@ -365,8 +391,9 @@ function catLabel(cat) {
 }
 
 function estadoPill(e) {
-  const map = { buena: 'Buena', desgaste: 'Desgaste', reparacion: 'Reparación', baja: 'Baja' };
-  return `<span class="pill pill-${e || 'buena'}">${map[e] || e || '—'}</span>`;
+  const slug = (e || 'buena').toLowerCase().replace(/[^a-z]/g,'');
+  const label = e ? (e.charAt(0).toUpperCase() + e.slice(1)) : '—';
+  return `<span class="pill pill-${slug}">${label}</span>`;
 }
 
 function render() {
@@ -389,7 +416,7 @@ function render() {
 
   const tbody = document.getElementById('tbl-body');
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No hay herramientas.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No hay herramientas.</td></tr>`;
     return;
   }
 
@@ -466,11 +493,23 @@ function renderCaja(wId) {
 }
 
 async function returnTool(toolId, wId) {
-  if (!confirm('¿Registrar devolución?')) return;
+  const ok = await showConfirm('¿Registrar devolución?', 'La herramienta quedará disponible en el pool.');
+  if (!ok) return;
+  const tool = herramientas.find(h => h.id === toolId);
+  if (!tool) return;
+  const updated = { ...tool, assignedTo: null };
   try {
-    await window.DB.assignTool(toolId, wId, true);
+    await window.parent.setDocumentInFirebase('herramientas', toolId, updated);
     const idx = herramientas.findIndex(h => h.id === toolId);
-    if (idx >= 0) herramientas[idx].assignedTo = null;
+    if (idx >= 0) {
+      herramientas[idx] = updated;
+      const dsIdx = (window.parent.DB_STATE?.herramientas || []).findIndex(h => (h.id||h._id) === toolId);
+      if (dsIdx >= 0) window.parent.DB_STATE.herramientas[dsIdx] = updated;
+    }
+    const log = { id: crypto.randomUUID(), toolId, toolNombre: tool.nombre, workerId: wId, tipo: 'devolucion', fecha: new Date().toISOString() };
+    await window.parent.setDocumentInFirebase('tool_logs', log.id, log);
+    logs.unshift(log);
+    if (window.parent.DB_STATE?.tool_logs) window.parent.DB_STATE.tool_logs.unshift(log);
     renderCaja(wId);
     render();
     toast('✓ Devolución registrada.');
@@ -478,35 +517,50 @@ async function returnTool(toolId, wId) {
 }
 
 /* ── Modal asignación directa ──────────── */
+let _asignTargetWorker = null;
+
 function openAsignModal(wId) {
   const disponibles = herramientas.filter(h => h.tipo === 'compartida' && !h.assignedTo);
   if (!disponibles.length) { toast('No hay herramientas disponibles para asignar.', 'warn'); return; }
+  _asignTargetWorker = wId;
+  const sel = document.getElementById('asign-tool-sel');
+  sel.innerHTML = disponibles
+    .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'))
+    .map(h => `<option value="${h.id}">${h.nombre}${h.codigo ? ' — ' + h.codigo : ''}${h.marca ? ' · ' + h.marca : ''}</option>`)
+    .join('');
+  document.getElementById('asign-modal').style.display = 'flex';
+}
 
-  const sel = prompt('Ingresa el código de la herramienta a asignar como personal:\n\n' +
-    disponibles.map(h => `${h.codigo || h.id.slice(0,8)} — ${h.nombre}`).join('\n'));
-  if (!sel) return;
+function closeAsignModal() {
+  document.getElementById('asign-modal').style.display = 'none';
+  _asignTargetWorker = null;
+}
 
-  const tool = herramientas.find(h => h.codigo === sel || h.id === sel);
-  if (!tool) { toast('Herramienta no encontrada.', 'warn'); return; }
-
-  (async () => {
-    const updated = { ...tool, tipo: 'personal', assignedTo: wId };
+async function confirmAsign() {
+  const toolId = document.getElementById('asign-tool-sel').value;
+  const wId    = _asignTargetWorker;
+  if (!toolId || !wId) return;
+  const tool = herramientas.find(h => h.id === toolId);
+  if (!tool) return;
+  closeAsignModal();
+  const updated = { ...tool, tipo: 'personal', assignedTo: wId };
+  try {
     await window.parent.setDocumentInFirebase('herramientas', tool.id, updated);
     const idx = herramientas.findIndex(h => h.id === tool.id);
-    if (idx >= 0) herramientas[idx] = updated;
-
+    if (idx >= 0) {
+      herramientas[idx] = updated;
+      const dsIdx = (window.parent.DB_STATE?.herramientas || []).findIndex(h => (h.id||h._id) === tool.id);
+      if (dsIdx >= 0) window.parent.DB_STATE.herramientas[dsIdx] = updated;
+    }
     const log = { id: crypto.randomUUID(), toolId: tool.id, toolNombre: tool.nombre, workerId: wId, tipo: 'asignacion', fecha: new Date().toISOString() };
     await window.parent.setDocumentInFirebase('tool_logs', log.id, log);
-    if (window.parent?.DB_STATE) {
-      if (!window.parent.DB_STATE.tool_logs) window.parent.DB_STATE.tool_logs = [];
-      window.parent.DB_STATE.tool_logs.unshift(log);
-    }
     logs.unshift(log);
-
+    if (!window.parent.DB_STATE.tool_logs) window.parent.DB_STATE.tool_logs = [];
+    window.parent.DB_STATE.tool_logs.unshift(log);
     renderCaja(wId);
     render();
     toast('✓ Herramienta asignada.');
-  })();
+  } catch (e) { toast('Error: ' + e.message, 'warn'); }
 }
 
 /* ── Historial tab ─────────────────────── */
@@ -613,16 +667,17 @@ async function saveTool() {
   try {
     await window.parent.setDocumentInFirebase('herramientas', data.id, data);
     if (!window.parent.DB_STATE.herramientas) window.parent.DB_STATE.herramientas = [];
-    const idx = herramientas.findIndex(h => h.id === data.id);
-    if (idx >= 0) { herramientas[idx] = data; window.parent.DB_STATE.herramientas[idx] = data; }
-    else          { herramientas.push(data); window.parent.DB_STATE.herramientas.push(data); }
+    const idx   = herramientas.findIndex(h => h.id === data.id);
+    const dsIdx = window.parent.DB_STATE.herramientas.findIndex(h => (h.id||h._id) === data.id);
+    if (idx >= 0)   herramientas[idx] = data; else herramientas.push(data);
+    if (dsIdx >= 0) window.parent.DB_STATE.herramientas[dsIdx] = data; else window.parent.DB_STATE.herramientas.push(data);
 
-    if (!editId) {
-      const log = { id: crypto.randomUUID(), toolId: data.id, toolNombre: data.nombre, workerId: data.assignedTo || '', tipo: 'asignacion', fecha: new Date().toISOString() };
-      if (data.assignedTo) {
-        await window.parent.setDocumentInFirebase('tool_logs', log.id, log);
-        logs.unshift(log);
-      }
+    if (!editId && data.assignedTo) {
+      const log = { id: crypto.randomUUID(), toolId: data.id, toolNombre: data.nombre, workerId: data.assignedTo, tipo: 'asignacion', fecha: new Date().toISOString() };
+      await window.parent.setDocumentInFirebase('tool_logs', log.id, log);
+      logs.unshift(log);
+      if (!window.parent.DB_STATE.tool_logs) window.parent.DB_STATE.tool_logs = [];
+      window.parent.DB_STATE.tool_logs.unshift(log);
     }
 
     populateFilters();
@@ -638,7 +693,8 @@ async function saveTool() {
 async function deleteTool() {
   const id = document.getElementById('edit-id').value;
   if (!id) return;
-  if (!confirm('¿Eliminar esta herramienta? Esta acción no se puede deshacer.')) return;
+  const ok = await showConfirm('¿Eliminar esta herramienta?', 'Esta acción no se puede deshacer.');
+  if (!ok) return;
   try {
     await window.parent.deleteDocumentFromFirebase('herramientas', id);
     herramientas = herramientas.filter(h => h.id !== id);
@@ -660,16 +716,24 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
-  // Mostrar filtros de catálogo solo en el tab catálogo
   const showFilters = id === 'catalogo';
-  ['search', 'fil-cat', 'fil-tipo', 'fil-estado', 'fil-worker'].forEach(elId => {
-    const el = document.getElementById(elId);
-    if (el) el.closest('.search-box, .f-select') && (el.parentElement.style.display = showFilters ? '' : 'none');
-  });
   document.querySelectorAll('.hdr .search-box, .hdr .f-select').forEach(el => {
     el.style.display = showFilters ? '' : 'none';
   });
   if (id === 'historial') renderHistorial();
+}
+
+/* ── Confirm ───────────────────────────── */
+function showConfirm(title, msg) {
+  return new Promise(resolve => {
+    const modal = document.getElementById('confirm-modal');
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent   = msg || '';
+    modal.style.display = 'flex';
+    const done = ok => { modal.style.display = 'none'; resolve(ok); };
+    document.getElementById('confirm-ok').onclick     = () => done(true);
+    document.getElementById('confirm-cancel').onclick = () => done(false);
+  });
 }
 
 /* ── Toast ─────────────────────────────── */
