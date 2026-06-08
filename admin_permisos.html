@@ -2,258 +2,223 @@
 <html lang="es">
 <head>
 <link rel="stylesheet" href="global.css">
-  <meta charset="UTF-8">
-  <title>Admin Permisos</title>
-  <style>
-        body {
-      margin: 0; padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--base); color: var(--text);
-    }
-    .header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 24px;
-    }
-    .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
-    .btn {
-      background: var(--blue); color: #111;
-      border: none; padding: 8px 16px; border-radius: 6px;
-      font-weight: 600; cursor: pointer;
-    }
-    .btn:hover { opacity: 0.9; }
-    
-    table {
-      width: 100%; border-collapse: collapse;
-      background: var(--mantle); border-radius: 8px; overflow: hidden;
-      border: 1px solid var(--crust);
-    }
-    th, td {
-      padding: 12px; text-align: left;
-      border-bottom: 1px solid var(--crust);
-      border-right: 1px solid var(--crust);
-    }
-    th {
-      background: var(--surface0);
-      font-size: 13px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    tr:last-child td { border-bottom: none; }
-    
-    .section-group {
-      background: var(--crust);
-      font-weight: bold;
-      color: var(--blue);
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: 1px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Permisos de Acceso</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .section-name {
-      font-weight: 500;
-      font-size: 14px;
-    }
+.page-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
+}
+.page-title { font-size: 20px; font-weight: 800; }
+.page-sub   { font-size: 13px; color: var(--subtext); margin-top: 2px; }
 
-    .perm-toggle {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-      text-align: center;
-      min-width: 80px;
-      border: 1px solid transparent;
-    }
-    .perm-toggle.disabled {
-      cursor: not-allowed;
-      opacity: 0.6;
-      pointer-events: none;
-    }
+.legend {
+  display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+  font-size: 12px; margin-bottom: 18px;
+}
+.leg-item { display: flex; align-items: center; gap: 6px; }
+.leg-dot  { width: 10px; height: 10px; border-radius: 50%; }
 
-    .perm-full {
-      background: rgba(166, 227, 161, 0.2);
-      color: var(--green);
-      border-color: rgba(166, 227, 161, 0.4);
-    }
-    .perm-readonly {
-      background: rgba(137, 180, 250, 0.2);
-      color: var(--blue);
-      border-color: rgba(137, 180, 250, 0.4);
-    }
-    .perm-none {
-      background: var(--surface0);
-      color: var(--subtext);
-      border-color: var(--surface1);
-    }
-  </style>
+.tbl-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--crust); }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 760px; }
+
+thead th {
+  background: var(--mantle); padding: 10px 12px; text-align: center;
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--subtext); white-space: nowrap; border-bottom: 2px solid var(--crust);
+}
+thead th:first-child { text-align: left; width: 220px; }
+
+tbody tr { border-bottom: 1px solid var(--crust); }
+tbody tr:last-child { border-bottom: none; }
+
+td { padding: 9px 10px; vertical-align: middle; }
+td:first-child { font-weight: 600; font-size: 13px; }
+td.desc { font-size: 11px; color: var(--subtext); padding-top: 1px; }
+
+.group-row td {
+  background: var(--crust); color: var(--blue);
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+  padding: 7px 12px;
+}
+
+td.perm-cell { text-align: center; padding: 6px; }
+
+.tog {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 82px; padding: 5px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; cursor: pointer; user-select: none;
+  border: 1px solid transparent; transition: filter .12s;
+}
+.tog:hover:not(.tog-locked) { filter: brightness(.88); }
+.tog-locked { cursor: default; opacity: .7; }
+
+.tog-full     { background: rgba(64,160,43,.15);   color: var(--green); border-color: rgba(64,160,43,.3); }
+.tog-readonly { background: rgba(30,102,245,.12);  color: var(--blue);  border-color: rgba(30,102,245,.25); }
+.tog-none     { background: var(--surface0);       color: var(--subtext); }
+
+.toast-wrap { position:fixed; top:70px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+</style>
 </head>
 <body>
-
-  <div class="header">
-    <h1>Matriz de Permisos</h1>
-    <button class="btn" onclick="savePermissions()">Guardar cambios</button>
+<div style="padding:20px;">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">🔐 Permisos de Acceso</div>
+      <div class="page-sub">Haz clic en una celda para cambiar el nivel: Completo → Solo lectura → Sin acceso</div>
+    </div>
+    <button class="btn btn-blue" onclick="savePermissions()">Guardar cambios</button>
   </div>
 
-  <div style="font-size:13px; color:var(--subtext); margin-bottom:16px;">
-    Haz clic en las celdas para alternar entre: 
-    <span style="color:var(--green); font-weight:bold; margin-left:8px;">Verde (Acceso Completo)</span>
-    <span style="color:var(--blue); font-weight:bold; margin-left:8px;">Azul (Solo Lectura)</span>
-    <span style="color:var(--subtext); font-weight:bold; margin-left:8px;">Gris (Sin Acceso)</span>
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div> Acceso completo</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div> Solo lectura</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--subtext)"></div> Sin acceso</div>
+    <div class="leg-item" style="color:var(--subtext);">— Programador siempre tiene acceso completo</div>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width:200px;">Sección</th>
-        <th>Programador</th>
-        <th>Admin</th>
-        <th>Gerencia</th>
-        <th>Contador</th>
-        <th>Compras</th>
-        <th>Almacén</th>
-        <th>Producción</th>
-      </tr>
-    </thead>
-    <tbody id="perm-body">
-      <!-- Generated via JS -->
-    </tbody>
-  </table>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Módulo / Sección</th>
+          <th>Admin</th>
+          <th>Gerencia</th>
+          <th>Contador</th>
+          <th>Compras</th>
+          <th>Almacén</th>
+          <th>Producción</th>
+        </tr>
+      </thead>
+      <tbody id="perm-body"></tbody>
+    </table>
+  </div>
+</div>
+<div class="toast-wrap" id="toast-wrap"></div>
 
-  <script>
-    const ROLES = ['programador', 'admin', 'gerencia', 'contador', 'compras', 'almacen', 'produccion'];
-    
-    const SECTIONS = [
-      { type: 'group', title: 'General' },
-      { id: 'dashboard', label: 'Dashboard' },
-      
-      { type: 'group', title: 'Proyectos' },
-      { id: 'proyectos', label: 'Proyectos' },
-      { id: 'cotizaciones', label: 'Cotizaciones' },
-      
-      { type: 'group', title: 'Finanzas' },
-      { id: 'finanzas', label: 'Finanzas y Contabilidad' },
-      { id: 'nomina', label: 'Nómina Semanal' },
-      { id: 'rh', label: 'RH / Trabajadores' },
-      { id: 'viaticos', label: 'Viáticos' },
+<script>
+// Roles editables (programador siempre completo, se omite de la tabla)
+const ROLES = ['admin', 'gerencia', 'contador', 'compras', 'almacen', 'produccion'];
 
-      { type: 'group', title: 'Operaciones' },
-      { id: 'pedidos', label: 'Pedidos a Proveedores / Autorizaciones' },
-      { id: 'compras_oc', label: 'Órdenes de Compra (Panel Compras)' },
-      { id: 'almacen', label: 'Inventario / Almacén / Recepción' },
-      { id: 'herramientas', label: 'Herramientas / Salida de Herramientas' },
-      { id: 'madera', label: 'Almacén de Madera / Escaneo' },
-      { id: 'produccion', label: 'Producción Diaria' },
-      { id: 'reloj', label: 'Reloj Checador' },
+const SECTIONS = [
+  { type: 'group', title: 'General' },
+  { id: 'dashboard',   label: 'Dashboard',       sub: 'Dashboard · Directorio CRM' },
 
-      { type: 'group', title: 'Administración' },
-      { id: 'admin_usuarios', label: 'Gestión de Usuarios' },
-      { id: 'admin_listas', label: 'Listas y Catálogos' },
-      { id: 'admin_db', label: 'Admin DB' },
-      { id: 'admin_permisos', label: 'Permisos de Acceso' },
-      { id: 'wiki', label: 'Wiki / Manual del Sistema' },
-      { id: 'fichas_tecnicas', label: 'Fichas Técnicas' },
-      { id: 'admin_bugs', label: 'Bugs y Reportes de Sistema' }
-    ];
+  { type: 'group', title: 'Diseño y Proyectos' },
+  { id: 'proyectos',    label: 'Proyectos',        sub: 'Lista y detalle de proyectos' },
+  { id: 'cotizaciones', label: 'Cotizaciones',     sub: 'Nueva cotización · PDF' },
+  { id: 'fichas_tecnicas', label: 'Fichas Técnicas', sub: 'Fichas técnicas de piezas' },
 
-    let currentPerms = {};
+  { type: 'group', title: 'Contabilidad y RRHH' },
+  { id: 'finanzas', label: 'Movimientos Contables', sub: 'Ingresos, gastos y transferencias' },
+  { id: 'nomina',   label: 'Nómina Semanal',        sub: 'Cálculo y registro de nómina' },
+  { id: 'rh',       label: 'Trabajadores (RH)',      sub: 'Fichas, asistencias, trabajadores' },
+  { id: 'reloj',    label: 'Reloj Checador',         sub: 'Registro de entrada/salida' },
+  { id: 'viaticos', label: 'Viáticos',               sub: 'Gestión de viajes y anticipos' },
 
-    function init() {
-      if (window.parent && window.parent.PERMISOS) {
-        currentPerms = JSON.parse(JSON.stringify(window.parent.PERMISOS));
-      }
-      // Ensure every section exists and programador always has full access
-      SECTIONS.filter(s => !s.type).forEach(s => {
-        if (!currentPerms[s.id]) currentPerms[s.id] = {};
-        ROLES.forEach(r => {
-          if (r === 'programador') {
-            currentPerms[s.id][r] = 'full';
-          } else if (currentPerms[s.id][r] === undefined) {
-            currentPerms[s.id][r] = 'none';
-          }
-        });
-      });
-      renderTable();
+  { type: 'group', title: 'Compras y Almacén' },
+  { id: 'pedidos',    label: 'Pedidos / Autorizaciones', sub: 'Hoja de pedido · Autorizar pedidos · Confirmar pedidos' },
+  { id: 'compras_oc', label: 'Panel de Compras',         sub: 'Cotizar precios · marcar como comprado' },
+  { id: 'almacen',    label: 'Inventario y Almacén',     sub: 'Inventario · Salidas · Recepción de almacén' },
+  { id: 'herramientas', label: 'Herramientas',           sub: 'Control y salida de herramientas' },
+  { id: 'madera',     label: 'Almacén de Madera',        sub: 'Control de madera · Escaneo' },
+
+  { type: 'group', title: 'Operaciones' },
+  { id: 'produccion', label: 'Producción Diaria',  sub: 'Registro de trabajos del día' },
+
+  { type: 'group', title: 'Administración' },
+  { id: 'documentos',    label: 'Documentos',         sub: 'Repositorio de documentos Drive' },
+
+  { type: 'group', title: 'Administración del Sistema' },
+  { id: 'admin_usuarios', label: 'Gestión de Usuarios', sub: 'Crear y editar usuarios del sistema' },
+  { id: 'admin_listas',   label: 'Reglas, Ajustes y Listas', sub: 'admin_config · admin_listas' },
+  { id: 'admin_db',       label: 'Esquema de DB',       sub: 'Estructura de colecciones' },
+  { id: 'admin_permisos', label: 'Permisos de Acceso',  sub: 'Esta pantalla' },
+  { id: 'admin_papelera', label: 'Papelera Cotizaciones', sub: 'Restaurar o eliminar cotizaciones' },
+  { id: 'admin_bugs',     label: 'Bugs y Reportes',     sub: 'Reporte de errores del sistema' },
+  { id: 'wiki',           label: 'Wiki / Manual',       sub: 'Manual del sistema' },
+];
+
+let perms = {};
+
+function init() {
+  if (window.parent?.PERMISOS) perms = JSON.parse(JSON.stringify(window.parent.PERMISOS));
+  SECTIONS.filter(s => !s.type).forEach(s => {
+    if (!perms[s.id]) perms[s.id] = {};
+    ROLES.forEach(r => { if (perms[s.id][r] === undefined) perms[s.id][r] = 'none'; });
+  });
+  renderTable();
+}
+
+function cycle(secId, role) {
+  const order = ['full', 'readonly', 'none'];
+  const cur = perms[secId]?.[role] || 'none';
+  perms[secId][role] = order[(order.indexOf(cur) + 1) % order.length];
+  renderTable();
+}
+
+function togHTML(secId, role) {
+  const v = perms[secId]?.[role] || 'none';
+  const map = { full: ['tog-full', 'Completo'], readonly: ['tog-readonly', 'Lectura'], none: ['tog-none', 'No'] };
+  const [cls, lbl] = map[v] || map.none;
+  return `<span class="tog ${cls}" data-sec="${secId}" data-role="${role}">${lbl}</span>`;
+}
+
+function renderTable() {
+  let html = '';
+  SECTIONS.forEach(s => {
+    if (s.type === 'group') {
+      html += `<tr class="group-row"><td colspan="${ROLES.length + 1}">${s.title}</td></tr>`;
+    } else {
+      html += `<tr>
+        <td>
+          <div>${s.label}</div>
+          <div style="font-size:11px;color:var(--subtext);margin-top:1px;">${s.sub}</div>
+        </td>
+        ${ROLES.map(r => `<td class="perm-cell">${togHTML(s.id, r)}</td>`).join('')}
+      </tr>`;
     }
+  });
+  document.getElementById('perm-body').innerHTML = html;
+}
 
-    function togglePerm(secId, role) {
-      if (role === 'programador') return;
-      if (!currentPerms[secId]) currentPerms[secId] = {};
-      const states = ['full', 'readonly', 'none'];
-      const cur = currentPerms[secId][role] || 'none';
-      currentPerms[secId][role] = states[(states.indexOf(cur) + 1) % states.length];
-      renderTable();
-    }
+document.addEventListener('click', e => {
+  const tog = e.target.closest('.tog:not(.tog-locked)');
+  if (!tog) return;
+  const { sec, role } = tog.dataset;
+  if (sec && role) cycle(sec, role);
+});
 
-    function renderTable() {
-      const tbody = document.getElementById('perm-body');
-      let html = '';
-
-      SECTIONS.forEach(s => {
-        if (s.type === 'group') {
-          html += `<tr><td colspan="8" class="section-group">${s.title}</td></tr>`;
-        } else {
-          html += `<tr>`;
-          html += `<td class="section-name">${s.label}</td>`;
-
-          ROLES.forEach(r => {
-            const state = currentPerms[s.id]?.[r] || 'none';
-            let label = 'No';
-            let cssClass = 'perm-none';
-            if (state === 'full')     { label = 'Completo';     cssClass = 'perm-full'; }
-            if (state === 'readonly') { label = 'Solo Lectura'; cssClass = 'perm-readonly'; }
-
-            const isDisabled = (r === 'programador');
-            html += `<td style="text-align:center;">
-              <span class="perm-toggle ${cssClass}${isDisabled ? ' disabled' : ''}"
-                data-sec="${s.id}" data-role="${r}">${label}</span>
-            </td>`;
-          });
-
-          html += `</tr>`;
-        }
-      });
-
-      tbody.innerHTML = html;
-    }
-
-    // Event delegation — más confiable que onclick inline en innerHTML
-    document.getElementById('perm-body').addEventListener('click', e => {
-      const span = e.target.closest('.perm-toggle:not(.disabled)');
-      if (!span) return;
-      const secId = span.dataset.sec;
-      const role  = span.dataset.role;
-      if (!secId || !role) return;
-      togglePerm(secId, role);
+async function savePermissions() {
+  try {
+    const data = JSON.parse(JSON.stringify(perms));
+    // Ensure programador always gets full on save
+    SECTIONS.filter(s => !s.type).forEach(s => {
+      if (!data[s.id]) data[s.id] = {};
+      data[s.id].programador = 'full';
     });
+    await window.parent.setDocumentInFirebase('config_params', 'permisos', data);
+    window.parent.PERMISOS = data;
+    toast('Permisos guardados.');
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
 
-    window.savePermissions = async () => {
-      try {
-        const data = JSON.parse(JSON.stringify(currentPerms));
-        // Programador always gets full access on save — safety net
-        SECTIONS.filter(s => !s.type).forEach(s => {
-          if (!data[s.id]) data[s.id] = {};
-          data[s.id]['programador'] = 'full';
-        });
-        await window.parent.setDocumentInFirebase("config_params", "permisos", data);
-        window.parent.PERMISOS = data;
-        toast('✓ Permisos guardados correctamente.');
-      } catch (err) {
-        console.error(err);
-        toast('Error al guardar: ' + err.message, 'warn');
-      }
-    };
+function toast(msg, type = 'ok') {
+  const wrap = document.getElementById('toast-wrap');
+  const bg = type === 'err' ? 'var(--red)' : 'var(--green)';
+  const el = document.createElement('div');
+  el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.18);`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 
-    function toast(msg, type='ok') {
-      const el = document.createElement('div');
-      el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
-      el.textContent = msg;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 3000);
-    }
-
-    document.addEventListener("DOMContentLoaded", init);
-
-  </script>
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
