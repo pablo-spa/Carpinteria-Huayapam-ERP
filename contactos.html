@@ -111,16 +111,14 @@
     <button class="back-btn" onclick="window.history.back()">← Volver</button>
     <h1>Directorio CRM</h1>
   </div>
-  <div class="hdr-right">
-    <div class="search-box">
-      <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
-      <input type="text" id="srch" placeholder="Buscar nombre, empresa, teléfono...">
-    </div>
-    <button class="btn btn-blue" onclick="openPanel(null)">+ Nuevo Contacto</button>
-  </div>
+  <button class="btn btn-blue" onclick="openPanel(null)">+ Nuevo Contacto</button>
 </div>
 
 <div class="filters">
+  <div class="search-box" style="flex-shrink:0;">
+    <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
+    <input type="text" id="srch" placeholder="Buscar nombre, empresa, teléfono...">
+  </div>
   <div class="f-btn act" onclick="filterData('all')">Todos</div>
   <div class="f-btn" onclick="filterData('cliente')">Clientes</div>
   <div class="f-btn" onclick="filterData('proveedor')">Proveedores</div>
