@@ -77,7 +77,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
           <h2 id="l-name">Lista</h2>
           <p id="l-desc"></p>
         </div>
-        <span class="saving-badge" id="saving-badge">✓ Guardado</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="recode-inv-btn" onclick="recodifyInventory()" style="display:none;padding:7px 13px;border:1px solid var(--crust);border-radius:8px;background:var(--surface0);color:var(--text);font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;">⟳ Recodificar Inventario</button>
+          <span class="saving-badge" id="saving-badge">✓ Guardado</span>
+        </div>
       </div>
     </div>
     <div class="m-body">
@@ -295,6 +298,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     document.getElementById('list-view').style.display = 'flex';
     document.getElementById('l-name').textContent = currentDef.name;
     document.getElementById('l-desc').textContent = currentDef.desc;
+    document.getElementById('recode-inv-btn').style.display = currentDef.key === 'concept_categories' ? '' : 'none';
     renderAddBar();
     renderItems();
     renderSidebar();
@@ -579,6 +583,44 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  }
+
+  async function recodifyInventory() {
+    const cats = STATE['concept_categories'] || [];
+    if (!cats.length) { alert('No hay categorías definidas.'); return; }
+
+    await window.DB.query('inventory');
+    await window.DB.query('inventory_brands');
+    const d = window.DB.get();
+    const inventory = (d.inventory || []).filter(i => !i._init && i.name);
+    const brands = (d.inventory_brands || []).filter(b => b?.id && b.name);
+
+    const catCodeMap = {};
+    cats.forEach(c => { catCodeMap[c.name] = String(c.catCode || '00').padStart(2,'0').slice(0,2); });
+
+    const counters = {};
+    let updated = 0;
+    for (const item of inventory) {
+      const cc  = catCodeMap[item.category] || '00';
+      const brand = brands.find(b => b.id === item.brandId || b.name === item.brand);
+      const mmm = String(brand?.brandCode || '000').padStart(3,'0').slice(0,3);
+      const pfx = cc + mmm;
+      const seq = counters[pfx] ?? 0;
+      counters[pfx] = seq + 1;
+      const newCode = cc + '-' + mmm + '-' + String(seq).padStart(2,'0');
+      if (item.code !== newCode) {
+        item.code = newCode;
+        if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('inventory', item.id, item);
+        updated++;
+      }
+    }
+    window.DB.save(d);
+
+    const b = document.getElementById('saving-badge');
+    b.textContent = `✓ ${updated} productos recodificados`;
+    b.style.display = 'inline';
+    clearTimeout(b._t);
+    b._t = setTimeout(() => { b.style.display = 'none'; b.textContent = '✓ Guardado'; }, 3500);
   }
 
   document.addEventListener('DOMContentLoaded', loadAll);

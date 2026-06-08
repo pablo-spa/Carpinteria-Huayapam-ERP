@@ -19,8 +19,6 @@
 .f-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
 .f-btn.act-red { background: var(--red); color: #fff; border-color: var(--red); }
 .f-btn.act-amber { background: var(--amber); color: #111; border-color: var(--amber); }
-.f-btn-tool { height: 36px; padding: 0 12px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; font-family: inherit; }
-.f-btn-tool:hover { background: var(--surface0); color: var(--text); }
 .f-select { height: 36px; padding: 0 10px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; max-width: 180px; }
 .f-select:focus { border-color: var(--blue); color: var(--text); }
 .hdr-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
@@ -76,10 +74,11 @@
     <select id="cat-select" class="f-select" onchange="setCatFilterSelect(this.value)">
       <option value="all">Todas las categorías</option>
     </select>
-    <button class="f-btn act" data-stock="all" onclick="setStockFilter('all',this)">Todos</button>
-    <button class="f-btn"    data-stock="low" onclick="setStockFilter('low',this)">Stock bajo</button>
-    <button class="f-btn"    data-stock="out" onclick="setStockFilter('out',this)">Sin stock</button>
-    <button class="f-btn-tool" onclick="recodifyAll()" title="Re-codificar códigos de artículo">⟳ Codificar</button>
+    <select class="f-select" id="stock-filter" onchange="setStockFilter(this.value)">
+      <option value="all">Todos</option>
+      <option value="low">Stock bajo</option>
+      <option value="out">Sin stock</option>
+    </select>
   </div>
 </div>
 
@@ -244,14 +243,8 @@
     applyFilters();
   }
 
-  function setStockFilter(val, btn) {
+  function setStockFilter(val) {
     currentStockFilter = val;
-    document.querySelectorAll('.f-btn[data-stock]').forEach(b => {
-      b.classList.remove('act','act-red','act-amber');
-    });
-    if (val === 'out') btn.classList.add('act-red');
-    else if (val === 'low') btn.classList.add('act-amber');
-    else btn.classList.add('act');
     applyFilters();
   }
 
