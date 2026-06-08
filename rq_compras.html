@@ -503,7 +503,31 @@ function statusFlow(cur) {
   ).join('') + '</div>';
 }
 
-// ── Autocomplete for concept field in existing order cards ─────
+// ── Concept select for existing order cards ────────────────────
+function buildConceptNameOpts(selectedName) {
+  const opts = INV.map(i => {
+    const nom = i.name || i.nombre || i.code;
+    return `<option value="${nom}" data-unit="${i.unit||'pza'}" ${nom === selectedName ? 'selected' : ''}>${i.code} — ${nom}</option>`;
+  }).join('');
+  // If current name isn't in INV, prepend it as a custom option
+  const inCatalog = INV.find(i => (i.name||i.nombre||i.code) === selectedName);
+  const custom = (selectedName && !inCatalog)
+    ? `<option value="${selectedName}" selected>${selectedName}</option>`
+    : '';
+  return `<option value="">— Buscar concepto —</option>${custom}${opts}`;
+}
+
+function iconceptChange(sel) {
+  if (!sel.value || sel.value === '_new') return;
+  const opt = sel.options[sel.selectedIndex];
+  const unit = opt?.dataset?.unit;
+  if (!unit) return;
+  const tr = sel.closest('tr');
+  const unitSel = tr?.querySelector('.iunit');
+  if (unitSel) { unitSel.value = unit; if (unitSel._ssSync) unitSel._ssSync(); }
+}
+
+// ── Legacy autocomplete (kept for reference) ───────────────────
 function iacFilter(input, key) {
   const q   = input.value.trim();
   const drop = document.getElementById('iacdrop-' + key);
@@ -589,15 +613,9 @@ function buildItemsTable(o) {
     return `
     <tr>
       <td>
-        <div class="iac-wrap">
-          <input type="text" class="iname" data-order="${o.id}" data-idx="${i}" data-iackey="${key}"
-            value="${nameVal}" title="${nameVal}"
-            autocomplete="off"
-            oninput="iacFilter(this,'${key}')" onfocus="iacFilter(this,'${key}')"
-            onkeydown="iacKey(event,this,'${key}')"
-            style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
-          <div class="iac-drop" id="iacdrop-${key}"></div>
-        </div>
+        <select class="iname" data-searchable data-allow-new data-order="${o.id}" data-idx="${i}" onchange="iconceptChange(this)">
+          ${buildConceptNameOpts(nameVal)}
+        </select>
         ${(item.conceptoPendiente && !item.esHerramienta) ? `
           <div class="add-cat-row">
             <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
@@ -812,9 +830,11 @@ async function guardarPrecios(ordId) {
 function readPricesFromCard(ordId, order) {
   const card = document.getElementById('ord-'+ordId);
   if (!card) return;
-  card.querySelectorAll('.iname').forEach(inp => {
-    const idx = parseInt(inp.dataset.idx);
-    if (order.items[idx] !== undefined) order.items[idx].name = inp.value.trim();
+  card.querySelectorAll('.iname').forEach(sel => {
+    const idx = parseInt(sel.dataset.idx);
+    if (order.items[idx] === undefined) return;
+    const name = sel.value === '_new' ? (sel.dataset.allowNewText || '').trim() : sel.value.trim();
+    if (name) order.items[idx].name = name;
   });
   card.querySelectorAll('.iqty').forEach(inp => {
     const idx = parseInt(inp.dataset.idx);
