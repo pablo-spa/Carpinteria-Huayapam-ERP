@@ -165,25 +165,35 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           </div>
           ${sfFlow('Pedido')}
           <div class="ficha-items">${itemsHtml}</div>
+          <div class="ficha-actions" style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
+            <button class="btn btn-red" style="font-size:12px;padding:5px 12px;" onclick="cancelOrder('${o.id}')">✕ Cancelar</button>
+            <button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="confirmOrder('${o.id}')">✓ Confirmar</button>
+          </div>
         </div>`;
     });
     cont.innerHTML = html;
   }
 
   function renderHistorialPedidos() {
+    const TERMINAL = ['Cancelado','Recibido','Entregado'];
     const hist = ORDERS
-      .filter(o => !o._init && o.status !== 'Pedido' && !o.manual)
-      .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date))
-;
+      .filter(o => !o._init && o.status !== 'Pedido' && !o.manual && !TERMINAL.includes(o.status))
+      .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
     const cont = document.getElementById('historial-pedidos');
     if (!hist.length) { cont.innerHTML = ''; return; }
 
-    let html = `<div class="sec-lbl">Historial de Pedidos (${hist.length})</div>`;
+    const isOpen = localStorage.getItem('rq_almacen_hist') !== 'closed';
+    let html = `
+      <div class="sec-lbl" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;" onclick="toggleHist(this)">
+        <span>En Proceso (${hist.length})</span>
+        <span id="hist-arrow">${isOpen ? '▲' : '▼'}</span>
+      </div>
+      <div id="hist-body" style="display:${isOpen ? 'block' : 'none'};">`;
     hist.forEach(o => {
       const cls = PILL_MAP[o.status] || 'pill-gray';
       const itemsTxt = (o.items||[]).map(i => `${i.qty} ${i.unit||'pza'} — ${i.name||i.code}`).join(' · ');
       html += `
-        <div class="ficha" style="opacity:.65;">
+        <div class="ficha" style="opacity:.75;">
           <div class="ficha-hdr">
             <span class="ficha-folio">${o.folio}</span>
             <span class="pill ${cls}">${o.status}</span>
@@ -194,10 +204,35 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             ${o.date?`<span>📅 ${o.date}</span>`:''}
           </div>
           ${sfFlow(o.status)}
-          <div style="font-size:12px;color:var(--subtext);margin-top:4px;">${itemsTxt}</div>
         </div>`;
     });
+    html += '</div>';
     cont.innerHTML = html;
+  }
+
+  function toggleHist(hdr) {
+    const body = document.getElementById('hist-body');
+    const arrow = document.getElementById('hist-arrow');
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    arrow.textContent  = open ? '▼' : '▲';
+    localStorage.setItem('rq_almacen_hist', open ? 'closed' : 'open');
+  }
+
+  async function cancelOrder(ordId) {
+    const order = ORDERS.find(o => o.id === ordId);
+    if (!order || !confirm(`¿Cancelar pedido ${order.folio}? Se moverá al Historial de Compras.`)) return;
+    order.status = 'Cancelado';
+    order.cancelledAt = new Date().toISOString();
+    if (window.parent?.setDocumentInFirebase)
+      await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
+    if (window.parent?.DB_STATE?.purchase_orders) {
+      const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
+      if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
+    }
+    toast('Pedido cancelado — aparece en Historial de Compras.');
+    renderActivePedidos();
+    renderHistorialPedidos();
   }
 
   async function confirmOrder(ordId) {

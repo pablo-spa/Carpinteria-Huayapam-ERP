@@ -87,7 +87,6 @@ td { color: var(--text); }
     <button class="btn btn-blue" onclick="showView('form')">+ Nuevo Viaje</button>
   </div>
   <div id="hdr-actions-detail" style="display:none; gap: 8px;">
-    <button class="btn" onclick="showView('list')">← Viajes</button>
     <button class="btn btn-blue" onclick="guardarYSalir()">Guardar y Salir</button>
   </div>
 </div>
@@ -197,9 +196,10 @@ td { color: var(--text); }
         </div>
         <div id="d-nota-cierre" style="font-size:13px; font-style:italic; color:var(--amber); margin-top:8px; display:none;"></div>
       </div>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; align-items:center;">
         <button id="btn-cerrar-viaje" class="btn btn-green" onclick="comenzarLiquidacion()" style="display:none;">Liquidar y Cerrar</button>
         <button id="btn-reabrir-viaje" class="btn" onclick="reabrirViaje()" style="display:none;">Reabrir Viaje</button>
+        <button class="btn" onclick="eliminarViaje()" style="color:var(--red);border-color:var(--crust);margin-left:auto;">🗑 Eliminar Viaje</button>
       </div>
     </div>
 
@@ -1238,11 +1238,23 @@ function updateViajeProject(pId) {
 }
 
 function guardarYSalir() {
-  // Los anticipos/gastos ya están guardados individualmente.
-  // Solo navegar al padre o a la lista de viajes.
-  if (window.parent && window.parent.goHome) window.parent.goHome();
-  else if (window.parent && window.parent.goBack) window.parent.goBack();
-  else showView('list');
+  showView('list');
+}
+
+async function eliminarViaje() {
+  if (!currentViajeId || !confirm('¿Eliminar este viaje? Esta acción no se puede deshacer.')) return;
+  try {
+    await window.parent.deleteDocumentFromFirebase('viajes', currentViajeId);
+    const db = window.DB.get();
+    if (db.viajes) {
+      const idx = db.viajes.findIndex(v => v.id === currentViajeId);
+      if (idx >= 0) db.viajes.splice(idx, 1);
+    }
+    currentViajeId = null;
+    currentViaje   = null;
+    showView('list');
+    viatToast('Viaje eliminado.');
+  } catch(e) { alert('Error al eliminar: ' + e.message); }
 }
 
 function editNotaCierre() {

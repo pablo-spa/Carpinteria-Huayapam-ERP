@@ -686,11 +686,16 @@ function buildActiveCard(o, mode) {
 
   const accts = ACCOUNTS.length ? ACCOUNTS : ['CAJA','CHU','SATP'];
   const cuentaOpts = accts.map(a => `<option value="${a}">${a}</option>`).join('');
+  const cancelBtn = `<button class="btn btn-red" style="font-size:12px;padding:5px 12px;" onclick="cancelOrder('${o.id}')">✕ Cancelar</button>`;
   const actionBtns = isCotizar
-    ? `<button class="btn btn-ghost" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
-       <span style="font-size:12px;color:var(--subtext);margin-left:8px;">⏳ Esperando autorización en <strong>Autorizar Pedidos</strong></span>`
+    ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+         ${cancelBtn}
+         <button class="btn btn-ghost" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
+         <span style="font-size:12px;color:var(--subtext);margin-left:auto;">⏳ Esperando autorización</span>
+       </div>`
     : `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;justify-content:flex-end;">
-         <div style="display:flex;align-items:center;gap:6px;margin-right:auto;">
+         ${cancelBtn}
+         <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
            <label style="font-size:12px;font-weight:700;color:var(--subtext);white-space:nowrap;">Cuenta de pago:</label>
            <select class="sel-cuenta-pago" data-searchable>
              <option value="">— Seleccionar cuenta —</option>
@@ -738,9 +743,10 @@ function renderOrders() {
     .filter(o => o.status === 'Autorizado' || (o.manual === true && !['Comprado','Recibido','Entregado'].includes(o.status)))
     .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
 
+  const TERMINAL = ['Cancelado','Recibido','Entregado'];
   const activeIds = new Set([...confirmados, ...autorizados].map(o => o.id));
   const historial = all
-    .filter(o => !activeIds.has(o.id))
+    .filter(o => !activeIds.has(o.id) && !TERMINAL.includes(o.status))
     .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
 
   const cont = document.getElementById('orders-list');
@@ -770,15 +776,18 @@ function renderOrders() {
     cont.insertAdjacentHTML('beforeend', '<div style="color:var(--subtext);text-align:center;padding:32px;background:var(--mantle);border-radius:12px;border:1px solid var(--crust);margin-bottom:14px;">No hay órdenes autorizadas pendientes.</div>');
   }
 
-  // ── Sección 3: Todas las demás (read-only) ──
+  // ── Sección 3: En proceso (activas no terminales) ──
   if (historial.length) {
     const PMAP = {'Pedido':'pill-amber','Solicitado':'pill-amber','Confirmado':'pill-blue','Autorizado':'pill-green','Comprado':'pill-green','Recibido':'pill-green','Cancelado':'pill-red'};
     const fmt2 = n => '$'+parseFloat(n).toLocaleString('es-MX',{minimumFractionDigits:2});
+    const isOpen = localStorage.getItem('rq_compras_hist') !== 'closed';
     cont.insertAdjacentHTML('beforeend', `
-      <div class="sec-hdr">
-        <span class="sec-hdr-lbl">Todas las órdenes (${historial.length})</span>
+      <div class="sec-hdr" style="cursor:pointer;" onclick="toggleComprasHist(this)">
+        <span class="sec-hdr-lbl">En Proceso (${historial.length})</span>
+        <span id="compras-hist-arrow" style="font-size:12px;font-weight:700;color:var(--subtext);">${isOpen ? '▲' : '▼'}</span>
         <div class="sec-hdr-line"></div>
       </div>
+      <div id="compras-hist-body" style="display:${isOpen ? 'block' : 'none'};">
       ${historial.map(o => {
         const proj = db.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
         const pLbl = proj ? `${proj.codigo||proj.code} – ${proj.nombre||proj.name}` : (o.project||'Stock General');
@@ -800,8 +809,36 @@ function renderOrders() {
             ${statusFlow(o.status)}
             <div class="ficha-items">${itemsHtml}</div>
           </div>`;
-      }).join('')}`);
+      }).join('')}
+      </div>`);
   }
+}
+
+function toggleComprasHist(hdr) {
+  const body = document.getElementById('compras-hist-body');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  const arrow = document.getElementById('compras-hist-arrow');
+  if (arrow) arrow.textContent = open ? '▼' : '▲';
+  localStorage.setItem('rq_compras_hist', open ? 'closed' : 'open');
+}
+
+async function cancelOrder(id) {
+  const db = window.DB.get();
+  const all = db.purchase_orders || db.orders || [];
+  const order = all.find(o => o.id === id);
+  if (!order || !confirm(`¿Cancelar orden ${order.folio}? Se moverá al Historial de Compras.`)) return;
+  order.status = 'Cancelado';
+  order.cancelledAt = new Date().toISOString();
+  if (window.parent?.setDocumentInFirebase)
+    await window.parent.setDocumentInFirebase('purchase_orders', id, order);
+  if (window.parent?.DB_STATE?.purchase_orders) {
+    const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === id);
+    if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
+  }
+  toast('Orden cancelada — aparece en Historial de Compras.', 'warn');
+  renderOrders();
 }
 
 // ── Save prices (concepto, qty, unidad, precio — proveedor y cuenta opcionales) ──

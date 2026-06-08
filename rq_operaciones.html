@@ -88,8 +88,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     document.getElementById('hdr-count').textContent =
       pending.length ? `${pending.length} pedido(s) esperando confirmación` : 'Sin pedidos pendientes';
 
+    const TERMINAL = ['Cancelado','Recibido','Entregado'];
     const historial = ALL_ORDERS
-      .filter(o => o.status !== 'Pedido' && o.status !== 'Solicitado')
+      .filter(o => o.status !== 'Pedido' && o.status !== 'Solicitado' && !TERMINAL.includes(o.status))
       .sort((a, b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
 
     const filtered = currentTab === 'pending' ? pending : ALL_ORDERS.filter(o => o.status === 'Pedido' || o.status === 'Solicitado');
@@ -161,24 +162,24 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     if (historial.length) {
       const PMAP = {'Confirmado':'pill-blue','Autorizado':'pill-green','Comprado':'pill-green','Recibido':'pill-green','Cancelado':'pill-red'};
+      const isOpen = localStorage.getItem('rq_op_hist') !== 'closed';
       list.insertAdjacentHTML('beforeend', `
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;">
-          Historial (${historial.length})
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleOpHist(this)">
+          <span>En Proceso (${historial.length})</span>
+          <span>${isOpen ? '▲' : '▼'}</span>
         </div>
+        <div id="op-hist-body" style="display:${isOpen ? 'block' : 'none'};">
         ${historial.map(o => {
           const proj = d.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
           const projLabel = proj ? `${proj.code||proj.codigo} – ${proj.name||proj.nombre}` : (o.project || 'Stock');
           const pill = PMAP[o.status] || 'pill-gray';
-          const itemsHtml = (o.items||[]).map(i =>
-            `<div class="ficha-item"><span class="ficha-item-name">${i.name||i.code}${i.esHerramienta?'&nbsp;<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(223,142,29,0.15);color:var(--amber);">🔧</span>':''}</span><span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}</span></div>`
-          ).join('');
-          return `<div class="ficha" style="opacity:.65;">
+          return `<div class="ficha" style="opacity:.75;">
             <div class="ficha-hdr"><span class="ficha-folio">${o.folio||o.id}</span><span class="pill ${pill}">${o.status}</span></div>
             <div class="ficha-meta"><span>📁 ${projLabel}</span>${o.requester?`<span>👤 ${o.requester}</span>`:''}${o.date?`<span>📅 ${o.date}</span>`:''}</div>
             ${statusFlow(o.status)}
-            <div class="ficha-items">${itemsHtml}</div>
           </div>`;
-        }).join('')}`);
+        }).join('')}
+        </div>`);
     }
   }
 
@@ -297,6 +298,15 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       ov.querySelector('#sc-yes').onclick = () => done(true);
       ov.addEventListener('mousedown', e => { if (e.target === ov) done(false); });
     });
+  }
+
+  function toggleOpHist(hdr) {
+    const body = document.getElementById('op-hist-body');
+    if (!body) return;
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    hdr.querySelector('span:last-child').textContent = open ? '▼' : '▲';
+    localStorage.setItem('rq_op_hist', open ? 'closed' : 'open');
   }
 
   async function act(id, newStatus) {

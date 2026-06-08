@@ -239,11 +239,28 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       list.insertAdjacentHTML('beforeend', `<div style="color:var(--subtext);text-align:center;padding:20px;background:var(--mantle);border-radius:12px;border:1px solid var(--crust);margin-bottom:14px;">Sin pedidos esperando autorización.</div>`);
     }
 
-    // Sección 2: Todas las demás (read-only)
-    if (rest.length) {
-      list.insertAdjacentHTML('beforeend', secHdr('Todas las órdenes', rest.length));
-      rest.forEach(o => list.insertAdjacentHTML('beforeend', fichaConPrecios(o, d, false)));
+    // Sección 2: En proceso (activas, no terminales)
+    const TERMINAL = ['Cancelado','Recibido','Entregado'];
+    const enProceso = rest.filter(o => !TERMINAL.includes(o.status));
+    if (enProceso.length) {
+      const isOpen = localStorage.getItem('rq_apro_hist') !== 'closed';
+      list.insertAdjacentHTML('beforeend', `
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleAproHist(this)">
+          <span>En Proceso (${enProceso.length})</span><span>${isOpen ? '▲' : '▼'}</span>
+        </div>
+        <div id="apro-hist-body" style="display:${isOpen ? 'block' : 'none'};">`);
+      enProceso.forEach(o => list.insertAdjacentHTML('beforeend', fichaConPrecios(o, d, false)));
+      list.insertAdjacentHTML('beforeend', '</div>');
     }
+  }
+
+  function toggleAproHist(hdr) {
+    const body = document.getElementById('apro-hist-body');
+    if (!body) return;
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    hdr.querySelector('span:last-child').textContent = open ? '▼' : '▲';
+    localStorage.setItem('rq_apro_hist', open ? 'closed' : 'open');
   }
 
   async function act(id, newStatus) {
