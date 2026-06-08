@@ -6,75 +6,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Catálogo de Tablas — Carpintería Huayapam</title>
 <style>
-:root { --radius: 10px; --radius-lg: 14px; }
-body { font-size: 14px; min-height: 100vh; }
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.hdr-title { font-size: 18px; font-weight: 800; }
 
-.header {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-}
-.header-title { font-size: 18px; font-weight: 800; color: var(--text); }
-.header-actions { display: flex; gap: 12px; }
+.search-box { display: flex; align-items: center; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 8px 12px; width: 240px; gap: 8px; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
 
-.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; min-width: 240px; }
-.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-family: inherit; font-size: 13px; margin-left: 8px; }
-
-.filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 16px 24px; background: var(--base); border-bottom: 1px solid var(--crust); }
+.filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); }
 .filters::-webkit-scrollbar { display: none; }
-.filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; outline: none; transition: 0.15s; }
+.filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; outline: none; font-family: inherit; }
 .filter-select:focus { border-color: var(--blue); }
-.filter-btn { padding: 6px 14px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; transition: all .15s; }
-.filter-btn:hover { background: var(--surface0); color: var(--text); }
-.filter-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
 
-.main { max-width: 1200px; margin: 0 auto; padding: 24px 20px 100px; }
+.main { padding: 16px 20px; }
 
-/* Dashboard Cards */
-.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.dash-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-.dc-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--subtext); }
-.dc-val { font-size: 28px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
-.dc-sub { font-size: 12px; font-weight: 600; color: var(--subtext); display: flex; align-items: center; gap: 6px; }
-.dc-sub span { color: var(--green); }
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
+.tbl-wrap { overflow-x: auto; width: 100%; }
+.tbl { width: 100%; border-collapse: collapse; min-width: 760px; }
+.tbl th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; }
+.tbl tbody tr:hover { background: var(--surface0); cursor: pointer; }
+.tbl tr:last-child td { border-bottom: none; }
 
-/* Main Table */
-.data-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
-
-.table-wrap { overflow-x: auto; scrollbar-width: none; width: 100%; }
-.table-wrap::-webkit-scrollbar { display: none; }
-.madera-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-.madera-table th {
-  text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 800; text-transform: uppercase;
-  color: var(--subtext); border-bottom: 2px solid var(--crust); letter-spacing: .05em; background: var(--surface0);
-}
-.madera-table td { padding: 14px 16px; vertical-align: middle; border-bottom: 1px solid var(--crust); font-size: 13px; font-weight: 500; }
-.madera-table tr:hover { background: var(--surface0); cursor: pointer; }
-.madera-table tr:last-child td { border-bottom: none; }
-
-.badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing:.04em; white-space: nowrap; }
+.badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; }
 .badge-verde { background: var(--green-bg); color: var(--green); }
-.badge-aire { background: var(--amber-bg); color: var(--amber); }
-.badge-seco { background: var(--blue-bg); color: var(--blue); }
+.badge-aire  { background: var(--amber-bg); color: var(--amber); }
+.badge-seco  { background: var(--blue-bg);  color: var(--blue); }
 
-.pt-val { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text); }
 .td-hint { color: var(--subtext); font-size: 11px; font-weight: 600; display: block; margin-top: 2px; }
-.id-text { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: 0.05em; }
+.id-text { font-family: monospace; font-size: 12px; font-weight: 700; }
 
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
-    <div class="header-title">Almacén de Madera</div>
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <div class="hdr-title">Almacén de Madera</div>
   </div>
-  <div class="header-actions">
-    <div class="search-box">
-      <span>🔍</span>
-      <input type="text" placeholder="Escanear o buscar ID..." autofocus>
-    </div>
+  <div class="search-box">
+    <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
+    <input type="text" placeholder="Buscar ID, especie…" autofocus>
   </div>
 </div>
 
@@ -94,10 +66,9 @@ body { font-size: 14px; min-height: 100vh; }
 </div>
 
 <div class="main">
-
-  <div class="data-card">
-    <div class="table-wrap">
-      <table class="madera-table">
+  <div class="card">
+    <div class="tbl-wrap">
+      <table class="tbl">
         <thead>
           <tr>
             <th>ID Tabla</th>
@@ -111,9 +82,7 @@ body { font-size: 14px; min-height: 100vh; }
             <th>Fecha Entr.</th>
           </tr>
         </thead>
-        <tbody id="wood-body">
-          <!-- Rendered by JS -->
-        </tbody>
+        <tbody id="wood-body"></tbody>
       </table>
     </div>
   </div>
