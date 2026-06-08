@@ -1242,13 +1242,11 @@ function guardarYSalir() {
 }
 
 async function eliminarViaje() {
-  if (!currentViajeId || !confirm('¿Eliminar este viaje? Esta acción no se puede deshacer.')) return;
+  if (!currentViajeId || !window.confirm('¿Eliminar este viaje? Esta acción no se puede deshacer.')) return;
   try {
     await window.parent.deleteDocumentFromFirebase('viajes', currentViajeId);
-    const db = window.DB.get();
-    if (db.viajes) {
-      const idx = db.viajes.findIndex(v => v.id === currentViajeId);
-      if (idx >= 0) db.viajes.splice(idx, 1);
+    if (window.parent?.DB_STATE?.viajes) {
+      window.parent.DB_STATE.viajes = window.parent.DB_STATE.viajes.filter(v => v.id !== currentViajeId);
     }
     currentViajeId = null;
     currentViaje   = null;
