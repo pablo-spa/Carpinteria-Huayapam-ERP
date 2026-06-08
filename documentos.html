@@ -158,8 +158,55 @@
 .viewer-meta  { font-size: 12px; color: var(--subtext); margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .viewer-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
-.viewer-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-.viewer-body iframe { width: 100%; flex: 1; border: none; min-height: 0; }
+.viewer-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  gap: 24px;
+}
+
+.doc-card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--mantle);
+  border: 1px solid var(--crust);
+  border-radius: 16px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.doc-card-icon { font-size: 48px; line-height: 1; }
+.doc-card-title { font-size: 22px; font-weight: 800; color: var(--text); }
+.doc-card-rows { display: flex; flex-direction: column; gap: 10px; }
+.doc-card-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+.doc-card-row-label { font-weight: 700; color: var(--subtext); min-width: 110px; }
+.doc-card-row-val { color: var(--text); }
+
+.btn-open-drive {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 520px;
+  padding: 14px 24px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.btn-open-drive:hover { opacity: .88; }
 
 .viewer-empty {
   flex: 1;
@@ -243,28 +290,24 @@
 
   <!-- Viewer -->
   <div class="viewer" id="viewer">
-    <div class="viewer-hdr" id="viewer-hdr" style="display:none;">
-      <div class="viewer-hdr-info">
-        <div class="viewer-title" id="viewer-title"></div>
-        <div class="viewer-meta">
-          <span id="viewer-cat"></span>
-          <span id="viewer-proyecto" style="color:var(--subtext);"></span>
-          <span id="viewer-desc" style="font-style:italic;"></span>
+    <div class="viewer-body" id="viewer-body" style="display:none;">
+      <div class="doc-card">
+        <div class="doc-card-icon" id="card-icon">📁</div>
+        <div class="doc-card-title" id="card-title"></div>
+        <div class="doc-card-rows" id="card-rows"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-dark" id="btn-edit" style="font-size:12px;padding:6px 14px;" onclick="editCurrent()">Editar</button>
+          <button class="btn" id="btn-delete" style="font-size:12px;padding:6px 14px;color:var(--red);border-color:var(--crust);" onclick="deleteCurrent()">Eliminar</button>
         </div>
       </div>
-      <div class="viewer-actions">
-        <button class="btn btn-dark" id="btn-edit" style="font-size:12px;padding:5px 10px;" onclick="editCurrent()">Editar</button>
-        <button class="btn" id="btn-delete" style="font-size:12px;padding:5px 10px;color:var(--red);border-color:var(--crust);" onclick="deleteCurrent()">🗑</button>
-        <a class="btn btn-dark" id="btn-drive" href="#" target="_blank" style="font-size:12px;padding:5px 10px;">↗ Abrir en Drive</a>
-      </div>
-    </div>
-    <div class="viewer-body" id="viewer-body" style="display:none;">
-      <iframe id="doc-frame" title="Vista previa documento" allow="autoplay" style="flex:1; min-height:0;"></iframe>
+      <a class="btn-open-drive" id="btn-drive" href="#" target="_blank">
+        <span>↗</span> Abrir en Google Drive
+      </a>
     </div>
     <div class="viewer-empty" id="viewer-empty">
-      <div class="viewer-empty-icon">📁</div>
-      <div class="viewer-empty-text">Selecciona un documento para verlo</div>
-      <div class="viewer-empty-sub">Los documentos se muestran directamente desde Google Drive</div>
+      <div class="viewer-empty-icon">🗂️</div>
+      <div class="viewer-empty-text">Selecciona un documento</div>
+      <div class="viewer-empty-sub">Se abrirá directamente en Google Drive</div>
     </div>
   </div>
 
@@ -284,15 +327,6 @@
       <label>Categoría *</label>
       <select id="f-categoria">
         <option value="">— Seleccionar —</option>
-        <option value="Contratos">📄 Contratos</option>
-        <option value="Planos">📐 Planos</option>
-        <option value="Facturas">🧾 Facturas</option>
-        <option value="Permisos y Licencias">🏛️ Permisos y Licencias</option>
-        <option value="Recursos Humanos">👷 Recursos Humanos</option>
-        <option value="Manuales">📖 Manuales</option>
-        <option value="Garantías">🔒 Garantías</option>
-        <option value="Presupuestos">💰 Presupuestos</option>
-        <option value="Otros">📁 Otros</option>
       </select>
     </div>
 
@@ -324,38 +358,17 @@
 <script src="db.js"></script>
 <script>
 
-const CAT_ICONS = {
-  'Contratos':           '📄',
-  'Planos':              '📐',
-  'Facturas':            '🧾',
-  'Permisos y Licencias':'🏛️',
-  'Recursos Humanos':    '👷',
-  'Manuales':            '📖',
-  'Garantías':           '🔒',
-  'Presupuestos':        '💰',
-  'Otros':               '📁',
-};
-const CAT_ORDER = ['Contratos', 'Planos', 'Facturas', 'Permisos y Licencias', 'Recursos Humanos', 'Manuales', 'Garantías', 'Presupuestos', 'Otros'];
+const CAT_ICON_DEFAULT = '📄';
 
 let docs       = [];
 let projects   = [];
+let categories = [];
 let currentId  = null;
 let editingId  = null;
 let canEdit    = false;
 let activeCat  = null;
 
-// ── Util: URL de Drive a embed ────────────────────────────────────────
-function toDriveEmbed(url) {
-  if (!url) return '';
-  const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?#]+)/);
-  if (m1) return `https://drive.google.com/file/d/${m1[1]}/preview`;
-  const m2 = url.match(/[?&]id=([^&#]+)/);
-  if (m2) return `https://drive.google.com/file/d/${m2[1]}/preview`;
-  if (/^[A-Za-z0-9_-]{20,}$/.test(url.trim()))
-    return `https://drive.google.com/file/d/${url.trim()}/preview`;
-  return url;
-}
-
+// ── Util ──────────────────────────────────────────────────────────────
 function toDriveOpen(url) {
   if (!url) return '#';
   const m1 = url.match(/drive\.google\.com\/file\/d\/([^\/\?#]+)/);
@@ -366,13 +379,20 @@ function toDriveOpen(url) {
 // ── Carga ─────────────────────────────────────────────────────────────
 async function load() {
   try {
+    await window.parent.cargar_coleccion('document_categories');
+    const raw = window.parent.DB_STATE?.document_categories || [];
+    categories = raw[0]?.list || raw.filter(x => typeof x === 'string');
+    if (!categories.length) categories = ['Contratos','Planos','Facturas','Permisos y Licencias','Recursos Humanos','Manuales','Garantias','Presupuestos','Otros'];
+  } catch(e) { categories = []; }
+
+  try {
     if (window.parent?.DB_STATE) window.parent.DB_STATE.documentos = undefined;
     await window.parent.cargar_coleccion('documentos');
     docs = (window.parent.DB_STATE?.documentos || [])
       .map(d => ({ ...d, id: d.id || d._id }))
       .filter(d => d.id);
     docs.sort((a, b) => {
-      const ci = CAT_ORDER.indexOf(a.categoria) - CAT_ORDER.indexOf(b.categoria);
+      const ci = categories.indexOf(a.categoria) - categories.indexOf(b.categoria);
       return ci !== 0 ? ci : (a.titulo || '').localeCompare(b.titulo || '');
     });
   } catch(e) {
@@ -398,8 +418,8 @@ function renderCatFilter() {
   if (usedCats.length < 2) { el.innerHTML = ''; return; }
 
   let html = `<span class="cat-chip${!activeCat ? ' active' : ''}" onclick="setActiveCat(null)">Todos</span>`;
-  CAT_ORDER.filter(c => usedCats.includes(c)).forEach(c => {
-    html += `<span class="cat-chip${activeCat === c ? ' active' : ''}" onclick="setActiveCat('${c}')">${CAT_ICONS[c] || '📁'} ${c}</span>`;
+  categories.filter(c => usedCats.includes(c)).forEach(c => {
+    html += `<span class="cat-chip${activeCat === c ? ' active' : ''}" onclick="setActiveCat('${c}')">${c}</span>`;
   });
   el.innerHTML = html;
 }
@@ -437,14 +457,15 @@ function renderList() {
   });
 
   let html = '';
-  CAT_ORDER.forEach(cat => {
+  const allCats = [...categories, ...Object.keys(groups).filter(c => !categories.includes(c))];
+  allCats.forEach(cat => {
     if (!groups[cat]) return;
-    html += `<div class="cat-group"><div class="cat-title">${CAT_ICONS[cat] || '📁'} ${cat}</div>`;
+    html += `<div class="cat-group"><div class="cat-title">${cat}</div>`;
     groups[cat].forEach(d => {
       const proyNombre = d.proyectoId ? (projects.find(p => p.id === d.proyectoId)?.nombre || projects.find(p => p.id === d.proyectoId)?.codigo || '') : '';
       const active = d.id === currentId ? ' active' : '';
       html += `<div class="doc-item${active}" onclick="selectDoc('${d.id}')">
-        <div class="doc-item-icon">${CAT_ICONS[d.categoria] || '📁'}</div>
+        <div class="doc-item-icon">${CAT_ICON_DEFAULT}</div>
         <div class="doc-item-body">
           <div class="doc-item-title">${d.titulo || 'Sin título'}</div>
           <div class="doc-item-meta">${proyNombre ? `📁 ${proyNombre}` : (d.descripcion || '')}</div>
@@ -465,24 +486,23 @@ function selectDoc(id) {
 
   renderList();
 
-  document.getElementById('viewer-hdr').style.display   = 'flex';
   document.getElementById('viewer-body').style.display  = 'flex';
-  document.getElementById('viewer-body').style.flexDirection = 'column';
   document.getElementById('viewer-empty').style.display = 'none';
 
-  document.getElementById('viewer-title').textContent = d.titulo || 'Sin título';
-  document.getElementById('viewer-cat').innerHTML = `<span class="cat-pill">${CAT_ICONS[d.categoria] || '📁'} ${d.categoria || ''}</span>`;
-  document.getElementById('viewer-desc').textContent = d.descripcion || '';
+  document.getElementById('card-icon').textContent  = CAT_ICON_DEFAULT;
+  document.getElementById('card-title').textContent = d.titulo || 'Sin título';
 
   const proyNombre = d.proyectoId ? (projects.find(p => p.id === d.proyectoId)?.nombre || projects.find(p => p.id === d.proyectoId)?.codigo || '') : '';
-  document.getElementById('viewer-proyecto').textContent = proyNombre ? `Proyecto: ${proyNombre}` : '';
+  const fecha = d.fecha ? new Date(d.fecha).toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' }) : '';
 
-  const openUrl = toDriveOpen(d.driveUrl);
-  document.getElementById('btn-drive').href = openUrl;
+  let rows = '';
+  if (d.categoria)   rows += `<div class="doc-card-row"><span class="doc-card-row-label">Categoría</span><span class="doc-card-row-val">${d.categoria}</span></div>`;
+  if (proyNombre)    rows += `<div class="doc-card-row"><span class="doc-card-row-label">Proyecto</span><span class="doc-card-row-val">${proyNombre}</span></div>`;
+  if (d.descripcion) rows += `<div class="doc-card-row"><span class="doc-card-row-label">Descripción</span><span class="doc-card-row-val">${d.descripcion}</span></div>`;
+  if (fecha)         rows += `<div class="doc-card-row"><span class="doc-card-row-label">Agregado</span><span class="doc-card-row-val">${fecha}</span></div>`;
+  document.getElementById('card-rows').innerHTML = rows;
 
-  const frame = document.getElementById('doc-frame');
-  frame.src = '';
-  setTimeout(() => { frame.src = toDriveEmbed(d.driveUrl); }, 50);
+  document.getElementById('btn-drive').href = toDriveOpen(d.driveUrl);
 
   document.getElementById('btn-edit').style.display   = canEdit ? '' : 'none';
   document.getElementById('btn-delete').style.display = canEdit ? '' : 'none';
@@ -492,10 +512,20 @@ function selectDoc(id) {
 function openModal(doc) {
   editingId = doc?.id || null;
   document.getElementById('modal-title').textContent = doc ? 'Editar Documento' : 'Agregar Documento';
-  document.getElementById('f-titulo').value    = doc?.titulo      || '';
-  document.getElementById('f-categoria').value = doc?.categoria   || '';
-  document.getElementById('f-drive').value     = doc?.driveUrl    || '';
-  document.getElementById('f-desc').value      = doc?.descripcion || '';
+  document.getElementById('f-titulo').value = doc?.titulo      || '';
+  document.getElementById('f-drive').value  = doc?.driveUrl    || '';
+  document.getElementById('f-desc').value   = doc?.descripcion || '';
+
+  // Poblar select de categorías
+  const catSel = document.getElementById('f-categoria');
+  catSel.innerHTML = '<option value="">— Seleccionar —</option>';
+  categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    if (c === doc?.categoria) opt.selected = true;
+    catSel.appendChild(opt);
+  });
 
   // Poblar select de proyectos
   const sel = document.getElementById('f-proyecto');
