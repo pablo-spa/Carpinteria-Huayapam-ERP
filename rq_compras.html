@@ -598,7 +598,6 @@ function buildItemsTable(o) {
             style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;">
           <div class="iac-drop" id="iacdrop-${key}"></div>
         </div>
-        ${item.esHerramienta ? `<span style="font-size:10px;font-weight:700;color:var(--amber);">🔧</span>` : ''}
         ${(item.conceptoPendiente && !item.esHerramienta) ? `
           <div class="add-cat-row">
             <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
@@ -696,6 +695,7 @@ function buildActiveCard(o, mode) {
       ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
       ${o.date ? `<span>📅 ${o.date}</span>` : ''}
       ${o.notes ? `<span>📝 ${o.notes}</span>` : ''}
+      ${(o.items||[]).some(i => i.esHerramienta) ? `<span style="font-size:10px;font-weight:800;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber);border-radius:5px;padding:1px 6px;">🔧 Herramienta</span>` : ''}
     </div>
     ${statusFlow(o.status)}
     ${pendingHtml}
