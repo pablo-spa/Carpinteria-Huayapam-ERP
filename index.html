@@ -398,9 +398,9 @@
           <div class="mc-icon">🔨</div>
           <div class="mc-text"><strong>Trabajos del Día</strong><span>Asistencia, horas y actividades del día.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('cotizacion.html','Nueva Cotización')">
+        <div class="module-card" onclick="openModule('cotizaciones.html','Cotizaciones')">
           <div class="mc-icon">📋</div>
-          <div class="mc-text"><strong>Cotización</strong><span>Presupuestos con desglose de materiales y mano de obra.</span></div>
+          <div class="mc-text"><strong>Cotizaciones</strong><span>Presupuestos con desglose de materiales y mano de obra.</span></div>
         </div>
         <div class="module-card" onclick="openModule('finanzas.html','Contabilidad / Movimientos')">
           <div class="mc-icon">💰</div>
@@ -573,7 +573,7 @@
     {
       id: 'cat-diseno', title: 'Diseño',
       items: [
-        { id: 'nav-cotizacion', html: `<span class="icon">📋</span> Nueva Cotización`, file: 'cotizacion.html', label: 'Nueva Cotización' },
+        { id: 'nav-cotizaciones', html: `<span class="icon">📋</span> Cotizaciones`, file: 'cotizaciones.html', label: 'Cotizaciones' },
         { id: 'nav-proyectos', html: `<span class="icon">📁</span> Proyectos`, file: 'proyectos.html', label: 'Proyectos Activos' },
         { id: 'nav-fichas', html: `<span class="icon">📐</span> Fichas Técnicas`, file: 'fichas_tecnicas.html', label: 'Fichas Técnicas' }
       ]
@@ -621,6 +621,7 @@
     'dashboard.html': 'dashboard',
     'proyectos.html': 'proyectos',
     'cotizacion.html': 'cotizaciones',
+    'cotizaciones.html': 'cotizaciones',
     'finanzas.html': 'finanzas',
     'nomina_semanal.html': 'nomina',
     'rh_trabajadores.html': 'rh',
@@ -952,7 +953,8 @@
     'rq_operaciones.html':    'nav-confirmacion',
     'nomina_semanal.html':    'nav-nomina',
     'rh_trabajadores.html':   'nav-trabajadores',
-    'cotizacion.html':        'nav-cotizacion',
+    'cotizacion.html':        'nav-cotizaciones',
+    'cotizaciones.html':      'nav-cotizaciones',
     'almacen_inventario.html':   'nav-inventario',
     'almacen_salidas.html':      'nav-salidas',
     'rq_almacen.html':           'nav-hoja-pedido',

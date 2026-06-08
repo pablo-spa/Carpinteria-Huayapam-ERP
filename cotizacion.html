@@ -149,7 +149,7 @@ input.mat-price { text-align: right; font-size: 12px; }
     <h2 class="hdr-title">Nueva Cotización</h2>
     <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
   </div>
-  <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()">Guardar cotización ↗</button>
+  <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()">Guardar cotización</button>
 </div>
 <div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
   <select class="hdr-select" id="clientInput" data-searchable></select>
@@ -656,7 +656,7 @@ function renderPiece(piece) {
 
   const hrRows = (piece.hrRows||[]).map((r,i) => `
     <div class="mat-row">
-      <select class="mat-name" onchange="setHrRole(${piece.id},${i},this.value)">
+      <select class="mat-name" data-searchable onchange="setHrRole(${piece.id},${i},this.value)">
         ${Object.keys(RATES).map(k=>`<option value="${k}"${k===r.role?' selected':''}>${RATE_LABELS[k]}</option>`).join('')}
       </select>
       <input class="mat-qty" type="number" value="${r.hrs||''}" min="0" step="0.5" placeholder="0" oninput="setHrHrs(${piece.id},${i},this.value)">
@@ -734,7 +734,7 @@ function renderPiece(piece) {
           </div>
           ${(piece.woodRows||[]).map((w,i) => `
             <div class="mat-row">
-              <select class="mat-name" onchange="setWoodType(${piece.id},${i},this.value)">
+              <select class="mat-name" data-searchable onchange="setWoodType(${piece.id},${i},this.value)">
                 ${WOOD_CATALOG.map(c=>`<option value="${c.id}"${c.id===w.catalog_id?' selected':''}>${c.nombre}</option>`).join('')}
                 ${!WOOD_CATALOG.find(c=>c.id===w.catalog_id) && w.nombre ? `<option value="${w.catalog_id||''}" selected>${w.nombre}</option>` : ''}
               </select>
@@ -1276,8 +1276,6 @@ function saveQuoteToProject() {
   const cId = document.getElementById('clientInput').value;
   const pId = document.getElementById('projectInput').value;
 
-  if (!cId) { toast('Debes seleccionar un cliente.', 'warn'); return; }
-  if (!pId) { toast('Debes seleccionar un proyecto.', 'warn'); return; }
   if (!S.pieces || S.pieces.length === 0) { toast('No hay piezas cotizadas.', 'warn'); return; }
 
   const tot     = S.pieces.reduce((acc, p) => acc + calc(p).final * (p.qty||1), 0);
@@ -1294,33 +1292,34 @@ function saveQuoteToProject() {
       if (!confirm(`Esta cotización está Activa.\n\nSe creará una nueva versión con los cambios y la actual quedará "En Pausa".\n\n¿Continuar?`)) return;
       existing.status = 'En Pausa';
       window.DB.updateQuote(existing);
-      const existingForProj = (d.quotations||[]).filter(q => q.projectId === pId);
-      const folio = `${dateStr}-${String(existingForProj.length + 1).padStart(3,'0')}`;
-      const copy = { id: crypto.randomUUID(), folio, projectId: pId, clientId: cId, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
+      const existingForProj = (d.quotations||[]).filter(q => pId ? q.projectId === pId : !q.projectId);
+      const folio = genFolio(dateStr, existingForProj.length + 1);
+      const copy = { id: crypto.randomUUID(), folio, projectId: pId||null, clientId: cId||null, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
       window.DB.addQuote(copy);
-      linkClientToProject(d, pId, cId);
+      if (pId && cId) linkClientToProject(d, pId, cId);
       toast('✓ Nueva versión creada. La anterior quedó En Pausa.');
     } else {
       existing.pieces    = pieces;
       existing.total     = tot;
       existing.globalCfg = cfg;
-      existing.clientId  = cId;
-      existing.projectId = pId;
+      existing.clientId  = cId || null;
+      existing.projectId = pId || null;
       window.DB.updateQuote(existing);
-      linkClientToProject(d, pId, cId);
+      if (pId && cId) linkClientToProject(d, pId, cId);
       toast('✓ Cotización actualizada.');
     }
-    navToProject(pId);
+    if (pId) navToProject(pId);
+    else navToCotizaciones();
     return;
   }
 
   // ── Cotización nueva (o copia de revisión) ────────────────────────────────
   if (!confirm(`¿Guardar cotización?`)) return;
 
-  const existingForProj = (d.quotations||[]).filter(q => q.projectId === pId);
-  const folio = `${dateStr}-${String(existingForProj.length + 1).padStart(3,'0')}`;
+  const existingForProj = (d.quotations||[]).filter(q => pId ? q.projectId === pId : !q.projectId);
+  const folio = genFolio(dateStr, existingForProj.length + 1);
 
-  const quote = { id: crypto.randomUUID(), folio, projectId: pId, clientId: cId, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
+  const quote = { id: crypto.randomUUID(), folio, projectId: pId||null, clientId: cId||null, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
 
   if (Q_state.baseQuoteId) {
     const baseIdx = (d.quotations||[]).findIndex(q => q.id === Q_state.baseQuoteId);
@@ -1328,9 +1327,19 @@ function saveQuoteToProject() {
   }
 
   window.DB.addQuote(quote);
-  linkClientToProject(d, pId, cId);
+  if (pId && cId) linkClientToProject(d, pId, cId);
   toast('✓ Cotización guardada.');
-  navToProject(pId);
+  if (pId) navToProject(pId);
+  else navToCotizaciones();
+}
+
+function genFolio(dateStr, n) {
+  return `${dateStr}-${String(n).padStart(3,'0')}`;
+}
+
+function navToCotizaciones() {
+  if (window.parent?.openModule) window.parent.openModule('cotizaciones.html', 'Cotizaciones');
+  else window.location.href = 'cotizaciones.html';
 }
 
 function processURLParams() {

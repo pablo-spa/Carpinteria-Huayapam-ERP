@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="global.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizaciones</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.hdr {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--mantle); border-bottom: 1px solid var(--crust);
+  padding: 14px 24px; display: flex; align-items: center;
+  justify-content: space-between; gap: 16px;
+}
+.hdr-title { font-size: 18px; font-weight: 800; }
+
+.filters {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust);
+  align-items: center;
+}
+.filters::-webkit-scrollbar { display: none; }
+.search-box {
+  display: flex; align-items: center; background: var(--mantle);
+  border: 1px solid var(--crust); border-radius: 8px; padding: 8px 12px;
+  width: 240px; gap: 8px; flex-shrink: 0;
+}
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
+.filter-select {
+  padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust);
+  border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text);
+  cursor: pointer; outline: none; font-family: inherit;
+}
+.filter-select:focus { border-color: var(--blue); }
+
+.main { padding: 20px 24px; display: flex; flex-direction: column; gap: 24px; }
+
+.section-title {
+  font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--subtext); margin-bottom: 10px;
+}
+
+.q-card {
+  background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.q-card:hover { border-color: var(--blue); background: var(--surface0); }
+
+.q-folio {
+  font-size: 11px; font-weight: 800; font-family: monospace;
+  background: var(--surface0); color: var(--subtext); padding: 3px 8px;
+  border-radius: 5px; white-space: nowrap; flex-shrink: 0;
+}
+.q-name { font-size: 13px; font-weight: 700; flex: 1; min-width: 0; }
+.q-sub  { font-size: 11px; color: var(--subtext); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-total { font-size: 14px; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+.q-date  { font-size: 11px; color: var(--subtext); white-space: nowrap; flex-shrink: 0; }
+
+.pill {
+  display: inline-flex; align-items: center; padding: 3px 8px;
+  border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; flex-shrink: 0;
+}
+.pill-espera   { background: var(--amber-bg);  color: var(--amber); }
+.pill-activa   { background: var(--green-bg);  color: var(--green); }
+.pill-pausa    { background: var(--surface1);  color: var(--subtext); }
+.pill-cancelada { background: var(--red-bg);   color: var(--red); }
+
+.proj-group { display: flex; flex-direction: column; gap: 6px; }
+.proj-group-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 6px 0;
+  font-size: 13px; font-weight: 700; cursor: pointer; user-select: none;
+}
+.proj-group-hdr .proj-code {
+  font-size: 10px; font-weight: 800; font-family: monospace;
+  background: var(--blue-bg); color: var(--blue); padding: 2px 7px; border-radius: 4px;
+}
+.proj-group-hdr .proj-name { flex: 1; }
+.proj-group-hdr .proj-arrow { color: var(--subtext); font-size: 11px; }
+
+.q-list { display: flex; flex-direction: column; gap: 6px; }
+
+.empty-state {
+  text-align: center; padding: 40px; color: var(--subtext);
+  font-size: 13px; border: 1px dashed var(--crust); border-radius: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <div class="hdr-title">📋 Cotizaciones</div>
+  </div>
+  <button class="btn btn-green" onclick="openNueva()">+ Nueva Cotización</button>
+</div>
+
+<div class="filters">
+  <div class="search-box">
+    <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
+    <input type="text" id="srch" placeholder="Buscar cotización…">
+  </div>
+  <select class="filter-select" id="fil-status" onchange="render()">
+    <option value="">Todos los estados</option>
+    <option value="Esperando Autorización">Esperando Autorización</option>
+    <option value="Activa">Activa</option>
+    <option value="En Pausa">En Pausa</option>
+    <option value="Cancelada">Cancelada</option>
+  </select>
+</div>
+
+<div class="main" id="main-content"></div>
+
+<script src="db.js"></script>
+<script>
+let ALL = [];
+let PROJECTS = {};
+let CLIENTS  = {};
+
+async function init() {
+  const p = window.parent;
+  if (p?.cargar_coleccion) {
+    await Promise.all([
+      p.cargar_coleccion('quotations'),
+      p.cargar_coleccion('projects'),
+      p.cargar_coleccion('contacts'),
+    ]);
+  }
+
+  const [quotes, projects, contacts] = await Promise.all([
+    window.DB.query('quotations'),
+    window.DB.query('projects'),
+    window.DB.query('contacts'),
+  ]);
+
+  ALL = (quotes || []).filter(q => !q.eliminada);
+
+  PROJECTS = {};
+  (projects || []).forEach(p => { PROJECTS[p.id] = p; });
+
+  CLIENTS = {};
+  (contacts || []).forEach(c => { CLIENTS[c.id] = c; });
+
+  document.getElementById('srch').addEventListener('input', render);
+  render();
+}
+
+function statusPill(s) {
+  const map = {
+    'Esperando Autorización': 'pill-espera',
+    'Activa': 'pill-activa',
+    'En Pausa': 'pill-pausa',
+    'Cancelada': 'pill-cancelada',
+  };
+  return `<span class="pill ${map[s] || 'pill-pausa'}">${s || '—'}</span>`;
+}
+
+function fmt(n) {
+  return '$' + (n||0).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function quoteCard(q) {
+  const proj   = q.projectId ? PROJECTS[q.projectId] : null;
+  const client = q.clientId  ? CLIENTS[q.clientId]   : null;
+  const clientName = client ? (client.name || client.givenName || '') : '';
+  const projCode   = proj   ? (proj.codigo  || proj.code   || '') : '';
+  const projName   = proj   ? (proj.nombre  || proj.name   || '') : '';
+  const sub = [clientName, projCode && projName ? `${projCode} – ${projName}` : ''].filter(Boolean).join(' · ');
+  const piecesLabel = q.pieces?.length === 1 ? '1 pieza' : `${q.pieces?.length || 0} piezas`;
+
+  return `<div class="q-card" onclick="openQuote('${q.id}')">
+    <div class="q-folio">${q.folio || '—'}</div>
+    <div style="flex:1;min-width:0;">
+      <div class="q-name">${q.pieces?.map(p => p.name).filter(Boolean).join(', ') || '(Sin nombre)'}</div>
+      ${sub ? `<div class="q-sub">${sub}</div>` : `<div class="q-sub">${piecesLabel}</div>`}
+    </div>
+    ${statusPill(q.status)}
+    <div class="q-date">${q.date || ''}</div>
+    <div class="q-total">${fmt(q.total)}</div>
+  </div>`;
+}
+
+function render() {
+  const term      = document.getElementById('srch').value.toLowerCase().trim();
+  const statusFil = document.getElementById('fil-status').value;
+
+  let quotes = ALL.filter(q => {
+    if (statusFil && q.status !== statusFil) return false;
+    if (!term) return true;
+    const proj   = q.projectId ? PROJECTS[q.projectId] : null;
+    const client = q.clientId  ? CLIENTS[q.clientId]   : null;
+    const haystack = [
+      q.folio, q.status, q.date,
+      proj?.codigo, proj?.code, proj?.nombre, proj?.name,
+      client?.name, client?.givenName,
+      ...(q.pieces || []).map(p => p.name),
+    ].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(term);
+  });
+
+  // Sort: newest first
+  quotes.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const assigned   = quotes.filter(q => q.projectId);
+  const unassigned = quotes.filter(q => !q.projectId);
+
+  let html = '';
+
+  // ── Sin asignar ──────────────────────────────────────────────────────────
+  if (unassigned.length) {
+    html += `<div>
+      <div class="section-title">Sin asignar a proyecto</div>
+      <div class="q-list">${unassigned.map(quoteCard).join('')}</div>
+    </div>`;
+  }
+
+  // ── Por proyecto ─────────────────────────────────────────────────────────
+  if (assigned.length) {
+    // Group by projectId
+    const groups = {};
+    assigned.forEach(q => {
+      if (!groups[q.projectId]) groups[q.projectId] = [];
+      groups[q.projectId].push(q);
+    });
+
+    const projIds = Object.keys(groups);
+    projIds.sort((a, b) => {
+      const pa = PROJECTS[a], pb = PROJECTS[b];
+      const ca = pa?.codigo || pa?.code || '';
+      const cb = pb?.codigo || pb?.code || '';
+      return ca.localeCompare(cb, 'es');
+    });
+
+    html += `<div>
+      <div class="section-title">Por Proyecto</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">`;
+
+    projIds.forEach(pid => {
+      const proj = PROJECTS[pid];
+      const code = proj?.codigo || proj?.code || pid;
+      const name = proj?.nombre || proj?.name || 'Proyecto';
+      const list = groups[pid];
+      html += `<div class="proj-group">
+        <div class="proj-group-hdr" onclick="toggleGroup(this)">
+          <span class="proj-code">${code}</span>
+          <span class="proj-name">${name}</span>
+          <span style="font-size:11px;color:var(--subtext);">${list.length} cotización${list.length !== 1 ? 'es' : ''}</span>
+          <span class="proj-arrow">▼</span>
+        </div>
+        <div class="q-list">${list.map(quoteCard).join('')}</div>
+      </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  if (!quotes.length) {
+    html = `<div class="empty-state">No hay cotizaciones que coincidan con los filtros.</div>`;
+  }
+
+  document.getElementById('main-content').innerHTML = html;
+}
+
+function toggleGroup(hdr) {
+  const list = hdr.nextElementSibling;
+  const arrow = hdr.querySelector('.proj-arrow');
+  const hidden = list.style.display === 'none';
+  list.style.display = hidden ? '' : 'none';
+  arrow.textContent = hidden ? '▼' : '▶';
+}
+
+function openQuote(id) {
+  if (window.parent?.openModule) window.parent.openModule('cotizacion.html?viewId=' + id, 'Cotización');
+  else window.location.href = 'cotizacion.html?viewId=' + id;
+}
+
+function openNueva() {
+  if (window.parent?.openModule) window.parent.openModule('cotizacion.html', 'Nueva Cotización');
+  else window.location.href = 'cotizacion.html';
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
