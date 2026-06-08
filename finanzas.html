@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="global.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contabilidad / Movimientos — Carpintería Huayapam</title>
+<title>Contabilidad — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -109,7 +109,7 @@
 <div class="hdr">
   <div class="hdr-title">
     <button class="back-btn" onclick="if(window.parent&&window.parent.goHome){window.parent.goHome()}else{window.history.back()}">← Volver</button>
-    Movimientos
+    Contabilidad
   </div>
   <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--subtext);font-weight:600;">
@@ -118,7 +118,7 @@
     </label>
     <button class="btn btn-dark" onclick="openNuevaCuenta()">+ Cuenta</button>
     <button class="btn btn-ghost" onclick="recalcularSaldos()" title="Recalcula los saldos de todas las cuentas a partir del historial de movimientos cargado" style="font-size:11px; padding:5px 10px;">⟳ Saldos</button>
-    <button class="btn btn-blue" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Movimiento</button>
+    <button class="btn btn-blue" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Nuevo Registro</button>
   </div>
 </div>
 
@@ -181,7 +181,7 @@
 <div class="panel-overlay" id="panel-overlay">
   <div class="side-panel" id="side-panel">
     <div class="sp-hdr">
-      <h2 id="sp-title">Nuevo Movimiento</h2>
+      <h2 id="sp-title">Nuevo Registro</h2>
       <button class="sp-close" onclick="closePanel()">✕</button>
     </div>
     
@@ -416,6 +416,10 @@
     } else {
       STATE_CATEGORIES = window.DB.get().expense_categories || [];
     }
+    // Forzar recarga de contactos desde contacts_lists (datos frescos)
+    const p = window.parent;
+    if (p?.DB_STATE) delete p.DB_STATE.contacts;
+    if (p?.cargar_coleccion) await p.cargar_coleccion('contacts');
     const rawContacts = await window.DB.query("contacts");
     STATE_CONTACTS = rawContacts.filter(c => c.activo !== false && (c.name || c.nombre || c.givenName));
     if (!STATE_CONTACTS.length) STATE_CONTACTS = window.DB.get().contacts || [];
@@ -823,7 +827,7 @@
     if(id) {
       const m = DBm.find(x => (x.id === id) || (x._id === id));
       if (!m) { console.warn('[finanzas] openPanel: movimiento no encontrado:', id); return; }
-      document.getElementById('sp-title').innerHTML = `Editar Movimiento`;
+      document.getElementById('sp-title').innerHTML = `Editar Registro`;
       document.getElementById('f-id').value = m.id || m._id;
       setPanelType(m.type);
       document.getElementById('f-date').value = m.date;
@@ -857,7 +861,7 @@
       document.getElementById('btn-delete-panel').dataset.mid = id;
 
     } else {
-      document.getElementById('sp-title').textContent = 'Nuevo Movimiento';
+      document.getElementById('sp-title').textContent = 'Nuevo Registro';
       document.getElementById('f-id').value = '';
       setPanelType('Gasto');
       document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
@@ -872,6 +876,7 @@
       document.getElementById('btn-delete-panel').style.display = 'none';
       const projEl2 = document.getElementById('f-proj');
       projEl2.value = '';
+      populateContacts(); // ensure list is always fresh when creating new movement
       if (projEl2._ssSync) projEl2._ssSync();
       document.getElementById('f-oc').value = '';
     }

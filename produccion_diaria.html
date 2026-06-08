@@ -306,8 +306,9 @@ async function loadMasterData() {
     window.DB.query('attendance'),
   ]);
 
-  WORKERS = workers
-    .filter(w => w.activo !== false && (w.name || w.nombre) && !w._init)
+  const filteredWorkers = workers.filter(w => w.activo !== false && (w.name || w.nombre) && !w._init);
+  const sortedWorkers = window.parent?.getWorkersSorted ? window.parent.getWorkersSorted(filteredWorkers) : filteredWorkers;
+  WORKERS = sortedWorkers
     .map(w => {
       const name = w.name || [w.nombre, w.apellidoPaterno].filter(Boolean).join(' ') || '';
       const parts = name.split(' ');

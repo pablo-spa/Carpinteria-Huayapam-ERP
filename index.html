@@ -402,7 +402,7 @@
           <div class="mc-icon">📋</div>
           <div class="mc-text"><strong>Cotizaciones</strong><span>Presupuestos con desglose de materiales y mano de obra.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('finanzas.html','Contabilidad / Movimientos')">
+        <div class="module-card" onclick="openModule('finanzas.html','Contabilidad')">
           <div class="mc-icon">💰</div>
           <div class="mc-text"><strong>Contabilidad</strong><span>Libro mayor, ingresos, gastos y transferencias.</span></div>
         </div>
@@ -439,7 +439,10 @@
           <span id="frame-cat-sep" style="opacity:.4; display:none;">/</span>
           <span id="frame-label">—</span>
         </div>
-        <button class="btn-back" onclick="goHome()">← Salir del módulo</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="btn-sync" onclick="syncAllData()" title="Actualizar todos los datos" style="display:none;padding:5px 12px;background:var(--surface0);color:var(--subtext);border:1px solid var(--crust);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--crust)';this.style.color='var(--subtext)'">🔄 Actualizar</button>
+          <button class="btn-back" onclick="goHome()">← Salir del módulo</button>
+        </div>
       </div>
       <iframe id="main-frame" src="" title="Módulo"></iframe>
       <div id="db-loading-overlay" style="display:none; position:absolute; inset:0; background:rgba(var(--base-rgb,239,241,245),0.85); backdrop-filter:blur(4px); z-index:50; flex-direction:column; align-items:center; justify-content:center; gap:16px; font-family:inherit;">
@@ -563,7 +566,7 @@
     {
       id: 'cat-contabilidad', title: 'Contabilidad y RRHH',
       items: [
-        { id: 'nav-finanzas', html: `<span class="icon">💰</span> Movimientos`, file: 'finanzas.html', label: 'Movimientos' },
+        { id: 'nav-finanzas', html: `<span class="icon">💰</span> Contabilidad`, file: 'finanzas.html', label: 'Contabilidad' },
         { id: 'nav-nomina', html: `<span class="icon">💵</span> Nómina Semanal`, file: 'nomina_semanal.html', label: 'Nómina Semanal' },
         { id: 'nav-trabajadores', html: `<span class="icon">👷‍♂️</span> Trabajadores`, file: 'rh_trabajadores.html', label: 'Trabajadores' },
         { id: 'nav-checador', html: `<span class="icon">⏰</span> Reloj Checador`, file: 'reloj_checador.html', label: 'Reloj Checador' },
@@ -944,6 +947,11 @@
 
   document.addEventListener('DOMContentLoaded', loadMenu);
 
+  // Chrome bfcache: when page is restored from back/forward cache, re-render the sidebar
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted && window.CURRENT_USER_ROLE) renderMenu();
+  });
+
   let navHistory = [];
 
   const MODULES = {
@@ -1030,6 +1038,7 @@
     document.getElementById('welcome').style.display = 'none';
     const fw = document.getElementById('frame-wrapper');
     fw.style.display = 'flex';
+    document.getElementById('btn-sync').style.display = '';
 
     const frame = document.getElementById('main-frame');
     if (frame.getAttribute('data-loaded') !== file) {
@@ -1736,35 +1745,74 @@
           }
         };
         
-        // Fetch permissions
+        // ── Sincronización de datos en tiempo real ─────────────────────────────
+        // Fuerza recarga de las colecciones más críticas (las que otros usuarios modifican)
+        // y recarga el iframe activo si hay uno abierto.
+        // ── Ordenamiento global de trabajadores ────────────────────────────────
+        // Cualquier página puede llamar window.getWorkersSorted() para obtener
+        // los trabajadores ordenados según la preferencia global del usuario.
+        window.WORKER_SORT_KEY = localStorage.getItem('erp_worker_sort') || 'nombre';
+        window.saveWorkerSort = function(key) {
+          window.WORKER_SORT_KEY = key;
+          localStorage.setItem('erp_worker_sort', key);
+        };
+        window.getWorkersSorted = function(workers) {
+          const key = window.WORKER_SORT_KEY || 'nombre';
+          return [...(workers || [])].sort((a, b) => {
+            if (key === 'nombre')    return (a.nombre||a.name||'').localeCompare(b.nombre||b.name||'', 'es');
+            if (key === 'paterno')   return (a.apellidoPaterno||'').localeCompare(b.apellidoPaterno||'', 'es');
+            if (key === 'ingreso')   return (a.fechaIngreso||a.startDate||'').localeCompare(b.fechaIngreso||b.startDate||'');
+            if (key === 'salario')   return (b.salarioBase||b.baseSalary||0) - (a.salarioBase||a.baseSalary||0);
+            if (key === 'id')        return (a.personalId||a.scanCode||'').localeCompare(b.personalId||b.scanCode||'');
+            return 0;
+          });
+        };
+
+        window.syncAllData = async function() {
+          const btn = document.getElementById('btn-sync');
+          if (btn) { btn.textContent = '⏳ Actualizando…'; btn.disabled = true; }
+          const criticalCols = ['accounting_movements', 'contacts', 'projects', 'quotations', 'purchase_orders'];
+          for (const col of criticalCols) {
+            if (window.DB_STATE) delete window.DB_STATE[col];
+          }
+          if (window.DB_STATE?._acc_months) window.DB_STATE._acc_months = {};
+          await Promise.all(criticalCols.map(c => window.cargar_coleccion(c)));
+          // Reload the active iframe so it picks up fresh data
+          const frame = document.getElementById('main-frame');
+          const loaded = frame?.getAttribute('data-loaded');
+          if (loaded) {
+            frame.src = loaded;
+          }
+          if (btn) { btn.textContent = '🔄 Actualizar'; btn.disabled = false; }
+          console.log('[DB] 🔄 Sincronización manual completada');
+        };
+
+        // Fetch permissions — always set a default so canViewFile never blocks the sidebar
+        const defaultPerms = {
+          dashboard:      { programador: 'full', admin: 'full', gerencia: 'full', contador: 'full', compras: 'full', almacen: 'full', produccion: 'full' },
+          proyectos:      { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'readonly', almacen: 'none', produccion: 'none' },
+          cotizaciones:   { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'readonly', almacen: 'none', produccion: 'none' },
+          finanzas:       { programador: 'full', admin: 'full', gerencia: 'full', contador: 'full', compras: 'none', almacen: 'none', produccion: 'none' },
+          nomina:         { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'full', compras: 'none', almacen: 'none', produccion: 'none' },
+          rh:             { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'none', almacen: 'none', produccion: 'none' },
+          pedidos:        { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'readonly', compras: 'full', almacen: 'readonly', produccion: 'full' },
+          compras_oc:     { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'readonly', compras: 'full', almacen: 'none', produccion: 'none' },
+          almacen:        { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'full', almacen: 'full', produccion: 'none' },
+          herramientas:   { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'none', almacen: 'full', produccion: 'full' },
+          madera:         { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'full', almacen: 'full', produccion: 'none' },
+          produccion:     { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'none', almacen: 'none', produccion: 'full' },
+          reloj:          { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'full', produccion: 'full' },
+          admin_usuarios: { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
+          admin_listas:   { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
+          admin_db:       { programador: 'full', admin: 'none', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
+          admin_permisos: { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
+          admin_bugs:     { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' }
+        };
+        window.PERMISOS = defaultPerms; // always set before Firestore so sidebar never blocks
         try {
            const permDoc = await getDocs(collection(db, "config_params"));
-           let perms = null;
-           for(let d of permDoc.docs) { if(d.id === "permisos") perms = d.data(); }
-           if (!perms) {
-               perms = {
-                 dashboard:      { programador: 'full', admin: 'full', gerencia: 'full', contador: 'full', compras: 'full', almacen: 'full', produccion: 'full' },
-                 proyectos:      { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'readonly', almacen: 'none', produccion: 'none' },
-                 cotizaciones:   { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'readonly', almacen: 'none', produccion: 'none' },
-                 finanzas:       { programador: 'full', admin: 'full', gerencia: 'full', contador: 'full', compras: 'none', almacen: 'none', produccion: 'none' },
-                 nomina:         { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'full', compras: 'none', almacen: 'none', produccion: 'none' },
-                 rh:             { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'none', almacen: 'none', produccion: 'none' },
-                 pedidos:        { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'readonly', compras: 'full', almacen: 'readonly', produccion: 'full' },
-                 compras_oc:     { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'readonly', compras: 'full', almacen: 'none', produccion: 'none' },
-                 almacen:        { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'full', almacen: 'full', produccion: 'none' },
-                 herramientas:   { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'none', almacen: 'full', produccion: 'full' },
-                 madera:         { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'full', almacen: 'full', produccion: 'none' },
-                 produccion:     { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'none', almacen: 'none', produccion: 'full' },
-                 reloj:          { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'full', produccion: 'full' },
-                 admin_usuarios: { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
-                 admin_listas:   { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
-                 admin_db:       { programador: 'full', admin: 'none', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
-                 admin_permisos: { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
-                 admin_bugs:     { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' }
-               };
-           }
-           window.PERMISOS = perms;
-        } catch(e) { console.error("Error loading permissions", e); }
+           for(let d of permDoc.docs) { if(d.id === "permisos") window.PERMISOS = d.data(); }
+        } catch(e) { console.error("Error loading permissions — using defaults", e); }
         
         // Render menu after state completes
         loadMenu();

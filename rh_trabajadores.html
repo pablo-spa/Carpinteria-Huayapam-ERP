@@ -122,8 +122,8 @@
     <button class="btn btn-green" onclick="openFicha()">+ Nuevo Trabajador</button>
   </div>
   <div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
-    <select id="sort-by" onchange="renderList()" style="font-size:13px; padding:6px 10px; border-radius:6px; border:1px solid var(--surface0); background:var(--base); color:var(--text); cursor:pointer; font-family:inherit;">
-      <option value="name">Ordenar: Nombre</option>
+    <select id="sort-by" onchange="onSortChange(this.value)" style="font-size:13px; padding:6px 10px; border-radius:6px; border:1px solid var(--surface0); background:var(--base); color:var(--text); cursor:pointer; font-family:inherit;">
+      <option value="nombre">Ordenar: Nombre</option>
       <option value="paterno">Ordenar: Apellido</option>
       <option value="ingreso">Ordenar: Fecha ingreso</option>
       <option value="salario">Ordenar: Sueldo</option>
@@ -193,16 +193,16 @@
             <input type="text" class="f-input" id="f-name" disabled>
           </div>
           <div class="f-field">
-            <label>ID Personal</label>
-            <input type="text" class="f-input" id="f-id-personal" disabled>
+            <label>RFC</label>
+            <input type="text" class="f-input" id="f-rfc" style="text-transform:uppercase;" oninput="onRfcInput(this)">
+          </div>
+          <div class="f-field">
+            <label>ID Personal <span style="font-size:10px;color:var(--subtext);font-weight:400;">(auto desde RFC)</span></label>
+            <input type="text" class="f-input" id="f-id-personal" style="font-family:monospace;font-weight:700;letter-spacing:.05em;" readonly>
           </div>
           <div class="f-field">
             <label>Fecha de Nacimiento</label>
             <input type="date" class="f-input" id="f-birth" onchange="recalcValues()">
-          </div>
-          <div class="f-field">
-            <label>RFC</label>
-            <input type="text" class="f-input" id="f-rfc" style="text-transform:uppercase;">
           </div>
           
           <div class="f-field">
@@ -319,16 +319,25 @@
       const allWorkers = await window.DB.query("contacts", { tipo: "trabajador" });
       let workers = showInactive ? allWorkers : allWorkers.filter(w => w.activo !== false);
 
-      // Ordenar
-      const sortBy = document.getElementById('sort-by')?.value || 'name';
-      workers = [...workers].sort((a, b) => {
-        if (sortBy === 'name')    return (a.nombre||a.name||'').localeCompare(b.nombre||b.name||'');
-        if (sortBy === 'paterno') return (a.apellidoPaterno||a.name||'').localeCompare(b.apellidoPaterno||b.name||'');
-        if (sortBy === 'ingreso') return (a.fechaIngreso||a.startDate||'').localeCompare(b.fechaIngreso||b.startDate||'');
-        if (sortBy === 'salario') return (b.baseSalary||b.salarioBase||0) - (a.baseSalary||a.salarioBase||0);
-        if (sortBy === 'id')      return (a.personalId||a.scanCode||'').localeCompare(b.personalId||b.scanCode||'');
-        return 0;
-      });
+      // Sync select UI with global sort preference
+      const sortSel = document.getElementById('sort-by');
+      const globalKey = window.parent?.WORKER_SORT_KEY || localStorage.getItem('erp_worker_sort') || 'nombre';
+      if (sortSel && sortSel.value !== globalKey) sortSel.value = globalKey;
+
+      // Ordenar usando el helper global (si está disponible) o localmente
+      if (window.parent?.getWorkersSorted) {
+        workers = window.parent.getWorkersSorted(workers);
+      } else {
+        const sortBy = sortSel?.value || 'nombre';
+        workers = [...workers].sort((a, b) => {
+          if (sortBy === 'nombre')  return (a.nombre||a.name||'').localeCompare(b.nombre||b.name||'', 'es');
+          if (sortBy === 'paterno') return (a.apellidoPaterno||'').localeCompare(b.apellidoPaterno||'', 'es');
+          if (sortBy === 'ingreso') return (a.fechaIngreso||a.startDate||'').localeCompare(b.fechaIngreso||b.startDate||'');
+          if (sortBy === 'salario') return (b.salarioBase||b.baseSalary||0) - (a.salarioBase||a.baseSalary||0);
+          if (sortBy === 'id')      return (a.personalId||a.scanCode||'').localeCompare(b.personalId||b.scanCode||'');
+          return 0;
+        });
+      }
       const d = window.DB.get(); // to optionally save
       let dbUpdated = false;
       
@@ -404,23 +413,45 @@
       });
     }
     
+    // Deriva las 4 letras del RFC desde apellido paterno, materno y nombre
+    // Fórmula oficial SAT: 1ª letra+1ª vocal interna de paterno, 1ª letra de materno, 1ª letra de nombre
+    function rfcCode4(paterno, materno, nombre) {
+      const norm = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z]/g, '');
+      const pat = norm(paterno);
+      const mat = norm(materno);
+      const nom = norm(nombre);
+      const firstInternalVowel = s => { for (let i = 1; i < s.length; i++) if ('AEIOU'.includes(s[i])) return s[i]; return s[1] || ''; };
+      return (pat[0] || '') + (firstInternalVowel(pat) || '') + (mat[0] || '') + (nom[0] || '');
+    }
+
+    function onRfcInput(el) {
+      el.value = el.value.toUpperCase();
+      const rfc = el.value.trim();
+      // First 4 chars of RFC are the name code
+      if (rfc.length >= 4) {
+        document.getElementById('f-id-personal').value = rfc.substring(0, 4);
+        document.getElementById('f-id-pers').textContent = rfc.substring(0, 4);
+      }
+    }
+
     function recalcValues() {
       const g = document.getElementById('f-given-name').value.trim();
       const p = document.getElementById('f-paterno').value.trim();
       const m = document.getElementById('f-materno').value.trim();
-      
+
       const full = [p, m, g].filter(Boolean).join(' ');
       document.getElementById('f-name').value = full;
-      
+
       document.getElementById('f-display-name').textContent = full || 'Nuevo Trabajador';
       document.getElementById('f-avatar').textContent = full ? full.charAt(0).toUpperCase() : 'N';
-      
-      const bDate = document.getElementById('f-birth').value;
-      if(p && g && bDate) {
-        let part1 = g.substring(0,2).toUpperCase();
-        let part2 = p.substring(0,1).toUpperCase();
-        let part3 = bDate.substring(2,4); // YY
-        document.getElementById('f-id-personal').value = `${part1}${part2}${part3}`;
+
+      // Only auto-suggest ID from name if RFC field is empty
+      const existingRfc = document.getElementById('f-rfc').value.trim();
+      if (existingRfc.length >= 4) {
+        document.getElementById('f-id-personal').value = existingRfc.substring(0, 4).toUpperCase();
+      } else if (p && g) {
+        const code = rfcCode4(p, m, g);
+        document.getElementById('f-id-personal').value = code;
       } else {
         document.getElementById('f-id-personal').value = '';
       }
@@ -724,6 +755,13 @@
        await renderList();
     }
     document.addEventListener('DOMContentLoaded', init);
+
+  function onSortChange(key) {
+    // Save globally so all other pages use the same order
+    if (window.parent?.saveWorkerSort) window.parent.saveWorkerSort(key);
+    else localStorage.setItem('erp_worker_sort', key);
+    renderList();
+  }
 
   function toast(msg, type='ok') {
     const el = document.createElement('div');

@@ -33,7 +33,13 @@
 .badge-seco  { background: var(--blue-bg);  color: var(--blue); }
 
 .td-hint { color: var(--subtext); font-size: 11px; font-weight: 600; display: block; margin-top: 2px; }
-.id-text { font-family: monospace; font-size: 12px; font-weight: 700; }
+.col-code { font-family: monospace; font-size: 12px; font-weight: 700; white-space: nowrap; }
+@media (max-width: 900px) { .col-loc, .col-date { display: none; } }
+@media (max-width: 600px) { .col-cost { display: none; } }
+.pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.pill-ok  { background: var(--green-bg); color: var(--green); }
+.pill-low { background: var(--amber-bg); color: var(--amber); }
+.pill-out { background: var(--red-bg);   color: var(--red); }
 
 </style>
 </head>
@@ -50,18 +56,20 @@
   </div>
 </div>
 
-<div class="filters" style="display:flex; align-items:center;">
-  <select id="filt-format" class="filter-select" onchange="renderWood()">
-    <option value="all">Tipos de Pieza</option>
+<div class="filters">
+  <select id="filt-type" class="filter-select" onchange="renderWood()">
+    <option value="all">Todos los tipos</option>
+    <option value="mdf">MDF</option>
+    <option value="triplay">Triplay</option>
+    <option value="madera">Madera Aserrada</option>
+    <option value="ecotab">Ecotab</option>
+    <option value="deck">Deck</option>
+    <option value="otro">Otro</option>
   </select>
-  <select id="filt-species" class="filter-select" onchange="renderWood()">
-    <option value="all">Todas las Especies</option>
-  </select>
-  <select id="filt-lote" class="filter-select" onchange="renderWood()">
-    <option value="all">Todos los Lotes</option>
-  </select>
-  <select id="filt-quality" class="filter-select" onchange="renderWood()">
-    <option value="all">Todas las Calidades</option>
+  <select id="filt-stock" class="filter-select" onchange="renderWood()">
+    <option value="all">Todo el stock</option>
+    <option value="in">Con stock</option>
+    <option value="out">Sin stock</option>
   </select>
 </div>
 
@@ -71,15 +79,13 @@
       <table class="tbl">
         <thead>
           <tr>
-            <th>ID Tabla</th>
-            <th>Lote</th>
-            <th>Tipo Pieza</th>
-            <th>Especie</th>
-            <th>Dimensiones</th>
-            <th>Volumen (PT)</th>
-            <th>Calidad</th>
-            <th>Ubicación</th>
-            <th>Fecha Entr.</th>
+            <th class="col-code">Código</th>
+            <th>Nombre</th>
+            <th>Unidad</th>
+            <th>Stock</th>
+            <th class="col-cost">Costo</th>
+            <th class="col-date">Últ. Compra</th>
+            <th class="col-loc">Ubicación</th>
           </tr>
         </thead>
         <tbody id="wood-body"></tbody>
@@ -89,95 +95,74 @@
 
 </div>
 
-<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
-  let inited = false;
-  let STATE_LISTS = { formats: [], types: [], quality: [] };
-
-  function initFilters(wood) {
-    if(inited) return;
-    inited = true;
-
-    const lotes = new Set();
-    wood.forEach(w => { if(w.lote) lotes.add(w.lote); });
-
-    const extractList = raw => (Array.isArray(raw) && raw.length && raw[0]?.list) ? raw[0].list : (Array.isArray(raw) ? raw.filter(x => typeof x === 'string') : []);
-
-    // Fall back to data-derived values if Firestore list is empty
-    const formats  = extractList(STATE_LISTS.formats);
-    const types    = extractList(STATE_LISTS.types).length  ? extractList(STATE_LISTS.types)   : [...new Set(wood.map(w => w.species).filter(Boolean))].sort();
-    const quality  = extractList(STATE_LISTS.quality).length ? extractList(STATE_LISTS.quality) : [...new Set(wood.map(w => w.quality).filter(Boolean))].sort();
-
-    const fmtSel  = document.getElementById('filt-format');
-    const spSel   = document.getElementById('filt-species');
-    const lotSel  = document.getElementById('filt-lote');
-    const qualSel = document.getElementById('filt-quality');
-
-    fmtSel.innerHTML  = '<option value="all">Tipos de Pieza</option>'        + formats.map(f => `<option value="${f}">${f}</option>`).join('');
-    spSel.innerHTML   = '<option value="all">Todas las Especies</option>'     + types.map(s => `<option value="${s}">${s}</option>`).join('');
-    lotSel.innerHTML  = '<option value="all">Todos los Lotes</option>'        + Array.from(lotes).sort().map(s => `<option value="${s}">${s}</option>`).join('');
-    qualSel.innerHTML = '<option value="all">Todas las Calidades</option>'    + quality.map(s => `<option value="${s}">${s}</option>`).join('');
-
-    [fmtSel, spSel, lotSel, qualSel].forEach(sel => SearchableSelect.init(sel));
-  }
-
   let STATE_WOOD = [];
 
+  const TYPE_KEYWORDS = {
+    mdf:    n => /\bmdf\b/i.test(n),
+    triplay: n => /triplay/i.test(n),
+    ecotab: n => /ecotab/i.test(n),
+    deck:   n => /\bdeck\b/i.test(n),
+    madera: n => /madera\b|aserrad/i.test(n),
+  };
+
+  function itemType(name) {
+    for (const [k, fn] of Object.entries(TYPE_KEYWORDS)) if (fn(name)) return k;
+    return 'otro';
+  }
+
   async function init() {
-    const [inv, legacyWood, woodFormats, woodTypes, woodQuality] = await Promise.all([
-      window.DB.query("inventory", { category: "madera" }),
-      window.DB.query("wood"),
-      window.DB.query("wood_formats"),
-      window.DB.query("wood_types"),
-      window.DB.query("wood_quality"),
-      window.DB.query("wood_locations"),
-    ]);
-    STATE_WOOD = inv && inv.length > 0 ? inv : legacyWood;
-    STATE_LISTS = { formats: woodFormats || [], types: woodTypes || [], quality: woodQuality || [] };
+    const p = window.parent;
+    if (p?.DB_STATE) delete p.DB_STATE.inventory;
+    if (p?.cargar_coleccion) await p.cargar_coleccion('inventory');
+
+    STATE_WOOD = await window.DB.query('inventory', { category: 'madera' });
+    STATE_WOOD.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'));
+
+    // Wire up search
+    document.querySelector('.search-box input').addEventListener('input', renderWood);
     renderWood();
   }
-  
+
   document.addEventListener('DOMContentLoaded', init);
 
   function renderWood() {
-    let wood = STATE_WOOD || [];
-    
-    initFilters(wood);
-    
-    const fFmt = document.getElementById('filt-format').value;
-    const fSp = document.getElementById('filt-species').value;
-    const fLot = document.getElementById('filt-lote').value;
-    const fQual = document.getElementById('filt-quality').value;
-    
-    if(fFmt !== 'all') wood = wood.filter(w => w.format === fFmt);
-    if(fSp !== 'all') wood = wood.filter(w => w.species === fSp);
-    if(fLot !== 'all') wood = wood.filter(w => w.lote === fLot);
-    if(fQual !== 'all') wood = wood.filter(w => w.quality === fQual);
+    const term      = document.querySelector('.search-box input').value.toLowerCase().trim();
+    const fType     = document.getElementById('filt-type').value;
+    const fStock    = document.getElementById('filt-stock').value;
 
-    // Render Table
+    let items = STATE_WOOD.filter(w => {
+      if (fType !== 'all' && itemType(w.name || '') !== fType) return false;
+      const s = parseFloat(w.stock) || 0;
+      if (fStock === 'in'  && s <= 0) return false;
+      if (fStock === 'out' && s >  0) return false;
+      if (term && !(w.name || '').toLowerCase().includes(term) && !(w.code || '').toLowerCase().includes(term)) return false;
+      return true;
+    });
+
     const tbody = document.getElementById('wood-body');
-    tbody.innerHTML = wood.map(w => {
-      let bClass = 'badge-verde';
-      const q = w.quality ? w.quality.toLowerCase() : '';
-      if(q.includes('primera')) bClass = 'badge-seco';
-      else if(q.includes('segunda')) bClass = 'badge-aire';
-      
-      const entryDate = w.entryDate || '-';
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--subtext);">Sin resultados</td></tr>`;
+      return;
+    }
 
-      return `
-        <tr>
-          <td><span class="id-text">${w.code}</span></td>
-          <td><span class="td-hint">${w.lote}</span></td>
-          <td>${w.format || 'Tabla'}</td>
-          <td>${w.species}</td>
-          <td>${w.t}" × ${w.w}" × ${w.l}'</td>
-          <td class="pt-val">${w.pt ? w.pt.toFixed(2) : '-'}</td>
-          <td><span class="badge ${bClass}">${w.quality || '-'}</span></td>
-          <td>${w.location}</td>
-          <td style="color:var(--subtext);font-size:12px;">${entryDate}</td>
-        </tr>
-      `;
+    tbody.innerHTML = items.map(w => {
+      const stock = parseFloat(w.stock) || 0;
+      const min   = parseFloat(w.min)   || 0;
+      const pillCls = stock === 0 ? 'pill-out' : stock <= min ? 'pill-low' : 'pill-ok';
+      return `<tr>
+        <td class="col-code" style="font-family:monospace;font-size:12px;font-weight:700;white-space:nowrap;">${w.code || '—'}</td>
+        <td>
+          <div style="font-weight:700;">${w.name || '—'}</div>
+          ${w.brand ? `<div class="td-hint">${w.brand}</div>` : ''}
+        </td>
+        <td style="font-size:12px;color:var(--subtext);">${w.unit || '—'}</td>
+        <td><span class="pill ${pillCls}">${stock}</span>${min ? `<div class="td-hint">Mín: ${min}</div>` : ''}</td>
+        <td class="col-cost" style="font-weight:600;">$${(w.cost||0).toFixed(2)}</td>
+        <td class="col-date" style="font-size:12px;color:var(--subtext);">${w.lastPurchaseDate || '—'}</td>
+        <td class="col-loc" style="font-size:12px;color:var(--subtext);">${w.location || '—'}</td>
+      </tr>`;
     }).join('');
   }
 </script>

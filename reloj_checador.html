@@ -123,7 +123,8 @@ tick();
 /* ── Workers ────────────────────────────── */
 let WORKERS_CACHE = [];
 async function init() {
-  WORKERS_CACHE = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
+  const all = await window.DB.query('contacts', { tipo: 'trabajador', activo: true });
+  WORKERS_CACHE = window.parent?.getWorkersSorted ? window.parent.getWorkersSorted(all) : all;
 }
 document.addEventListener('DOMContentLoaded', init);
 

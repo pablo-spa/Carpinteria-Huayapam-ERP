@@ -1287,7 +1287,7 @@ async function showReporteMensual() {
   const salidas = del.filter(m => m.type === 'Gasto').reduce((s,m) => s + m.amount, 0);
   const entradas = del.filter(m => m.type === 'Ingreso').reduce((s,m) => s + m.amount, 0);
 
-  alert(`📊 REPORTE VIÁTICOS — ${monthStr}\n\nSalidas (anticipos y reembolsos): ${fmt(salidas)}\nEntradas (devoluciones): ${fmt(entradas)}\n\nGASTO NETO: ${fmt(salidas - entradas)}\n\n(Basado en los últimos movimientos cargados. Para el historial completo, usar el botón "Cargar historial completo" en Movimientos.)`);
+  alert(`📊 REPORTE VIÁTICOS — ${monthStr}\n\nSalidas (anticipos y reembolsos): ${fmt(salidas)}\nEntradas (devoluciones): ${fmt(entradas)}\n\nGASTO NETO: ${fmt(salidas - entradas)}\n\n(Basado en los últimos movimientos cargados. Para el historial completo, usar el botón "Cargar historial completo" en Contabilidad.)`);
 }
 
 // ── Guardar viático diario al cambiar en el detalle ──────────────────────

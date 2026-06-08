@@ -393,7 +393,8 @@ async function init() {
   const dbs  = all.filter(w => w.activo !== false && (w.name || w.nombre));
   const loans = await window.DB.query("worker_loans", { estado: "activo" });
 
-  WORKERS = dbs.map(w => ({
+  const sorted = window.parent?.getWorkersSorted ? window.parent.getWorkersSorted(dbs) : dbs;
+  WORKERS = sorted.map(w => ({
       id: w.id,
       n: w.nombre || (w.name ? w.name.split(' ')[0] : '-'),
       ape: w.apellidoPaterno || '',
