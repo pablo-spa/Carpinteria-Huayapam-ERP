@@ -134,19 +134,31 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column;
 .cat-search:focus { border-color: var(--blue); }
 .cat-scroll { flex: 1; overflow-y: auto; padding: 12px 14px; }
 
-.cat-group-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); padding: 6px 0 5px; }
-.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px; }
-.tool-card {
+/* Sección de categoría */
+.cat-section { margin-bottom: 16px; }
+.cat-section-hdr {
+  display: flex; align-items: center; gap: 10px;
   background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px;
-  padding: 12px; cursor: pointer; transition: all .12s; display: flex; flex-direction: column; gap: 5px; user-select: none;
+  padding: 10px 14px; margin-bottom: 8px;
 }
-.tool-card:hover         { background: var(--surface0); transform: translateY(-1px); }
+.cat-section-icon { font-size: 22px; }
+.cat-section-label { font-size: 13px; font-weight: 800; }
+.cat-section-count { font-size: 11px; color: var(--subtext); margin-left: auto; font-weight: 600; }
+
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.tool-card {
+  background: var(--base); border: 1px solid var(--crust); border-radius: 10px;
+  padding: 12px 10px; cursor: pointer; transition: all .12s;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 5px; user-select: none; text-align: center;
+}
+.tool-card:hover         { background: var(--surface0); border-color: var(--blue); transform: translateY(-1px); }
 .tool-card.taken         { opacity: .38; cursor: not-allowed; pointer-events: none; }
 .tool-card.mine          { border-color: var(--red); background: rgba(243,139,168,.08); }
-.tool-card.mine:hover    { background: rgba(243,139,168,.18); }
+.tool-card.mine:hover    { border-color: var(--red); background: rgba(243,139,168,.18); }
 
-.tc-icon  { font-size: 20px; }
-.tc-name  { font-size: 12px; font-weight: 700; line-height: 1.3; }
+.tc-icon  { font-size: 26px; }
+.tc-name  { font-size: 11px; font-weight: 700; line-height: 1.3; }
 .tc-code  { font-size: 10px; color: var(--subtext); font-family: monospace; }
 .tc-badge { font-size: 10px; font-weight: 700; margin-top: 2px; }
 .tc-avail  { color: var(--green); }
@@ -348,8 +360,23 @@ async function init() {
     p.cargar_coleccion('workers'),
   ]);
 
+  // Mapa de label → id para normalizar categorías guardadas con nombre completo
+  const catByLabel = {};
+  CATEGORIAS.forEach(c => {
+    catByLabel[c.id]    = c.id;
+    catByLabel[c.label.toLowerCase()] = c.id;
+    // sin tildes
+    catByLabel[c.label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')] = c.id;
+  });
+  const normCat = raw => {
+    if (!raw) return 'otro';
+    const key = raw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    return catByLabel[key] || catByLabel[raw.toLowerCase()] || 'otro';
+  };
+
   herramientas = (p.DB_STATE?.herramientas || [])
-    .map(h => ({ ...h, id: h.id || h._id })).filter(h => h.id);
+    .map(h => ({ ...h, id: h.id || h._id, categoria: normCat(h.categoria) }))
+    .filter(h => h.id);
 
   workers = (p.DB_STATE?.workers || [])
     .map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id);
@@ -658,26 +685,33 @@ function renderCatalogo() {
     return;
   }
 
-  el.innerHTML = CATEGORIAS.filter(c => groups[c.id]?.length).map(c => `
-    <div class="cat-group-title">${c.icon} ${c.label}</div>
-    <div class="tool-grid">
-      ${groups[c.id].map(h => {
-        const isMine  = myIds.has(h.id);
-        const isTaken = !isMine && !!h.assignedTo;
-        const badge   = isMine  ? `<span class="tc-badge tc-mine">↩ devolver</span>`
-                      : isTaken ? `<span class="tc-badge tc-taken">Con ${workerName(h.assignedTo)}</span>`
-                      :           `<span class="tc-badge tc-avail">Disponible</span>`;
-        const cardCls = isMine ? 'mine' : isTaken ? 'taken' : '';
-        const onclick = isTaken ? '' : `onclick="handleTool(herramientas.find(x=>x.id==='${h.id}'));resetTimer()"`;
-        return `
-          <div class="tool-card ${cardCls}" ${onclick}>
-            <span class="tc-icon">${c.icon}</span>
-            <span class="tc-name">${h.nombre}</span>
-            ${h.codigo ? `<span class="tc-code">${h.codigo}</span>` : ''}
-            ${badge}
-          </div>`;
-      }).join('')}
-    </div>`).join('');
+  el.innerHTML = CATEGORIAS.filter(c => groups[c.id]?.length).map(c => {
+    const tools = groups[c.id];
+    const availCount = tools.filter(h => !h.assignedTo).length;
+    const cards = tools.map(h => {
+      const isMine  = myIds.has(h.id);
+      const isTaken = !isMine && !!h.assignedTo;
+      const badge   = isMine  ? `<span class="tc-badge tc-mine">↩ devolver</span>`
+                    : isTaken ? `<span class="tc-badge tc-taken">Con ${workerName(h.assignedTo)}</span>`
+                    :           `<span class="tc-badge tc-avail">Disponible</span>`;
+      const cardCls = isMine ? 'mine' : isTaken ? 'taken' : '';
+      const onclick = isTaken ? '' : `onclick="handleTool(herramientas.find(x=>x.id==='${h.id}'));resetTimer()"`;
+      return `<div class="tool-card ${cardCls}" ${onclick}>
+        <span class="tc-icon">${c.icon}</span>
+        <span class="tc-name">${h.nombre}</span>
+        ${h.codigo ? `<span class="tc-code">${h.codigo}</span>` : ''}
+        ${badge}
+      </div>`;
+    }).join('');
+    return `<div class="cat-section">
+      <div class="cat-section-hdr">
+        <span class="cat-section-icon">${c.icon}</span>
+        <span class="cat-section-label">${c.label}</span>
+        <span class="cat-section-count">${availCount} disp. / ${tools.length}</span>
+      </div>
+      <div class="tool-grid">${cards}</div>
+    </div>`;
+  }).join('');
 }
 
 /* ── Toast ──────────────────────────── */
