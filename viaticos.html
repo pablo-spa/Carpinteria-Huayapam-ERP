@@ -79,10 +79,11 @@ td { color: var(--text); }
 <body>
 
 <div class="hdr">
-  <div class="hdr-title">Gestión de Viáticos</div>
-  <div id="hdr-actions">
+  <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent&&window.parent.goHome){window.parent.goHome()}else{window.history.back()}">← Volver</button>
-    <button class="btn btn-dark" onclick="showReporteMensual()">📊 Reporte Mensual</button>
+    <div class="hdr-title">Gestión de Viáticos</div>
+  </div>
+  <div id="hdr-actions" style="display:flex; gap:8px; align-items:center;">
     <button class="btn btn-blue" onclick="showView('form')">+ Nuevo Viaje</button>
   </div>
   <div id="hdr-actions-detail" style="display:none; gap: 8px;">
@@ -91,17 +92,18 @@ td { color: var(--text); }
   </div>
 </div>
 
+<div id="filters-bar" style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
+  <select id="f-filter-status" class="form-control" style="width:auto; font-size:13px;" onchange="renderList()">
+    <option value="todos">Todos los Viajes</option>
+    <option value="activo" selected>En Curso / Activos</option>
+    <option value="cerrado">Cerrados / Liquidados</option>
+  </select>
+  <button class="btn" onclick="showReporteMensual()" style="margin-left:auto;">📊 Reporte Mensual</button>
+</div>
+
 <div class="main">
   <!-- VIEW: LIST -->
   <div id="view-list" class="view active">
-    <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; background: var(--mantle); padding: 12px; border-radius: 8px; border: 1px solid var(--crust);">
-      <label style="font-size: 13px; font-weight: 700; color: var(--subtext);">Filtrar por Estado:</label>
-      <select id="f-filter-status" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="renderList()">
-        <option value="todos">Todos los Viajes</option>
-        <option value="activo" selected>En Curso / Activos</option>
-        <option value="cerrado">Cerrados / Liquidados</option>
-      </select>
-    </div>
     <div id="list-container" class="trip-list">
       <!-- trips will be loaded here -->
     </div>
@@ -498,12 +500,15 @@ function showView(name) {
   document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));
   document.getElementById(`view-${name}`).classList.add('active');
   
+  const filtersBar = document.getElementById('filters-bar');
   if(name === 'detail') {
     document.getElementById('hdr-actions').style.display = 'none';
     document.getElementById('hdr-actions-detail').style.display = 'flex';
+    filtersBar.style.display = 'none';
   } else {
     document.getElementById('hdr-actions').style.display = 'flex';
     document.getElementById('hdr-actions-detail').style.display = 'none';
+    filtersBar.style.display = name === 'list' ? 'flex' : 'none';
     if(name === 'list') renderList();
   }
 }
