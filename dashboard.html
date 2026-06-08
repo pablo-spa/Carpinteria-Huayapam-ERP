@@ -530,6 +530,14 @@
     document.getElementById('cal-popover').classList.remove('open');
   }
 
+  function calNavigate(evId) {
+    const ev = CAL_EV_DATA[evId];
+    if (!ev?.navFile) return;
+    closeCalPopover();
+    if (ev.navSetup) ev.navSetup();
+    window.parent.openModule(ev.navFile, ev.navLabel || ev.title);
+  }
+
   function showCalPopover(evtEl, evId) {
     const ev = CAL_EV_DATA[evId];
     if (!ev) return;
@@ -539,16 +547,19 @@
     document.getElementById('cpop-title').textContent = ev.title || '';
 
     const rowsEl = document.getElementById('cpop-rows');
-    rowsEl.innerHTML = (ev.rows || []).map(r =>
+    const rowsHtml = (ev.rows || []).map(r =>
       `<div class="cpop-row"><span class="cpop-label">${r.label}</span><span class="cpop-val">${r.val}</span></div>`
     ).join('');
+    const navBtn = ev.navFile
+      ? `<div style="margin-top:10px;"><button class="btn btn-blue" style="font-size:12px;padding:5px 14px;width:100%;" onclick="calNavigate('${evId}')">Abrir →</button></div>`
+      : '';
+    rowsEl.innerHTML = rowsHtml + navBtn;
 
     pop.classList.add('open');
 
-    // Position near the clicked element
     const rect = evtEl.getBoundingClientRect();
     const vw = window.innerWidth, vh = window.innerHeight;
-    const pw = 280, ph = 300;
+    const pw = 280, ph = 320;
     let left = rect.left, top = rect.bottom + 6;
     if (left + pw > vw - 8) left = Math.max(8, vw - pw - 8);
     if (top + ph > vh - 8) top = rect.top - ph - 6;
@@ -602,10 +613,11 @@
       if (window.parent?.cargar_coleccion && window.parent?.DB_STATE?.[col] === undefined)
         await window.parent.cargar_coleccion(col).catch(() => {});
     };
-    await Promise.all([loadCol('viajes'), loadCol('purchase_orders'), loadCol('quotations')]);
+    await Promise.all([loadCol('viajes'), loadCol('purchase_orders'), loadCol('quotations'), loadCol('workers'), loadCol('contacts')]);
     const db2 = window.DB.get();
 
-    const workers    = (db2.workers    || []).filter(w => !w._init && w.birthDate);
+    const workers    = (db2.workers    || []).filter(w => !w._init);
+    const contacts   = (db2.contacts   || []).filter(c => !c._init);
     const projects   = (db2.projects   || []).filter(p => !p._init);
     const orders     = (db2.purchase_orders || db2.orders || []).filter(o => !o._init && o.date);
     const viajes     = (db2.viajes     || []).filter(v => !v._init && v.fecha_salida);
@@ -630,19 +642,23 @@
       evMap[iso].push(id);
     };
 
+    const shortName = (s, max=22) => s && s.length > max ? s.slice(0, max) + '…' : (s || '');
+
     // ── Cumpleaños
     workers.forEach(w => {
-      const [, bm, bd] = (w.birthDate || '').split('-').map(Number);
-      if (!bm || !bd) return;
-      const iso = `${CAL_YEAR}-${String(bm).padStart(2,'0')}-${String(bd).padStart(2,'0')}`;
-      const birthYear = Number((w.birthDate || '').split('-')[0]);
-      const edad = birthYear ? CAL_YEAR - birthYear : null;
+      const bd = w.birthDate || '';
+      const parts = bd.split('-').map(Number);
+      if (parts.length < 3) return;
+      const [byear, bm, bday] = parts;
+      if (!bm || !bday) return;
+      const iso = `${CAL_YEAR}-${String(bm).padStart(2,'0')}-${String(bday).padStart(2,'0')}`;
+      const edad = byear ? CAL_YEAR - byear : null;
       const nombre = w.nombre || w.name || '?';
       reg(iso, {
-        cls: 'cev-b', chip: '🎂', typeLabel: 'Cumpleaños',
+        cls: 'cev-b', chip: `🎂 ${nombre.split(' ')[0]}`, typeLabel: 'Cumpleaños',
         title: nombre,
         rows: [
-          { label: 'Fecha', val: fmtDate(iso) },
+          { label: 'Fecha',  val: fmtDate(iso) },
           ...(edad ? [{ label: 'Edad', val: `${edad} años` }] : []),
         ]
       });
@@ -653,25 +669,26 @@
       const nombre = p.nombre || p.name || '';
       const codigo = p.codigo || p.code || '';
       const label  = nombre && codigo ? `${nombre} (${codigo})` : nombre || codigo || 'Proyecto';
-      const chip   = codigo || nombre.split(' ')[0] || 'Proyecto';
+      const chip   = shortName(nombre || codigo, 18);
       const start  = (p.fechaInicio || p.startDate || '').slice(0, 10);
       const end    = (p.fechaFin    || p.endDate   || '').slice(0, 10);
 
       const baseRows = [
-        { label: 'Código',    val: codigo || '—' },
-        { label: 'Inicio',    val: fmtDate(start) },
-        { label: 'Entrega',   val: end ? fmtDate(end) : '—' },
+        { label: 'Código',  val: codigo || '—' },
+        { label: 'Inicio',  val: fmtDate(start) },
+        { label: 'Entrega', val: end ? fmtDate(end) : '—' },
         ...(p.estado ? [{ label: 'Estado', val: p.estado }] : []),
-        ...(p.cliente ? [{ label: 'Cliente', val: p.cliente }] : []),
       ];
 
       if (start) reg(start, {
         cls: 'cev-p', chip: `▶ ${chip}`, typeLabel: 'Inicio de proyecto',
-        title: label, rows: baseRows
+        title: label, rows: baseRows,
+        navFile: `proyecto_detalle.html?id=${p.id}`, navLabel: label,
       });
       if (end && end !== start) reg(end, {
         cls: 'cev-p', chip: `■ ${chip}`, typeLabel: 'Entrega de proyecto',
-        title: label, rows: baseRows
+        title: label, rows: baseRows,
+        navFile: `proyecto_detalle.html?id=${p.id}`, navLabel: label,
       });
     });
 
@@ -679,40 +696,47 @@
     orders.forEach(o => {
       const date = (o.date || '').slice(0, 10);
       if (!date) return;
+      const supplier = o.proveedor || o.supplier || o.provider || '';
       const rows = [
-        { label: 'Fecha',      val: fmtDate(date) },
-        ...(o.proveedor  ? [{ label: 'Proveedor',  val: o.proveedor }]  : []),
+        { label: 'Folio',     val: o.folio || '—' },
+        { label: 'Fecha',     val: fmtDate(date) },
+        ...(supplier ? [{ label: 'Proveedor', val: supplier }] : []),
         ...(o.total != null ? [{ label: 'Total', val: fmtMXN(o.total) }] : []),
         ...(o.items?.length  ? [{ label: 'Artículos', val: String(o.items.length) }] : []),
       ];
       reg(date, {
         cls: 'cev-c', chip: `🛒 ${o.folio || 'Compra'}`, typeLabel: 'Orden de Compra',
-        title: o.folio || 'Orden de Compra', rows
+        title: o.folio || 'Orden de Compra', rows,
+        navFile: 'historial_compras.html', navLabel: 'Historial Compras',
       });
     });
 
     // ── Viajes
     viajes.forEach(v => {
-      const sal = (v.fecha_salida || '').slice(0, 10);
+      const sal    = (v.fecha_salida     || '').slice(0, 10);
       const regReal = (v.fecha_regreso_real || '').slice(0, 10);
       const regEst  = (v.fecha_regreso_est  || '').slice(0, 10);
-      const regEnd  = (regReal || regEst || sal);
+      const regEnd  = regReal || regEst || sal;
       if (!sal) return;
 
-      const proyId = v.proyectoId || v.projectId || v.proyecto_id;
-      const proy   = proyId ? projects.find(p => p.id === proyId) : null;
-      const proyLabel = proy
-        ? ((proy.nombre || '') + (proy.codigo ? ` (${proy.codigo})` : '')).trim()
-        : (v.proyecto || null);
+      const proy = v.project_id ? projects.find(p => p.id === v.project_id) : null;
+      const proyNombre = proy ? (proy.nombre || proy.name || '') : '';
+      const proyLabel  = proy
+        ? (proyNombre + (proy.codigo ? ` (${proy.codigo})` : '')).trim()
+        : '';
 
       const rows = [
-        { label: 'Salida',    val: fmtDate(sal) },
-        { label: 'Regreso est.',  val: regEst  ? fmtDate(regEst)  : '—' },
+        { label: 'Destino',      val: v.destino || '—' },
+        { label: 'Salida',       val: fmtDate(sal) },
+        { label: 'Regreso est.', val: regEst  ? fmtDate(regEst)  : '—' },
         ...(regReal ? [{ label: 'Regreso real', val: fmtDate(regReal) }] : []),
-        ...(proyLabel  ? [{ label: 'Proyecto',  val: proyLabel }]  : []),
-        ...(v.estado   ? [{ label: 'Estado',    val: v.estado }]   : []),
-        ...(v.trabajador || v.empleado ? [{ label: 'Trabajador', val: v.trabajador || v.empleado }] : []),
+        ...(proyLabel ? [{ label: 'Proyecto', val: proyLabel }] : []),
+        ...(v.estado  ? [{ label: 'Estado',   val: v.estado }]  : []),
       ];
+
+      // Chip: project name if available, else destination
+      const chipText = shortName(proyNombre || v.destino || 'Viaje', 18);
+      const vId = v.id;
 
       const cur = new Date(sal + 'T12:00:00');
       const endD = new Date(regEnd + 'T12:00:00');
@@ -722,8 +746,10 @@
         const mnEnd   = `${CAL_YEAR}-${String(CAL_MONTH+1).padStart(2,'0')}-31`;
         if (iso >= mnStart && iso <= mnEnd)
           reg(iso, {
-            cls: 'cev-v', chip: `✈ ${v.destino || 'Viaje'}`, typeLabel: 'Viaje',
-            title: v.destino || 'Viaje', rows
+            cls: 'cev-v', chip: `✈ ${chipText}`, typeLabel: 'Viaje',
+            title: v.destino || 'Viaje', rows,
+            navFile: 'viaticos.html', navLabel: 'Viáticos',
+            navSetup: () => { window.parent.PENDING_VIAJE_ID = vId; },
           });
         cur.setDate(cur.getDate() + 1);
       }
@@ -733,16 +759,25 @@
     quotations.forEach(q => {
       const date = (q.createdAt || q.fecha || q.date || '').slice(0, 10);
       if (!date) return;
+      const proy   = q.projectId ? projects.find(p => p.id === q.projectId) : null;
+      const client = q.clientId  ? contacts.find(c => c.id === q.clientId)  : null;
+      const proyNombre   = proy   ? (proy.nombre  || proy.name  || '') : '';
+      const clientNombre = client ? (client.nombre || client.name || '') : '';
+      const displayTitle = proyNombre || clientNombre || q.folio || 'Cotización';
+
       const rows = [
+        { label: 'Folio',   val: q.folio || '—' },
         { label: 'Fecha',   val: fmtDate(date) },
-        ...(q.cliente  ? [{ label: 'Cliente',  val: q.cliente }]  : []),
-        ...(q.proyecto ? [{ label: 'Proyecto', val: q.proyecto }] : []),
-        ...(q.total != null ? [{ label: 'Total', val: fmtMXN(q.total) }] : []),
-        ...(q.estado   ? [{ label: 'Estado',   val: q.estado }]   : []),
+        ...(clientNombre  ? [{ label: 'Cliente',  val: clientNombre }]  : []),
+        ...(proyNombre    ? [{ label: 'Proyecto', val: proyNombre + (proy.codigo ? ` (${proy.codigo})` : '') }] : []),
+        ...(q.total != null ? [{ label: 'Total',  val: fmtMXN(q.total) }] : []),
+        ...(q.status || q.estado ? [{ label: 'Estado', val: q.status || q.estado }] : []),
       ];
       reg(date, {
-        cls: 'cev-q', chip: `📋 ${q.folio || q.codigo || 'Cotización'}`, typeLabel: 'Cotización',
-        title: q.folio || q.codigo || 'Cotización', rows
+        cls: 'cev-q', chip: `📋 ${shortName(proyNombre || clientNombre || q.folio || 'Cot.', 16)}`,
+        typeLabel: 'Cotización', title: displayTitle, rows,
+        navFile: q.id ? `cotizacion.html?id=${q.id}` : (proy ? `proyecto_detalle.html?id=${proy.id}` : null),
+        navLabel: 'Cotización',
       });
     });
 

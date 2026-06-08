@@ -494,6 +494,13 @@ async function init() {
   document.getElementById('fg-fecha').value = today;
 
   renderList();
+
+  // Open specific viaje if navigated from calendar
+  const pendingId = window.parent?.PENDING_VIAJE_ID;
+  if (pendingId) {
+    window.parent.PENDING_VIAJE_ID = null;
+    setTimeout(() => openDetalle(pendingId), 100);
+  }
 }
 
 function showView(name) {
