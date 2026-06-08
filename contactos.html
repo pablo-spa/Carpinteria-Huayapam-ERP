@@ -9,21 +9,17 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Header */
-.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
-.hdr h1 { font-size: 17px; font-weight: 800; padding-right: 16px; border-right: 1px solid var(--crust); white-space: nowrap; }
-.search-box { flex: 1; display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 8px 12px; min-width: 180px; }
-.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-family: inherit; font-size: 14px; margin-left: 8px; }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; white-space: nowrap; }
-.btn:hover { background: var(--surface0); }
-.btn-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
-.btn-blue:hover { opacity: .9; }
+.hdr h1 { padding-right: 16px; border-right: 1px solid var(--crust); white-space: nowrap; }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+.search-box { display: flex; align-items: center; gap: 6px; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; width: 260px; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-family: inherit; font-size: 13px; height: auto; padding: 0; width: 100%; }
 .btn-red  { background: var(--red-bg); color: var(--red); border-color: var(--red); }
 .btn-red:hover { background: var(--red); color: #fff; }
 
 /* Filters */
-.filters { display: flex; gap: 8px; overflow-x: auto; padding: 10px 24px; border-bottom: 1px solid var(--crust); }
+.filters { display: flex; gap: 8px; overflow-x: auto; padding: 12px 24px; border-bottom: 1px solid var(--crust); background: var(--base); }
 .filters::-webkit-scrollbar { display: none; }
-.f-btn { padding: 5px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; }
+.f-btn { padding: 6px 14px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; transition: all .15s; }
 .f-btn:hover { background: var(--surface0); color: var(--text); }
 .f-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
 
@@ -111,9 +107,17 @@
 <body>
 
 <div class="hdr">
-  <h1>Directorio CRM</h1>
-  <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar nombre, empresa, teléfono..."></div>
-  <button class="btn btn-blue" onclick="openPanel(null)">+ Nuevo Contacto</button>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <h1>Directorio CRM</h1>
+  </div>
+  <div class="hdr-right">
+    <div class="search-box">
+      <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
+      <input type="text" id="srch" placeholder="Buscar nombre, empresa, teléfono...">
+    </div>
+    <button class="btn btn-blue" onclick="openPanel(null)">+ Nuevo Contacto</button>
+  </div>
 </div>
 
 <div class="filters">

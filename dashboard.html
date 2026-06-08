@@ -88,7 +88,10 @@
 <body>
 
 <div class="hdr">
-  <div class="hdr-title">Dashboard Administrativo</div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <div class="hdr-title">Dashboard Administrativo</div>
+  </div>
   <div style="display:flex; align-items:center; gap:12px;">
     <div class="filter-bar">
       <select id="filt-period" class="filter-select" onchange="handlePeriodChange()">

@@ -145,7 +145,7 @@ input.mat-price { text-align: right; font-size: 12px; }
 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
-    <button id="btn-back-project" class="back-btn" style="display:none;" onclick="goBackToProject()">← Volver al Proyecto</button>
+    <button id="btn-back-project" class="back-btn" onclick="goBackToProject()">← Volver</button>
     <h2 class="hdr-title">Nueva Cotización</h2>
     <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
   </div>
@@ -1245,7 +1245,7 @@ function navToProject(pId) {
 
 function goBackToProject() {
   const pId = BACK_PROJECT_ID;
-  if (!pId) return;
+  if (!pId) { window.history.back(); return; }
   if (window.parent?.openModule) window.parent.openModule('proyecto_detalle.html?id=' + pId, 'Detalle del Proyecto');
   else window.location.href = 'proyecto_detalle.html?id=' + pId;
 }
@@ -1253,7 +1253,7 @@ function goBackToProject() {
 function showBackButton(pId) {
   BACK_PROJECT_ID = pId;
   const btn = document.getElementById('btn-back-project');
-  if (btn) btn.style.display = '';
+  if (btn) btn.textContent = '← Volver al Proyecto';
 }
 
 function linkClientToProject(d, pId, cId) {
