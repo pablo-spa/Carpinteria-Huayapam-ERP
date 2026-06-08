@@ -254,10 +254,14 @@
   let STATE_BRANDS    = []; // [{id, name, brandCode}]
 
   async function init() {
-    // Force-refresh inventory from Firestore to avoid stale cache
+    // Force-refresh from Firestore to avoid stale cache
     if (window.parent?.DB_STATE && window.parent?.cargar_coleccion) {
       delete window.parent.DB_STATE.inventory;
-      await window.parent.cargar_coleccion('inventory');
+      delete window.parent.DB_STATE.concept_categories;
+      await Promise.all([
+        window.parent.cargar_coleccion('inventory'),
+        window.parent.cargar_coleccion('concept_categories'),
+      ]);
     }
     const [invData, workersData, , catsRaw, brandsData] = await Promise.all([
       window.DB.query("inventory"),
