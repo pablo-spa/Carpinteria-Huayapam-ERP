@@ -95,7 +95,7 @@
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 
 .btn { padding: 8px 16px; border-radius: 7px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
-.btn-primary { background: var(--blue); color: #111; }
+.btn-primary { background: var(--blue); color: #fff; }
 .btn-ghost   { background: var(--surface0); color: var(--text); border: 1px solid var(--crust); }
 .btn-danger  { background: var(--red); color: #fff; }
 .btn-sm      { padding: 4px 10px; font-size: 12px; }
@@ -104,14 +104,18 @@
 <body>
 
 <div class="hdr">
-  <div class="hdr-title">🧰 Herramientas</div>
-  <div class="hdr-right">
-    <div class="search-box">🔍 <input id="search" placeholder="Buscar herramienta…" oninput="render()"></div>
-    <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nueva</button>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <div class="hdr-title">Herramientas</div>
   </div>
+  <button class="btn btn-primary" onclick="openModal()">+ Agregar Herramienta</button>
 </div>
 
 <div class="filters" id="hdr-filters">
+  <div class="search-box" style="flex-shrink:0;">
+    <span style="color:var(--subtext); font-size:14px; flex-shrink:0;">🔍</span>
+    <input id="search" placeholder="Buscar herramienta…" oninput="render()">
+  </div>
   <select id="fil-cat"    class="filter-select" onchange="render()"><option value="">Todas las categorías</option></select>
   <select id="fil-tipo"   class="filter-select" onchange="render()">
     <option value="">Todos los tipos</option>

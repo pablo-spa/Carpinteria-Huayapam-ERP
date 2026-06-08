@@ -68,10 +68,14 @@
     <button class="back-btn" onclick="window.history.back()">← Volver</button>
     <div class="hdr-title">Inventario General</div>
   </div>
-  <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar artículo…" autofocus></div>
+  <button class="btn btn-green" onclick="openModal()">+ Agregar Artículo</button>
 </div>
 
 <div class="filters">
+  <div class="search-box" style="flex-shrink:0;">
+    <span style="color:var(--subtext); font-size:14px; flex-shrink:0;">🔍</span>
+    <input type="text" id="srch" placeholder="Buscar artículo…" autofocus>
+  </div>
   <select id="cat-select" class="filter-select" onchange="setCatFilterSelect(this.value)">
     <option value="all">Todas las categorías</option>
   </select>
