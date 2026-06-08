@@ -130,6 +130,7 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
 
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
   let isLocked = false;
@@ -161,10 +162,18 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     }
     const getList2 = key => { const raw = window.parent?.DB_STATE?.[key]||d[key]||[]; return raw[0]?.list || raw.filter(x=>typeof x==='string'); };
 
-    document.getElementById('ctx-format').innerHTML = getList2('wood_formats').map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-species').innerHTML = getList2('wood_types').map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-quality').innerHTML = getList2('wood_quality').map(x => `<option value="${x}">${x}</option>`).join('');
-    document.getElementById('ctx-loc').innerHTML = getList2('wood_locations').map(x => `<option value="${x}">${x}</option>`).join('');
+    const fmtSel  = document.getElementById('ctx-format');
+    const spSel   = document.getElementById('ctx-species');
+    const qualSel = document.getElementById('ctx-quality');
+    const locSel  = document.getElementById('ctx-loc');
+
+    fmtSel.innerHTML  = getList2('wood_formats').map(x  => `<option value="${x}">${x}</option>`).join('');
+    spSel.innerHTML   = getList2('wood_types').map(x    => `<option value="${x}">${x}</option>`).join('');
+    qualSel.innerHTML = getList2('wood_quality').map(x  => `<option value="${x}">${x}</option>`).join('');
+    locSel.innerHTML  = getList2('wood_locations').map(x => `<option value="${x}">${x}</option>`).join('');
+
+    [fmtSel, spSel, qualSel, locSel].forEach(sel => SearchableSelect.init(sel));
+
     document.getElementById('ctx-date').value = new Date().toISOString().split('T')[0];
   });
 
@@ -176,6 +185,7 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     const status = document.getElementById('ctx-status');
 
     ctx.querySelectorAll('input, select').forEach(el => el.disabled = isLocked);
+    ctx.querySelectorAll('.ss-wrap').forEach(el => { el.style.pointerEvents = isLocked ? 'none' : ''; el.style.opacity = isLocked ? '0.55' : ''; });
 
     if (isLocked) {
       scan.style.opacity = '1';

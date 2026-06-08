@@ -120,6 +120,7 @@ body { font-size: 14px; min-height: 100vh; }
 
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
   let inited = false;
@@ -139,17 +140,17 @@ body { font-size: 14px; min-height: 100vh; }
     const types    = extractList(STATE_LISTS.types).length  ? extractList(STATE_LISTS.types)   : [...new Set(wood.map(w => w.species).filter(Boolean))].sort();
     const quality  = extractList(STATE_LISTS.quality).length ? extractList(STATE_LISTS.quality) : [...new Set(wood.map(w => w.quality).filter(Boolean))].sort();
 
-    document.getElementById('filt-format').innerHTML = '<option value="all">Tipos de Pieza</option>' +
-      formats.map(f => `<option value="${f}">${f}</option>`).join('');
+    const fmtSel  = document.getElementById('filt-format');
+    const spSel   = document.getElementById('filt-species');
+    const lotSel  = document.getElementById('filt-lote');
+    const qualSel = document.getElementById('filt-quality');
 
-    document.getElementById('filt-species').innerHTML = '<option value="all">Todas las Especies</option>' +
-      types.map(s => `<option value="${s}">${s}</option>`).join('');
+    fmtSel.innerHTML  = '<option value="all">Tipos de Pieza</option>'        + formats.map(f => `<option value="${f}">${f}</option>`).join('');
+    spSel.innerHTML   = '<option value="all">Todas las Especies</option>'     + types.map(s => `<option value="${s}">${s}</option>`).join('');
+    lotSel.innerHTML  = '<option value="all">Todos los Lotes</option>'        + Array.from(lotes).sort().map(s => `<option value="${s}">${s}</option>`).join('');
+    qualSel.innerHTML = '<option value="all">Todas las Calidades</option>'    + quality.map(s => `<option value="${s}">${s}</option>`).join('');
 
-    document.getElementById('filt-lote').innerHTML = '<option value="all">Todos los Lotes</option>' +
-      Array.from(lotes).sort().map(s => `<option value="${s}">${s}</option>`).join('');
-
-    document.getElementById('filt-quality').innerHTML = '<option value="all">Todas las Calidades</option>' +
-      quality.map(s => `<option value="${s}">${s}</option>`).join('');
+    [fmtSel, spSel, lotSel, qualSel].forEach(sel => SearchableSelect.init(sel));
   }
 
   let STATE_WOOD = [];
