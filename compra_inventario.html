@@ -161,7 +161,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
       <div class="row-grid">
         <div class="field">
           <label>Proveedor</label>
-          <select id="proveedor" onchange="onProveedorChange()">
+          <select id="proveedor" data-searchable data-allow-new onchange="onProveedorChange()">
             <option value="">— Selecciona —</option>
             <option value="maderas_del_sur">Maderas del Sur</option>
             <option value="maderex">Maderex Oaxaca</option>
@@ -398,6 +398,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
   </div>
 </div>
 
+<script src="searchable-select.js"></script>
 <script>
 let items = [];
 let nextId = 1;
@@ -444,6 +445,7 @@ async function loadDBData() {
   const otroOpt = document.createElement('option');
   otroOpt.value = 'otro'; otroOpt.textContent = 'Otro proveedor…';
   pSel.appendChild(otroOpt);
+  if (pSel._ssInit) pSel._ssRefresh(); else SearchableSelect.init(pSel);
 
   // Populate add-mat: inventory items + herramientas groups
   const matSel = document.getElementById('add-mat');
@@ -490,7 +492,19 @@ function stockPill(val) {
 }
 
 function onProveedorChange() {
-  document.getElementById('proveedor-otro-wrap').style.display = document.getElementById('proveedor').value === 'otro' ? '' : 'none';
+  const sel  = document.getElementById('proveedor');
+  const wrap = document.getElementById('proveedor-otro-wrap');
+  const txt  = document.getElementById('proveedor-otro');
+  if (sel.value === '_new') {
+    const typed = sel.dataset.allowNewText || '';
+    wrap.style.display = '';
+    if (typed) txt.value = typed;
+    sel.value = 'otro';
+    if (sel._ssSync) sel._ssSync();
+    txt.focus();
+  } else {
+    wrap.style.display = sel.value === 'otro' ? '' : 'none';
+  }
 }
 
 function onStateChange() {

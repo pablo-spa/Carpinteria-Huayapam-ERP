@@ -36,11 +36,11 @@
   <div style="display:flex; gap:16px;">
     <div class="field" style="flex:1;">
       <label>Entregado a (Trabajador)</label>
-      <select id="worker"><option value="">— Seleccionar —</option></select>
+      <select id="worker" data-searchable><option value="">— Seleccionar —</option></select>
     </div>
     <div class="field" style="flex:1;">
       <label>Proyecto Asignado</label>
-      <select id="proj"><option value="">— Stock General / Taller —</option></select>
+      <select id="proj" data-searchable><option value="">— Stock General / Taller —</option></select>
     </div>
   </div>
 
@@ -81,6 +81,7 @@ async function init() {
     o.textContent = w.name || w.givenName;
     wSel.appendChild(o);
   });
+  SearchableSelect.init(wSel);
 
   const pSel = document.getElementById('proj');
   projects.filter(p => !p._init && !(p.archivado||p.archived) && (p.codigo||p.code) && (p.nombre||p.name)).forEach(p => {
@@ -89,6 +90,7 @@ async function init() {
     o.textContent = `${(p.codigo||p.code)} — ${(p.nombre||p.name)}`;
     pSel.appendChild(o);
   });
+  SearchableSelect.init(pSel);
 
   addRow();
 }

@@ -251,6 +251,7 @@
   <button class="btn btn-green" id="btn-cerrar-ft" onclick="cerrarDia()">✓ Cerrar día</button>
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script>
 // ── Constants ─────────────────────────────────────────────────
@@ -515,13 +516,14 @@ function renderManualAdd(otherWorkers) {
   sect.innerHTML = `
     <div style="margin:8px 0;background:var(--mantle);border:1px solid var(--crust);border-radius:var(--radius-lg);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--subtext);">Agregar trabajador</span>
-      <select id="manual-worker-sel" style="flex:1;min-width:180px;max-width:340px;">
+      <select id="manual-worker-sel" data-searchable style="flex:1;min-width:180px;max-width:340px;">
         <option value="">— Seleccionar —</option>
         ${opts}
       </select>
       <button class="btn btn-dark" style="padding:6px 12px;font-size:12px;" onclick="addManualWorker()">+ Agregar</button>
     </div>
   `;
+  SearchableSelect.init(document.getElementById('manual-worker-sel'));
 }
 
 function addManualWorker() {

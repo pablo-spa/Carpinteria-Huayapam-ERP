@@ -261,9 +261,11 @@ function addNewItemRow(data = {}) {
       <!-- Proveedor -->
       <div class="f-field">
         <label>Proveedor sugerido</label>
-        <select class="ni-proveedor" onchange="handleSupplierChange('${rowId}',this)">
-          ${buildSupplierOpts(data.proveedorId||'')}
-        </select>
+        <div class="ni-proveedor-wrap">
+          <select class="ni-proveedor" data-searchable data-allow-new onchange="handleSupplierChange('${rowId}',this)">
+            ${buildSupplierOpts(data.proveedorId||'')}
+          </select>
+        </div>
         <div class="ni-proveedor-nuevo" style="display:${showCustomSupplier}; margin-top:4px;">
           <input type="text" class="ni-proveedor-txt" placeholder="Nombre del proveedor nuevo" value="${data.proveedorPendiente?.nombre||''}">
           <span class="new-badge">✦ Nuevo — pendiente aprobación</span>
@@ -296,6 +298,7 @@ function addNewItemRow(data = {}) {
   `;
   cont.appendChild(div);
   if (!isHerr) SearchableSelect.init(div.querySelector('.ni-concepto'));
+  SearchableSelect.init(div.querySelector('.ni-proveedor'));
   updPendingNotice();
 }
 
@@ -370,12 +373,16 @@ function handleConceptChange(rowId, sel) {
 }
 
 function handleSupplierChange(rowId, sel) {
-  const row      = document.getElementById(rowId);
+  const row     = document.getElementById(rowId);
   const nuevoDiv = row.querySelector('.ni-proveedor-nuevo');
+  const provTxt  = row.querySelector('.ni-proveedor-txt');
   if (sel.value === '_new') {
+    const typed = sel.dataset.allowNewText || '';
     sel.value = '';
+    if (sel._ssSync) sel._ssSync();
     nuevoDiv.style.display = 'block';
-    row.querySelector('.ni-proveedor-txt').focus();
+    if (typed) provTxt.value = typed;
+    provTxt.focus();
   } else {
     nuevoDiv.style.display = 'none';
   }
