@@ -10,7 +10,7 @@
 
 .hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .hdr-title { font-size: 17px; font-weight: 800; white-space: nowrap; }
-.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 0 12px; height: 36px; min-width: 180px; max-width: 280px; gap: 8px; }
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 0 12px; height: 36px; min-width: 220px; flex: 1; max-width: 380px; gap: 8px; }
 .search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
 .search-box span { color: var(--subtext); font-size: 14px; flex-shrink: 0; }
 
@@ -21,7 +21,7 @@
 .f-btn.act-amber { background: var(--amber); color: #111; border-color: var(--amber); }
 .f-btn-tool { height: 36px; padding: 0 12px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; font-family: inherit; }
 .f-btn-tool:hover { background: var(--surface0); color: var(--text); }
-.f-select { height: 36px; padding: 0 10px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; }
+.f-select { height: 36px; padding: 0 10px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; max-width: 180px; }
 .f-select:focus { border-color: var(--blue); color: var(--text); }
 .hdr-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
 
@@ -415,10 +415,10 @@
     const locs = rawLocs[0]?.list || rawLocs.filter(x => typeof x === 'string');
 
     // ── Category select in header ──────────────────────────────────────
-    const catSel = document.getElementById('cat-select');
-    catSel.innerHTML = '<option value="all">Todas las categorías</option>' +
+    const hdrCatSel = document.getElementById('cat-select');
+    hdrCatSel.innerHTML = '<option value="all">Todas las categorías</option>' +
       catNames.map(name => `<option value="${name}">${name}</option>`).join('');
-    catSel.value = currentFilter;
+    hdrCatSel.value = currentFilter;
 
     // ── Modal selects ────────────────────────────────────────────────
     const catSel = document.getElementById('m-cat');
