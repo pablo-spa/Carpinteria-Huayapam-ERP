@@ -19,7 +19,8 @@
 .filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; outline: none; font-family: inherit; transition: border-color .15s; }
 .filter-select:focus { border-color: var(--blue); }
 
-.tabs { display: flex; gap: 4px; padding: 0 20px; border-bottom: 1px solid var(--crust); background: var(--mantle); }
+.tabs { display: flex; gap: 4px; padding: 0 20px; border-bottom: 1px solid var(--crust); background: var(--mantle); position: sticky; top: 57px; z-index: 19; }
+.filters { position: sticky; top: 97px; z-index: 18; }
 .tab-btn { padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: all .15s; }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
@@ -111,6 +112,12 @@
   <button class="btn btn-primary" onclick="openModal()">+ Agregar Herramienta</button>
 </div>
 
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('catalogo',this)">Catálogo</button>
+  <button class="tab-btn" onclick="switchTab('cajas',this)">Cajas</button>
+  <button class="tab-btn" onclick="switchTab('historial',this)">Historial</button>
+</div>
+
 <div class="filters" id="hdr-filters">
   <div class="search-box" style="flex-shrink:0;">
     <span style="color:var(--subtext); font-size:14px; flex-shrink:0;">🔍</span>
@@ -130,12 +137,6 @@
     <option value="baja">Baja</option>
   </select>
   <select id="fil-worker" class="filter-select" onchange="render()"><option value="">Todos los trabajadores</option></select>
-</div>
-
-<div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('catalogo',this)">Catálogo</button>
-  <button class="tab-btn" onclick="switchTab('cajas',this)">Cajas</button>
-  <button class="tab-btn" onclick="switchTab('historial',this)">Historial</button>
 </div>
 
 <!-- ── TAB: Catálogo ─────────────────────────────────── -->
@@ -728,7 +729,7 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
-  document.getElementById('hdr-filters').style.display = id === 'catalogo' ? '' : 'none';
+  document.getElementById('hdr-filters').style.visibility = id === 'catalogo' ? '' : 'hidden';
   if (id === 'historial') renderHistorial();
 }
 
