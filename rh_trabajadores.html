@@ -392,7 +392,7 @@
           <td><div class="avatar">${namePart}</div></td>
           <td><b>${w.personalId || '-'}</b></td>
           <td style="font-weight:600;">${w.name || '-'}${w.activo === false ? ' <span style="font-size:10px;font-weight:700;color:#d20f39;background:rgba(210,15,57,.12);padding:2px 6px;border-radius:4px;">BAJA</span>' : ''}</td>
-          <td>${w.role || '-'}</td>
+          <td>${w.puesto || w.role || '-'}</td>
           <td>${w.rfc || '-'}</td>
           <td>${w.phone || '-'}</td>
           <td>${fechaIngreso || '-'}</td>
@@ -534,7 +534,7 @@
         document.getElementById('f-name').value = w.name || '';
         document.getElementById('f-birth').value = w.birthDate || '';
         document.getElementById('f-rfc').value = w.rfc || '';
-        document.getElementById('f-role').value = w.role || '';
+        document.getElementById('f-role').value = w.puesto || w.role || '';
         document.getElementById('f-in-workshop').value = w.inWorkshop || 'Si';
         document.getElementById('f-measure-att').value = w.measureAtt || 'Si';
         document.getElementById('f-phone').value = w.phone || '';
@@ -665,7 +665,7 @@
         personalId: document.getElementById('f-id-personal').value,
         birthDate: document.getElementById('f-birth').value,
         rfc: document.getElementById('f-rfc').value.trim().toUpperCase(),
-        role: document.getElementById('f-role').value.trim(),
+        puesto: document.getElementById('f-role').value.trim(),
         inWorkshop: document.getElementById('f-in-workshop').value,
         measureAtt: document.getElementById('f-measure-att').value,
         phone: document.getElementById('f-phone').value.trim(),

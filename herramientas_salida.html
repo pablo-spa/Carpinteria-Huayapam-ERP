@@ -383,7 +383,7 @@ let allRoles   = [];
 let hiddenRoles = new Set(JSON.parse(localStorage.getItem(CFG_KEY) || '[]'));
 
 function buildRoleChips() {
-  allRoles = [...new Set(workers.map(w => w.role || '').filter(Boolean))].sort();
+  allRoles = [...new Set(workers.map(w => w.puesto || w.role || '').filter(Boolean))].sort();
   // Asignar colores en orden estable (sort garantiza consistencia)
   allRoles.forEach(r => roleColor(r));
   const el = document.getElementById('cfg-roles');
@@ -411,7 +411,7 @@ function toggleCfg() {
 /* ── Worker grid ────────────────────── */
 function renderWorkerGrid() {
   const el = document.getElementById('worker-grid');
-  const visible = workers.filter(w => !hiddenRoles.has(w.role || ''));
+  const visible = workers.filter(w => !hiddenRoles.has(w.puesto || w.role || ''));
 
   if (!visible.length) {
     el.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--subtext);padding:20px;font-size:13px;">Sin trabajadores visibles — revisa la configuración ⚙</div>';
@@ -420,7 +420,7 @@ function renderWorkerGrid() {
   el.innerHTML = visible.map(w => {
     const name       = displayName(w);
     const initial    = name[0].toUpperCase();
-    const [bg, fg, border] = roleColor(w.role || '');
+    const [bg, fg, border] = roleColor(w.puesto || w.role || '');
     return `<div class="w-btn" onclick="loginWorker('${w.id}')"
       style="border-color:${border}40;">
       <div class="w-avatar" style="background:${bg};color:${fg};">${initial}</div>
@@ -510,7 +510,7 @@ function loginWorker(wId) {
   activeWorker = w;
 
   const name       = displayName(w);
-  const [bg, fg]   = roleColor(w.role || '');
+  const [bg, fg]   = roleColor(w.puesto || w.role || '');
   const avatar     = document.getElementById('hdr-avatar');
   avatar.textContent   = name[0].toUpperCase();
   avatar.style.background = bg;
