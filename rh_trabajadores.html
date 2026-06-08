@@ -115,17 +115,20 @@
 <body>
 
   <div class="hdr">
-    <h2 class="hdr-title"><span>👷‍♂️</span> Directorio de Trabajadores</h2>
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-      <select id="sort-by" onchange="renderList()" style="font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer;">
-        <option value="name">Ordenar: Nombre</option>
-        <option value="paterno">Ordenar: Apellido</option>
-        <option value="ingreso">Ordenar: Fecha ingreso</option>
-        <option value="salario">Ordenar: Sueldo</option>
-        <option value="id">Ordenar: ID Personal</option>
-      </select>
-      <button class="btn" onclick="openFicha()">+ Nuevo Trabajador</button>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button class="back-btn" onclick="window.history.back()">← Volver</button>
+      <h2 class="hdr-title">Directorio de Trabajadores</h2>
     </div>
+    <button class="btn btn-green" onclick="openFicha()">+ Nuevo Trabajador</button>
+  </div>
+  <div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
+    <select id="sort-by" onchange="renderList()" style="font-size:13px; padding:6px 10px; border-radius:6px; border:1px solid var(--surface0); background:var(--base); color:var(--text); cursor:pointer; font-family:inherit;">
+      <option value="name">Ordenar: Nombre</option>
+      <option value="paterno">Ordenar: Apellido</option>
+      <option value="ingreso">Ordenar: Fecha ingreso</option>
+      <option value="salario">Ordenar: Sueldo</option>
+      <option value="id">Ordenar: ID Personal</option>
+    </select>
   </div>
 
         <div class="table-container">
