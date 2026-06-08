@@ -292,18 +292,24 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column;
 
 <script>
 const TIMEOUT_SEC = 30;
-const CATEGORIAS = [
-  { id: 'perforacion',  label: 'Perforación',    icon: '🔩' },
-  { id: 'corte',        label: 'Corte',           icon: '🪚' },
-  { id: 'lijado',       label: 'Lijado',          icon: '📋' },
-  { id: 'cepillado',    label: 'Cepillado',       icon: '🪵' },
-  { id: 'medicion',     label: 'Medición',        icon: '📐' },
-  { id: 'sujecion',     label: 'Sujeción',        icon: '🔧' },
-  { id: 'router',       label: 'Router / Fresado',icon: '⚙️' },
-  { id: 'ensamble',     label: 'Ensamble / Mano', icon: '🔨' },
-  { id: 'acabado',      label: 'Acabado',         icon: '🎨' },
-  { id: 'otro',         label: 'Otros',           icon: '🧰' },
-];
+// Íconos para categorías conocidas — se completa con las dinámicas de los datos
+const CAT_ICON_MAP = {
+  'perforación': '🔩', 'perforacion': '🔩',
+  'corte': '🪚',
+  'lijado': '📋',
+  'cepillado': '🪵',
+  'medición': '📐', 'medicion': '📐',
+  'sujeción': '🔧', 'sujecion': '🔧',
+  'router / fresado': '⚙️', 'router': '⚙️',
+  'ensamble / mano': '🔨', 'ensamble': '🔨',
+  'acabado': '🎨',
+  'otros': '🧰', 'otro': '🧰',
+};
+function catIcon(label) {
+  return CAT_ICON_MAP[(label||'').toLowerCase()] || '🧰';
+}
+// Se llena dinámicamente después de cargar herramientas
+let CATEGORIAS = [];
 
 let herramientas = [];
 let workers      = [];
@@ -360,23 +366,14 @@ async function init() {
     p.cargar_coleccion('workers'),
   ]);
 
-  // Mapa de label → id para normalizar categorías guardadas con nombre completo
-  const catByLabel = {};
-  CATEGORIAS.forEach(c => {
-    catByLabel[c.id]    = c.id;
-    catByLabel[c.label.toLowerCase()] = c.id;
-    // sin tildes
-    catByLabel[c.label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')] = c.id;
-  });
-  const normCat = raw => {
-    if (!raw) return 'otro';
-    const key = raw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-    return catByLabel[key] || catByLabel[raw.toLowerCase()] || 'otro';
-  };
-
   herramientas = (p.DB_STATE?.herramientas || [])
-    .map(h => ({ ...h, id: h.id || h._id, categoria: normCat(h.categoria) }))
+    .map(h => ({ ...h, id: h.id || h._id, categoria: h.categoria || 'Otros' }))
     .filter(h => h.id);
+
+  // Construir lista de categorías dinámicamente desde los datos reales
+  const catSet = new Set(herramientas.map(h => h.categoria));
+  CATEGORIAS = [...catSet].sort((a, b) => a.localeCompare(b, 'es'))
+    .map(label => ({ id: label, label, icon: catIcon(label) }));
 
   workers = (p.DB_STATE?.workers || [])
     .map(w => ({ ...w, id: w.id || w._id })).filter(w => w.id);
@@ -636,7 +633,7 @@ function workerName(id) {
 }
 
 /* ── Render ─────────────────────────── */
-function catIcon(id) { return CATEGORIAS.find(c => c.id === id)?.icon || '🧰'; }
+
 
 function renderCaja() {
   if (!activeWorker) return;

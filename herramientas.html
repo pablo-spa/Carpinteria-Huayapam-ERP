@@ -197,6 +197,7 @@
             <th>Herramienta</th>
             <th>Trabajador</th>
             <th>Movimiento</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="log-body">
@@ -602,7 +603,19 @@ function renderHistorial() {
       <td>${l.toolNombre || toolNombre(l.toolId)}</td>
       <td>${workerName(l.workerId)}</td>
       <td><span class="log-tipo-${l.tipo}">${labels[l.tipo] || l.tipo}</span></td>
+      <td style="text-align:right;padding:6px 10px;">
+        <button class="btn btn-sm btn-ghost" style="color:var(--red);" onclick="deleteLog('${l.id}')">🗑</button>
+      </td>
     </tr>`).join('');
+}
+
+async function deleteLog(id) {
+  if (!window.confirm('¿Eliminar este movimiento del historial?')) return;
+  await window.parent.deleteDocumentFromFirebase('tool_logs', id);
+  if (window.parent?.DB_STATE?.tool_logs)
+    window.parent.DB_STATE.tool_logs = window.parent.DB_STATE.tool_logs.filter(l => (l.id||l._id) !== id);
+  logs = logs.filter(l => l.id !== id);
+  renderHistorial();
 }
 
 function toolNombre(toolId) {
