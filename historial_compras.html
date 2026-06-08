@@ -39,27 +39,39 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <script src="db.js"></script>
 <script>
   let STATE_ORDERS = [];
+  let canDelete = false;
 
   function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
   async function loadData() {
     STATE_ORDERS = await window.DB.query("purchase_orders");
     if (!STATE_ORDERS || STATE_ORDERS.length === 0) STATE_ORDERS = window.DB.get().orders || [];
-    // only received or delivered
     STATE_ORDERS = STATE_ORDERS.filter(o => !o._init && ['Comprado', 'Recibido', 'Entregado'].includes(o.status));
     STATE_ORDERS.sort((a,b) => new Date(b.date) - new Date(a.date));
+    const role = window.parent?.CURRENT_USER_ROLE || '';
+    canDelete = ['programador','admin','gerencia'].includes(role);
     render();
+  }
+
+  async function deleteOrder(id) {
+    const o = STATE_ORDERS.find(x => x.id === id);
+    if (!o) return;
+    if (!confirm(`¿Eliminar la orden ${o.folio || id}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await window.parent.deleteDocumentFromFirebase('purchase_orders', id);
+      STATE_ORDERS = STATE_ORDERS.filter(x => x.id !== id);
+      render();
+    } catch(e) { alert('Error al eliminar: ' + e.message); }
   }
 
   function render() {
     const list = document.getElementById('app');
     let html = '';
-    
+
     STATE_ORDERS.forEach(o => {
        const badge = (o.status === 'Recibido' || o.status === 'Entregado') ? 'badge-done' : 'badge-amber';
-       
        let total = 0;
-       
+
        let itmsHtml = `
          <div class="item-row" style="font-weight:700; color:var(--subtext); font-size:11px; text-transform:uppercase; border:none; padding-bottom:4px;">
            <div>Item / Cantidad</div>
@@ -67,7 +79,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
            <div>Subtotal</div>
          </div>
        `;
-       
+
        (o.items || []).forEach(i => {
           const sub = (i.qty * i.price) || 0;
           total += sub;
@@ -75,30 +87,31 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             <div class="item-row">
               <div>${i.qty}x ${i.name} <span class="item-subtext">(${i.unit})</span></div>
               <div>${fmt(i.price||0)}</div>
-              <div>
-                <div>${fmt(sub)}</div>
-              </div>
+              <div>${fmt(sub)}</div>
             </div>
           `;
        });
-       
+
+       const delBtn = canDelete
+         ? `<button onclick="deleteOrder('${o.id}')" style="background:none;border:none;cursor:pointer;color:var(--subtext);font-size:14px;padding:2px 6px;border-radius:4px;line-height:1;" title="Eliminar orden">🗑</button>`
+         : '';
+
        html += `
        <div class="card">
         <div class="card-title">
-          <span>Folio ${o.folio} / ${o.project || 'Stock General'} - Proveedor: ${o.supplier || o.provider || '-'}</span>
-          <span class="badge ${badge}">${o.status}</span>
+          <span>Folio ${o.folio} / ${o.project || 'Stock General'} — Proveedor: ${o.supplier || o.provider || '-'}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="badge ${badge}">${o.status}</span>
+            ${delBtn}
+          </div>
         </div>
         <div style="font-size:12px; color:var(--subtext); margin-bottom:12px;">Comprado por ${o.requester || '-'}. Fecha: ${o.date}</div>
-        
         ${itmsHtml}
-        
-        <div class="total-row">
-          Total de la Orden: ${fmt(total)}
-        </div>
+        <div class="total-row">Total de la Orden: ${fmt(total)}</div>
       </div>
        `;
     });
-    
+
     if(!html) html = '<div class="card" style="text-align:center;color:var(--subtext);">No hay compras registradas.</div>';
     list.innerHTML = html;
   }
