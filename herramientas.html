@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <link rel="stylesheet" href="global.css">
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +10,14 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 10px 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.hdr-title { font-size: 15px; font-weight: 800; flex-shrink: 0; margin-right: 4px; }
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.hdr-title { font-size: 18px; font-weight: 800; flex-shrink: 0; }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+
+.filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
+.filters::-webkit-scrollbar { display: none; }
+.filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; outline: none; font-family: inherit; transition: border-color .15s; }
+.filter-select:focus { border-color: var(--blue); }
 
 .tabs { display: flex; gap: 4px; padding: 0 20px; border-bottom: 1px solid var(--crust); background: var(--mantle); }
 .tab-btn { padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: all .15s; }
@@ -20,12 +27,8 @@
 .tab-panel { display: none; padding: 16px 20px; }
 .tab-panel.active { display: block; }
 
-/* Filters — in the header */
-.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 7px; padding: 5px 10px; flex: 1; min-width: 140px; max-width: 260px; }
-.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 12px; margin-left: 5px; }
-.f-select { padding: 5px 8px; background: var(--base); border: 1px solid var(--crust); border-radius: 7px; font-size: 11px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; max-width: 130px; }
-.f-select:focus { border-color: var(--blue); color: var(--text); }
-.hdr-gap { flex: 1; }
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; min-width: 220px; gap: 6px; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
 /* Historial filter row */
 .filters-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 
@@ -102,23 +105,27 @@
 
 <div class="hdr">
   <div class="hdr-title">🧰 Herramientas</div>
-  <div class="search-box">🔍 <input id="search" placeholder="Buscar…" oninput="render()"></div>
-  <select id="fil-cat"    class="f-select" onchange="render()"><option value="">Categoría</option></select>
-  <select id="fil-tipo"   class="f-select" onchange="render()">
-    <option value="">Tipo</option>
+  <div class="hdr-right">
+    <div class="search-box">🔍 <input id="search" placeholder="Buscar herramienta…" oninput="render()"></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nueva</button>
+  </div>
+</div>
+
+<div class="filters" id="hdr-filters">
+  <select id="fil-cat"    class="filter-select" onchange="render()"><option value="">Todas las categorías</option></select>
+  <select id="fil-tipo"   class="filter-select" onchange="render()">
+    <option value="">Todos los tipos</option>
     <option value="personal">Personal</option>
     <option value="compartida">Compartida</option>
   </select>
-  <select id="fil-estado" class="f-select" onchange="render()">
-    <option value="">Estado</option>
+  <select id="fil-estado" class="filter-select" onchange="render()">
+    <option value="">Todos los estados</option>
     <option value="buena">Buena</option>
     <option value="desgaste">Desgaste</option>
     <option value="reparacion">Reparación</option>
     <option value="baja">Baja</option>
   </select>
-  <select id="fil-worker" class="f-select" onchange="render()"><option value="">Trabajador</option></select>
-  <div class="hdr-gap"></div>
-  <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nueva</button>
+  <select id="fil-worker" class="filter-select" onchange="render()"><option value="">Todos los trabajadores</option></select>
 </div>
 
 <div class="tabs">
@@ -346,9 +353,9 @@ function populateFilters() {
   const usedCats = new Set(herramientas.map(h => h.categoria).filter(Boolean));
   const catSel = document.getElementById('fil-cat');
   catSel.innerHTML = '<option value="">Todas las categorías</option>' +
-    CATS.filter(c => usedCats.has(c)).map(c =>
-      `<option value="${c}">${c}</option>`
-    ).join('');
+    CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  if (catSel._ssInit) catSel._ssRefresh(); else SearchableSelect.init(catSel);
 
   const wSel  = document.getElementById('fil-worker');
   const wSel2 = document.getElementById('fil-log-worker');
@@ -356,6 +363,7 @@ function populateFilters() {
     workers.map(w => `<option value="${w.id}">${w.nombre || w.name || w.id}</option>`).join('');
   wSel.innerHTML  = opts;
   wSel2.innerHTML = opts;
+  if (wSel._ssInit) wSel._ssRefresh(); else SearchableSelect.init(wSel);
 }
 
 function populateCategoriaSelect() {
@@ -716,10 +724,7 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
-  const showFilters = id === 'catalogo';
-  document.querySelectorAll('.hdr .search-box, .hdr .f-select').forEach(el => {
-    el.style.display = showFilters ? '' : 'none';
-  });
+  document.getElementById('hdr-filters').style.display = id === 'catalogo' ? '' : 'none';
   if (id === 'historial') renderHistorial();
 }
 

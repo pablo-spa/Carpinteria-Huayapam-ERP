@@ -8,20 +8,16 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.hdr-title { font-size: 17px; font-weight: 800; white-space: nowrap; }
-.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 0 12px; height: 36px; min-width: 220px; flex: 1; max-width: 380px; gap: 8px; }
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.hdr-title { font-size: 18px; font-weight: 800; white-space: nowrap; }
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; min-width: 240px; gap: 8px; }
 .search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
 .search-box span { color: var(--subtext); font-size: 14px; flex-shrink: 0; }
 
-.f-btn { height: 36px; padding: 0 14px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--subtext); cursor: pointer; white-space: nowrap; transition: all .12s; font-family: inherit; }
-.f-btn:hover { background: var(--surface0); color: var(--text); }
-.f-btn.act { background: var(--text); color: var(--base); border-color: var(--text); }
-.f-btn.act-red { background: var(--red); color: #fff; border-color: var(--red); }
-.f-btn.act-amber { background: var(--amber); color: #111; border-color: var(--amber); }
-.f-select { height: 36px; padding: 0 10px; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--subtext); cursor: pointer; outline: none; font-family: inherit; max-width: 180px; }
-.f-select:focus { border-color: var(--blue); color: var(--text); }
-.hdr-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
+.filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
+.filters::-webkit-scrollbar { display: none; }
+.filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; outline: none; font-family: inherit; transition: border-color .15s; }
+.filter-select:focus { border-color: var(--blue); }
 
 .page-desc { font-size: 12px; color: var(--subtext); background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 9px 14px; margin-bottom: 14px; line-height: 1.55; }
 
@@ -69,17 +65,18 @@
 
 <div class="hdr">
   <div class="hdr-title">Inventario General</div>
-  <div class="hdr-filters">
-    <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar artículo…" autofocus></div>
-    <select id="cat-select" class="f-select" onchange="setCatFilterSelect(this.value)">
-      <option value="all">Todas las categorías</option>
-    </select>
-    <select class="f-select" id="stock-filter" onchange="setStockFilter(this.value)">
-      <option value="all">Todos</option>
-      <option value="low">Stock bajo</option>
-      <option value="out">Sin stock</option>
-    </select>
-  </div>
+  <div class="search-box"><span>🔍</span><input type="text" id="srch" placeholder="Buscar artículo…" autofocus></div>
+</div>
+
+<div class="filters">
+  <select id="cat-select" class="filter-select" onchange="setCatFilterSelect(this.value)">
+    <option value="all">Todas las categorías</option>
+  </select>
+  <select class="filter-select" id="stock-filter" onchange="setStockFilter(this.value)">
+    <option value="all">Todo el stock</option>
+    <option value="low">Stock bajo</option>
+    <option value="out">Sin stock</option>
+  </select>
 </div>
 
 <div class="main">
@@ -416,6 +413,8 @@
     hdrCatSel.innerHTML = '<option value="all">Todas las categorías</option>' +
       catNames.map(name => `<option value="${name}">${name}</option>`).join('');
     hdrCatSel.value = currentFilter;
+    if (hdrCatSel._ssInit) hdrCatSel._ssRefresh(); else SearchableSelect.init(hdrCatSel);
+    if (hdrCatSel._ssSync) hdrCatSel._ssSync();
 
     // ── Modal selects ────────────────────────────────────────────────
     const catSel = document.getElementById('m-cat');
