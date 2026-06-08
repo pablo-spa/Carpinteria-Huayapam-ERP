@@ -8,20 +8,8 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Header */
-.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 10px 24px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; z-index: 20; }
-.hdr-row1 { display: flex; align-items: center; gap: 12px; }
-.hdr-row2 { display: flex; gap: 8px; }
-.hdr-brand { font-size: 13px; font-weight: 600; color: var(--subtext); white-space: nowrap; padding-right: 12px; border-right: 1px solid var(--crust); }
-.hdr-fields { display: flex; gap: 8px; flex: 1; }
-.hdr-input, .hdr-select { flex: 1; padding: 8px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; box-sizing:border-box; min-height:40px; }
-.hdr-input:focus, .hdr-select:focus { outline: none; border-color: var(--blue); }
-.hdr-num { font-size: 12px; color: var(--subtext); font-weight: 600; white-space: nowrap; }
-@media (max-width: 768px) {
-  .hdr { flex-direction: column; align-items: stretch; }
-  .hdr-brand { border: none; padding-bottom: 8px; border-bottom: 1px solid var(--crust); }
-  .hdr-fields { flex-direction: column; }
-}
+.hdr-select { flex: 1; padding: 8px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; box-sizing:border-box; min-height:40px; }
+.hdr-select:focus { outline: none; border-color: var(--blue); }
 
 /* Fix layout and make it more compact to prevent sideways scrolling */
 .main { max-width: 1000px; margin: 0 auto; padding: 24px 20px; }
@@ -156,19 +144,16 @@ input.mat-price { text-align: right; font-size: 12px; }
 <body>
 
 <div class="hdr">
-  <div class="hdr-row1">
+  <div style="display:flex; align-items:center; gap:12px;">
     <button id="btn-back-project" class="back-btn" style="display:none;" onclick="goBackToProject()">← Volver al Proyecto</button>
-    <div class="hdr-brand">Nueva Cotización</div>
-    <div style="flex:1;"></div>
+    <h2 class="hdr-title">Nueva Cotización</h2>
     <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
-    <button class="btn btn-dark" onclick="showPrintPreview(true)" style="padding:6px 12px; font-size:12px;">🖨 PDF Cliente</button>
-    <button class="btn btn-dark" onclick="showPrintPreview(false)" style="padding:6px 12px; font-size:12px;">🖨 PDF Taller</button>
-    <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()" style="padding:6px 14px; font-size:12px;">Guardar cotización ↗</button>
   </div>
-  <div class="hdr-row2">
-    <select class="hdr-select" id="clientInput" data-searchable style="flex:1;"></select>
-    <select class="hdr-select" id="projectInput" data-searchable style="flex:1;"></select>
-  </div>
+  <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()">Guardar cotización ↗</button>
+</div>
+<div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
+  <select class="hdr-select" id="clientInput" data-searchable></select>
+  <select class="hdr-select" id="projectInput" data-searchable></select>
 </div>
 
 <div class="main">
@@ -244,6 +229,10 @@ input.mat-price { text-align: right; font-size: 12px; }
       <div class="ft-label">Total Cotización</div>
       <div class="ft-total-val" id="ft-total">$0</div>
       <div class="ft-total-sub" id="ft-sub">Sin piezas</div>
+      <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
+        <button class="btn btn-dark" onclick="showPrintPreview(true)" style="font-size:12px;">🖨 PDF Cliente</button>
+        <button class="btn btn-dark" onclick="showPrintPreview(false)" style="font-size:12px;">🖨 PDF Taller</button>
+      </div>
     </div>
   </div>
 </div>
