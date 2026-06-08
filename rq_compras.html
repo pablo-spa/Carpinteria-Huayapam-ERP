@@ -255,7 +255,6 @@ function addNewItemRow(data = {}) {
         </div>
         <div class="ni-concepto-nuevo" style="display:${showCustomConcept}; margin-top:${isHerr?'0':'4px'};">
           <input type="text" class="ni-concepto-txt" placeholder="${isHerr ? 'Nombre de la herramienta (ej. Taladro DeWalt 18V)' : 'Nombre del concepto nuevo'}" value="${data.conceptoPendiente?.nombre||data.herrNombre||''}">
-          ${isHerr ? '' : '<span class="new-badge">✦ Nuevo — pendiente aprobación</span>'}
         </div>
       </div>
       <!-- Proveedor -->
@@ -268,7 +267,6 @@ function addNewItemRow(data = {}) {
         </div>
         <div class="ni-proveedor-nuevo" style="display:${showCustomSupplier}; margin-top:4px;">
           <input type="text" class="ni-proveedor-txt" placeholder="Nombre del proveedor nuevo" value="${data.proveedorPendiente?.nombre||''}">
-          <span class="new-badge">✦ Nuevo — pendiente aprobación</span>
         </div>
       </div>
       <!-- Cantidad -->
