@@ -28,8 +28,9 @@
 .tab-panel { display: none; padding: 16px 20px; }
 .tab-panel.active { display: block; }
 
-.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; width: 220px; gap: 6px; }
-.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
+.search-box { display: flex; align-items: center; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 8px 12px; width: 220px; gap: 6px; flex-shrink: 0; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-weight: 600; font-family: inherit; }
+.search-box:focus-within { border-color: var(--blue); }
 /* Historial filter row */
 .filters-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 
@@ -729,7 +730,7 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
-  document.getElementById('hdr-filters').style.visibility = id === 'catalogo' ? '' : 'hidden';
+  document.getElementById('hdr-filters').style.display = id === 'catalogo' ? 'flex' : 'none';
   if (id === 'historial') renderHistorial();
 }
 
