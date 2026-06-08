@@ -1430,6 +1430,11 @@
             if (c && window.DB_STATE?.contacts) {
               window.DB_STATE.contacts = window.DB_STATE.contacts.filter(x => (x.id || x._id) !== docId);
               await writeContactList(c.tipo || 'cliente');
+              if (c.tipo === 'trabajador') {
+                await deleteDoc(doc(db, 'workers', docId)).catch(() => {});
+                if (window.DB_STATE?.workers)
+                  window.DB_STATE.workers = window.DB_STATE.workers.filter(x => (x.id || x._id) !== docId);
+              }
             }
             return;
           }
@@ -1456,6 +1461,15 @@
                 else window.DB_STATE.contacts.push(plainData);
               }
               await writeContactList(plainData.tipo || 'cliente');
+              // Mantener workers sincronizado con contactos de tipo trabajador
+              if (plainData.tipo === 'trabajador') {
+                await setDoc(doc(db, 'workers', docId), plainData);
+                if (window.DB_STATE?.workers) {
+                  const wi = window.DB_STATE.workers.findIndex(x => (x.id || x._id) === docId);
+                  if (wi >= 0) window.DB_STATE.workers[wi] = plainData;
+                  else window.DB_STATE.workers.push(plainData);
+                }
+              }
               return;
             }
 
