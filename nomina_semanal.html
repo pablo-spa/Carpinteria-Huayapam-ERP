@@ -7,15 +7,8 @@
 <title>Nómina Semanal — Carpintería Huayapam</title>
 <style>
 
-/* ── Header ── */
-.header {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 14px 24px 0;
-}
-.header-top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-bottom: 12px; }
-.brand { font-size: 18px; font-weight: 800; color: var(--text); white-space: nowrap; }
-.week-nav { display: flex; align-items: center; gap: 6px; margin-left: 4px; }
+/* ── Week nav ── */
+.week-nav { display: flex; align-items: center; gap: 6px; }
 .wbtn {
   cursor: pointer; background: transparent; border: 1px solid var(--crust);
   border-radius: var(--radius); color: var(--subtext); font-size: 15px;
@@ -25,16 +18,16 @@
 .wbtn:hover { background: var(--surface0); color: var(--text); }
 .week-lbl { font-size: 13px; font-weight: 700; }
 .week-sub { font-size: 11px; color: var(--subtext); font-weight: 600; margin-top: 1px; }
-.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
 .hdr-total { text-align: right; }
 .hdr-total .lbl { font-size: 10px; text-transform: uppercase; color: var(--subtext); font-weight: 800; letter-spacing: .05em; }
 .hdr-total .val  { font-size: 20px; font-weight: 900; color: var(--green); font-variant-numeric: tabular-nums; line-height: 1.1; }
-.nom-badge { background: var(--green-bg); color: var(--green-text); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 99px; border: 1px solid rgba(62,130,52,.2); white-space: nowrap; }
 
-/* ── Tabs (underline style) ── */
-.tabs { display: flex; gap: 0; padding-bottom: 0; }
+/* ── Tabs ── */
+.subbar { background: var(--base); border-bottom: 1px solid var(--crust); padding: 0 24px; position: sticky; top: 57px; z-index: 19; display: flex; align-items: center; }
+.week-block { display: flex; align-items: center; gap: 6px; padding: 8px 16px 8px 0; border-right: 1px solid var(--crust); margin-right: 8px; }
+.tabs { display: flex; gap: 0; flex: 1; }
 .tab {
-  cursor: pointer; padding: 8px 18px; font-size: 13px; font-weight: 700;
+  cursor: pointer; padding: 10px 18px; font-size: 13px; font-weight: 700;
   color: var(--subtext); background: transparent; border: none;
   border-bottom: 2px solid transparent;
   font-family: inherit; transition: color .15s, border-color .15s;
@@ -253,29 +246,30 @@
 <div id="print-area"></div>
 
 <!-- Header -->
-<div class="header">
-  <div class="header-top">
-    <div style="display:flex; align-items:center; gap:16px; flex:1; min-width:0;">
-      <div class="brand">Nómina Semanal</div>
-      <div class="week-nav">
-        <button class="wbtn" onclick="chgWeek(-1)">‹</button>
-        <div>
-          <div class="week-lbl" id="week-lbl">—</div>
-          <div class="week-sub" id="week-sub">—</div>
-        </div>
-        <button class="wbtn" onclick="chgWeek(1)">›</button>
-      </div>
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <h2 class="hdr-title">Nómina Semanal</h2>
+  </div>
+  <div class="hdr-total">
+    <div class="lbl">Total nómina</div>
+    <div class="val" id="hdr-total">$0</div>
+  </div>
+</div>
+<div class="subbar">
+  <div class="week-block">
+    <button class="wbtn" onclick="chgWeek(-1)">‹</button>
+    <div>
+      <div class="week-lbl" id="week-lbl">—</div>
+      <div class="week-sub" id="week-sub">—</div>
     </div>
-    <div class="hdr-right">
-      <span class="nom-badge" id="hdr-badge">0 / —</span>
-      <div class="hdr-total"><div class="lbl">Total nómina</div><div class="val" id="hdr-total">$0</div></div>
-    </div>
+    <button class="wbtn" onclick="chgWeek(1)">›</button>
   </div>
   <div class="tabs">
-    <button class="tab active" onclick="showTab('nomina',this)">👷 Nómina</button>
-    <button class="tab"        onclick="showTab('efectivo',this)">💵 Efectivo</button>
-    <button class="tab"        onclick="showTab('resumen',this)">📊 Resumen general</button>
-    <button class="tab"        onclick="showTab('recibos',this)">📄 Recibos individuales</button>
+    <button class="tab active" onclick="showTab('nomina',this)">Nómina</button>
+    <button class="tab"        onclick="showTab('efectivo',this)">Efectivo</button>
+    <button class="tab"        onclick="showTab('resumen',this)">Resumen general</button>
+    <button class="tab"        onclick="showTab('recibos',this)">Recibos individuales</button>
   </div>
 </div>
 
@@ -1154,7 +1148,7 @@ function updLabels(){
   const pend=WORKERS.length-done;
   document.getElementById('lbl-pend').textContent=`Por verificar (${pend})`;
   document.getElementById('lbl-verif').textContent=`Verificados (${done})`;
-  document.getElementById('hdr-badge').textContent=`${done} / ${WORKERS.length}`;
+
 }
 function updateFooter(){
   const total=totalNomina();
