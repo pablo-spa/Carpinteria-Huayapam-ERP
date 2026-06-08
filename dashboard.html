@@ -621,7 +621,7 @@
     const projects   = (db2.projects   || []).filter(p => !p._init);
     const orders     = (db2.purchase_orders || db2.orders || []).filter(o => !o._init && o.date);
     const viajes     = (db2.viajes     || []).filter(v => !v._init && v.fecha_salida);
-    const quotations = (db2.quotations || []).filter(q => !q._init && (q.createdAt || q.fecha || q.date));
+    const quotations = (db2.quotations || []).filter(q => !q._init && !q.eliminada && (q.createdAt || q.fecha || q.date));
 
     titleEl.textContent = `${MONTHS_ES_L[CAL_MONTH]} ${CAL_YEAR}`;
 
