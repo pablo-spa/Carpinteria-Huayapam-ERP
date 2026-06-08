@@ -200,6 +200,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       ]
     },
     {
+      section: 'Herramientas',
+      items: [
+        { key: 'tool_categories', col: 'tool_categories', type: 'list',
+          name: 'Categorías de Herramientas', desc: 'Clasificación de herramientas por tipo de uso (Corte, Perforación, Medición…)' },
+        { key: 'tool_types', col: 'tool_types', type: 'list',
+          name: 'Tipos de Herramienta', desc: 'Personal o Compartida — indica a quién pertenece la herramienta' },
+        { key: 'tool_states', col: 'tool_states', type: 'list',
+          name: 'Estados de Herramienta', desc: 'Condición actual de la herramienta (Nueva, Buena, Mantenimiento, Baja…)' },
+      ]
+    },
+    {
       section: 'Almacén de Madera',
       items: [
         { key: 'wood_price_catalog', col: 'wood_price_catalog', type: 'woodcat',
@@ -228,12 +239,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         if (def.type === 'list') {
           STATE[def.key] = raw[0]?.list || raw.filter(x => typeof x === 'string');
           // Sembrar defaults si la colección está vacía
-          if (!STATE[def.key].length && def.key === 'worker_roles') {
-            STATE[def.key] = [...DEFAULT_WORKER_ROLES];
+          const DEFAULTS = {
+            worker_roles: DEFAULT_WORKER_ROLES,
+            tool_categories: ['Perforación','Corte','Lijado','Cepillado','Medición','Sujeción','Router / Fresado','Ensamble / Mano','Acabado','Otro'],
+            tool_types: ['Personal','Compartida'],
+            tool_states: ['Nueva','Buena','Mantenimiento','Baja'],
+          };
+          if (!STATE[def.key].length && DEFAULTS[def.key]) {
+            STATE[def.key] = [...DEFAULTS[def.key]];
             if (window.parent?.setDocumentInFirebase)
-              window.parent.setDocumentInFirebase('worker_roles', 'main', { list: DEFAULT_WORKER_ROLES });
+              window.parent.setDocumentInFirebase(def.col, 'main', { list: DEFAULTS[def.key] });
             if (window.parent?.DB_STATE)
-              window.parent.DB_STATE['worker_roles'] = [{ _id: 'main', list: DEFAULT_WORKER_ROLES }];
+              window.parent.DB_STATE[def.key] = [{ _id: 'main', list: DEFAULTS[def.key] }];
           }
         } else if (def.type === 'catlist') {
           // Lista de objetos {name, catCode} guardada como doc 'main' {list:[...]}
