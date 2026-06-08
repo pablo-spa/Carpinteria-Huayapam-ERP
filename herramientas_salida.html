@@ -361,6 +361,9 @@ async function init() {
   const p = window.parent;
   if (!p?.cargar_coleccion) { setTimeout(init, 300); return; }
 
+  // Forzar recarga fresca de herramientas — los estados de asignación y
+  // categorías cambian con frecuencia y no deben quedar en caché
+  if (p.DB_STATE) delete p.DB_STATE.herramientas;
   await Promise.all([
     p.cargar_coleccion('herramientas'),
     p.cargar_coleccion('workers'),
