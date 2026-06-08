@@ -251,7 +251,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     if (!order) return;
 
     const verb = newStatus === 'Autorizado' ? 'autorizar' : newStatus === 'Cancelado' ? 'rechazar' : 'solicitar re-cotización de';
-    if (!confirm(`¿Seguro que deseas ${verb} este pedido?`)) return;
+    if (!await showConfirm(`¿Seguro que deseas ${verb} este pedido?`)) return;
 
     order.status = newStatus;
     if (window.parent && window.parent.setDocumentInFirebase) {
@@ -508,6 +508,19 @@ function toast(msg, type='ok') {
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3500);
+}
+
+function showConfirm(msg, okLabel = 'Confirmar') {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    ov.innerHTML = `<div style="background:var(--base,#eff1f5);border-radius:12px;padding:24px 28px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.25);"><p style="margin:0 0 20px;font-size:14px;font-weight:600;color:var(--text,#4c4f69);line-height:1.5;">${msg}</p><div style="display:flex;gap:10px;justify-content:flex-end;"><button id="sc-no" style="padding:8px 18px;border-radius:7px;border:1px solid var(--crust,#dce0e8);background:var(--mantle,#e6e9ef);color:var(--text,#4c4f69);font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button><button id="sc-yes" style="padding:8px 18px;border-radius:7px;border:none;background:var(--blue,#1e66f5);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">${okLabel}</button></div></div>`;
+    document.body.appendChild(ov);
+    const done = v => { ov.remove(); resolve(v); };
+    ov.querySelector('#sc-no').onclick  = () => done(false);
+    ov.querySelector('#sc-yes').onclick = () => done(true);
+    ov.addEventListener('mousedown', e => { if (e.target === ov) done(false); });
+  });
 }
 </script>
 </body>

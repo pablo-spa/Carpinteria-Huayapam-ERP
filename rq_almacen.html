@@ -205,7 +205,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   async function confirmOrder(ordId) {
     const order = ORDERS.find(o => o.id === ordId);
     if (!order) return;
-    if (!confirm(`¿Confirmar pedido ${order.folio}?\nPasará a la lista de cotizaciones en el Panel de Compras.`)) return;
+    if (!await showConfirm(`¿Confirmar pedido ${order.folio}?<br><span style="font-weight:400;font-size:13px;">Pasará a la lista de cotizaciones en el Panel de Compras.</span>`)) return;
 
     order.status = 'Confirmado';
     order.confirmedAt = new Date().toISOString();
@@ -223,13 +223,27 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     renderHistorialPedidos();
   }
 
-  function toast(msg) {
+  function toast(msg, type = 'ok') {
     const wrap = document.getElementById('toast-wrap');
+    const bg = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
     const el = document.createElement('div');
-    el.style.cssText = 'background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+    el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
     el.textContent = msg;
     wrap.appendChild(el);
     setTimeout(() => el.remove(), 4000);
+  }
+
+  function showConfirm(msg, okLabel = 'Confirmar') {
+    return new Promise(resolve => {
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+      ov.innerHTML = `<div style="background:var(--base,#eff1f5);border-radius:12px;padding:24px 28px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.25);"><p style="margin:0 0 20px;font-size:14px;font-weight:600;color:var(--text,#4c4f69);line-height:1.5;">${msg}</p><div style="display:flex;gap:10px;justify-content:flex-end;"><button id="sc-no" style="padding:8px 18px;border-radius:7px;border:1px solid var(--crust,#dce0e8);background:var(--mantle,#e6e9ef);color:var(--text,#4c4f69);font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button><button id="sc-yes" style="padding:8px 18px;border-radius:7px;border:none;background:var(--blue,#1e66f5);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">${okLabel}</button></div></div>`;
+      document.body.appendChild(ov);
+      const done = v => { ov.remove(); resolve(v); };
+      ov.querySelector('#sc-no').onclick  = () => done(false);
+      ov.querySelector('#sc-yes').onclick = () => done(true);
+      ov.addEventListener('mousedown', e => { if (e.target === ov) done(false); });
+    });
   }
 
   async function init() {
@@ -422,7 +436,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       if ((name || code) && qty > 0) items.push({ code, name, qty, unit, price: 0, esHerramienta: esHerr || undefined });
     });
 
-    if (!items.length) return alert('Agrega al menos un material.');
+    if (!items.length) { toast('Agrega al menos un material.', 'warn'); return; }
 
     const now = new Date();
     const folio = 'RQ-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') +

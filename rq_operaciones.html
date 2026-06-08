@@ -255,11 +255,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
         const esHerr = tr.dataset.herr === '1';
         if (name && qty > 0) newItems.push({ name, qty, unit, price: 0, code: '', esHerramienta: esHerr || undefined });
       });
-      if (!newItems.length) { alert('Agrega al menos un renglón antes de confirmar.'); return; }
+      if (!newItems.length) { toast('Agrega al menos un renglón antes de confirmar.', 'warn'); return; }
       order.items = newItems;
     }
 
-    if (!confirm(`¿Confirmar pedido ${order.folio}?`)) return;
+    if (!await showConfirm(`¿Confirmar pedido ${order.folio}?`)) return;
     order.status = 'Confirmado';
     order.confirmedAt = new Date().toISOString();
 
@@ -276,20 +276,34 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     render();
   }
 
-  function toast(msg) {
+  function toast(msg, type = 'ok') {
     let tw = document.getElementById('toast-ops');
     if (!tw) { tw = document.createElement('div'); tw.id='toast-ops'; tw.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(tw); }
     const t = document.createElement('div');
-    t.style.cssText='background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+    const bg = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
+    t.style.cssText=`background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
     t.textContent = msg;
     tw.appendChild(t); setTimeout(() => t.remove(), 3500);
+  }
+
+  function showConfirm(msg, okLabel = 'Confirmar') {
+    return new Promise(resolve => {
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+      ov.innerHTML = `<div style="background:var(--base,#eff1f5);border-radius:12px;padding:24px 28px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.25);"><p style="margin:0 0 20px;font-size:14px;font-weight:600;color:var(--text,#4c4f69);line-height:1.5;">${msg}</p><div style="display:flex;gap:10px;justify-content:flex-end;"><button id="sc-no" style="padding:8px 18px;border-radius:7px;border:1px solid var(--crust,#dce0e8);background:var(--mantle,#e6e9ef);color:var(--text,#4c4f69);font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button><button id="sc-yes" style="padding:8px 18px;border-radius:7px;border:none;background:var(--blue,#1e66f5);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">${okLabel}</button></div></div>`;
+      document.body.appendChild(ov);
+      const done = v => { ov.remove(); resolve(v); };
+      ov.querySelector('#sc-no').onclick  = () => done(false);
+      ov.querySelector('#sc-yes').onclick = () => done(true);
+      ov.addEventListener('mousedown', e => { if (e.target === ov) done(false); });
+    });
   }
 
   async function act(id, newStatus) {
     const order = ALL_ORDERS.find(o => o.id === id);
     if (!order) return;
     const verb = newStatus === 'Confirmado' ? 'confirmar' : 'rechazar';
-    if (!confirm(`¿Seguro que deseas ${verb} este pedido?`)) return;
+    if (!await showConfirm(`¿Seguro que deseas ${verb} este pedido?`)) return;
 
     order.status = newStatus;
 
