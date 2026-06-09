@@ -11,7 +11,7 @@
 .hdr-select { flex: 1; padding: 8px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; box-sizing:border-box; min-height:40px; }
 .hdr-select:focus { outline: none; border-color: var(--blue); }
 
-.main { max-width: 900px; margin: 0 auto; padding: 24px 20px 100px; display: flex; flex-direction: column; gap: 20px; }
+.main { max-width: 900px; margin: 0 auto; padding: 24px 20px 160px; display: flex; flex-direction: column; gap: 20px; }
 
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 20px; }
 .card-title { font-size: 14px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; border-bottom: 1px solid var(--crust); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
@@ -90,39 +90,27 @@
   </div>
   <button class="btn btn-green" id="btn-save-quote" onclick="saveQuote()">Guardar cotización</button>
 </div>
-<div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
-  <select class="hdr-select" id="clientInput" data-searchable></select>
-  <select class="hdr-select" id="projectInput" data-searchable></select>
+<div style="background:var(--base); border-bottom:1px solid var(--crust); padding:6px 24px; display:flex; gap:16px; align-items:center;">
+  <div style="display:flex; align-items:center; gap:6px;">
+    <span style="font-size:11px; font-weight:700; color:var(--subtext); white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;">Cliente</span>
+    <select class="hdr-select" id="clientInput" data-searchable style="min-width:180px; max-width:280px; min-height:34px; font-size:12px; padding:5px 10px;"></select>
+  </div>
+  <div style="display:flex; align-items:center; gap:6px;">
+    <span style="font-size:11px; font-weight:700; color:var(--subtext); white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;">Proyecto</span>
+    <select class="hdr-select" id="projectInput" data-searchable style="min-width:180px; max-width:280px; min-height:34px; font-size:12px; padding:5px 10px;"></select>
+  </div>
 </div>
 
 <div class="main">
 
-  <!-- Configuración Global -->
-  <div class="card" style="display:flex; gap:24px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:16px 20px;">
-    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--subtext);">
-        <span>Gastos Imprevistos (%)</span>
-        <input type="number" id="cfg-extras" class="inline-cfg" value="10" oninput="calcTotals()">
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--subtext);">
-        <span>Utilidad (%)</span>
-        <input type="number" id="cfg-margin" class="inline-cfg" value="20" oninput="calcTotals()">
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--subtext); border-left: 1px solid var(--crust); padding-left: 20px;">
-        <input type="checkbox" id="cfg-tax" checked onchange="calcTotals()" style="width:16px; height:16px; accent-color:var(--blue);">
-        <label for="cfg-tax" style="cursor:pointer; color:var(--text); text-transform:none;">Cobrar IVA (16%)</label>
-      </div>
-    </div>
-  </div>
-
   <!-- Ruta y Vehículo -->
   <div class="card">
-    <div class="card-title">🚛 Ruta y Combustible</div>
+    <div class="card-title">🚛 Ruta y Transporte</div>
     <div class="field" style="margin-bottom:12px;">
       <label>Concepto / Nombre del Servicio</label>
       <input type="text" id="f-concepto" placeholder="Ej: Flete para entrega de cocina en Puerto Escondido" oninput="calcTotals()">
     </div>
-    <div class="grid2">
+    <div class="grid3">
       <div class="field">
         <label>Origen</label>
         <input type="text" id="f-origen" value="Taller Huayapam" oninput="calcTotals()">
@@ -131,25 +119,21 @@
         <label>Destino</label>
         <input type="text" id="f-destino" placeholder="Ej: Puerto Escondido" oninput="calcTotals()">
       </div>
-    </div>
-    <div class="grid3">
       <div class="field">
-        <label>Km Totales (Ida y Vuelta)</label>
-        <input type="number" id="f-km" min="0" step="any" placeholder="0" oninput="calcTotals()">
-      </div>
-      <div class="field">
-        <label>Rendimiento Vehículo (Km/L)</label>
-        <input type="number" id="f-rend" min="0.1" step="0.1" value="7.5" oninput="calcTotals()">
-      </div>
-      <div class="field">
-        <label>Precio Combustible ($/L)</label>
-        <div class="input-with-icon">
-          <span>$</span>
-          <input type="number" id="f-precio-gas" min="0" step="0.5" value="25.50" oninput="calcTotals()">
-        </div>
+        <label>Vehículo</label>
+        <select id="f-vehiculo" oninput="calcTotals()">
+          <option value="">— Sin vehículo —</option>
+        </select>
       </div>
     </div>
-    <div class="subtotal-lbl">Subtotal Combustible: <span id="st-gas">$0.00</span></div>
+    <div class="field" style="max-width:240px;">
+      <label>Costo de Transporte ($)</label>
+      <div class="input-with-icon">
+        <span>$</span>
+        <input type="number" id="f-costo-transporte" min="0" step="any" placeholder="0" oninput="calcTotals()">
+      </div>
+    </div>
+    <div class="subtotal-lbl">Subtotal Transporte: <span id="st-gas">$0.00</span></div>
   </div>
 
   <!-- Casetas -->
@@ -237,16 +221,12 @@
 <!-- Footer Total -->
 <div class="footer">
   <div class="footer-inner">
-    <div>
-      <div class="ft-formula-row"><span>Costo Directo (Suma Subtotales)</span><span id="f-costo-base">—</span></div>
-      <div class="ft-formula-row"><span>Imprevistos (<span id="l-imprevistos">10%</span>)</span><span id="f-imprevistos">—</span></div>
-      <div class="ft-formula-row"><span>Utilidad (<span id="l-utilidad">20%</span>)</span><span id="f-utilidad">—</span></div>
-      <div class="ft-formula-row" id="row-tax"><span>IVA (16%)</span><span id="f-tax">—</span></div>
-    </div>
-    <div class="ft-total">
-      <div style="font-size:11px; font-weight:800; color:var(--subtext); text-transform:uppercase; margin-bottom:6px;">Precio Cotizado</div>
-      <div class="ft-total-val" id="ft-total">$0</div>
-      <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
+    <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
+      <div>
+        <div style="font-size:11px; font-weight:800; color:var(--subtext); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px;">Total Cotizado</div>
+        <div class="ft-total-val" id="ft-total">$0</div>
+      </div>
+      <div style="display:flex; gap:8px;">
         <button class="btn btn-dark" onclick="showPrintPreview(true)" style="font-size:12px;">🖨 PDF Cliente</button>
         <button class="btn btn-dark" onclick="showPrintPreview(false)" style="font-size:12px;">🖨 PDF Taller</button>
       </div>
@@ -329,11 +309,8 @@ function removeArr(typeStr, id) {
 }
 
 function calcTotals() {
-  // 1. Gasolina
-  const km = parseFloat(document.getElementById('f-km').value) || 0;
-  const rend = parseFloat(document.getElementById('f-rend').value) || 1;
-  const pGas = parseFloat(document.getElementById('f-precio-gas').value) || 0;
-  const subGas = (km / rend) * pGas;
+  // 1. Transporte
+  const subGas = parseFloat(document.getElementById('f-costo-transporte').value) || 0;
   document.getElementById('st-gas').textContent = fmt(subGas);
 
   // 2. Casetas
@@ -360,28 +337,9 @@ function calcTotals() {
   const subExtras = EXTRAS.reduce((s, e) => s + (parseFloat(e.price) || 0), 0);
   document.getElementById('st-extras').textContent = fmt(subExtras);
 
-  // Global
-  const costoBase = subGas + subCasetas + subViaticos + subExtras;
-  const pExt = (parseFloat(document.getElementById('cfg-extras').value) || 0) / 100;
-  const pUtl = (parseFloat(document.getElementById('cfg-margin').value) || 0) / 100;
-  const taxRate = document.getElementById('cfg-tax').checked ? 0.16 : 0;
-
-  const valExtras = costoBase * pExt;
-  const valUtl = costoBase * pUtl;
-  const subtotal = costoBase + valExtras + valUtl;
-  const tax = subtotal * taxRate;
-  const totalFinal = Math.round((subtotal + tax)/50)*50;
-
-  document.getElementById('f-costo-base').textContent = fmt(costoBase);
-  document.getElementById('f-imprevistos').textContent = fmt(valExtras);
-  document.getElementById('f-utilidad').textContent = fmt(valUtl);
-  document.getElementById('f-tax').textContent = fmt(tax);
-  document.getElementById('l-imprevistos').textContent = (pExt * 100) + '%';
-  document.getElementById('l-utilidad').textContent = (pUtl * 100) + '%';
-  document.getElementById('row-tax').style.display = taxRate > 0 ? 'flex' : 'none';
-  
+  // Total directo
+  const totalFinal = subGas + subCasetas + subViaticos + subExtras;
   document.getElementById('ft-total').textContent = fmt(totalFinal);
-  
   return totalFinal;
 }
 
@@ -389,6 +347,8 @@ async function loadOptions() {
   const clients = await window.DB.query("contacts");
   const filteredClients = clients.filter(c => !c.tipo || c.tipo === 'cliente');
   const activeProjs = await window.DB.query("projects");
+  const vehiclesDocs = await window.DB.query("vehicles");
+  const vehiclesList = vehiclesDocs[0]?.list || [];
 
   const cSel = document.getElementById('clientInput');
   cSel.innerHTML = '<option value="">— Seleccionar Cliente —</option>' +
@@ -397,6 +357,10 @@ async function loadOptions() {
   const pSel = document.getElementById('projectInput');
   pSel.innerHTML = '<option value="">— Seleccionar Proyecto —</option>' +
     activeProjs.filter(p => !p._init).map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('');
+
+  const vSel = document.getElementById('f-vehiculo');
+  vSel.innerHTML = '<option value="">— Sin vehículo —</option>' +
+    vehiclesList.map(v => `<option value="${v}">${v}</option>`).join('');
 
   SearchableSelect.init(cSel);
   SearchableSelect.init(pSel);
@@ -445,9 +409,8 @@ function saveQuote() {
     concepto,
     origen: document.getElementById('f-origen').value,
     destino: document.getElementById('f-destino').value,
-    km: parseFloat(document.getElementById('f-km').value) || 0,
-    rend: parseFloat(document.getElementById('f-rend').value) || 0,
-    pGas: parseFloat(document.getElementById('f-precio-gas').value) || 0,
+    vehiculo: document.getElementById('f-vehiculo').value,
+    costoTransporte: parseFloat(document.getElementById('f-costo-transporte').value) || 0,
     personas: parseFloat(document.getElementById('f-personas').value) || 0,
     dias: parseFloat(document.getElementById('f-dias').value) || 0,
     pComida: parseFloat(document.getElementById('f-precio-comida').value) || 0,
@@ -457,11 +420,7 @@ function saveQuote() {
     hospPrecio: parseFloat(document.getElementById('f-hosp-precio').value) || 0,
     casetas: JSON.parse(JSON.stringify(CASETAS)),
     extras: JSON.parse(JSON.stringify(EXTRAS)),
-    globalCfg: {
-      EXTRAS: (parseFloat(document.getElementById('cfg-extras').value) || 0) / 100,
-      MARGIN: (parseFloat(document.getElementById('cfg-margin').value) || 0) / 100,
-      TAX: document.getElementById('cfg-tax').checked ? 0.16 : 0
-    }
+    globalCfg: {}
   };
 
   // ── Modo edición ──────────────────────────────────────────────────────────
@@ -559,9 +518,8 @@ function processURLParams() {
     document.getElementById('f-concepto').value = loadQ.concepto || '';
     document.getElementById('f-origen').value = loadQ.origen || '';
     document.getElementById('f-destino').value = loadQ.destino || '';
-    document.getElementById('f-km').value = loadQ.km || '';
-    document.getElementById('f-rend').value = loadQ.rend || '';
-    document.getElementById('f-precio-gas').value = loadQ.pGas || '';
+    if (loadQ.vehiculo) document.getElementById('f-vehiculo').value = loadQ.vehiculo;
+    document.getElementById('f-costo-transporte').value = loadQ.costoTransporte ?? '';
     document.getElementById('f-personas').value = loadQ.personas || '';
     document.getElementById('f-dias').value = loadQ.dias || '';
     document.getElementById('f-precio-comida').value = loadQ.pComida || '';
@@ -570,11 +528,6 @@ function processURLParams() {
     if (loadQ.hospPeriodo) document.getElementById('f-hosp-periodo').value = loadQ.hospPeriodo;
     document.getElementById('f-hosp-precio').value = loadQ.hospPrecio || loadQ.pHotel || '';
     
-    if (loadQ.globalCfg) {
-      document.getElementById('cfg-extras').value = (loadQ.globalCfg.EXTRAS || 0) * 100;
-      document.getElementById('cfg-margin').value = (loadQ.globalCfg.MARGIN || 0) * 100;
-      document.getElementById('cfg-tax').checked = loadQ.globalCfg.TAX > 0;
-    }
     
     CASETAS = loadQ.casetas || [];
     EXTRAS = loadQ.extras || [];
@@ -617,7 +570,7 @@ function showPrintPreview(isClient) {
   
   // Totals recalculation
   const total = calcTotals();
-  const taxRate = document.getElementById('cfg-tax').checked ? 0.16 : 0;
+  const taxRate = 0;
   
   const subGas = document.getElementById('st-gas').textContent;
   const subCasetas = document.getElementById('st-casetas').textContent;
@@ -665,14 +618,14 @@ function showPrintPreview(isClient) {
               <strong>${concepto}</strong>
               <div style="font-size:10px;color:#555;margin-top:4px;">Incluye maniobras, viáticos, peajes y combustible de la ruta especificada.</div>
             </td>
-            <td style="${tdRCss}font-weight:700;">${fmt(total / (1 + taxRate))}</td>
+            <td style="${tdRCss}font-weight:700;">${fmt(total)}</td>
           </tr>
         </tbody>
       </table>
       <div style="display:flex;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:2px solid #222;">
         <div style="text-align:right;">
           <div style="font-size:15px;font-weight:800;">TOTAL: ${fmt(total)}</div>
-          <div style="font-size:9px;color:#888;margin-top:3px;">${taxRate>0?'IVA incluido (16%)':'Precios sin IVA'}</div>
+          <div style="font-size:9px;color:#888;margin-top:3px;">Precio sin IVA</div>
         </div>
       </div>
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid #ddd;">
@@ -721,10 +674,8 @@ function showPrintPreview(isClient) {
 
       ${secT('Combustible')}
       <table style="${tblCss}">
-        <tr><td style="${tdCss}">Kilómetros (Ida y Vuelta)</td><td style="${tdRCss}">${document.getElementById('f-km').value || 0} km</td></tr>
-        <tr><td style="${tdCss}">Rendimiento</td><td style="${tdRCss}">${document.getElementById('f-rend').value || 0} km/L</td></tr>
-        <tr><td style="${tdCss}">Precio de Combustible</td><td style="${tdRCss}">${fmt(document.getElementById('f-precio-gas').value || 0)} / L</td></tr>
-        <tr><td style="${tdCss}font-weight:bold;">Subtotal Combustible</td><td style="${tdRCss}font-weight:bold;">${subGas}</td></tr>
+        <tr><td style="${tdCss}">Vehículo</td><td style="${tdRCss}">${document.getElementById('f-vehiculo').value || '—'}</td></tr>
+        <tr><td style="${tdCss}font-weight:bold;">Costo de Transporte</td><td style="${tdRCss}font-weight:bold;">${subGas}</td></tr>
       </table>
 
       ${secT('Peajes / Casetas')}
@@ -757,10 +708,6 @@ function showPrintPreview(isClient) {
 
       ${secT('Resumen Total')}
       <table style="${tblCss}; margin-bottom: 24px;">
-        <tr><td style="${tdCss}">Costo Directo Base</td><td style="${tdRCss}">${document.getElementById('f-costo-base').textContent}</td></tr>
-        <tr><td style="${tdCss}">Imprevistos (${document.getElementById('l-imprevistos').textContent})</td><td style="${tdRCss}">${document.getElementById('f-imprevistos').textContent}</td></tr>
-        <tr><td style="${tdCss}">Utilidad Esperada (${document.getElementById('l-utilidad').textContent})</td><td style="${tdRCss}">${document.getElementById('f-utilidad').textContent}</td></tr>
-        ${taxRate > 0 ? `<tr><td style="${tdCss}">IVA (16%)</td><td style="${tdRCss}">${document.getElementById('f-tax').textContent}</td></tr>` : ''}
         <tr><td style="${tdCss}font-size:14px;font-weight:bold;">Total Cotizado</td><td style="${tdRCss}font-size:14px;font-weight:bold;">${fmt(total)}</td></tr>
       </table>
       <div id="print-cond-live" style="margin-top:14px;font-size:11px;color:#333;white-space:pre-wrap;line-height:1.6;">${currentPrintConds}</div>

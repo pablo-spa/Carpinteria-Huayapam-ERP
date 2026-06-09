@@ -11,7 +11,7 @@
 .hdr-select:focus { outline: none; border-color: var(--blue); }
 
 /* Fix layout and make it more compact to prevent sideways scrolling */
-.main { max-width: 1000px; margin: 0 auto; padding: 24px 20px; }
+.main { max-width: 1000px; margin: 0 auto; padding: 24px 20px 220px; }
 
 .ai-input { flex: 1; border: 1px solid var(--surface0); border-radius: 6px; padding: 8px; font-size: 13px; font-family: inherit; background: var(--base); color: var(--text); min-width: 120px; box-sizing:border-box; min-height:40px; }
 .ai-input:focus { outline: none; border-color: var(--blue); }
@@ -150,9 +150,15 @@ input.mat-price { text-align: right; font-size: 12px; }
   </div>
   <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()">Guardar cotización</button>
 </div>
-<div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
-  <select class="hdr-select" id="clientInput" data-searchable></select>
-  <select class="hdr-select" id="projectInput" data-searchable></select>
+<div style="background:var(--base); border-bottom:1px solid var(--crust); padding:6px 24px; display:flex; gap:16px; align-items:center;">
+  <div style="display:flex; align-items:center; gap:6px;">
+    <span style="font-size:11px; font-weight:700; color:var(--subtext); white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;">Cliente</span>
+    <select class="hdr-select" id="clientInput" data-searchable style="min-width:180px; max-width:280px; min-height:34px; font-size:12px; padding:5px 10px;"></select>
+  </div>
+  <div style="display:flex; align-items:center; gap:6px;">
+    <span style="font-size:11px; font-weight:700; color:var(--subtext); white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;">Proyecto</span>
+    <select class="hdr-select" id="projectInput" data-searchable style="min-width:180px; max-width:280px; min-height:34px; font-size:12px; padding:5px 10px;"></select>
+  </div>
 </div>
 
 <div class="main">
