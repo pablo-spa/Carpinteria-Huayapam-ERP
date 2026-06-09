@@ -1675,7 +1675,6 @@
         document.getElementById('current-user-role').innerText = role.toUpperCase();
 
         window.DB_STATE = state;
-        window.DB_STATE_LOADED = true;
         document.getElementById('db-loading-overlay').style.display = 'none';
 
         // ── Preferencias de usuario desde Firestore ─────────────────────────
@@ -1768,7 +1767,12 @@
             window._col_pendiente[col] = false;
           }
         };
-        
+
+        // Marcar DB como lista DESPUÉS de que cargar_coleccion esté disponible.
+        // Antes había un await entre DB_STATE_LOADED=true y esta definición,
+        // lo que causaba que iframes cargaran sin cargar_coleccion disponible.
+        window.DB_STATE_LOADED = true;
+
         // ── Sincronización de datos en tiempo real ─────────────────────────────
         // Fuerza recarga de las colecciones más críticas (las que otros usuarios modifican)
         // y recarga el iframe activo si hay uno abierto.
