@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contabilidad — Carpintería Huayapam</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
 
@@ -107,7 +108,7 @@
 
 <div class="hdr">
   <div class="hdr-title">
-    <button class="back-btn" onclick="if(window.parent&&window.parent.goHome){window.parent.goHome()}else{window.history.back()}">← Volver</button>
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     Contabilidad
   </div>
   <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -300,7 +301,6 @@
 
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
-<script src="ui.js"></script>
 <script>
   let DBm = []; // local var holding movements
   let STATE_PROJECTS = [];
@@ -1325,6 +1325,13 @@
     toast(`${rows.length} movimientos exportados.`);
   }
 
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 </script>
 
 <!-- Modal Nueva Cuenta -->

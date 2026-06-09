@@ -142,7 +142,7 @@
 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
-    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <div class="hdr-title">Dashboard Administrativo</div>
   </div>
   <div style="display:flex; align-items:center; gap:12px;">
@@ -235,7 +235,6 @@
 </div>
 
 <script src="db.js"></script>
-<script src="ui.js"></script>
 <script>
   const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
@@ -475,7 +474,7 @@
 
     area.style.display = 'block';
     list.innerHTML = alerts.map(a => `
-      <div class="alert-row ${a.cls}" onclick="if(window.parent?.openModule) window.parent.openModule('${a.file}','${a.mod}')">
+      <div class="alert-row ${a.cls}" onclick="if(window.parent?.openModule) window.parent.openModule('${a.file}','${a.mod}', false, true)">
         <span class="alert-icon">${a.icon}</span>
         <div class="alert-body">
           <div class="alert-title">${a.title}</div>
@@ -536,7 +535,7 @@
     if (!ev?.navFile) return;
     closeCalPopover();
     if (ev.navSetup) ev.navSetup();
-    window.parent.openModule(ev.navFile, ev.navLabel || ev.title);
+    window.parent.openModule(ev.navFile, ev.navLabel || ev.title, false, false);
   }
 
   function showCalPopover(evtEl, evId) {

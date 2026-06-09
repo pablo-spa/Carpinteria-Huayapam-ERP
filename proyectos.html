@@ -139,7 +139,7 @@ body {
 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
-    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <div class="hdr-title">Proyectos</div>
   </div>
   <button class="btn btn-blue" onclick="openModal(null)">+ Nuevo Proyecto</button>

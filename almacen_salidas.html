@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro de Salidas</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 .hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
 .main { max-width: 800px; margin: 24px auto; padding: 24px; background: var(--mantle); border-radius: 12px; border: 1px solid var(--crust); display: flex; flex-direction: column; gap: 20px; }
 .field { display: flex; flex-direction: column; gap: 8px; }
@@ -26,7 +27,7 @@
 <body>
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="window.history.back()" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <button onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
     <h2 style="font-size: 18px;">Vale de Salida (Entrega a Trabajador)</h2>
   </div>
   <button class="btn btn-amber" onclick="save()">Registrar Salida</button>
@@ -57,7 +58,6 @@
 
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
-<script src="ui.js"></script>
 <script>
 let INV = [];
 
@@ -175,7 +175,7 @@ async function save() {
       }
 
       toast('✓ Salida registrada y stock actualizado.');
-      setTimeout(() => window.history.back(), 800);
+      setTimeout(() => { if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back(); }, 800);
     } catch (e) {
       console.error("Error registrando salida:", e);
       toast('Error al guardar. Verifica tu conexión.', 'error');
@@ -184,6 +184,14 @@ async function save() {
 
 document.addEventListener('DOMContentLoaded', init);
 
+function toast(msg, type='ok') {
+  const bg = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
 </script>
 </body>
 </html>

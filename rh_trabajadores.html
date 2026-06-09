@@ -116,7 +116,7 @@
 
   <div class="hdr">
     <div style="display:flex; align-items:center; gap:12px;">
-      <button class="back-btn" onclick="window.history.back()">← Volver</button>
+      <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
       <h2 class="hdr-title">Directorio de Trabajadores</h2>
     </div>
     <button class="btn btn-green" onclick="openFicha()">+ Nuevo Trabajador</button>
@@ -313,7 +313,6 @@
   </div>
 
   <script src="db.js"></script>
-<script src="ui.js"></script>
   <script>
     async function renderList() {
       const showInactive = document.getElementById('show-inactive')?.checked;
@@ -764,6 +763,13 @@
     renderList();
   }
 
+  function toast(msg, type='ok') {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
   </script>
 </body>
 </html>

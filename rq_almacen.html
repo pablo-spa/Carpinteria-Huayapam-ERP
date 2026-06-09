@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hoja de Pedido</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; padding-bottom: 80px; }
 .main { max-width: 820px; margin: 24px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
@@ -46,7 +47,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .tipo-toggle span { padding:3px 9px; background:var(--surface0); color:var(--subtext); transition:.15s; }
 .tipo-toggle span.active-mat  { background:var(--blue-bg);  color:var(--blue); }
 .tipo-toggle span.active-herr { background:var(--amber-bg); color:var(--amber); }
-.tipo-toggle span.active-mad  { background:var(--green-bg); color:var(--green); }
 .herr-badge { display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:4px; background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); margin-left:5px; vertical-align:middle; }
 </style>
 </head>
@@ -56,7 +56,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:16px;">
-    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <span class="hdr-title">Hoja de Pedido</span>
   </div>
   <button class="btn btn-blue" onclick="submitRequest()">↗ Enviar Solicitud</button>
@@ -115,11 +115,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
-<script src="ui.js"></script>
 <script>
-  let INV        = [];
-  let MADERA_INV = [];
-  let UNITS  = [];
+  let INV   = [];
+  let UNITS = [];
   let ORDERS = [];
 
   // ── Orders loading ────────────────────────────────────────────
@@ -258,6 +256,16 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     renderHistorialPedidos();
   }
 
+  function toast(msg, type = 'ok') {
+    const wrap = document.getElementById('toast-wrap');
+    const bg = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
+    const el = document.createElement('div');
+    el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
   function showConfirm(msg, okLabel = 'Confirmar') {
     return new Promise(resolve => {
       const ov = document.createElement('div');
@@ -318,8 +326,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     SearchableSelect.init(reqSel);
 
     // Inventory & units for rows
-    INV        = inventory.filter(i => i.code && i.name && i.category !== 'madera');
-    MADERA_INV = inventory.filter(i => i.code && i.name && i.category === 'madera');
+    INV = inventory.filter(i => i.code && i.name);
     const rawUnits = conceptUnits[0]?.list || [];
     UNITS = rawUnits.length ? rawUnits : ['pza','caja','mt','mt2','lt','kg','gln','rollo','par','juego','bolsa'];
 
@@ -333,45 +340,31 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       `<option value="_new" style="font-weight:700; color:var(--blue);">+ Concepto nuevo…</option>`;
   }
 
-  function buildMaderaOptions(selectedCode) {
-    return `<option value="">— Buscar madera —</option>` +
-      MADERA_INV.map(i => `<option value="${i.code}" data-unit="${i.unit||'pza'}" ${i.code===selectedCode?'selected':''}>${i.code} – ${i.name}</option>`).join('') +
-      `<option value="_new" style="font-weight:700; color:var(--blue);">+ Concepto nuevo…</option>`;
-  }
-
   function buildUnitOptions(selected) {
     return UNITS.map(u => `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
   }
 
-  function addRow(code='', name='', qty=1, unit='pza', esHerramienta=false, esMadera=false) {
+  function addRow(code='', name='', qty=1, unit='pza', esHerramienta=false) {
     const tbody = document.getElementById('itemsList');
     const tr = document.createElement('tr');
-    const invList = esMadera ? MADERA_INV : INV;
-    const isCustom = (esHerramienta || !code || !invList.find(i => i.code === code)) ? '1' : '0';
-    tr.dataset.custom        = isCustom;
+    tr.dataset.custom = (esHerramienta || !code || !INV.find(i => i.code === code)) ? '1' : '0';
     tr.dataset.esHerramienta = esHerramienta ? '1' : '0';
-    tr.dataset.esMadera      = esMadera ? '1' : '0';
-    const showNewWrap = (isCustom === '1' && !!name) || esHerramienta;
-    const showSel     = !showNewWrap;
 
     tr.innerHTML = `
       <td>
         <div class="tipo-toggle">
-          <span class="${!esHerramienta && !esMadera ? 'active-mat' : ''}" onclick="setTipoRow(this.closest('tr'),'material')">📦 Material</span>
-          <span class="${esMadera ? 'active-mad' : ''}" onclick="setTipoRow(this.closest('tr'),'madera')">🪵 Madera</span>
-          <span class="${esHerramienta ? 'active-herr' : ''}" onclick="setTipoRow(this.closest('tr'),'herramienta')">🔧 Herramienta</span>
+          <span class="${esHerramienta?'':'active-mat'}" onclick="setTipoRow(this.closest('tr'),'material')">📦 Material</span>
+          <span class="${esHerramienta?'active-herr':''}" onclick="setTipoRow(this.closest('tr'),'herramienta')">🔧 Herramienta</span>
         </div>
-        <div class="i-sel-wrap" style="${showSel ? '' : 'display:none'}">
+        <div class="i-sel-wrap" style="${esHerramienta?'display:none':''}">
           <select class="i-sel" data-searchable data-allow-new onchange="handleConceptChange(this)">
-            ${esMadera ? buildMaderaOptions(code) : buildInvOptions(code)}
+            ${buildInvOptions(code)}
           </select>
         </div>
-        <div class="i-new-wrap" style="display:${showNewWrap ? 'flex' : 'none'}; align-items:center; gap:6px;">
-          <input type="text" class="i-custom" style="flex:1;"
-            placeholder="${esHerramienta ? 'Nombre de la herramienta…' : 'Descripción del concepto'}"
-            value="${name}">
-          ${!esHerramienta ? '<button type="button" class="btn btn-sm i-back-sel" title="Volver al catálogo" onclick="backToSel(this.closest(\'tr\'))">✕</button>' : ''}
-        </div>
+        <input type="text" class="i-custom"
+          placeholder="${esHerramienta ? 'Nombre de la herramienta…' : 'Descripción del material'}"
+          value="${name}"
+          style="display:${(tr.dataset.custom==='1' && name) || esHerramienta ? 'block':'none'}; margin-top:4px;">
       </td>
       <td><input type="number" class="i-qty" value="${qty}" min="0.01" step="any" style="width:80px;"></td>
       <td>
@@ -385,77 +378,48 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   }
 
   function setTipoRow(tr, tipo) {
-    const toggle  = tr.querySelector('.tipo-toggle');
-    const selWrap = tr.querySelector('.i-sel-wrap');
-    const newWrap = tr.querySelector('.i-new-wrap');
-    const iSel    = tr.querySelector('.i-sel');
-    const iCustom = tr.querySelector('.i-custom');
-    const backBtn = tr.querySelector('.i-back-sel');
-    const unitSel = tr.querySelector('.i-unit');
-    const spans   = toggle.querySelectorAll('span'); // [material, madera, herramienta]
+    const toggle   = tr.querySelector('.tipo-toggle');
+    const selWrap  = tr.querySelector('.i-sel-wrap');
+    const iSel     = tr.querySelector('.i-sel');
+    const iCustom  = tr.querySelector('.i-custom');
+    const unitSel  = tr.querySelector('.i-unit');
+    const spans    = toggle.querySelectorAll('span');
 
     if (tipo === 'herramienta') {
       spans[0].className = '';
-      spans[1].className = '';
-      spans[2].className = 'active-herr';
+      spans[1].className = 'active-herr';
       selWrap.style.display = 'none';
-      newWrap.style.display = 'flex';
+      iCustom.style.display = 'block';
       iCustom.placeholder = 'Nombre de la herramienta…';
       iCustom.value = '';
-      if (backBtn) backBtn.style.display = 'none';
       unitSel.disabled = false;
       unitSel.style.opacity = '';
       tr.dataset.custom = '1';
       tr.dataset.esHerramienta = '1';
-      tr.dataset.esMadera = '0';
-    } else if (tipo === 'madera') {
-      spans[0].className = '';
-      spans[1].className = 'active-mad';
-      spans[2].className = '';
-      selWrap.style.display = '';
-      newWrap.style.display = 'none';
-      iSel.innerHTML = buildMaderaOptions('');
-      if (!iSel._ssInit) SearchableSelect.init(iSel);
-      else iSel._ssRefresh?.() ?? iSel._ssSync?.();
-      iCustom.value = '';
-      unitSel.disabled = false;
-      unitSel.style.opacity = '';
-      tr.dataset.custom = '0';
-      tr.dataset.esHerramienta = '0';
-      tr.dataset.esMadera = '1';
-    } else { // material
+    } else {
       spans[0].className = 'active-mat';
       spans[1].className = '';
-      spans[2].className = '';
       selWrap.style.display = '';
-      newWrap.style.display = 'none';
-      iSel.innerHTML = buildInvOptions('');
       if (!iSel._ssInit) SearchableSelect.init(iSel);
-      else iSel._ssRefresh?.() ?? iSel._ssSync?.();
-      iCustom.value = '';
-      unitSel.disabled = false;
-      unitSel.style.opacity = '';
+      else iSel._ssSync?.();
+      iCustom.style.display = 'none';
       tr.dataset.custom = '0';
       tr.dataset.esHerramienta = '0';
-      tr.dataset.esMadera = '0';
     }
   }
 
   function handleConceptChange(sel) {
-    const tr        = sel.closest('tr');
-    const selWrap   = tr.querySelector('.i-sel-wrap');
-    const newWrap   = tr.querySelector('.i-new-wrap');
-    const iCustom   = tr.querySelector('.i-custom');
-    const unitSel   = tr.querySelector('.i-unit');
+    const tr = sel.closest('tr');
+    const customInput = tr.querySelector('.i-custom');
+    const unitSel = tr.querySelector('.i-unit');
 
     if (sel.value === '_new') {
       const typed = sel.dataset.allowNewText || '';
       sel.value = '';
       if (sel._ssSync) sel._ssSync();
-      selWrap.style.display = 'none';
-      newWrap.style.display = 'flex';
-      if (typed) iCustom.value = typed;
-      iCustom.focus();
+      customInput.style.display = 'block';
+      if (typed) customInput.value = typed;
+      customInput.focus();
       tr.dataset.custom = '1';
       unitSel.disabled = false;
       unitSel.style.opacity = '';
@@ -466,27 +430,14 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
         unitSel.disabled = true;
         unitSel.style.opacity = '.6';
       }
-      newWrap.style.display = 'none';
+      customInput.style.display = 'none';
       tr.dataset.custom = '0';
     } else {
-      newWrap.style.display = 'none';
+      customInput.style.display = 'none';
       tr.dataset.custom = '0';
       unitSel.disabled = false;
       unitSel.style.opacity = '';
     }
-  }
-
-  function backToSel(tr) {
-    const iSel  = tr.querySelector('.i-sel');
-    tr.querySelector('.i-new-wrap').style.display = 'none';
-    tr.querySelector('.i-sel-wrap').style.display = '';
-    tr.querySelector('.i-custom').value = '';
-    tr.dataset.custom = '0';
-    const unitSel = tr.querySelector('.i-unit');
-    unitSel.disabled = false;
-    unitSel.style.opacity = '';
-    if (!iSel._ssInit) SearchableSelect.init(iSel);
-    else iSel._ssSync?.();
   }
 
   async function submitRequest() {
@@ -503,24 +454,19 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       const unit  = tr.querySelector('.i-unit').value;
 
       const esHerr = tr.dataset.esHerramienta === '1';
-      const esMad  = tr.dataset.esMadera === '1';
-      let code = sel?.value || '';
+      let code = sel.value;
       let name = '';
       if (esHerr) {
         name = custom?.value.trim() || '';
         code = '';
       } else if (code && code !== '_new') {
-        const inv = INV.find(i => i.code === code) || MADERA_INV.find(i => i.code === code);
-        name = inv ? inv.name : sel?.options[sel.selectedIndex]?.text || code;
+        const inv = INV.find(i => i.code === code);
+        name = inv ? inv.name : sel.options[sel.selectedIndex]?.text || code;
       } else {
         name = custom?.value.trim() || '';
         code = '';
       }
-      if ((name || code) && qty > 0) items.push({
-        code, name, qty, unit, price: 0,
-        esHerramienta: esHerr || undefined,
-        esMadera: esMad || undefined
-      });
+      if ((name || code) && qty > 0) items.push({ code, name, qty, unit, price: 0, esHerramienta: esHerr || undefined });
     });
 
     if (!items.length) { toast('Agrega al menos un material.', 'warn'); return; }

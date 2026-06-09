@@ -394,35 +394,35 @@
       </div>
 
       <div class="module-grid">
-        <div class="module-card" onclick="openModule('produccion_diaria.html','Registro del Día')">
+        <div class="module-card" onclick="openModule('produccion_diaria.html','Registro del Día', false, true)">
           <div class="mc-icon">🔨</div>
           <div class="mc-text"><strong>Trabajos del Día</strong><span>Asistencia, horas y actividades del día.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('cotizaciones.html','Cotizaciones')">
+        <div class="module-card" onclick="openModule('cotizaciones.html','Cotizaciones', false, true)">
           <div class="mc-icon">📋</div>
           <div class="mc-text"><strong>Cotizaciones</strong><span>Presupuestos con desglose de materiales y mano de obra.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('finanzas.html','Contabilidad')">
+        <div class="module-card" onclick="openModule('finanzas.html','Contabilidad', false, true)">
           <div class="mc-icon">💰</div>
           <div class="mc-text"><strong>Contabilidad</strong><span>Libro mayor, ingresos, gastos y transferencias.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('proyectos.html','Proyectos Activos')">
+        <div class="module-card" onclick="openModule('proyectos.html','Proyectos Activos', false, true)">
           <div class="mc-icon">📁</div>
           <div class="mc-text"><strong>Proyectos</strong><span>Seguimiento de obras y cronogramas.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('almacen_inventario.html','Inventario General')">
+        <div class="module-card" onclick="openModule('almacen_inventario.html','Inventario General', false, true)">
           <div class="mc-icon">📦</div>
           <div class="mc-text"><strong>Inventario</strong><span>Control de stock, insumos y herramientas.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('control_madera.html','Almacén de Madera')">
+        <div class="module-card" onclick="openModule('control_madera.html','Almacén de Madera', false, true)">
           <div class="mc-icon">🪵</div>
           <div class="mc-text"><strong>Almacén de Madera</strong><span>Catálogo de tablas por pieza individual.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('rq_compras.html','Compras')">
+        <div class="module-card" onclick="openModule('rq_compras.html','Compras', false, true)">
           <div class="mc-icon">🛒</div>
           <div class="mc-text"><strong>Compras</strong><span>Órdenes de compra, proveedores y precios.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('nomina_semanal.html','Nómina Semanal')">
+        <div class="module-card" onclick="openModule('nomina_semanal.html','Nómina Semanal', false, true)">
           <div class="mc-icon">💵</div>
           <div class="mc-text"><strong>Nómina</strong><span>Cálculo de pagos semanales al personal.</span></div>
         </div>
@@ -441,7 +441,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <button id="btn-sync" onclick="syncAllData()" title="Actualizar todos los datos" style="display:none;padding:5px 12px;background:var(--surface0);color:var(--subtext);border:1px solid var(--crust);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--crust)';this.style.color='var(--subtext)'">🔄 Actualizar</button>
-          <button class="btn-back" onclick="goHome()">← Salir del módulo</button>
+          <button class="btn-back" onclick="goHome()">✕ Salir del módulo</button>
         </div>
       </div>
       <iframe id="main-frame" src="" title="Módulo"></iframe>
@@ -807,7 +807,7 @@
         iDiv.setAttribute('data-section', 'fav');
         iDiv.setAttribute('data-iidx', iIdx);
         iDiv.setAttribute('data-file', item.file);
-        iDiv.onclick = () => openModule(item.file, item.label);
+        iDiv.onclick = () => openModule(item.file, item.label, false, true);
 
         // Botón quitar de favoritos
         const rmBtn = document.createElement('button');
@@ -856,7 +856,7 @@
         iDiv.setAttribute('data-cidx', cIdx);
         iDiv.setAttribute('data-iidx', iIdx);
         iDiv.setAttribute('data-file', item.file);
-        iDiv.onclick = () => openModule(item.file, item.label);
+        iDiv.onclick = () => openModule(item.file, item.label, false, true);
 
         // Botón estrella — agregar/quitar favorito (no mueve el item de su sección)
         const starBtn = document.createElement('button');
@@ -1098,9 +1098,20 @@
     };
   }
 
+  window.goBackModule = function() {
+    if (navHistory.length > 1) {
+      const prevStep = navHistory[navHistory.length - 2];
+      navHistory = navHistory.slice(0, navHistory.length - 2);
+      openModule(prevStep.file, prevStep.label, true, false);
+    } else {
+      goHome();
+    }
+  };
+
   function goHome() {
     document.getElementById('welcome').style.display = 'flex';
     document.getElementById('frame-wrapper').style.display = 'none';
+    navHistory = [];
   }
 
   // ── LÓGICA DE TEMA GLOBAL (CLARO/OSCURO) ──
@@ -1186,7 +1197,7 @@
     title.textContent = 'Pendientes';
     cont.style.display = 'flex';
     const html = alerts.map(a => `
-      <div class="w-alert" style="border-left-color:${a.color};" onclick="openModule('${a.file}','${a.mod}')">
+      <div class="w-alert" style="border-left-color:${a.color};" onclick="openModule('${a.file}','${a.mod}', false, true)">
         <span class="w-alert-icon">${a.icon}</span>
         <span class="w-alert-label">${a.label}</span>
         <span class="w-alert-arrow">→</span>

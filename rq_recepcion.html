@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Recepción de Material</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 .main { max-width: 860px; margin: 24px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
 .item-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; gap: 8px; }
 .chk { width: 18px; height: 18px; cursor: pointer; }
@@ -14,7 +15,7 @@
 </head>
 <body>
 <div class="hdr">
-  <button class="back-btn" onclick="window.history.back()">← Volver</button>
+  <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
   <h2 style="font-size:18px;">Recepción de Material (Almacén)</h2>
 </div>
 
@@ -23,7 +24,6 @@
 </div>
 
 <script src="db.js"></script>
-<script src="ui.js"></script>
 <script>
 const PILL_MAP = {
   'Pedido':'pill-amber','Solicitado':'pill-amber',
@@ -41,6 +41,16 @@ function statusFlow(cur) {
     (i>0?'<span class="sf-sep">›</span>':'')+
     `<span class="sf-step ${i<ci?'sf-done':i===ci?'sf-active':''}">${lbl}</span>`
   ).join('') + '</div>';
+}
+
+function toast(msg, type='ok') {
+  const bg = type === 'error' ? 'var(--red)' : 'var(--green)';
+  let tw = document.getElementById('rec-toast');
+  if (!tw) { tw = document.createElement('div'); tw.id='rec-toast'; tw.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(tw); }
+  const t = document.createElement('div');
+  t.style.cssText=`background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
+  t.textContent = msg;
+  tw.appendChild(t); setTimeout(() => t.remove(), 3500);
 }
 
 async function init() {
@@ -147,36 +157,13 @@ async function recibir(id) {
       await window.parent.setDocumentInFirebase('purchase_orders', id, order);
     }
 
-    // Actualizar stock del inventario
+    // Actualizar stock del inventario esperando todas las operaciones
     if (order.items) {
       const invPromises = [];
       order.items.forEach(i => {
-        if (i.code && !i.esMadera) {
-          invPromises.push(window.DB.logInventoryPurchase(i.code, parseFloat(i.qty)||0, parseFloat(i.price)||0, order.fechaRecepcion));
-        }
+        if (i.code) invPromises.push(window.DB.logInventoryPurchase(i.code, parseFloat(i.qty)||0, parseFloat(i.price)||0, order.fechaRecepcion));
       });
       await Promise.all(invPromises);
-
-      // Actualizar stock de madera (inventory_lists/madera)
-      const maderaItems = order.items.filter(i => i.esMadera && i.code);
-      if (maderaItems.length) {
-        const p = window.parent;
-        const invState = p?.DB_STATE?.inventory || [];
-        let changed = false;
-        maderaItems.forEach(i => {
-          const item = invState.find(inv => inv.code === i.code);
-          if (item) {
-            item.stock = (item.stock || 0) + (parseFloat(i.qty) || 0);
-            item.lastPurchaseDate = order.fechaRecepcion;
-            if (parseFloat(i.price) > 0) item.cost = parseFloat(i.price);
-            changed = true;
-          }
-        });
-        if (changed && p?.setDocumentInFirebase) {
-          const maderaList = invState.filter(inv => inv.category === 'madera');
-          await p.setDocumentInFirebase('inventory_lists', 'madera', { list: maderaList });
-        }
-      }
     }
 
     if (window.parent?.DB_STATE?.purchase_orders) {

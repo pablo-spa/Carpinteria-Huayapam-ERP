@@ -11,42 +11,45 @@
 .hdr-select { flex: 1; padding: 8px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; box-sizing:border-box; min-height:40px; }
 .hdr-select:focus { outline: none; border-color: var(--blue); }
 
-.main { max-width: 900px; margin: 0 auto; padding: 24px 20px 160px; display: flex; flex-direction: column; gap: 20px; }
+.main { max-width: 900px; margin: 0 auto; padding: 24px 20px 100px; display: flex; flex-direction: column; gap: 20px; }
 
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 20px; }
 .card-title { font-size: 14px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; border-bottom: 1px solid var(--crust); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 12px; }
 
 .field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .03em; }
+.field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
 .field input, .field select { padding: 9px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; transition: border-color .15s; }
 .field input:focus, .field select:focus { outline: none; border-color: var(--blue); }
-
-/* Stacked form rows inside a card — consistent 12px gap between rows */
-.card-fields { display: flex; flex-direction: column; gap: 12px; }
 
 .input-with-icon { position: relative; }
 .input-with-icon input { padding-left: 28px; width: 100%; }
 .input-with-icon span { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--subtext); font-size: 13px; font-weight: 700; pointer-events: none; }
 
-/* Dynamic tables */
-.dyn-table { width: 100%; border-collapse: collapse; }
-.dyn-table th { text-align: left; padding: 6px 8px; font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .03em; border-bottom: 2px solid var(--crust); }
-.dyn-table td { padding: 5px 4px; border-bottom: 1px solid var(--crust); vertical-align: middle; }
-.dyn-table input, .dyn-table select { width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; }
-.dyn-table input:focus, .dyn-table select:focus { outline: none; border-color: var(--blue); }
+/* Tables for Casetas/Extras */
+.dyn-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+.dyn-table th { text-align: left; padding: 6px 8px; font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; border-bottom: 2px solid var(--crust); }
+.dyn-table td { padding: 6px 4px; border-bottom: 1px solid var(--crust); }
+.dyn-table input { width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; }
+.dyn-table input:focus { outline: none; border-color: var(--blue); }
 .del-btn { background: none; border: none; color: var(--red); font-size: 18px; cursor: pointer; padding: 4px; line-height: 1; }
-.add-btn { background: transparent; border: 1px dashed var(--surface1); color: var(--subtext); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; transition: all .15s; }
+.add-btn { background: transparent; border: 1px dashed var(--surface1); color: var(--subtext); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; width: 100%; transition: all .15s; }
 .add-btn:hover { background: var(--surface0); color: var(--text); border-color: var(--subtext); }
 
-/* Divider between content and subtotal — consistent across all cards */
-.subtotal-lbl { font-size: 14px; font-weight: 800; color: var(--green); text-align: right; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--crust); }
+.subtotal-lbl { font-size: 14px; font-weight: 800; color: var(--green); text-align: right; margin-top: 8px; }
+
+/* Global Configs */
+.inline-cfg { width: 50px; padding: 6px; background: var(--base); color: var(--text); border: 1px solid var(--surface0); border-radius: 6px; font-size: 13px; font-weight: 700; font-family: inherit; text-align: center; }
+.inline-cfg:focus { outline: none; border-color: var(--blue); }
 
 /* Footer bar */
 .footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--mantle); border-top: 1px solid var(--crust); padding: 16px 24px; z-index: 20; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
 .footer-inner { max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.ft-formula-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--subtext); padding: 3px 0; gap: 24px; }
+.ft-formula-row span:last-child { font-weight: 600; color: var(--text); }
+.ft-total { text-align: right; }
 .ft-total-val { font-size: 32px; font-weight: 800; color: var(--green); line-height: 1; }
 
 /* Print Modal */
@@ -54,9 +57,21 @@
 .print-panel { width: 100%; max-width: 800px; background: var(--base); height: 100%; display: flex; flex-direction: column; box-shadow: -4px 0 24px rgba(0,0,0,0.1); animation: slideIn 0.3s ease; overflow: hidden; }
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 .print-hdr { padding: 16px 20px; border-bottom: 1px solid var(--crust); display: flex; justify-content: space-between; align-items: center; background: var(--mantle); }
-.print-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; color: #000; }
+.print-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; color: #000; } /* white bg for print preview */
 .print-ai-bar { padding: 16px; background: var(--mantle); border-top: 1px solid var(--crust); display: flex; flex-direction: column; gap: 12px; }
+
 .print-preview-content { max-width: 700px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 11px; }
+.print-piece { border-bottom: 1px solid #eee; padding: 12px 0; }
+.print-piece-hdr { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px; }
+.print-piece-desc { color: #555; white-space: pre-wrap; font-size: 12px; }
+.print-totals { border-top: 2px solid #000; margin-top: 24px; padding-top: 12px; display: flex; justify-content: flex-end; gap: 40px; }
+.print-totals-col { display: flex; flex-direction: column; gap: 4px; text-align: right; }
+.print-totals-row { display: flex; justify-content: space-between; gap: 24px; }
+.print-grand { font-size: 16px; font-weight: bold; margin-top: 8px; }
+
+.print-cond-box { margin-top: 24px; padding-top: 16px; border-top: 2px solid #000; }
+.print-cond-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; }
+.print-cond-text { font-size: 11px; color: #333; white-space: pre-wrap; }
 
 @media print {
   body * { visibility: hidden; }
@@ -75,144 +90,120 @@
   </div>
   <button class="btn btn-green" id="btn-save-quote" onclick="saveQuote()">Guardar cotización</button>
 </div>
-<div style="background:var(--base); border-bottom:1px solid var(--crust); padding:6px 24px; display:flex; gap:16px; align-items:center;">
-  <div style="display:flex; align-items:center; gap:6px;">
-    <span style="font-size:11px; font-weight:700; color:var(--subtext); white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;">Cliente</span>
-    <select class="hdr-select" id="clientInput" data-searchable style="min-width:180px; max-width:280px; min-height:34px; font-size:12px; padding:5px 10px;"></select>
-  </div>
-  <div style="display:flex; align-items:center; gap:6px;">
-    <span style="font-size:11px; font-weight:700; color:var(--subtext); white-space:nowrap; text-transform:uppercase; letter-spacing:.04em;">Proyecto</span>
-    <select class="hdr-select" id="projectInput" data-searchable style="min-width:180px; max-width:280px; min-height:34px; font-size:12px; padding:5px 10px;"></select>
-  </div>
+<div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
+  <select class="hdr-select" id="clientInput" data-searchable></select>
+  <select class="hdr-select" id="projectInput" data-searchable></select>
 </div>
 
 <div class="main">
 
-  <!-- Info del Servicio -->
-  <div class="card">
-    <div class="card-title">📍 Información del Servicio</div>
-    <div class="card-fields">
-      <div class="field">
-        <label>Concepto / Nombre del Servicio</label>
-        <input type="text" id="f-concepto" placeholder="Ej: Flete para entrega de cocina en Puerto Escondido">
+  <!-- Configuración Global -->
+  <div class="card" style="display:flex; gap:24px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:16px 20px;">
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--subtext);">
+        <span>Gastos Imprevistos (%)</span>
+        <input type="number" id="cfg-extras" class="inline-cfg" value="10" oninput="calcTotals()">
       </div>
-      <div class="grid2">
-        <div class="field">
-          <label>Origen</label>
-          <input type="text" id="f-origen" value="Taller Huayapam">
-        </div>
-        <div class="field">
-          <label>Destino</label>
-          <input type="text" id="f-destino" placeholder="Ej: Puerto Escondido">
-        </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--subtext);">
+        <span>Utilidad (%)</span>
+        <input type="number" id="cfg-margin" class="inline-cfg" value="20" oninput="calcTotals()">
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--subtext); border-left: 1px solid var(--crust); padding-left: 20px;">
+        <input type="checkbox" id="cfg-tax" checked onchange="calcTotals()" style="width:16px; height:16px; accent-color:var(--blue);">
+        <label for="cfg-tax" style="cursor:pointer; color:var(--text); text-transform:none;">Cobrar IVA (16%)</label>
       </div>
     </div>
   </div>
 
-  <!-- Viajes -->
+  <!-- Ruta y Vehículo -->
   <div class="card">
-    <div class="card-title">🚛 Viajes</div>
-    <table class="dyn-table" id="viajes-table">
-      <thead><tr>
-        <th style="width:200px;">Vehículo</th>
-        <th>Descripción</th>
-        <th style="width:130px;">Costo ($)</th>
-        <th style="width:40px;"></th>
-      </tr></thead>
-      <tbody></tbody>
-    </table>
-    <button class="add-btn" onclick="addViaje()">+ Agregar Viaje</button>
-    <div class="subtotal-lbl">Subtotal Viajes: <span id="st-viajes">$0.00</span></div>
+    <div class="card-title">🚛 Ruta y Combustible</div>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Concepto / Nombre del Servicio</label>
+      <input type="text" id="f-concepto" placeholder="Ej: Flete para entrega de cocina en Puerto Escondido" oninput="calcTotals()">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Origen</label>
+        <input type="text" id="f-origen" value="Taller Huayapam" oninput="calcTotals()">
+      </div>
+      <div class="field">
+        <label>Destino</label>
+        <input type="text" id="f-destino" placeholder="Ej: Puerto Escondido" oninput="calcTotals()">
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="field">
+        <label>Km Totales (Ida y Vuelta)</label>
+        <input type="number" id="f-km" min="0" step="any" placeholder="0" oninput="calcTotals()">
+      </div>
+      <div class="field">
+        <label>Rendimiento Vehículo (Km/L)</label>
+        <input type="number" id="f-rend" min="0.1" step="0.1" value="7.5" oninput="calcTotals()">
+      </div>
+      <div class="field">
+        <label>Precio Combustible ($/L)</label>
+        <div class="input-with-icon">
+          <span>$</span>
+          <input type="number" id="f-precio-gas" min="0" step="0.5" value="25.50" oninput="calcTotals()">
+        </div>
+      </div>
+    </div>
+    <div class="subtotal-lbl">Subtotal Combustible: <span id="st-gas">$0.00</span></div>
   </div>
 
   <!-- Casetas -->
   <div class="card">
     <div class="card-title">🛣️ Casetas / Peajes</div>
     <table class="dyn-table" id="casetas-table">
-      <thead><tr>
-        <th>Nombre de la Caseta / Tramo</th>
-        <th style="width:130px;">Costo ($)</th>
-        <th style="width:40px;"></th>
-      </tr></thead>
+      <thead><tr><th>Nombre de la Caseta / Tramo</th><th style="width:120px;">Costo ($)</th><th style="width:40px;"></th></tr></thead>
       <tbody></tbody>
     </table>
     <button class="add-btn" onclick="addCaseta()">+ Agregar Caseta</button>
     <div class="subtotal-lbl">Subtotal Casetas: <span id="st-casetas">$0.00</span></div>
   </div>
 
-  <!-- Transporte de Personal -->
+  <!-- Viáticos: Hotel y Comida -->
   <div class="card">
-    <div class="card-title">👥 Transporte de Personal</div>
-    <table class="dyn-table" id="trans-personal-table">
-      <thead><tr>
-        <th style="width:90px;">Personas</th>
-        <th>Concepto</th>
-        <th style="width:130px;">Total ($)</th>
-        <th style="width:40px;"></th>
-      </tr></thead>
-      <tbody></tbody>
-    </table>
-    <button class="add-btn" onclick="addTransPersonal()">+ Agregar Transporte</button>
-    <div class="subtotal-lbl">Subtotal Transporte de Personal: <span id="st-trans-personal">$0.00</span></div>
-  </div>
-
-  <!-- Hospedaje -->
-  <div class="card">
-    <div class="card-title">🏨 Hospedaje</div>
-    <div class="card-fields">
+    <div class="card-title">🏨 Hospedaje y 🍽️ Alimentos</div>
+    <div class="grid3">
       <div class="field">
-        <label>Concepto</label>
-        <input type="text" id="f-hosp-concepto" placeholder="Ej: Hotel 3 noches, 2 personas" oninput="calcTotals()">
+        <label>Número de Personas</label>
+        <input type="number" id="f-personas" min="1" step="1" value="2" oninput="calcTotals()">
       </div>
-      <div class="field" style="max-width:240px;">
-        <label>Total ($)</label>
+      <div class="field">
+        <label>Días de Viaje</label>
+        <input type="number" id="f-dias" min="1" step="1" value="1" oninput="calcTotals()">
+      </div>
+      <div class="field">
+        <label>Noches de Hotel</label>
+        <input type="number" id="f-noches" min="0" step="1" value="0" oninput="calcTotals()">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Presupuesto Alimentos ($ / persona / día)</label>
         <div class="input-with-icon">
           <span>$</span>
-          <input type="number" id="f-hosp-total" min="0" step="any" placeholder="0" oninput="calcTotals()">
+          <input type="number" id="f-precio-comida" min="0" step="10" value="400" oninput="calcTotals()">
         </div>
       </div>
-    </div>
-    <div class="subtotal-lbl">Subtotal Hospedaje: <span id="st-hospedaje">$0.00</span></div>
-  </div>
-
-  <!-- Alimentos -->
-  <div class="card">
-    <div class="card-title">🍽️ Alimentos</div>
-    <div class="card-fields">
       <div class="field">
-        <label>Concepto</label>
-        <input type="text" id="f-alim-concepto" placeholder="Ej: Comidas durante el viaje" oninput="calcTotals()">
-      </div>
-      <div class="grid3">
-        <div class="field">
-          <label>Número de Personas</label>
-          <input type="number" id="f-personas" min="1" step="1" placeholder="0" oninput="calcTotals()">
-        </div>
-        <div class="field">
-          <label>Días</label>
-          <input type="number" id="f-dias" min="1" step="1" placeholder="0" oninput="calcTotals()">
-        </div>
-        <div class="field">
-          <label>Costo por Persona / Día</label>
-          <div class="input-with-icon">
-            <span>$</span>
-            <input type="number" id="f-precio-comida" min="0" step="10" placeholder="0" oninput="calcTotals()">
-          </div>
+        <label>Costo Noche de Hotel ($ / persona / noche)</label>
+        <div class="input-with-icon">
+          <span>$</span>
+          <input type="number" id="f-precio-hotel" min="0" step="10" value="600" oninput="calcTotals()">
         </div>
       </div>
     </div>
-    <div class="subtotal-lbl">Subtotal Alimentos: <span id="st-alimentos">$0.00</span></div>
+    <div class="subtotal-lbl">Subtotal Viáticos: <span id="st-viaticos">$0.00</span></div>
   </div>
 
   <!-- Extras / Maniobras -->
   <div class="card">
     <div class="card-title">📦 Maniobras, Fletes Externos y Otros</div>
     <table class="dyn-table" id="extras-table">
-      <thead><tr>
-        <th>Descripción</th>
-        <th style="width:130px;">Costo ($)</th>
-        <th style="width:40px;"></th>
-      </tr></thead>
+      <thead><tr><th>Descripción</th><th style="width:120px;">Costo ($)</th><th style="width:40px;"></th></tr></thead>
       <tbody></tbody>
     </table>
     <button class="add-btn" onclick="addExtra()">+ Agregar Gasto Extra</button>
@@ -224,12 +215,16 @@
 <!-- Footer Total -->
 <div class="footer">
   <div class="footer-inner">
-    <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
-      <div>
-        <div style="font-size:11px; font-weight:800; color:var(--subtext); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px;">Total Cotizado</div>
-        <div class="ft-total-val" id="ft-total">$0</div>
-      </div>
-      <div style="display:flex; gap:8px;">
+    <div>
+      <div class="ft-formula-row"><span>Costo Directo (Suma Subtotales)</span><span id="f-costo-base">—</span></div>
+      <div class="ft-formula-row"><span>Imprevistos (<span id="l-imprevistos">10%</span>)</span><span id="f-imprevistos">—</span></div>
+      <div class="ft-formula-row"><span>Utilidad (<span id="l-utilidad">20%</span>)</span><span id="f-utilidad">—</span></div>
+      <div class="ft-formula-row" id="row-tax"><span>IVA (16%)</span><span id="f-tax">—</span></div>
+    </div>
+    <div class="ft-total">
+      <div style="font-size:11px; font-weight:800; color:var(--subtext); text-transform:uppercase; margin-bottom:6px;">Precio Cotizado</div>
+      <div class="ft-total-val" id="ft-total">$0</div>
+      <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
         <button class="btn btn-dark" onclick="showPrintPreview(true)" style="font-size:12px;">🖨 PDF Cliente</button>
         <button class="btn btn-dark" onclick="showPrintPreview(false)" style="font-size:12px;">🖨 PDF Taller</button>
       </div>
@@ -248,7 +243,9 @@
       </div>
     </div>
     <div class="print-body" id="print-body">
-      <div class="print-preview-content" id="print-preview-content"></div>
+      <div class="print-preview-content" id="print-preview-content">
+        <!-- populated from JS -->
+      </div>
     </div>
     <div class="print-ai-bar">
       <div style="font-size:12px; font-weight:700; color:var(--text);">Agregar texto adicional (condiciones, notas de pago, etc.)</div>
@@ -266,59 +263,20 @@ let EDIT_STATE = { id: null, folio: null, originalStatus: null };
 let Q_state = { isViewMode: false };
 let CASETAS = [];
 let EXTRAS = [];
-let VIAJES = [];
-let TRANS_PERSONAL = [];
-let VEHICLES_LIST = [];
 let currentPrintConds = "";
 
 function fmt(n) { return '$' + Math.round(n).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
-// ── Viajes ────────────────────────────────────────────────────────────────────
-function addViaje(vehiculo = '', concepto = '', price = '') {
-  VIAJES.push({ id: crypto.randomUUID(), vehiculo, concepto, price });
-  renderViajes();
-  calcTotals();
-}
-
-function renderViajes() {
-  const tbody = document.querySelector('#viajes-table tbody');
-  const opts = '<option value="">— Sin vehículo —</option>' +
-    VEHICLES_LIST.map(v => `<option value="${v}">${v}</option>`).join('');
-  tbody.innerHTML = VIAJES.map(v => `
-    <tr>
-      <td><select onchange="updateViaje('${v.id}','vehiculo',this.value)">${opts}</select></td>
-      <td><input type="text" value="${escHtml(v.concepto)}" placeholder="Descripción del viaje" oninput="updateViaje('${v.id}','concepto',this.value)"></td>
-      <td><input type="number" value="${v.price}" min="0" step="any" placeholder="0.00" oninput="updateViaje('${v.id}','price',this.value)"></td>
-      <td style="text-align:center;"><button class="del-btn" onclick="removeViaje('${v.id}')">✕</button></td>
-    </tr>
-  `).join('');
-  // Set selected vehicle after rendering
-  VIAJES.forEach((v, i) => {
-    if (v.vehiculo) tbody.rows[i].cells[0].querySelector('select').value = v.vehiculo;
-  });
-}
-
-function updateViaje(id, field, val) {
-  const item = VIAJES.find(x => x.id === id);
-  if (item) item[field] = val;
-  calcTotals();
-}
-
-function removeViaje(id) {
-  VIAJES = VIAJES.filter(x => x.id !== id);
-  renderViajes();
-  calcTotals();
-}
-
-// ── Casetas / Extras (simple name+price) ──────────────────────────────────────
 function addCaseta(name = '', price = '') {
-  CASETAS.push({ id: crypto.randomUUID(), name, price });
+  const id = crypto.randomUUID();
+  CASETAS.push({ id, name, price });
   renderDynTable('casetas-table', CASETAS, 'CASETAS');
   calcTotals();
 }
 
 function addExtra(name = '', price = '') {
-  EXTRAS.push({ id: crypto.randomUUID(), name, price });
+  const id = crypto.randomUUID();
+  EXTRAS.push({ id, name, price });
   renderDynTable('extras-table', EXTRAS, 'EXTRAS');
   calcTotals();
 }
@@ -327,9 +285,9 @@ function renderDynTable(tableId, arr, typeStr) {
   const tbody = document.querySelector(`#${tableId} tbody`);
   tbody.innerHTML = arr.map(item => `
     <tr>
-      <td><input type="text" value="${escHtml(item.name)}" placeholder="Descripción" oninput="updateArr('${typeStr}','${item.id}','name',this.value)"></td>
-      <td><input type="number" value="${item.price}" min="0" step="any" placeholder="0.00" oninput="updateArr('${typeStr}','${item.id}','price',this.value)"></td>
-      <td style="text-align:center;"><button class="del-btn" onclick="removeArr('${typeStr}','${item.id}')">✕</button></td>
+      <td><input type="text" value="${item.name}" placeholder="Descripción" oninput="updateArr('${typeStr}', '${item.id}', 'name', this.value)"></td>
+      <td><input type="number" value="${item.price}" min="0" step="any" placeholder="0.00" oninput="updateArr('${typeStr}', '${item.id}', 'price', this.value)"></td>
+      <td style="text-align:center;"><button class="del-btn" onclick="removeArr('${typeStr}', '${item.id}')">✕</button></td>
     </tr>
   `).join('');
 }
@@ -344,102 +302,84 @@ function updateArr(typeStr, id, field, val) {
 function removeArr(typeStr, id) {
   if (typeStr === 'CASETAS') CASETAS = CASETAS.filter(x => x.id !== id);
   else EXTRAS = EXTRAS.filter(x => x.id !== id);
-  renderDynTable(typeStr === 'CASETAS' ? 'casetas-table' : 'extras-table',
-                 typeStr === 'CASETAS' ? CASETAS : EXTRAS, typeStr);
+  renderDynTable(typeStr === 'CASETAS' ? 'casetas-table' : 'extras-table', typeStr === 'CASETAS' ? CASETAS : EXTRAS, typeStr);
   calcTotals();
 }
 
-// ── Transporte de Personal ────────────────────────────────────────────────────
-function addTransPersonal(personas = '', concepto = '', price = '') {
-  TRANS_PERSONAL.push({ id: crypto.randomUUID(), personas, concepto, price });
-  renderTransPersonal();
-  calcTotals();
-}
-
-function renderTransPersonal() {
-  const tbody = document.querySelector('#trans-personal-table tbody');
-  tbody.innerHTML = TRANS_PERSONAL.map(t => `
-    <tr>
-      <td><input type="number" value="${t.personas}" min="1" step="1" placeholder="0" oninput="updateTransPersonal('${t.id}','personas',this.value)"></td>
-      <td><input type="text" value="${escHtml(t.concepto)}" placeholder="Descripción" oninput="updateTransPersonal('${t.id}','concepto',this.value)"></td>
-      <td><input type="number" value="${t.price}" min="0" step="any" placeholder="0.00" oninput="updateTransPersonal('${t.id}','price',this.value)"></td>
-      <td style="text-align:center;"><button class="del-btn" onclick="removeTransPersonal('${t.id}')">✕</button></td>
-    </tr>
-  `).join('');
-}
-
-function updateTransPersonal(id, field, val) {
-  const item = TRANS_PERSONAL.find(x => x.id === id);
-  if (item) item[field] = val;
-  calcTotals();
-}
-
-function removeTransPersonal(id) {
-  TRANS_PERSONAL = TRANS_PERSONAL.filter(x => x.id !== id);
-  renderTransPersonal();
-  calcTotals();
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function escHtml(s) { return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
-
-// ── calcTotals ────────────────────────────────────────────────────────────────
 function calcTotals() {
-  const subViajes = VIAJES.reduce((s, v) => s + (parseFloat(v.price) || 0), 0);
-  document.getElementById('st-viajes').textContent = fmt(subViajes);
+  // 1. Gasolina
+  const km = parseFloat(document.getElementById('f-km').value) || 0;
+  const rend = parseFloat(document.getElementById('f-rend').value) || 1;
+  const pGas = parseFloat(document.getElementById('f-precio-gas').value) || 0;
+  const subGas = (km / rend) * pGas;
+  document.getElementById('st-gas').textContent = fmt(subGas);
 
+  // 2. Casetas
   const subCasetas = CASETAS.reduce((s, c) => s + (parseFloat(c.price) || 0), 0);
   document.getElementById('st-casetas').textContent = fmt(subCasetas);
 
-  const subTransPersonal = TRANS_PERSONAL.reduce((s, t) => s + (parseFloat(t.price) || 0), 0);
-  document.getElementById('st-trans-personal').textContent = fmt(subTransPersonal);
+  // 3. Viáticos
+  const pers = parseFloat(document.getElementById('f-personas').value) || 0;
+  const dias = parseFloat(document.getElementById('f-dias').value) || 0;
+  const noch = parseFloat(document.getElementById('f-noches').value) || 0;
+  const pCom = parseFloat(document.getElementById('f-precio-comida').value) || 0;
+  const pHot = parseFloat(document.getElementById('f-precio-hotel').value) || 0;
+  const subViaticos = (pers * dias * pCom) + (pers * noch * pHot);
+  document.getElementById('st-viaticos').textContent = fmt(subViaticos);
 
-  const subHospedaje = parseFloat(document.getElementById('f-hosp-total').value) || 0;
-  document.getElementById('st-hospedaje').textContent = fmt(subHospedaje);
-
-  const pers  = parseFloat(document.getElementById('f-personas').value) || 0;
-  const dias  = parseFloat(document.getElementById('f-dias').value) || 0;
-  const pCom  = parseFloat(document.getElementById('f-precio-comida').value) || 0;
-  const subAlimentos = pers * dias * pCom;
-  document.getElementById('st-alimentos').textContent = fmt(subAlimentos);
-
+  // 4. Extras
   const subExtras = EXTRAS.reduce((s, e) => s + (parseFloat(e.price) || 0), 0);
   document.getElementById('st-extras').textContent = fmt(subExtras);
 
-  const totalFinal = subViajes + subCasetas + subTransPersonal + subHospedaje + subAlimentos + subExtras;
+  // Global
+  const costoBase = subGas + subCasetas + subViaticos + subExtras;
+  const pExt = (parseFloat(document.getElementById('cfg-extras').value) || 0) / 100;
+  const pUtl = (parseFloat(document.getElementById('cfg-margin').value) || 0) / 100;
+  const taxRate = document.getElementById('cfg-tax').checked ? 0.16 : 0;
+
+  const valExtras = costoBase * pExt;
+  const valUtl = costoBase * pUtl;
+  const subtotal = costoBase + valExtras + valUtl;
+  const tax = subtotal * taxRate;
+  const totalFinal = Math.round((subtotal + tax)/50)*50;
+
+  document.getElementById('f-costo-base').textContent = fmt(costoBase);
+  document.getElementById('f-imprevistos').textContent = fmt(valExtras);
+  document.getElementById('f-utilidad').textContent = fmt(valUtl);
+  document.getElementById('f-tax').textContent = fmt(tax);
+  document.getElementById('l-imprevistos').textContent = (pExt * 100) + '%';
+  document.getElementById('l-utilidad').textContent = (pUtl * 100) + '%';
+  document.getElementById('row-tax').style.display = taxRate > 0 ? 'flex' : 'none';
+  
   document.getElementById('ft-total').textContent = fmt(totalFinal);
+  
   return totalFinal;
 }
 
-// ── loadOptions ───────────────────────────────────────────────────────────────
 async function loadOptions() {
-  const clients      = await window.DB.query("contacts");
-  const activeProjs  = await window.DB.query("projects");
-  const vehiclesDocs = await window.DB.query("vehicles");
-  VEHICLES_LIST = vehiclesDocs[0]?.list || [];
+  const clients = await window.DB.query("contacts");
+  const filteredClients = clients.filter(c => !c.tipo || c.tipo === 'cliente');
+  const activeProjs = await window.DB.query("projects");
 
   const cSel = document.getElementById('clientInput');
   cSel.innerHTML = '<option value="">— Seleccionar Cliente —</option>' +
-    clients.filter(c => !c.tipo || c.tipo === 'cliente')
-           .map(c => `<option value="${c.id}">${c.name || c.givenName}</option>`).join('');
+    filteredClients.map(c => `<option value="${c.id}">${c.name || c.givenName}</option>`).join('');
 
   const pSel = document.getElementById('projectInput');
   pSel.innerHTML = '<option value="">— Seleccionar Proyecto —</option>' +
-    activeProjs.filter(p => !p._init)
-               .map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('');
+    activeProjs.filter(p => !p._init).map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('');
 
   SearchableSelect.init(cSel);
   SearchableSelect.init(pSel);
 }
 
-// ── Navigation ────────────────────────────────────────────────────────────────
 function goBackToProject() {
   const pId = document.getElementById('projectInput').value;
-  if (pId) {
-    if (window.parent?.openModule) window.parent.openModule('proyecto_detalle.html?id=' + pId, 'Detalle del Proyecto');
-    else window.location.href = 'proyecto_detalle.html?id=' + pId;
+  if (window.parent?.goBackModule) {
+    window.parent.goBackModule();
   } else {
-    window.history.back();
+    if (pId) window.location.href = 'proyecto_detalle.html?id=' + pId;
+    else window.history.back();
   }
 }
 
@@ -458,10 +398,9 @@ function linkClientToProject(d, pId, cId) {
   }
 }
 
-// ── saveQuote ─────────────────────────────────────────────────────────────────
 function saveQuote() {
   if (Q_state.isViewMode) return;
-
+  
   const d   = window.DB.get();
   const cId = document.getElementById('clientInput').value;
   const pId = document.getElementById('projectInput').value;
@@ -471,24 +410,30 @@ function saveQuote() {
 
   const tot = calcTotals();
   const dateStr = new Date().toISOString().slice(0, 10);
-
+  
   const quoteData = {
     type: 'viaticos',
     concepto,
-    origen:         document.getElementById('f-origen').value,
-    destino:        document.getElementById('f-destino').value,
-    viajes:         JSON.parse(JSON.stringify(VIAJES)),
-    casetas:        JSON.parse(JSON.stringify(CASETAS)),
-    transPersonal:  JSON.parse(JSON.stringify(TRANS_PERSONAL)),
-    hospConcepto:   document.getElementById('f-hosp-concepto').value,
-    hospTotal:      parseFloat(document.getElementById('f-hosp-total').value) || 0,
-    alimConcepto:   document.getElementById('f-alim-concepto').value,
-    personas:       parseFloat(document.getElementById('f-personas').value) || 0,
-    dias:           parseFloat(document.getElementById('f-dias').value) || 0,
-    pComida:        parseFloat(document.getElementById('f-precio-comida').value) || 0,
-    extras:         JSON.parse(JSON.stringify(EXTRAS)),
+    origen: document.getElementById('f-origen').value,
+    destino: document.getElementById('f-destino').value,
+    km: parseFloat(document.getElementById('f-km').value) || 0,
+    rend: parseFloat(document.getElementById('f-rend').value) || 0,
+    pGas: parseFloat(document.getElementById('f-precio-gas').value) || 0,
+    personas: parseFloat(document.getElementById('f-personas').value) || 0,
+    dias: parseFloat(document.getElementById('f-dias').value) || 0,
+    noches: parseFloat(document.getElementById('f-noches').value) || 0,
+    pComida: parseFloat(document.getElementById('f-precio-comida').value) || 0,
+    pHotel: parseFloat(document.getElementById('f-precio-hotel').value) || 0,
+    casetas: JSON.parse(JSON.stringify(CASETAS)),
+    extras: JSON.parse(JSON.stringify(EXTRAS)),
+    globalCfg: {
+      EXTRAS: (parseFloat(document.getElementById('cfg-extras').value) || 0) / 100,
+      MARGIN: (parseFloat(document.getElementById('cfg-margin').value) || 0) / 100,
+      TAX: document.getElementById('cfg-tax').checked ? 0.16 : 0
+    }
   };
 
+  // ── Modo edición ──────────────────────────────────────────────────────────
   if (EDIT_STATE.id) {
     const existing = (d.quotations_viaticos||[]).find(q => q.id === EDIT_STATE.id);
     if (!existing) { alert('No se encontró la cotización original.'); return; }
@@ -516,10 +461,12 @@ function saveQuote() {
     return;
   }
 
+  // ── Nueva ────────────────────────────────────────────────────────────────
   if (!confirm(`¿Guardar cotización?`)) return;
 
   const existingForProj = (d.quotations_viaticos||[]).filter(q => pId ? q.projectId === pId : !q.projectId);
   const folio = genFolio(dateStr, existingForProj.length + 1);
+
   const quote = { id: crypto.randomUUID(), folio, projectId: pId||null, clientId: cId||null, date: dateStr, total: tot, status: 'Esperando Autorización', ...quoteData };
 
   window.DB.addQuoteViaticos(quote);
@@ -532,13 +479,13 @@ function genFolio(dateStr, n) {
   return `${dateStr}-V${String(n).padStart(2,'0')}`;
 }
 
-// ── processURLParams ──────────────────────────────────────────────────────────
 function processURLParams() {
-  const params = new URLSearchParams(window.location.search);
-  const pId    = params.get('projectId');
-  const viewId = params.get('viewId');
-  const editId = params.get('editId');
-  const d      = window.DB.get();
+  const params  = new URLSearchParams(window.location.search);
+  const pId     = params.get('projectId');
+  const viewId  = params.get('viewId');
+  const editId  = params.get('editId');
+
+  const d = window.DB.get();
 
   function setSel(id, val) {
     const el = document.getElementById(id);
@@ -577,30 +524,32 @@ function processURLParams() {
   if (loadQ) {
     if (loadQ.projectId) { setSel('projectInput', loadQ.projectId); document.getElementById('btn-back-project').textContent = '← Volver al Proyecto'; }
     if (loadQ.clientId) setSel('clientInput', loadQ.clientId);
-
-    document.getElementById('f-concepto').value      = loadQ.concepto || '';
-    document.getElementById('f-origen').value        = loadQ.origen || '';
-    document.getElementById('f-destino').value       = loadQ.destino || '';
-    document.getElementById('f-hosp-concepto').value = loadQ.hospConcepto || '';
-    document.getElementById('f-hosp-total').value    = loadQ.hospTotal || '';
-    document.getElementById('f-alim-concepto').value = loadQ.alimConcepto || '';
-    document.getElementById('f-personas').value      = loadQ.personas || '';
-    document.getElementById('f-dias').value          = loadQ.dias || '';
+    
+    document.getElementById('f-concepto').value = loadQ.concepto || '';
+    document.getElementById('f-origen').value = loadQ.origen || '';
+    document.getElementById('f-destino').value = loadQ.destino || '';
+    document.getElementById('f-km').value = loadQ.km || '';
+    document.getElementById('f-rend').value = loadQ.rend || '';
+    document.getElementById('f-precio-gas').value = loadQ.pGas || '';
+    document.getElementById('f-personas').value = loadQ.personas || '';
+    document.getElementById('f-dias').value = loadQ.dias || '';
+    document.getElementById('f-noches').value = loadQ.noches || '';
     document.getElementById('f-precio-comida').value = loadQ.pComida || '';
-
-    VIAJES        = loadQ.viajes || [];
-    CASETAS       = loadQ.casetas || [];
-    TRANS_PERSONAL = loadQ.transPersonal || [];
-    EXTRAS        = loadQ.extras || [];
-
-    renderViajes();
+    document.getElementById('f-precio-hotel').value = loadQ.pHotel || '';
+    
+    if (loadQ.globalCfg) {
+      document.getElementById('cfg-extras').value = (loadQ.globalCfg.EXTRAS || 0) * 100;
+      document.getElementById('cfg-margin').value = (loadQ.globalCfg.MARGIN || 0) * 100;
+      document.getElementById('cfg-tax').checked = loadQ.globalCfg.TAX > 0;
+    }
+    
+    CASETAS = loadQ.casetas || [];
+    EXTRAS = loadQ.extras || [];
     renderDynTable('casetas-table', CASETAS, 'CASETAS');
-    renderTransPersonal();
     renderDynTable('extras-table', EXTRAS, 'EXTRAS');
-
-    if (Q_state.isViewMode) {
+    
+    if(Q_state.isViewMode) {
       document.querySelectorAll('input').forEach(i => i.disabled = true);
-      document.querySelectorAll('select').forEach(s => s.disabled = true);
       document.querySelectorAll('.del-btn').forEach(b => b.style.display = 'none');
     }
   }
@@ -614,33 +563,48 @@ async function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-// ── PDF ───────────────────────────────────────────────────────────────────────
 function showPrintPreview(isClient) {
   document.getElementById('print-modal').style.display = 'flex';
   document.getElementById('print-title').textContent = isClient ? 'Vista Previa — Para Cliente' : 'Vista Previa — Taller (Orden de Trabajo)';
 
-  const today      = new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
-  const clientSel  = document.getElementById('clientInput');
-  const projSel    = document.getElementById('projectInput');
-  let clientName   = clientSel.options[clientSel.selectedIndex]?.text || '—';
-  let projName     = projSel.options[projSel.selectedIndex]?.text || '—';
+  const today = new Date().toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
+  
+  const clientSel = document.getElementById('clientInput');
+  const projSel = document.getElementById('projectInput');
+  let clientName = clientSel.options[clientSel.selectedIndex]?.text || '—';
+  let projName = projSel.options[projSel.selectedIndex]?.text || '—';
   if (clientName === '— Seleccionar Cliente —') clientName = '—';
-  if (projName   === '— Seleccionar Proyecto —') projName = '—';
+  if (projName === '— Seleccionar Proyecto —') projName = '—';
 
-  const logoSrc  = 'images/320%20X%20132%20HUAYAPAM%20MINIMAL.png';
+  const logoSrc = 'images/320%20X%20132%20HUAYAPAM%20MINIMAL.png';
+  
   const concepto = document.getElementById('f-concepto').value || 'Cotización de Viáticos y Fletes';
-  const origen   = document.getElementById('f-origen').value;
-  const destino  = document.getElementById('f-destino').value;
-  const total    = calcTotals();
+  const origen = document.getElementById('f-origen').value;
+  const destino = document.getElementById('f-destino').value;
+  
+  // Totals recalculation
+  const total = calcTotals();
+  const taxRate = document.getElementById('cfg-tax').checked ? 0.16 : 0;
+  
+  const subGas = document.getElementById('st-gas').textContent;
+  const subCasetas = document.getElementById('st-casetas').textContent;
+  const subViaticos = document.getElementById('st-viaticos').textContent;
+  const subExtras = document.getElementById('st-extras').textContent;
 
-  const tblCss  = `width:100%;border-collapse:collapse;font-size:11px;`;
-  const thCss   = `padding:6px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:#222;color:#fff;text-align:left;`;
-  const thRCss  = `padding:6px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:#222;color:#fff;text-align:right;`;
-  const tdCss   = `padding:6px 8px;border-bottom:1px solid #e0e0e0;vertical-align:top;`;
-  const tdRCss  = `padding:6px 8px;border-bottom:1px solid #e0e0e0;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;`;
+  /* ── CSS compartido para tablas del documento ── */
+  const tblCss = `width:100%;border-collapse:collapse;font-size:11px;`;
+  const thCss  = `padding:6px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:#222;color:#fff;text-align:left;`;
+  const thRCss = `padding:6px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:#222;color:#fff;text-align:right;`;
+  const tdCss  = `padding:6px 8px;border-bottom:1px solid #e0e0e0;vertical-align:top;`;
+  const tdRCss = `padding:6px 8px;border-bottom:1px solid #e0e0e0;vertical-align:top;text-align:right;font-variant-numeric:tabular-nums;`;
+  const secHdr = (title) => `
+    <div style="margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #222;">
+      <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;">${title}</span>
+    </div>`;
 
   if (isClient) {
-    document.getElementById('print-preview-content').innerHTML = `
+    // PDF para cliente (Más simple, solo muestra el total y descripciones generales)
+    const html = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #222;">
         <img src="${logoSrc}" style="height:40px;" alt="Carpintería Huayapam">
         <div style="text-align:right;">
@@ -649,57 +613,57 @@ function showPrintPreview(isClient) {
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;padding:10px 14px;background:#f5f5f5;border-radius:6px;">
-        <div><div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Cliente</div><div style="font-size:13px;font-weight:700;margin-top:3px;">${clientName}</div></div>
-        <div><div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Proyecto</div><div style="font-size:11px;font-weight:600;margin-top:3px;">${projName}</div></div>
+        <div><div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Cliente</div><div style="font-size:13px;font-weight:700;margin-top:3px;">${clientName === '— Seleccionar Cliente —' ? '—' : clientName}</div></div>
+        <div><div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;">Proyecto</div><div style="font-size:11px;font-weight:600;margin-top:3px;">${projName === '— Seleccionar Proyecto —' ? '—' : projName}</div></div>
       </div>
-      <div style="margin-bottom:24px;">
-        <h3 style="font-size:14px;margin-bottom:8px;">Descripción del Servicio</h3>
-        <p style="font-size:12px;color:#333;"><strong>Concepto:</strong> ${concepto}</p>
-        <p style="font-size:12px;color:#333;margin-top:4px;"><strong>Ruta:</strong> ${origen} → ${destino}</p>
+      
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 14px; margin-bottom: 8px;">Descripción del Servicio</h3>
+        <p style="font-size: 12px; color: #333;"><strong>Concepto:</strong> ${concepto}</p>
+        <p style="font-size: 12px; color: #333; margin-top: 4px;"><strong>Ruta:</strong> ${origen} a ${destino}</p>
       </div>
+
       <table style="${tblCss}">
         <thead><tr><th style="${thCss}">Servicio</th><th style="${thRCss}">Importe</th></tr></thead>
         <tbody>
           <tr>
-            <td style="${tdCss}"><strong>${concepto}</strong><div style="font-size:10px;color:#555;margin-top:4px;">Incluye viáticos, hospedaje, alimentos, peajes y transporte.</div></td>
-            <td style="${tdRCss}font-weight:700;">${fmt(total)}</td>
+            <td style="${tdCss}">
+              <strong>${concepto}</strong>
+              <div style="font-size:10px;color:#555;margin-top:4px;">Incluye maniobras, viáticos, peajes y combustible de la ruta especificada.</div>
+            </td>
+            <td style="${tdRCss}font-weight:700;">${fmt(total / (1 + taxRate))}</td>
           </tr>
         </tbody>
       </table>
       <div style="display:flex;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:2px solid #222;">
         <div style="text-align:right;">
           <div style="font-size:15px;font-weight:800;">TOTAL: ${fmt(total)}</div>
-          <div style="font-size:9px;color:#888;margin-top:3px;">Precio sin IVA</div>
+          <div style="font-size:9px;color:#888;margin-top:3px;">${taxRate>0?'IVA incluido (16%)':'Precios sin IVA'}</div>
         </div>
       </div>
       <div style="margin-top:24px;padding-top:16px;border-top:1px solid #ddd;">
         <p style="font-size:11px;line-height:1.8;color:#333;">
-          Estimado/a <strong>${clientName}</strong>,<br><br>
+          Estimado/a <strong>${clientName === '— Seleccionar Cliente —' ? 'Cliente' : clientName}</strong>,<br><br>
           Quedamos a sus órdenes para cualquier duda o comentario sobre esta cotización.
         </p>
       </div>
       <div id="print-cond-live" style="margin-top:14px;font-size:11px;color:#333;white-space:pre-wrap;line-height:1.6;">${currentPrintConds}</div>`;
+
+    document.getElementById('print-preview-content').innerHTML = html;
+    
   } else {
-    const viajesRows     = VIAJES.map(v => `<tr><td style="${tdCss}">${v.vehiculo||'—'}</td><td style="${tdCss}">${v.concepto||'—'}</td><td style="${tdRCss}">${fmt(v.price||0)}</td></tr>`).join('') ||
-                           `<tr><td colspan="3" style="${tdCss}text-align:center;color:#888;">Sin viajes</td></tr>`;
-    const casetasRows    = CASETAS.map(c => `<tr><td style="${tdCss}">${c.name}</td><td style="${tdRCss}">${fmt(c.price||0)}</td></tr>`).join('') ||
-                           `<tr><td colspan="2" style="${tdCss}text-align:center;color:#888;">Sin casetas</td></tr>`;
-    const transRows      = TRANS_PERSONAL.map(t => `<tr><td style="${tdCss}text-align:center;">${t.personas||0}</td><td style="${tdCss}">${t.concepto||'—'}</td><td style="${tdRCss}">${fmt(t.price||0)}</td></tr>`).join('') ||
-                           `<tr><td colspan="3" style="${tdCss}text-align:center;color:#888;">Sin transporte de personal</td></tr>`;
-    const extrasRows     = EXTRAS.map(e => `<tr><td style="${tdCss}">${e.name}</td><td style="${tdRCss}">${fmt(e.price||0)}</td></tr>`).join('') ||
-                           `<tr><td colspan="2" style="${tdCss}text-align:center;color:#888;">Sin extras</td></tr>`;
+    // PDF para Taller (Desglosado)
+    let casetasRows = '';
+    CASETAS.forEach(c => {
+      casetasRows += `<tr><td style="${tdCss}">${c.name}</td><td style="${tdRCss}">${fmt(c.price)}</td></tr>`;
+    });
+    
+    let extrasRows = '';
+    EXTRAS.forEach(e => {
+      extrasRows += `<tr><td style="${tdCss}">${e.name}</td><td style="${tdRCss}">${fmt(e.price)}</td></tr>`;
+    });
 
-    const subViajes        = VIAJES.reduce((s, v) => s + (parseFloat(v.price)||0), 0);
-    const subCasetas       = CASETAS.reduce((s, c) => s + (parseFloat(c.price)||0), 0);
-    const subTransPersonal = TRANS_PERSONAL.reduce((s, t) => s + (parseFloat(t.price)||0), 0);
-    const subHospedaje     = parseFloat(document.getElementById('f-hosp-total').value) || 0;
-    const pers = parseFloat(document.getElementById('f-personas').value) || 0;
-    const dias = parseFloat(document.getElementById('f-dias').value) || 0;
-    const pCom = parseFloat(document.getElementById('f-precio-comida').value) || 0;
-    const subAlimentos     = pers * dias * pCom;
-    const subExtras        = EXTRAS.reduce((s, e) => s + (parseFloat(e.price)||0), 0);
-
-    document.getElementById('print-preview-content').innerHTML = `
+    const html = `
       <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #000;">
         <img src="${logoSrc}" style="height:36px;" alt="Carpintería Huayapam">
         <div style="text-align:right;">
@@ -707,66 +671,71 @@ function showPrintPreview(isClient) {
           <div style="font-size:9px;color:#666;margin-top:2px;">Uso Interno — Taller</div>
         </div>
       </div>
-      <table style="width:100%;border-collapse:collapse;border:1px solid #bbb;font-size:11px;margin-bottom:12px;">
+
+      <table style="width:100%;border-collapse:collapse;border:1px solid #bbb;font-size:11px;margin-bottom:4px;">
         <tr>
-          <td style="padding:6px 10px;border-right:1px solid #ddd;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Cliente</span><strong>${clientName}</strong></td>
-          <td style="padding:6px 10px;border-right:1px solid #ddd;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Proyecto</span>${projName}</td>
-          <td style="padding:6px 10px;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Fecha</span>${today}</td>
+          <td style="padding:6px 10px;border-right:1px solid #ddd;width:25%;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Cliente</span><strong>${clientName === '— Seleccionar Cliente —' ? '—' : clientName}</strong></td>
+          <td style="padding:6px 10px;border-right:1px solid #ddd;width:35%;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Proyecto</span>${projName === '— Seleccionar Proyecto —' ? '—' : projName}</td>
+          <td style="padding:6px 10px;border-right:1px solid #ddd;width:20%;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;color:#666;display:block;">Fecha</span>${today}</td>
         </tr>
       </table>
-      <div style="margin:12px 0;font-size:13px;"><strong>Concepto:</strong> ${concepto} &nbsp;|&nbsp; <strong>Ruta:</strong> ${origen} → ${destino}</div>
+      
+      <div style="margin: 16px 0; font-size: 13px;">
+        <strong>Concepto:</strong> ${concepto}<br>
+        <strong>Ruta:</strong> ${origen} a ${destino}
+      </div>
 
-      ${secT('Viajes')}
+      ${secT('Combustible')}
       <table style="${tblCss}">
-        <thead><tr><th style="${thCss}">Vehículo</th><th style="${thCss}">Descripción</th><th style="${thRCss}">Costo</th></tr></thead>
-        <tbody>${viajesRows}</tbody>
-        <tfoot><tr><td colspan="2" style="${tdCss}font-weight:bold;">Subtotal Viajes</td><td style="${tdRCss}font-weight:bold;">${fmt(subViajes)}</td></tr></tfoot>
+        <tr><td style="${tdCss}">Kilómetros (Ida y Vuelta)</td><td style="${tdRCss}">${document.getElementById('f-km').value || 0} km</td></tr>
+        <tr><td style="${tdCss}">Rendimiento</td><td style="${tdRCss}">${document.getElementById('f-rend').value || 0} km/L</td></tr>
+        <tr><td style="${tdCss}">Precio de Combustible</td><td style="${tdRCss}">${fmt(document.getElementById('f-precio-gas').value || 0)} / L</td></tr>
+        <tr><td style="${tdCss}font-weight:bold;">Subtotal Combustible</td><td style="${tdRCss}font-weight:bold;">${subGas}</td></tr>
       </table>
 
-      ${secT('Casetas / Peajes')}
+      ${secT('Peajes / Casetas')}
       <table style="${tblCss}">
         <thead><tr><th style="${thCss}">Caseta / Tramo</th><th style="${thRCss}">Costo</th></tr></thead>
-        <tbody>${casetasRows}</tbody>
-        <tfoot><tr><td style="${tdCss}font-weight:bold;">Subtotal Casetas</td><td style="${tdRCss}font-weight:bold;">${fmt(subCasetas)}</td></tr></tfoot>
+        <tbody>${casetasRows || `<tr><td colspan="2" style="${tdCss}text-align:center;color:#888;">No hay casetas</td></tr>`}</tbody>
+        <tfoot><tr><td style="${tdCss}font-weight:bold;">Subtotal Casetas</td><td style="${tdRCss}font-weight:bold;">${subCasetas}</td></tr></tfoot>
       </table>
 
-      ${secT('Transporte de Personal')}
+      ${secT('Viáticos (Hospedaje y Alimentos)')}
       <table style="${tblCss}">
-        <thead><tr><th style="${thCss}text-align:center;">Personas</th><th style="${thCss}">Concepto</th><th style="${thRCss}">Total</th></tr></thead>
-        <tbody>${transRows}</tbody>
-        <tfoot><tr><td colspan="2" style="${tdCss}font-weight:bold;">Subtotal Transporte de Personal</td><td style="${tdRCss}font-weight:bold;">${fmt(subTransPersonal)}</td></tr></tfoot>
+        <tr><td style="${tdCss}">Personas</td><td style="${tdRCss}">${document.getElementById('f-personas').value || 0}</td></tr>
+        <tr><td style="${tdCss}">Días de Viaje (Comida)</td><td style="${tdRCss}">${document.getElementById('f-dias').value || 0} x ${fmt(document.getElementById('f-precio-comida').value || 0)}</td></tr>
+        <tr><td style="${tdCss}">Noches de Hotel</td><td style="${tdRCss}">${document.getElementById('f-noches').value || 0} x ${fmt(document.getElementById('f-precio-hotel').value || 0)}</td></tr>
+        <tr><td style="${tdCss}font-weight:bold;">Subtotal Viáticos</td><td style="${tdRCss}font-weight:bold;">${subViaticos}</td></tr>
       </table>
-
-      ${secT('Hospedaje')}
-      <table style="${tblCss}">
-        <tr><td style="${tdCss}">${document.getElementById('f-hosp-concepto').value || '—'}</td><td style="${tdRCss}font-weight:bold;">${fmt(subHospedaje)}</td></tr>
-      </table>
-
-      ${secT('Alimentos')}
-      <table style="${tblCss}">
-        <tr><td style="${tdCss}">${document.getElementById('f-alim-concepto').value || '—'}</td><td style="${tdRCss}"></td></tr>
-        <tr><td style="${tdCss}">${pers} personas × ${dias} días × ${fmt(pCom)}/día</td><td style="${tdRCss}font-weight:bold;">${fmt(subAlimentos)}</td></tr>
-      </table>
-
+      
       ${secT('Maniobras / Extras')}
       <table style="${tblCss}">
         <thead><tr><th style="${thCss}">Descripción</th><th style="${thRCss}">Costo</th></tr></thead>
-        <tbody>${extrasRows}</tbody>
-        <tfoot><tr><td style="${tdCss}font-weight:bold;">Subtotal Extras</td><td style="${tdRCss}font-weight:bold;">${fmt(subExtras)}</td></tr></tfoot>
+        <tbody>${extrasRows || `<tr><td colspan="2" style="${tdCss}text-align:center;color:#888;">No hay extras</td></tr>`}</tbody>
+        <tfoot><tr><td style="${tdCss}font-weight:bold;">Subtotal Extras</td><td style="${tdRCss}font-weight:bold;">${subExtras}</td></tr></tfoot>
       </table>
 
-      ${secT('Total')}
-      <table style="${tblCss};margin-bottom:24px;">
+      ${secT('Resumen Total')}
+      <table style="${tblCss}; margin-bottom: 24px;">
+        <tr><td style="${tdCss}">Costo Directo Base</td><td style="${tdRCss}">${document.getElementById('f-costo-base').textContent}</td></tr>
+        <tr><td style="${tdCss}">Imprevistos (${document.getElementById('l-imprevistos').textContent})</td><td style="${tdRCss}">${document.getElementById('f-imprevistos').textContent}</td></tr>
+        <tr><td style="${tdCss}">Utilidad Esperada (${document.getElementById('l-utilidad').textContent})</td><td style="${tdRCss}">${document.getElementById('f-utilidad').textContent}</td></tr>
+        ${taxRate > 0 ? `<tr><td style="${tdCss}">IVA (16%)</td><td style="${tdRCss}">${document.getElementById('f-tax').textContent}</td></tr>` : ''}
         <tr><td style="${tdCss}font-size:14px;font-weight:bold;">Total Cotizado</td><td style="${tdRCss}font-size:14px;font-weight:bold;">${fmt(total)}</td></tr>
       </table>
-      <div id="print-cond-live" style="margin-top:14px;font-size:11px;color:#333;white-space:pre-wrap;line-height:1.6;">${currentPrintConds}</div>`;
+      <div id="print-cond-live" style="margin-top:14px;font-size:11px;color:#333;white-space:pre-wrap;line-height:1.6;">${currentPrintConds}</div>
+    `;
+    document.getElementById('print-preview-content').innerHTML = html;
   }
-
+  
   document.getElementById('ai-print-prompt').value = currentPrintConds;
 }
 
 function secT(title) {
-  return `<div style="margin:22px 0 8px;padding-bottom:3px;border-bottom:1.5px solid #000;"><span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;">${title}</span></div>`;
+  return `
+    <div style="margin:22px 0 8px;padding-bottom:3px;border-bottom:1.5px solid #000;">
+      <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;">${title}</span>
+    </div>`;
 }
 
 function closePrintPreview() {
@@ -774,7 +743,8 @@ function closePrintPreview() {
 }
 
 function simulatePrintAI() {
-  currentPrintConds = document.getElementById('ai-print-prompt').value;
+  const input = document.getElementById('ai-print-prompt');
+  currentPrintConds = input.value;
   const condBox = document.getElementById('print-cond-live');
   if (condBox) condBox.textContent = currentPrintConds;
 }

@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wiki / Manual del Sistema — Carpintería Huayapam</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 /* Uses global.css variables */
 body.dark-mode {
   --purple: #cba6f7;
@@ -75,7 +76,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
 <div class="hdr">
   <div class="hdr-title">
-    <button onclick="if(window.parent?.openModule) window.parent.openModule('index.html','Inicio'); else window.history.back();" style="background:none;border:none;font-size:16px;color:var(--subtext);cursor:pointer;">←</button>
+    <button onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();" style="background:none;border:none;font-size:16px;color:var(--subtext);cursor:pointer;">← Volver</button>
     📖 Manual del ERP — Carpintería Huayapam
   </div>
   <input class="search-input" type="search" placeholder="Buscar en el manual…" oninput="searchWiki(this.value)" />
