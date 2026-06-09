@@ -158,10 +158,11 @@ const SearchableSelect = (() => {
     arrow.textContent = '▼';
     wrap.appendChild(arrow);
 
-    // Dropdown
+    // Dropdown — appended to body so position:fixed works correctly
+    // inside panels with CSS transform (which would otherwise create a new fixed containing block)
     const dropdown = document.createElement('div');
     dropdown.className = 'ss-dropdown';
-    wrap.appendChild(dropdown);
+    document.body.appendChild(dropdown);
 
     const searchWrap = document.createElement('div');
     searchWrap.className = 'ss-search-wrap';
@@ -326,7 +327,7 @@ const SearchableSelect = (() => {
     });
 
     document.addEventListener('mousedown', e => {
-      if (!wrap.contains(e.target)) close();
+      if (!wrap.contains(e.target) && !dropdown.contains(e.target)) close();
     }, true);
 
     // Sync trigger when select changes externally (e.g. JS sets select.value)
