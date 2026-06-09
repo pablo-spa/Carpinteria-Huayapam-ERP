@@ -313,6 +313,23 @@
   }
   .btn-back:hover { background: var(--surface0); border-color: var(--surface1); }
   iframe { flex: 1; border: none; width: 100%; background: var(--base); }
+
+  /* ── Mobile Sidebar Toggle ── */
+  .menu-toggle-btn {
+    display: none; background: none; border: none; font-size: 24px; color: var(--text); cursor: pointer;
+    padding: 4px; border-radius: 6px; margin-right: 8px; line-height: 1;
+  }
+  .menu-toggle-btn:hover { background: var(--surface0); }
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 8999; backdrop-filter: blur(2px); }
+  @media (max-width: 850px) {
+    aside {
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 9000;
+      transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    aside.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+    .menu-toggle-btn { display: inline-flex; align-items: center; justify-content: center; }
+  }
 </style>
 </head>
 <body>
@@ -331,6 +348,7 @@
     </form>
   </div>
   <!-- SIDEBAR -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
   <aside>
     <div class="sidebar-header">
       <div onclick="goHome()" style="cursor:pointer; display:flex; align-items:center; gap:12px; flex:1;" title="Ir al inicio">
@@ -368,6 +386,9 @@
     
     <!-- Welcome -->
     <div id="welcome">
+      <div style="width:100%; display:flex; justify-content:flex-start; margin-bottom:-20px; margin-left:-20px;">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
+      </div>
       <div class="welcome-top">
         <div class="welcome-icon">🪵</div>
         <h1>Carpintería Huayapam</h1>
@@ -432,6 +453,7 @@
     <!-- Iframe wrapper -->
     <div id="frame-wrapper">
       <div class="frame-topbar">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
         <div class="breadcrumb">
           <a href="#" onclick="goHome(); return false;" class="crumb-link">Workspace</a> 
           <span style="opacity:.4">/</span> 
@@ -473,6 +495,12 @@
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
     <!-- BUG REPORTER GLOBAL -->
+<script>
+  window.toggleSidebar = function() {
+    document.querySelector('aside').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+  };
+</script>
     <div id="bug-modal" style="display:none;position:fixed;bottom:80px;left:24px;width:340px;background:var(--mantle);border:1px solid var(--crust);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:10000;flex-direction:column;overflow:hidden;font-family:inherit;">
       <div style="background:var(--red);color:white;padding:12px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;">
         Reportar un Problema
@@ -788,7 +816,7 @@
       container.classList.add('loading');
     }
     const favSet = new Set(favorites);
-    const currentFile = document.getElementById('main-frame').getAttribute('data-loaded');
+  const activeRootFile = navHistory.length > 0 ? navHistory[0].file : null;
 
     // ── Sección Favoritos ──────────────────────────────────────────────
     if (favorites.length > 0) {
@@ -806,7 +834,7 @@
         if (!item) return;
         if (!canViewFile(item.file)) return;
         const iDiv = document.createElement('div');
-        iDiv.className = 'nav-item' + (item.file === currentFile ? ' active' : '');
+      iDiv.className = 'nav-item' + (item.file === activeRootFile ? ' active' : '');
         iDiv.innerHTML = item.html;
         iDiv.draggable = true;
         iDiv.setAttribute('data-section', 'fav');
@@ -853,7 +881,7 @@
       cat.items.forEach((item, iIdx) => {
         if (!canViewFile(item.file)) return;
         const iDiv = document.createElement('div');
-        iDiv.className = 'nav-item' + (item.file === currentFile ? ' active' : '');
+      iDiv.className = 'nav-item' + (item.file === activeRootFile ? ' active' : '');
         iDiv.id = item.id;
         iDiv.innerHTML = item.html;
         iDiv.draggable = true;
@@ -1065,10 +1093,10 @@
       const elFile = el.getAttribute('data-file');
       el.classList.toggle('active', !!elFile && elFile === activeFile);
     });
-    const navIdId = MODULES[activeFile];
-    if (navIdId) {
-      const el = document.getElementById(navIdId);
-      if (el) el.classList.add('active');
+    
+    if (window.innerWidth <= 850) {
+      document.querySelector('aside').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('open');
     }
     
     // Check permissions
@@ -1120,6 +1148,10 @@
     document.getElementById('welcome').style.display = 'flex';
     document.getElementById('frame-wrapper').style.display = 'none';
     navHistory = [];
+    if (window.innerWidth <= 850) {
+      document.querySelector('aside').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('open');
+    }
   }
 
   // ── LÓGICA DE TEMA GLOBAL (CLARO/OSCURO) ──

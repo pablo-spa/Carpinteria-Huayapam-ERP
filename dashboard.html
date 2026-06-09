@@ -434,7 +434,7 @@
     document.getElementById('monthly-chart').innerHTML = html;
   }
 
-  function renderAlerts(d) {
+  async function renderAlerts(d) {
     const alerts = [];
     const orders = (d.purchase_orders||[]).filter(o => !o._init);
 

@@ -74,6 +74,7 @@ function saveDB(newData) {
 }
 
 window.DB = {
+  // ── CORE: ACCESO Y SINCRONIZACIÓN DE ESTADO ─────────────────────────────────
   get: getDB,
   save: saveDB,
   query: async (collectionName, filters = {}) => {
