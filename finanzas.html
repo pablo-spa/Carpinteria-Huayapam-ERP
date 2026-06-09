@@ -110,6 +110,10 @@
 
 .link-sect { border: 1px dashed var(--surface1); padding: 16px; border-radius: 8px; background: var(--mantle); }
 .link-hdr { font-size: 12px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+
+.iv-pill { background: none; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; transition: .15s; font-family: inherit; }
+.iv-pill:hover { background: var(--surface0); color: var(--text); }
+.iv-pill.act { background: var(--blue); color: #fff; }
 </style>
 </head>
 <body>
@@ -120,18 +124,29 @@
     Contabilidad
   </div>
   <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--subtext);font-weight:600;">
-      Variación desde
-      <input type="date" id="iv-desde" class="f-input" style="padding:4px 8px;font-size:12px;height:30px;width:128px;" onchange="onIntervalChange()">
-    </label>
-    <button class="btn btn-dark" onclick="openNuevaCuenta()">+ Cuenta</button>
-    <button class="btn btn-ghost" onclick="recalcularSaldos()" title="Recalcula los saldos de todas las cuentas a partir del historial de movimientos cargado" style="font-size:11px; padding:5px 10px;">⟳ Saldos</button>
     <button class="btn btn-blue" style="display:none;" id="desktop-new-btn" onclick="openPanel()">+ Nuevo Registro</button>
   </div>
 </div>
 
 <div class="main">
   
+  <!-- Toolbar de cuentas -->
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <span style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase; letter-spacing:.05em;">Variación en:</span>
+      <div style="display:flex; gap:4px; background:var(--mantle); border:1px solid var(--crust); border-radius:8px; padding:3px;">
+        <button class="iv-pill act" data-iv="7d"   onclick="setIv('7d')">7 días</button>
+        <button class="iv-pill"    data-iv="30d"  onclick="setIv('30d')">30 días</button>
+        <button class="iv-pill"    data-iv="180d" onclick="setIv('180d')">6 meses</button>
+        <button class="iv-pill"    data-iv="365d" onclick="setIv('365d')">1 año</button>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button class="btn btn-ghost" onclick="recalcularSaldos()" title="Recalcula los saldos desde cero a partir de los movimientos cargados en pantalla. Útil si los saldos están desincronizados." style="font-size:11px; padding:5px 10px; color:var(--subtext);">⟳ Recalcular saldos</button>
+      <button class="btn btn-dark" onclick="openNuevaCuenta()">+ Cuenta</button>
+    </div>
+  </div>
+
   <!-- Tarjetas de Cuenta — la tarjeta ALL es fija, el resto se genera dinámicamente -->
   <div class="acc-grid" id="acc-grid">
     <div class="acc-card act" id="acard-ALL" onclick="filterAccount('ALL')">
@@ -381,10 +396,11 @@
     const sorted = [...LOADED_MONTHS].sort();
     const desde  = sorted[0];
     const hasta  = sorted[sorted.length - 1];
-    document.getElementById('mov-banner-txt').textContent =
-      HISTORY_EXHAUSTED
-        ? `Todo el historial cargado — ${_allMovements.length} movimientos (${desde} → ${hasta})`
-        : `${_allMovements.length} movimientos (${desde} → ${hasta})`;
+    const fmtMes = ym => { const [y,m] = ym.split('-'); return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][+m-1] + ' ' + y; };
+    const rangoTxt = desde === hasta ? fmtMes(desde) : `${fmtMes(desde)} → ${fmtMes(hasta)}`;
+    document.getElementById('mov-banner-txt').innerHTML = HISTORY_EXHAUSTED
+      ? `📅 Historial completo &nbsp;·&nbsp; <b>${rangoTxt}</b> &nbsp;·&nbsp; ${_allMovements.length} movimientos`
+      : `📅 Mostrando: <b>${rangoTxt}</b> &nbsp;·&nbsp; ${_allMovements.length} movimientos`;
     const prevBtn = document.getElementById('btn-load-prev-month');
     const histBtn = document.querySelector('[onclick="cargarTodoElHistorial()"]');
     if (HISTORY_EXHAUSTED) {
@@ -392,7 +408,8 @@
       if (histBtn) histBtn.style.display = 'none';
     } else {
       const pm = prevMonth();
-      if (prevBtn) { prevBtn.style.display = ''; prevBtn.disabled = false; prevBtn.textContent = `← ${pm}`; }
+      const pmLabel = pm ? fmtMes(pm) : '';
+      if (prevBtn) { prevBtn.style.display = ''; prevBtn.disabled = false; prevBtn.textContent = `← Cargar ${pmLabel}`; }
       if (histBtn) histBtn.style.display = '';
     }
   }
@@ -1151,20 +1168,19 @@
   const MAIN_ACCOUNTS        = new Set(['CHU','SATP','CAJA']);
 
   function initIntervalPicker() {
-    const since = new Date();
-    since.setDate(since.getDate() - 30);
-    document.getElementById('iv-desde').value = since.toISOString().slice(0,10);
+    setIntervalPill('30d');
   }
 
-  function onIntervalChange() {
-    const desde = document.getElementById('iv-desde').value;
-    if (!desde) return;
-    const daysAgo = Math.round((Date.now() - new Date(desde)) / 86400000);
-    if      (daysAgo <= 10)  currentInterval = '7d';
-    else if (daysAgo <= 60)  currentInterval = '30d';
-    else if (daysAgo <= 270) currentInterval = '180d';
-    else                     currentInterval = '365d';
+  function setIv(iv) {
+    setIntervalPill(iv);
     calcBalances();
+  }
+
+  function setIntervalPill(iv) {
+    currentInterval = iv;
+    document.querySelectorAll('.iv-pill').forEach(b => {
+      b.classList.toggle('act', b.dataset.iv === iv);
+    });
   }
 
   function varHTML(current, before) {
