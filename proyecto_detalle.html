@@ -278,7 +278,7 @@
     const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Oficial A', aprendiz:'Aprendiz', barniz:'Barniz', pulido:'Pulido', empaque:'Empaque', chofer:'Chofer' };
 
     function fmt(n) { return '$' + (parseFloat(n)||0).toLocaleString('es-MX', {minimumFractionDigits:2}); }
-    function goBack() { window.location.href = 'proyectos.html'; }
+    function goBack() { if(window.parent?.goBackModule) window.parent.goBackModule(); else window.location.href = 'proyectos.html'; }
 
     // ── Drive link ───────────────────────────────────
     document.getElementById('f-drive').addEventListener('input', detectDriveLink);

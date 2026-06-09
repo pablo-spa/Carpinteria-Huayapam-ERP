@@ -204,7 +204,7 @@
 <!-- ── Header ── -->
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:12px;">
-    <button class="back-btn" onclick="window.history.back()">← Volver</button>
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <span style="font-size:18px;font-weight:800;">Registro del Día</span>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
@@ -256,7 +256,6 @@
 
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
-<script src="ui.js"></script>
 <script>
 // ── Constants ─────────────────────────────────────────────────
 const DIAS_L = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -1166,6 +1165,15 @@ function reabrirDia() {
 }
 
 // ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const c  = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3400);
+}
+
 // ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   try {
