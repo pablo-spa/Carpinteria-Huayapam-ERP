@@ -21,8 +21,6 @@
 .acc-card.drag-over { border-color: var(--blue); border-top-color: var(--blue); box-shadow: 0 0 0 2px var(--blue); }
 .acc-name { font-size: 11px; font-weight: 800; color: var(--subtext); letter-spacing: 0.8px; text-transform: uppercase; }
 .acc-bal { font-size: 22px; font-weight: 800; color: var(--text); margin-top: 6px; line-height: 1.1; }
-.acc-meta { font-size: 11px; color: var(--subtext); margin-top: 8px; }
-.acc-var { font-weight: 700; }
 
 /* Avisos */
 .notice-block { background: var(--amber-bg); border: 1px solid var(--amber); border-radius: 12px; padding: 16px; display: none; }
@@ -111,9 +109,6 @@
 .link-sect { border: 1px dashed var(--surface1); padding: 16px; border-radius: 8px; background: var(--mantle); }
 .link-hdr { font-size: 12px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
 
-.iv-pill { background: none; border: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; transition: .15s; font-family: inherit; }
-.iv-pill:hover { background: var(--surface0); color: var(--text); }
-.iv-pill.act { background: var(--blue); color: #fff; }
 </style>
 </head>
 <body>
@@ -130,40 +125,26 @@
 
 <div class="main">
   
-  <!-- Toolbar de cuentas -->
-  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-      <span style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase; letter-spacing:.05em;">Variación en:</span>
-      <div style="display:flex; gap:4px; background:var(--mantle); border:1px solid var(--crust); border-radius:8px; padding:3px;">
-        <button class="iv-pill act" data-iv="7d"   onclick="setIv('7d')">7 días</button>
-        <button class="iv-pill"    data-iv="30d"  onclick="setIv('30d')">30 días</button>
-        <button class="iv-pill"    data-iv="180d" onclick="setIv('180d')">6 meses</button>
-        <button class="iv-pill"    data-iv="365d" onclick="setIv('365d')">1 año</button>
-      </div>
-    </div>
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button class="btn btn-ghost" onclick="recalcularSaldos()" title="Recalcula los saldos desde cero a partir de los movimientos cargados en pantalla. Útil si los saldos están desincronizados." style="font-size:11px; padding:5px 10px; color:var(--subtext);">⟳ Recalcular saldos</button>
-      <button class="btn btn-dark" onclick="openNuevaCuenta()">+ Cuenta</button>
-    </div>
+  <!-- Selector de rango de fechas -->
+  <div style="background:var(--mantle); border:1px solid var(--crust); border-radius:8px; padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <span style="color:var(--subtext); font-weight:700; font-size:12px; white-space:nowrap;">📅 Movimientos del</span>
+    <input type="date" id="range-desde" class="filter-input" style="padding:5px 8px; font-size:12px; height:32px; width:145px;">
+    <span style="color:var(--subtext); font-weight:700; font-size:12px;">al</span>
+    <input type="date" id="range-hasta" class="filter-input" style="padding:5px 8px; font-size:12px; height:32px; width:145px;">
+    <button id="btn-cargar-rango" class="btn btn-dark" onclick="cargarRango()" style="font-size:12px; padding:5px 14px;">Cargar</button>
+    <span id="range-info" style="margin-left:auto; color:var(--subtext); font-size:12px;"></span>
   </div>
 
-  <!-- Tarjetas de Cuenta — la tarjeta ALL es fija, el resto se genera dinámicamente -->
+  <!-- Tarjetas de Cuenta -->
+  <div style="display:flex; justify-content:flex-end;">
+    <button class="btn btn-dark" onclick="openNuevaCuenta()">+ Cuenta</button>
+  </div>
   <div class="acc-grid" id="acc-grid">
     <div class="acc-card act" id="acard-ALL" onclick="filterAccount('ALL')">
       <div class="acc-name">TODAS LAS CUENTAS</div>
       <div class="acc-bal" id="bal-ALL">$0.00</div>
-      <div class="acc-meta" id="meta-ALL">Consolidado general</div>
     </div>
     <!-- Tarjetas por cuenta se inyectan aquí por JS desde renderDynamicCards() -->
-  </div>
-
-  <!-- Banner vista parcial -->
-  <div id="mov-banner" style="display:none; background:var(--mantle); border:1px solid var(--crust); border-radius:8px; padding:10px 16px; font-size:13px; color:var(--subtext); align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-    <span id="mov-banner-txt"></span>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button id="btn-load-prev-month" class="btn btn-dark" style="white-space:nowrap; font-size:12px;" onclick="cargarMesAnterior()">Cargar mes anterior</button>
-      <button class="btn btn-ghost" style="white-space:nowrap; font-size:12px;" onclick="cargarTodoElHistorial()">Todo el historial</button>
-    </div>
   </div>
 
   <!-- Avisos / Pendientes -->
@@ -364,8 +345,7 @@
   let currentAccFilter = 'ALL';
   let llmTimer = null;
   let _allMovements = [];
-  let LOADED_MONTHS      = []; // meses ya cargados (YYYY-MM)
-  let HISTORY_EXHAUSTED  = false; // true cuando ya no hay más meses hacia atrás
+  let LOADED_MONTHS = []; // meses ya cargados (YYYY-MM)
 
   function fmt(num) { return '$' + parseFloat(num).toLocaleString('es-MX', {minimumFractionDigits:2}); }
 
@@ -380,75 +360,45 @@
     return `${+d} ${mo}\n'${y.slice(2)}`;
   }
 
-  // Retorna el YYYY-MM anterior al más antiguo cargado
-  function prevMonth() {
-    const sorted = [...LOADED_MONTHS].sort();
-    if (!sorted.length) return null;
-    const [y, m] = sorted[0].split('-').map(Number);
-    const d = new Date(y, m - 2, 1); // m es 1-based, Date.month es 0-based, -2 para retroceder uno
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  }
+  async function cargarRango() {
+    const desde = document.getElementById('range-desde').value;
+    const hasta = document.getElementById('range-hasta').value;
+    if (!desde || !hasta) { toast('Selecciona un rango de fechas.', 'warn'); return; }
+    if (desde > hasta)    { toast('La fecha inicial debe ser anterior a la final.', 'warn'); return; }
+    if (!window.parent?.loadAccountingMonth) { updateRangeInfo(); renderList(); return; }
 
-  function updateMovBanner() {
-    const banner = document.getElementById('mov-banner');
-    if (!LOADED_MONTHS.length) { banner.style.display = 'none'; return; }
-    banner.style.display = 'flex';
-    const sorted = [...LOADED_MONTHS].sort();
-    const desde  = sorted[0];
-    const hasta  = sorted[sorted.length - 1];
-    const fmtMes = ym => { const [y,m] = ym.split('-'); return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][+m-1] + ' ' + y; };
-    const rangoTxt = desde === hasta ? fmtMes(desde) : `${fmtMes(desde)} → ${fmtMes(hasta)}`;
-    document.getElementById('mov-banner-txt').innerHTML = HISTORY_EXHAUSTED
-      ? `📅 Historial completo &nbsp;·&nbsp; <b>${rangoTxt}</b> &nbsp;·&nbsp; ${_allMovements.length} movimientos`
-      : `📅 Mostrando: <b>${rangoTxt}</b> &nbsp;·&nbsp; ${_allMovements.length} movimientos`;
-    const prevBtn = document.getElementById('btn-load-prev-month');
-    const histBtn = document.querySelector('[onclick="cargarTodoElHistorial()"]');
-    if (HISTORY_EXHAUSTED) {
-      if (prevBtn) prevBtn.style.display = 'none';
-      if (histBtn) histBtn.style.display = 'none';
-    } else {
-      const pm = prevMonth();
-      const pmLabel = pm ? fmtMes(pm) : '';
-      if (prevBtn) { prevBtn.style.display = ''; prevBtn.disabled = false; prevBtn.textContent = `← Cargar ${pmLabel}`; }
-      if (histBtn) histBtn.style.display = '';
+    // Calcular todos los meses YYYY-MM en el rango
+    const months = [];
+    const cur = new Date(desde.slice(0,7) + '-01');
+    const end = new Date(hasta.slice(0,7) + '-01');
+    while (cur <= end) {
+      months.push(cur.toISOString().slice(0,7));
+      cur.setMonth(cur.getMonth() + 1);
     }
-  }
 
-  async function cargarMesAnterior() {
-    const pm = prevMonth();
-    if (!pm || LOADED_MONTHS.includes(pm)) return;
-    if (!window.parent?.loadAccountingMonth) return;
-    const btn = document.getElementById('btn-load-prev-month');
-    if (btn) { btn.disabled = true; btn.textContent = 'Cargando...'; }
-    const newMovs = await window.parent.loadAccountingMonth(pm);
-    LOADED_MONTHS.push(pm);
-    if (newMovs.length === 0) {
-      HISTORY_EXHAUSTED = true;
-    } else {
-      _allMovements = [..._allMovements, ...newMovs];
-      DBm = [...DBm, ...newMovs];
+    const toLoad = months.filter(m => !LOADED_MONTHS.includes(m));
+    const btn = document.getElementById('btn-cargar-rango');
+    if (toLoad.length) {
+      if (btn) { btn.disabled = true; btn.textContent = 'Cargando...'; }
+      try {
+        const results = await Promise.all(toLoad.map(ym => window.parent.loadAccountingMonth(ym).catch(() => [])));
+        toLoad.forEach((ym, i) => {
+          LOADED_MONTHS.push(ym);
+          if (results[i]?.length) { _allMovements.push(...results[i]); DBm.push(...results[i]); }
+        });
+        _allMovements.sort((a, b) => (b.date||'').localeCompare(a.date||''));
+        DBm = [..._allMovements];
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Cargar'; }
+      }
     }
-    updateMovBanner();
-    calcBalances();
+    updateRangeInfo();
     renderList();
   }
 
-  async function cargarTodoElHistorial() {
-    if (!window.parent?.loadAccountingMonth) return;
-    const histBtn = document.querySelector('[onclick="cargarTodoElHistorial()"]');
-    if (histBtn) { histBtn.disabled = true; histBtn.textContent = 'Cargando...'; }
-    // Cargar accounting_by_month colección completa (~170 reads, 1 por mes)
-    const allMonthSnaps = await window.DB.query('accounting_by_month');
-    if (allMonthSnaps && allMonthSnaps.length > 0) {
-      const all = allMonthSnaps.flatMap(d => d.list || []);
-      _allMovements = all;
-      DBm = all;
-      LOADED_MONTHS = [...new Set(all.map(m => (m.date||'').slice(0,7)).filter(Boolean))];
-    }
-    HISTORY_EXHAUSTED = true;
-    updateMovBanner();
-    calcBalances();
-    renderList();
+  function updateRangeInfo() {
+    const el = document.getElementById('range-info');
+    if (el) el.textContent = `${_allMovements.length} movimientos cargados`;
   }
 
   // Init Data Layer
@@ -552,14 +502,18 @@
 
 
     renderDynamicCards();
-    initIntervalPicker();
-
     populateContacts();
     populateOrders();
 
     if(window.innerWidth > 800) document.getElementById('desktop-new-btn').style.display = 'block';
 
-    updateMovBanner();
+    // Inicializar selector de rango con el período ya cargado
+    const hoy = new Date().toISOString().slice(0, 10);
+    const sortedM = [...LOADED_MONTHS].sort();
+    document.getElementById('range-hasta').value = hoy;
+    document.getElementById('range-desde').value = sortedM.length ? sortedM[0] + '-01' : hoy;
+    updateRangeInfo();
+
     calcBalances();
     renderList();
     console.log('[finanzas] initData done | STATE_PROJECTS:', STATE_PROJECTS.length,
@@ -1160,59 +1114,24 @@
 
 
   // ── Estado de saldos y cuentas ──────────────────────────────────────────────
-  let STATE_ACCOUNT_BALANCES = {}; // id → doc de account_balances
-  let STATE_BANK_ACCOUNTS    = []; // lista de todas las cuentas
-  let currentInterval        = '30d';
+  let STATE_ACCOUNT_BALANCES = {};
+  let STATE_BANK_ACCOUNTS    = [];
 
-  const HARDCODED_ACCOUNTS   = new Set(['CHU','SATP','CAJA','OTROS','ALL']);
-  const MAIN_ACCOUNTS        = new Set(['CHU','SATP','CAJA']);
-
-  function initIntervalPicker() {
-    setIntervalPill('30d');
-  }
-
-  function setIv(iv) {
-    setIntervalPill(iv);
-    calcBalances();
-  }
-
-  function setIntervalPill(iv) {
-    currentInterval = iv;
-    document.querySelectorAll('.iv-pill').forEach(b => {
-      b.classList.toggle('act', b.dataset.iv === iv);
-    });
-  }
-
-  function varHTML(current, before) {
-    if (before === 0 && current === 0) return `<span style="color:var(--subtext)">sin mov.</span>`;
-    const change = current - before;
-    const pct = before !== 0 ? ((change / Math.abs(before)) * 100).toFixed(1) : null;
-    const col  = change > 0 ? 'var(--green)' : change < 0 ? 'var(--red)' : 'var(--subtext)';
-    const sign = change >= 0 ? '+' : '';
-    const fmtChange = (change >= 0 ? '+' : '') + '$' + Math.abs(change).toLocaleString('es-MX', {minimumFractionDigits:0, maximumFractionDigits:0});
-    const pctStr = pct !== null ? `${sign}${pct}%` : '—';
-    return `<span style="color:${col};font-weight:700">${pctStr}</span> <span style="color:var(--subtext);font-size:10px">${fmtChange}</span>`;
-  }
+  const HARDCODED_ACCOUNTS = new Set(['CHU','SATP','CAJA','OTROS','ALL']);
+  const MAIN_ACCOUNTS      = new Set(['CHU','SATP','CAJA']);
 
   function calcBalances() {
-    const iv = currentInterval;
-    const beforeKey = `before_${iv}`;
-
-    // Calcular ALL sumando todas las cuentas conocidas
-    let allBal = 0, allBefore = 0;
+    let allBal = 0;
     for (const data of Object.values(STATE_ACCOUNT_BALANCES)) {
-      allBal    += data.balance    || 0;
-      allBefore += data[beforeKey] || 0;
+      allBal += data.balance || 0;
     }
 
-    const setCard = (acc, bal, before) => {
+    const setCard = (acc, bal) => {
       const balEl  = document.getElementById('bal-' + acc);
-      const varEl  = document.getElementById('var-' + acc);
       const cardEl = document.getElementById('acard-' + acc);
       if (!balEl) return;
       balEl.textContent = fmt(bal);
       balEl.style.color = bal < 0 ? 'var(--red)' : 'var(--text)';
-      if (varEl) varEl.innerHTML = varHTML(bal, before);
       if (cardEl && !cardEl.classList.contains('act')) {
         cardEl.classList.remove('bal-pos','bal-neg');
         if (bal > 0) cardEl.classList.add('bal-pos');
@@ -1220,16 +1139,11 @@
       }
     };
 
-    setCard('ALL', allBal, allBefore);
-
-    // Una tarjeta por cada cuenta registrada
+    setCard('ALL', allBal);
     STATE_BANK_ACCOUNTS.forEach(acc => {
       const d = STATE_ACCOUNT_BALANCES[acc] || {};
-      setCard(acc, d.balance || 0, d[beforeKey] || 0);
+      setCard(acc, d.balance || 0);
     });
-
-    const metaAll = document.getElementById('meta-ALL');
-    if (metaAll) metaAll.innerHTML = varHTML(allBal, allBefore);
 
     // Avisos (pendientes / sin categoría) — sigue usando DBm local
     const drafts = DBm.filter(m => m.status === 'pendiente');
@@ -1310,7 +1224,7 @@
       div.className = 'acc-card acc-card-dynamic' + (cat === 'deuda' ? ' is-deuda' : '');
       div.id = 'acard-' + acc;
       div.draggable = true;
-      div.innerHTML = `<div class="acc-name">${acc}</div><div class="acc-bal" id="bal-${acc}">$0.00</div><div class="acc-meta"><span class="acc-var" id="var-${acc}">—</span></div><span class="cat-chip cat-${cat}" title="Clic para cambiar categoría">${CAT_LABEL[cat]}</span>`;
+      div.innerHTML = `<div class="acc-name">${acc}</div><div class="acc-bal" id="bal-${acc}">$0.00</div><span class="cat-chip cat-${cat}" title="Clic para cambiar categoría">${CAT_LABEL[cat]}</span>`;
 
       div.querySelector('.cat-chip').addEventListener('click', e => cycleCategoria(acc, e));
       div.onclick = () => filterAccount(acc);
@@ -1377,7 +1291,7 @@
   function applyLocalBalances(ops) {
     ops.forEach(op => {
       if (op.type === 'increment' && op.col === 'account_balances') {
-        if (!STATE_ACCOUNT_BALANCES[op.id]) STATE_ACCOUNT_BALANCES[op.id] = { id: op.id, account: op.id, balance: 0, before_d7: 0, before_d30: 0, before_d180: 0, before_d365: 0 };
+        if (!STATE_ACCOUNT_BALANCES[op.id]) STATE_ACCOUNT_BALANCES[op.id] = { id: op.id, account: op.id, balance: 0 };
         STATE_ACCOUNT_BALANCES[op.id].balance += op.amount;
         STATE_ACCOUNT_BALANCES[op.id].updated_at = op.extraUpdates.updated_at;
       }
@@ -1406,7 +1320,7 @@
     saveCategoriasToFirestore();
 
     // Crear balance inicial en $0
-    STATE_ACCOUNT_BALANCES[name] = { id: name, account: name, balance: 0, before_d7: 0, before_d30: 0, before_d180: 0, before_d365: 0, updated_at: new Date().toISOString() };
+    STATE_ACCOUNT_BALANCES[name] = { id: name, account: name, balance: 0, updated_at: new Date().toISOString() };
     if (window.parent && window.parent.setDocumentInFirebase) {
       window.parent.setDocumentInFirebase('account_balances', name, STATE_ACCOUNT_BALANCES[name]);
     }
@@ -1420,49 +1334,6 @@
     calcBalances();
     closeNuevaCuenta();
     toast(`Cuenta "${name}" creada.`);
-  }
-
-  // Recalcula saldos desde cero usando todos los movimientos cargados en pantalla
-  async function recalcularSaldos() {
-    const showConfirmFn = window.parent?.showConfirm || ((t,m,b,c,fn) => { if(confirm(`${t}\n\n${m}`)) fn(); });
-    showConfirmFn(
-      'Recalcular Saldos',
-      'Esto recalcula el saldo de todas las cuentas a partir de los movimientos confirmados actualmente cargados. Útil si los saldos están desincronizados.\n\n¿Continuar?',
-      'Recalcular', 'btn-blue',
-      async () => {
-        // Construir saldos desde cero
-        const newBalances = {};
-        _allMovements.forEach(m => {
-          if (m.eliminado) return;
-          if (m.status !== 'confirmado' && m.status !== 'confirmed') return;
-          const apply = (acc, delta) => {
-            if (!acc) return;
-            if (!newBalances[acc]) newBalances[acc] = 0;
-            newBalances[acc] += delta;
-          };
-          if (m.type === 'Ingreso')       apply(m.account, m.amount);
-          else if (m.type === 'Gasto')    apply(m.account, -m.amount);
-          else if (m.type === 'Transferencia') {
-            apply(m.account, -m.amount);
-            apply(m.destAccount, m.amount);
-          }
-        });
-
-        // Actualizar STATE_ACCOUNT_BALANCES y Firestore
-        const ops = [];
-        for (const [acc, bal] of Object.entries(newBalances)) {
-          if (!STATE_ACCOUNT_BALANCES[acc])
-            STATE_ACCOUNT_BALANCES[acc] = { id: acc, account: acc, balance: 0, before_d7:0, before_d30:0, before_d180:0, before_d365:0 };
-          STATE_ACCOUNT_BALANCES[acc].balance = bal;
-          if (window.parent?.setDocumentInFirebase) {
-            ops.push(window.parent.setDocumentInFirebase('account_balances', acc, { ...STATE_ACCOUNT_BALANCES[acc], balance: bal }));
-          }
-        }
-        await Promise.all(ops).catch(e => console.warn('Error guardando saldos:', e));
-        calcBalances();
-        toast('Saldos recalculados y guardados.', 'ok');
-      }
-    );
   }
 
   function toast(msg, type = 'ok') {
