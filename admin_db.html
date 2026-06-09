@@ -5,7 +5,7 @@
 <script src="ui.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Base de Datos - Firebase</title>
+<title>Esquema de Base de Datos</title>
 <style>
   body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; }
 
@@ -41,7 +41,7 @@
 
   <div class="main">
     <div id="no-sel" style="text-align:center; padding:100px; color:var(--muted);">
-      <div style="font-size:20px; font-weight:800; color:var(--text); margin-bottom:8px;">Esquema de Bases de Datos</div>
+      <div style="font-size:20px; font-weight:800; color:var(--text); margin-bottom:8px;">Esquema de Base de Datos</div>
       <div style="max-width:500px; margin:0 auto; line-height:1.5;">Vista del estado actual de tu base de datos Firebase.</div>
     </div>
     
@@ -154,6 +154,7 @@
   window.vaciarColeccion = async function() {
       if(!currentTable) return;
       if(!confirm("¿Estás seguro de ELIMINAR TODOS los registros de: " + currentTable + "? Esto es irreversible.")) return;
+      if(!await showConfirm('Vaciar Colección', `¿Estás seguro de ELIMINAR TODOS los registros de: <b>${currentTable}</b>? Esto es irreversible.`, 'Eliminar Todo', 'btn-red')) return;
 
       try {
           const records = getState()[currentTable] || [];

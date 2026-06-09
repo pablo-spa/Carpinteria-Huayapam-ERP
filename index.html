@@ -406,9 +406,9 @@
           <div class="mc-icon">💰</div>
           <div class="mc-text"><strong>Contabilidad</strong><span>Libro mayor, ingresos, gastos y transferencias.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('proyectos.html','Proyectos Activos', false, true)">
+        <div class="module-card" onclick="openModule('proyectos.html','Proyectos', false, true)">
           <div class="mc-icon">📁</div>
-          <div class="mc-text"><strong>Proyectos</strong><span>Seguimiento de obras y cronogramas.</span></div>
+          <div class="mc-text"><strong>Proyectos</strong><span>Seguimiento de obras, presupuestos y cronogramas.</span></div>
         </div>
         <div class="module-card" onclick="openModule('almacen_inventario.html','Inventario General', false, true)">
           <div class="mc-icon">📦</div>
@@ -418,9 +418,9 @@
           <div class="mc-icon">🪵</div>
           <div class="mc-text"><strong>Almacén de Madera</strong><span>Catálogo de tablas por pieza individual.</span></div>
         </div>
-        <div class="module-card" onclick="openModule('rq_compras.html','Compras', false, true)">
+        <div class="module-card" onclick="openModule('rq_compras.html','Panel de Compras', false, true)">
           <div class="mc-icon">🛒</div>
-          <div class="mc-text"><strong>Compras</strong><span>Órdenes de compra, proveedores y precios.</span></div>
+          <div class="mc-text"><strong>Panel de Compras</strong><span>Órdenes de compra, proveedores y precios.</span></div>
         </div>
         <div class="module-card" onclick="openModule('nomina_semanal.html','Nómina Semanal', false, true)">
           <div class="mc-icon">💵</div>
@@ -556,7 +556,7 @@
     {
       id: 'cat-admin', title: 'Administración',
       items: [
-        { id: 'nav-dashboard', html: `<span class="icon">📈</span> Dashboard`, file: 'dashboard.html', label: 'Dashboard' },
+        { id: 'nav-dashboard', html: `<span class="icon">📈</span> Dashboard`, file: 'dashboard.html', label: 'Dashboard Administrativo' },
         { id: 'nav-contactos', html: `<span class="icon">👥</span> Directorio CRM`, file: 'contactos.html', label: 'Directorio CRM' },
 { id: 'nav-aprobacion', html: `<span class="icon">🛡️</span> Autorizar Pedidos`, file: 'rq_admin_aprobacion.html', label: 'Autorizar Pedidos' },
         { id: 'nav-documentos', html: `<span class="icon">🗂️</span> Documentos`, file: 'documentos.html', label: 'Documentos' }
@@ -567,7 +567,7 @@
       items: [
         { id: 'nav-finanzas', html: `<span class="icon">💰</span> Contabilidad`, file: 'finanzas.html', label: 'Contabilidad' },
         { id: 'nav-nomina', html: `<span class="icon">💵</span> Nómina Semanal`, file: 'nomina_semanal.html', label: 'Nómina Semanal' },
-        { id: 'nav-trabajadores', html: `<span class="icon">👷‍♂️</span> Trabajadores`, file: 'rh_trabajadores.html', label: 'Trabajadores' },
+        { id: 'nav-trabajadores', html: `<span class="icon">👷‍♂️</span> Trabajadores`, file: 'rh_trabajadores.html', label: 'Directorio de Trabajadores' },
         { id: 'nav-checador', html: `<span class="icon">⏰</span> Reloj Checador`, file: 'reloj_checador.html', label: 'Reloj Checador' },
         { id: 'nav-viaticos', html: `<span class="icon">🗺️</span> Viáticos`, file: 'viaticos.html', label: 'Gestión de Viáticos' },
         { id: 'nav-accidentes', html: `<span class="icon">🩹</span> Bitácora Accidentes`, file: 'accidentes.html', label: 'Bitácora de Accidentes' }
@@ -577,7 +577,7 @@
       id: 'cat-diseno', title: 'Diseño',
       items: [
         { id: 'nav-cotizaciones', html: `<span class="icon">📋</span> Cotizaciones`, file: 'cotizaciones.html', label: 'Cotizaciones' },
-        { id: 'nav-proyectos', html: `<span class="icon">📁</span> Proyectos`, file: 'proyectos.html', label: 'Proyectos Activos' },
+        { id: 'nav-proyectos', html: `<span class="icon">📁</span> Proyectos`, file: 'proyectos.html', label: 'Proyectos' },
         { id: 'nav-fichas', html: `<span class="icon">📐</span> Fichas Técnicas`, file: 'fichas_tecnicas.html', label: 'Fichas Técnicas' }
       ]
     },
@@ -585,14 +585,14 @@
       id: 'cat-compras', title: 'Compras y Almacén',
       items: [
         { id: 'nav-inventario',         html: `<span class="icon">📦</span> Inventario`,              file: 'almacen_inventario.html',   label: 'Inventario General' },
-        { id: 'nav-salidas',            html: `<span class="icon">📤</span> Salida de Almacén`,        file: 'almacen_salidas.html',       label: 'Salida de Almacén' },
+        { id: 'nav-salidas',            html: `<span class="icon">📤</span> Salida de Almacén`,        file: 'almacen_salidas.html',       label: 'Salidas de Almacén' },
         { id: 'nav-hoja-pedido',        html: `<span class="icon">📋</span> Hoja de Pedido`,            file: 'rq_almacen.html',            label: 'Hoja de Pedido' },
-        { id: 'nav-recepcion',          html: `<span class="icon">🚚</span> Recepción de Almacén`,      file: 'rq_recepcion.html',          label: 'Recepción de Almacén' },
+        { id: 'nav-recepcion',          html: `<span class="icon">🚚</span> Recepción de Almacén`,      file: 'rq_recepcion.html',          label: 'Recepción de Material' },
         { id: 'nav-herramientas',       html: `<span class="icon">🧰</span> Herramientas`,              file: 'herramientas.html',          label: 'Herramientas' },
         { id: 'nav-herramientas-salida',html: `<span class="icon">🔧</span> Salida de Herramientas`,    file: 'herramientas_salida.html',   label: 'Salida de Herramientas' },
         { id: 'nav-madera',             html: `<span class="icon">🪵</span> Almacén de Madera`,         file: 'control_madera.html',        label: 'Almacén de Madera' },
         { id: 'nav-ingreso-madera',     html: `<span class="icon">🏷️</span> Escanear Madera`,           file: 'ingreso_madera.html',        label: 'Escanear Madera' },
-        { id: 'nav-compras-panel',      html: `<span class="icon">🛒</span> Compras`,                   file: 'rq_compras.html',            label: 'Compras' },
+        { id: 'nav-compras-panel',      html: `<span class="icon">🛒</span> Panel de Compras`,          file: 'rq_compras.html',            label: 'Panel de Compras' },
         { id: 'nav-historial',          html: `<span class="icon">📚</span> Historial Compras`,         file: 'historial_compras.html',     label: 'Historial de Compras' },
       ]
     },
@@ -600,7 +600,7 @@
       id: 'cat-operaciones', title: 'Operaciones',
       items: [
         { id: 'nav-produccion', html: `<span class="icon">🔨</span> Trabajos del Día`, file: 'produccion_diaria.html', label: 'Registro del Día' },
-        { id: 'nav-confirmacion', html: `<span class="icon">✅</span> Confirmar Pedidos`, file: 'rq_operaciones.html', label: 'Confirmación de Pedidos' },
+        { id: 'nav-confirmacion', html: `<span class="icon">✅</span> Confirmar Pedidos`, file: 'rq_operaciones.html', label: 'Confirmar Pedidos' },
         { id: 'nav-vehiculos', html: `<span class="icon">🚚</span> Vehículos`, file: 'vehiculos.html', label: 'Flotilla y Vehículos' },
         { id: 'nav-mantenimiento', html: `<span class="icon">🛠️</span> Mantenimiento`, file: 'mantenimiento.html', label: 'Bitácora Mantenimiento' }
       ]
@@ -609,12 +609,12 @@
       id: 'cat-bd', title: 'Administración del Sistema',
       items: [
         { id: 'nav-usuarios', html: `<span class="icon">👥</span> Gestión Usuarios`, file: 'admin_usuarios.html', label: 'Gestión de Usuarios' },
-        { id: 'nav-db', html: `<span class="icon">⚙️</span> Esquema de DB`, file: 'admin_db.html', label: 'Gestión de Esquemas' },
-        { id: 'nav-config', html: `<span class="icon">🛠️</span> Reglas y Ajustes`, file: 'admin_config.html', label: 'Configuración General' },
-        { id: 'nav-listas', html: `<span class="icon">📋</span> Editar Listas`, file: 'admin_listas.html', label: 'Editar Listas de Sistema' },
+        { id: 'nav-db', html: `<span class="icon">⚙️</span> Esquema de DB`, file: 'admin_db.html', label: 'Esquema de Base de Datos' },
+        { id: 'nav-config', html: `<span class="icon">🛠️</span> Reglas y Ajustes`, file: 'admin_config.html', label: 'Reglas y Ajustes' },
+        { id: 'nav-listas', html: `<span class="icon">📋</span> Listas del Sistema`, file: 'admin_listas.html', label: 'Listas del Sistema' },
         { id: 'nav-permisos', html: `<span class="icon">🔐</span> Admin Permisos`, file: 'admin_permisos.html', label: 'Permisos de Acceso' },
-        { id: 'nav-wiki', html: `<span class="icon">📖</span> Wiki / Manual`, file: 'wiki.html', label: 'Manual del Sistema' },
-        { id: 'nav-bugs', html: `<span class="icon">🐞</span> Bugs y Reportes`, file: 'admin_bugs.html', label: 'Reportes de Sistema' },
+        { id: 'nav-wiki', html: `<span class="icon">📖</span> Manual del Sistema`, file: 'wiki.html', label: 'Manual del Sistema' },
+        { id: 'nav-bugs', html: `<span class="icon">🐞</span> Bugs y Reportes`, file: 'admin_bugs.html', label: 'Bugs y Reportes' },
         { id: 'nav-papelera', html: `<span class="icon">🗑</span> Papelera Cotizaciones`, file: 'papelera_cotizaciones.html', label: 'Papelera de Cotizaciones' }
       ]
     }

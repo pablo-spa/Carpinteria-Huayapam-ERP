@@ -105,7 +105,7 @@ const ROLES = ['admin', 'gerencia', 'contador', 'compras', 'almacen', 'produccio
 
 const SECTIONS = [
   { type: 'group', title: 'General' },
-  { id: 'dashboard',   label: 'Dashboard',       sub: 'Dashboard · Directorio CRM' },
+  { id: 'dashboard',   label: 'Dashboard Administrativo', sub: 'Dashboard · Directorio CRM' },
 
   { type: 'group', title: 'Diseño y Proyectos' },
   { id: 'proyectos',    label: 'Proyectos',        sub: 'Lista y detalle de proyectos' },
@@ -115,15 +115,15 @@ const SECTIONS = [
   { type: 'group', title: 'Contabilidad y RRHH' },
   { id: 'finanzas', label: 'Contabilidad', sub: 'Ingresos, gastos y transferencias' },
   { id: 'nomina',   label: 'Nómina Semanal',        sub: 'Cálculo y registro de nómina' },
-  { id: 'rh',       label: 'Trabajadores (RH)',      sub: 'Fichas, asistencias, trabajadores' },
+  { id: 'rh',       label: 'Directorio de Trabajadores', sub: 'Fichas, asistencias, altas y bajas' },
   { id: 'reloj',    label: 'Reloj Checador',         sub: 'Registro de entrada/salida' },
   { id: 'viaticos', label: 'Viáticos',               sub: 'Gestión de viajes y anticipos' },
   { id: 'accidentes', label: 'Bitácora Accidentes',  sub: 'Registro de incidentes y salud laboral' },
 
   { type: 'group', title: 'Compras y Almacén' },
-  { id: 'pedidos',    label: 'Pedidos / Autorizaciones', sub: 'Hoja de pedido · Autorizar pedidos · Confirmar pedidos' },
+  { id: 'pedidos',    label: 'Pedidos / Autorizaciones', sub: 'Hoja de Pedido · Autorizar Pedidos · Confirmar Pedidos' },
   { id: 'compras_oc', label: 'Panel de Compras',         sub: 'Cotizar precios · marcar como comprado' },
-  { id: 'almacen',    label: 'Inventario y Almacén',     sub: 'Inventario · Salidas · Recepción de almacén' },
+  { id: 'almacen',    label: 'Inventario General',       sub: 'Inventario General · Salidas de Almacén · Recepción de Material' },
   { id: 'herramientas', label: 'Herramientas',           sub: 'Control y salida de herramientas' },
   { id: 'madera',     label: 'Almacén de Madera',        sub: 'Control de madera · Escaneo' },
 
@@ -137,12 +137,12 @@ const SECTIONS = [
 
   { type: 'group', title: 'Administración del Sistema' },
   { id: 'admin_usuarios', label: 'Gestión de Usuarios', sub: 'Crear y editar usuarios del sistema' },
-  { id: 'admin_listas',   label: 'Reglas, Ajustes y Listas', sub: 'admin_config · admin_listas' },
-  { id: 'admin_db',       label: 'Esquema de DB',       sub: 'Estructura de colecciones' },
+  { id: 'admin_listas',   label: 'Reglas y Listas',     sub: 'Reglas y Ajustes · Listas del Sistema' },
+  { id: 'admin_db',       label: 'Esquema de Base de Datos', sub: 'Estructura de colecciones' },
   { id: 'admin_permisos', label: 'Permisos de Acceso',  sub: 'Esta pantalla' },
   { id: 'admin_papelera', label: 'Papelera Cotizaciones', sub: 'Restaurar o eliminar cotizaciones' },
-  { id: 'admin_bugs',     label: 'Bugs y Reportes',     sub: 'Reporte de errores del sistema' },
-  { id: 'wiki',           label: 'Wiki / Manual',       sub: 'Manual del sistema' },
+  { id: 'admin_bugs',     label: 'Bugs y Reportes',     sub: 'Reporte de errores o incidencias' },
+  { id: 'wiki',           label: 'Manual del Sistema',  sub: 'Wiki y documentación' },
 ];
 
 let perms = {};
