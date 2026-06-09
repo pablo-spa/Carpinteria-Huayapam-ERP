@@ -163,40 +163,62 @@
     <div class="subtotal-lbl">Subtotal Casetas: <span id="st-casetas">$0.00</span></div>
   </div>
 
-  <!-- Viáticos: Hotel y Comida -->
+  <!-- Alimentos -->
   <div class="card">
-    <div class="card-title">🏨 Hospedaje y 🍽️ Alimentos</div>
+    <div class="card-title">🍽️ Alimentos</div>
     <div class="grid3">
       <div class="field">
         <label>Número de Personas</label>
-        <input type="number" id="f-personas" min="1" step="1" value="" oninput="calcTotals()">
+        <input type="number" id="f-personas" min="1" step="1" value="" placeholder="0" oninput="calcTotals()">
       </div>
       <div class="field">
-        <label>Días de Viaje</label>
-        <input type="number" id="f-dias" min="1" step="1" value="" oninput="calcTotals()">
+        <label>Días de Alimentación</label>
+        <input type="number" id="f-dias" min="1" step="1" value="" placeholder="0" oninput="calcTotals()">
       </div>
       <div class="field">
-        <label>Noches de Hotel</label>
-        <input type="number" id="f-noches" min="0" step="1" value="0" oninput="calcTotals()">
+        <label>Costo por Persona / Día</label>
+        <div class="input-with-icon">
+          <span>$</span>
+          <input type="number" id="f-precio-comida" min="0" step="10" value="" placeholder="0" oninput="calcTotals()">
+        </div>
+      </div>
+    </div>
+    <div class="subtotal-lbl">Subtotal Alimentos: <span id="st-alimentos">$0.00</span></div>
+  </div>
+
+  <!-- Hospedaje -->
+  <div class="card">
+    <div class="card-title">🏨 Hospedaje</div>
+    <div class="grid3">
+      <div class="field">
+        <label>Número de Personas</label>
+        <input type="number" id="f-hosp-personas" min="1" step="1" value="" placeholder="0" oninput="calcTotals()">
+      </div>
+      <div class="field">
+        <label>Cantidad</label>
+        <input type="number" id="f-hosp-cant" min="0" step="1" value="" placeholder="0" oninput="calcTotals()">
+      </div>
+      <div class="field">
+        <label>Período</label>
+        <select id="f-hosp-periodo" onchange="calcTotals()">
+          <option value="noche">por Noche</option>
+          <option value="dia">por Día</option>
+          <option value="semana">por Semana</option>
+          <option value="quincena">por Quincena</option>
+          <option value="mes">por Mes</option>
+        </select>
       </div>
     </div>
     <div class="grid2">
       <div class="field">
-        <label>Presupuesto Alimentos ($ / persona / día)</label>
+        <label>Costo por Persona / Período</label>
         <div class="input-with-icon">
           <span>$</span>
-          <input type="number" id="f-precio-comida" min="0" step="10" value="400" oninput="calcTotals()">
-        </div>
-      </div>
-      <div class="field">
-        <label>Costo Noche de Hotel ($ / persona / noche)</label>
-        <div class="input-with-icon">
-          <span>$</span>
-          <input type="number" id="f-precio-hotel" min="0" step="10" value="600" oninput="calcTotals()">
+          <input type="number" id="f-hosp-precio" min="0" step="10" value="" placeholder="0" oninput="calcTotals()">
         </div>
       </div>
     </div>
-    <div class="subtotal-lbl">Subtotal Viáticos: <span id="st-viaticos">$0.00</span></div>
+    <div class="subtotal-lbl">Subtotal Hospedaje: <span id="st-hospedaje">$0.00</span></div>
   </div>
 
   <!-- Extras / Maniobras -->
@@ -318,14 +340,21 @@ function calcTotals() {
   const subCasetas = CASETAS.reduce((s, c) => s + (parseFloat(c.price) || 0), 0);
   document.getElementById('st-casetas').textContent = fmt(subCasetas);
 
-  // 3. Viáticos
+  // 3a. Alimentos
   const pers = parseFloat(document.getElementById('f-personas').value) || 0;
   const dias = parseFloat(document.getElementById('f-dias').value) || 0;
-  const noch = parseFloat(document.getElementById('f-noches').value) || 0;
   const pCom = parseFloat(document.getElementById('f-precio-comida').value) || 0;
-  const pHot = parseFloat(document.getElementById('f-precio-hotel').value) || 0;
-  const subViaticos = (pers * dias * pCom) + (pers * noch * pHot);
-  document.getElementById('st-viaticos').textContent = fmt(subViaticos);
+  const subAlimentos = pers * dias * pCom;
+  document.getElementById('st-alimentos').textContent = fmt(subAlimentos);
+
+  // 3b. Hospedaje
+  const hospPers  = parseFloat(document.getElementById('f-hosp-personas').value) || 0;
+  const hospCant  = parseFloat(document.getElementById('f-hosp-cant').value) || 0;
+  const hospPrecio = parseFloat(document.getElementById('f-hosp-precio').value) || 0;
+  const subHospedaje = hospPers * hospCant * hospPrecio;
+  document.getElementById('st-hospedaje').textContent = fmt(subHospedaje);
+
+  const subViaticos = subAlimentos + subHospedaje;
 
   // 4. Extras
   const subExtras = EXTRAS.reduce((s, e) => s + (parseFloat(e.price) || 0), 0);
@@ -421,9 +450,11 @@ function saveQuote() {
     pGas: parseFloat(document.getElementById('f-precio-gas').value) || 0,
     personas: parseFloat(document.getElementById('f-personas').value) || 0,
     dias: parseFloat(document.getElementById('f-dias').value) || 0,
-    noches: parseFloat(document.getElementById('f-noches').value) || 0,
     pComida: parseFloat(document.getElementById('f-precio-comida').value) || 0,
-    pHotel: parseFloat(document.getElementById('f-precio-hotel').value) || 0,
+    hospPersonas: parseFloat(document.getElementById('f-hosp-personas').value) || 0,
+    hospCant: parseFloat(document.getElementById('f-hosp-cant').value) || 0,
+    hospPeriodo: document.getElementById('f-hosp-periodo').value,
+    hospPrecio: parseFloat(document.getElementById('f-hosp-precio').value) || 0,
     casetas: JSON.parse(JSON.stringify(CASETAS)),
     extras: JSON.parse(JSON.stringify(EXTRAS)),
     globalCfg: {
@@ -533,9 +564,11 @@ function processURLParams() {
     document.getElementById('f-precio-gas').value = loadQ.pGas || '';
     document.getElementById('f-personas').value = loadQ.personas || '';
     document.getElementById('f-dias').value = loadQ.dias || '';
-    document.getElementById('f-noches').value = loadQ.noches || '';
     document.getElementById('f-precio-comida').value = loadQ.pComida || '';
-    document.getElementById('f-precio-hotel').value = loadQ.pHotel || '';
+    document.getElementById('f-hosp-personas').value = loadQ.hospPersonas || loadQ.personas || '';
+    document.getElementById('f-hosp-cant').value = loadQ.hospCant ?? (loadQ.noches || '');
+    if (loadQ.hospPeriodo) document.getElementById('f-hosp-periodo').value = loadQ.hospPeriodo;
+    document.getElementById('f-hosp-precio').value = loadQ.hospPrecio || loadQ.pHotel || '';
     
     if (loadQ.globalCfg) {
       document.getElementById('cfg-extras').value = (loadQ.globalCfg.EXTRAS || 0) * 100;
@@ -588,7 +621,8 @@ function showPrintPreview(isClient) {
   
   const subGas = document.getElementById('st-gas').textContent;
   const subCasetas = document.getElementById('st-casetas').textContent;
-  const subViaticos = document.getElementById('st-viaticos').textContent;
+  const subAlimentos = document.getElementById('st-alimentos').textContent;
+  const subHospedaje = document.getElementById('st-hospedaje').textContent;
   const subExtras = document.getElementById('st-extras').textContent;
 
   /* ── CSS compartido para tablas del documento ── */
@@ -700,12 +734,18 @@ function showPrintPreview(isClient) {
         <tfoot><tr><td style="${tdCss}font-weight:bold;">Subtotal Casetas</td><td style="${tdRCss}font-weight:bold;">${subCasetas}</td></tr></tfoot>
       </table>
 
-      ${secT('Viáticos (Hospedaje y Alimentos)')}
+      ${secT('Alimentos')}
       <table style="${tblCss}">
         <tr><td style="${tdCss}">Personas</td><td style="${tdRCss}">${document.getElementById('f-personas').value || 0}</td></tr>
-        <tr><td style="${tdCss}">Días de Viaje (Comida)</td><td style="${tdRCss}">${document.getElementById('f-dias').value || 0} x ${fmt(document.getElementById('f-precio-comida').value || 0)}</td></tr>
-        <tr><td style="${tdCss}">Noches de Hotel</td><td style="${tdRCss}">${document.getElementById('f-noches').value || 0} x ${fmt(document.getElementById('f-precio-hotel').value || 0)}</td></tr>
-        <tr><td style="${tdCss}font-weight:bold;">Subtotal Viáticos</td><td style="${tdRCss}font-weight:bold;">${subViaticos}</td></tr>
+        <tr><td style="${tdCss}">Días de Alimentación</td><td style="${tdRCss}">${document.getElementById('f-dias').value || 0} × ${fmt(document.getElementById('f-precio-comida').value || 0)}/día</td></tr>
+        <tr><td style="${tdCss}font-weight:bold;">Subtotal Alimentos</td><td style="${tdRCss}font-weight:bold;">${fmt(subAlimentos)}</td></tr>
+      </table>
+      ${secT('Hospedaje')}
+      <table style="${tblCss}">
+        <tr><td style="${tdCss}">Personas</td><td style="${tdRCss}">${document.getElementById('f-hosp-personas').value || 0}</td></tr>
+        <tr><td style="${tdCss}">Cantidad × Período</td><td style="${tdRCss}">${document.getElementById('f-hosp-cant').value || 0} ${document.getElementById('f-hosp-periodo').options[document.getElementById('f-hosp-periodo').selectedIndex].text}</td></tr>
+        <tr><td style="${tdCss}">Costo por Persona / Período</td><td style="${tdRCss}">${fmt(document.getElementById('f-hosp-precio').value || 0)}</td></tr>
+        <tr><td style="${tdCss}font-weight:bold;">Subtotal Hospedaje</td><td style="${tdRCss}font-weight:bold;">${fmt(subHospedaje)}</td></tr>
       </table>
       
       ${secT('Maniobras / Extras')}
