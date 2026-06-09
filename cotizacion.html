@@ -320,6 +320,9 @@ let WOOD_CATALOG = []; // { id, nombre, unidad, precioEst, notas }
 // Modo de edición: si se abre con ?editId=xxx, editamos la cotización existente
 let EDIT_STATE = { id: null, folio: null, originalStatus: null };
 
+// ID estable para subir imágenes antes de que exista la cotización guardada
+let UPLOAD_SESSION_ID = crypto.randomUUID();
+
 let EXTRAS = 0.07, MARGIN = 0.20, ERROR = 0.07, TAX = 0.16, COMMISSION = 0;
 
 // Fallback: se sobreescribe con Firestore si hay datos ahí
@@ -392,7 +395,7 @@ function setImage(id, input) {
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       const MAX = 700;
       let w = img.width, h = img.height;
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
@@ -400,8 +403,28 @@ function setImage(id, input) {
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
       const p = S.pieces.find(p => p.id === id);
-      if (p) { p.imagen = canvas.toDataURL('image/jpeg', 0.78); render(); }
+      if (!p) return;
+
+      // Mostrar preview local mientras sube
+      p.imagen = canvas.toDataURL('image/jpeg', 0.78);
+      p._imgUploading = true;
+      render();
+      toast('Subiendo imagen…', 'info');
+
+      try {
+        const quoteId = EDIT_STATE.id || UPLOAD_SESSION_ID;
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.78));
+        const url = await window.parent.uploadCotizacionImage(quoteId, id, blob);
+        p.imagen = url;
+        p._imgUploading = false;
+        render();
+        toast('Imagen subida.', 'ok');
+      } catch (err) {
+        p._imgUploading = false;
+        toast('Error al subir imagen: ' + (err.message || err), 'error');
+      }
     };
     img.src = e.target.result;
   };
@@ -920,6 +943,7 @@ function showPrintPreview(isClient) {
 
     document.getElementById('print-preview-content').innerHTML = html;
     document.getElementById('ai-print-prompt').value = currentPrintConds;
+    preloadPrintImages();
     return;
   }
 
@@ -1152,10 +1176,26 @@ function showPrintPreview(isClient) {
 
   document.getElementById('print-preview-content').innerHTML = html;
   document.getElementById('ai-print-prompt').value = currentPrintConds;
+  preloadPrintImages();
 }
 
 function closePrintPreview() {
   document.getElementById('print-modal').style.display = 'none';
+}
+
+// Espera a que todas las imágenes del preview carguen antes de habilitar el botón de imprimir
+function preloadPrintImages() {
+  const btn = document.querySelector('#print-modal .btn-green');
+  const imgs = Array.from(document.getElementById('print-preview-content').querySelectorAll('img'));
+  const urlImgs = imgs.filter(img => img.src && !img.src.startsWith('data:'));
+  if (!urlImgs.length) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Cargando imágenes…'; }
+  Promise.all(urlImgs.map(img => new Promise(res => {
+    if (img.complete) { res(); return; }
+    img.onload = img.onerror = res;
+  }))).then(() => {
+    if (btn) { btn.disabled = false; btn.textContent = 'Imprimir / Guardar PDF'; }
+  });
 }
 
 function simulatePrintAI() {
@@ -1334,7 +1374,8 @@ function saveQuoteToProject() {
         const existingForProj = (d.quotations || []).filter(q => pId ? q.projectId === pId : !q.projectId);
         const folio = genFolio(dateStr, existingForProj.length + 1);
 
-        const quote = { id: crypto.randomUUID(), folio, projectId: pId || null, clientId: cId || null, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
+        const quote = { id: UPLOAD_SESSION_ID, folio, projectId: pId || null, clientId: cId || null, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
+        UPLOAD_SESSION_ID = crypto.randomUUID(); // reset para futuras cotizaciones en la misma sesión
 
         if (Q_state.baseQuoteId) {
             const baseIdx = (d.quotations || []).findIndex(q => q.id === Q_state.baseQuoteId);
@@ -1403,6 +1444,7 @@ function processURLParams() {
       EDIT_STATE.id             = editId;
       EDIT_STATE.folio          = loadQ.folio || editId.slice(0,8);
       EDIT_STATE.originalStatus = loadQ.status;
+      UPLOAD_SESSION_ID         = editId; // imágenes nuevas van al mismo folder que la cotización
 
       const badge = document.getElementById('hdr-edit-badge');
       if (badge) { badge.textContent = `Editando ${EDIT_STATE.folio}`; badge.style.display = 'inline-block'; }
