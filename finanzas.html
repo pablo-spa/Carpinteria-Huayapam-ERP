@@ -457,32 +457,19 @@
       ].map(pr => Promise.resolve(pr).catch(e => console.warn('[finanzas] cargar_coleccion error:', e))));
     }
 
-    // DEBUG: log counts to console
-    const _dbs = window.parent?.DB_STATE;
-    console.log('[finanzas] DB_STATE_LOADED:', window.parent?.DB_STATE_LOADED,
-      '| cargar_coleccion:', !!window.parent?.cargar_coleccion,
-      '| projects:', (_dbs?.projects||[]).length,
-      '| contacts:', (_dbs?.contacts||[]).length,
-      '| bank_accounts:', (_dbs?.bank_accounts||[]).length,
-      '| expense_categories:', (_dbs?.expense_categories||[]).length);
+    // Leer directamente desde DB_STATE (evita las capas intermedias de DB.query)
+    const _dbs = window.parent?.DB_STATE || {};
+    STATE_PROJECTS  = (_dbs.projects          || []).filter(x => !x._init);
+    STATE_CONTACTS  = (_dbs.contacts          || []).filter(c => c.activo !== false && (c.name || c.nombre || c.givenName));
+    if (!STATE_CONTACTS.length) STATE_CONTACTS = (_dbs.contacts || []);
+    STATE_ORDERS    = (_dbs.purchase_orders   || []);
+    STATE_CATEGORIES = (_dbs.expense_categories || []).filter(c => c.name);
 
-    STATE_PROJECTS = await window.DB.query("projects");
-
-    const rawCats = await window.DB.query("expense_categories");
-    if (rawCats.length && rawCats[0]?.name) {
-      STATE_CATEGORIES = rawCats;
-    } else if (rawCats.length && rawCats[0]?.list) {
-      STATE_CATEGORIES = rawCats[0].list;
-    } else {
-      STATE_CATEGORIES = window.DB.get().expense_categories || [];
-    }
-
-    const rawContacts = await window.DB.query("contacts");
-    STATE_CONTACTS = rawContacts.filter(c => c.activo !== false && (c.name || c.nombre || c.givenName));
-    if (!STATE_CONTACTS.length) STATE_CONTACTS = window.DB.get().contacts || [];
-
-    STATE_ORDERS = await window.DB.query("purchase_orders");
-    if (!STATE_ORDERS || STATE_ORDERS.length === 0) STATE_ORDERS = window.DB.get().orders || [];
+    console.log('[finanzas] initData | projects:', STATE_PROJECTS.length,
+      '| contacts:', STATE_CONTACTS.length,
+      '| orders:', STATE_ORDERS.length,
+      '| categories:', STATE_CATEGORIES.length,
+      '| bank_accounts raw:', (_dbs.bank_accounts||[]).length);
 
     // Load selects
     const pSel = document.getElementById('f-proj');
@@ -530,10 +517,11 @@
     STATE_ACCOUNT_BALANCES = {};
     (rawBal || []).forEach(d => { STATE_ACCOUNT_BALANCES[d.account || d.id] = d; });
 
-    // Cargar cuentas y formas de pago con query async (no .get() síncrono)
-    const rawAccSnap = await window.DB.query('bank_accounts');
-    STATE_BANK_ACCOUNTS = rawAccSnap[0]?.list || [];
-    STATE_CATEGORIAS    = rawAccSnap[0]?.categorias || {};
+    // Cuentas: leer directamente del DB_STATE (ya cargado por cargar_coleccion)
+    const _baMain = (_dbs.bank_accounts || []).find(d => (d._id || d.id) === 'main') || (_dbs.bank_accounts || [])[0];
+    STATE_BANK_ACCOUNTS = _baMain?.list || [];
+    STATE_CATEGORIAS    = _baMain?.categorias || {};
+    console.log('[finanzas] bank_accounts:', STATE_BANK_ACCOUNTS.length, STATE_BANK_ACCOUNTS.slice(0,3));
     if (STATE_BANK_ACCOUNTS.length) {
       const accOpts = STATE_BANK_ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
       const accEl   = document.getElementById('f-acc');
