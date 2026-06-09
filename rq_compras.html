@@ -17,7 +17,7 @@
 /* Order items table */
 .items-tbl { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
 .items-tbl th { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); padding: 4px 6px; border-bottom: 2px solid var(--crust); text-align: left; white-space: nowrap; }
-.items-tbl td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: bottom; }
+.items-tbl td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: top; }
 .items-tbl tr:last-child td { border-bottom: none; }
 .items-tbl input, .items-tbl select { padding: 6px 8px; border-radius: var(--radius); border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
 .items-tbl input:focus, .items-tbl select:focus { outline: none; border-color: var(--blue); }
@@ -85,7 +85,7 @@
 .sf-done  { background:var(--green-bg); color:var(--green-text); opacity:.7; }
 .sf-active{ background:var(--blue-bg);  color:var(--blue-text); }
 .sf-sep { font-size:9px; color:var(--subtext); margin:0 1px; }
-.add-cat-row { display:flex; align-items:center; gap:6px; margin-top:4px; }
+.add-cat-row { display:flex; align-items:center; gap:6px; margin-top:6px; padding:4px 6px; background:var(--amber-bg); border-radius:5px; }
 .add-cat-row label { font-size:11px; font-weight:700; color:var(--amber-text); cursor:pointer; }
 
 /* Section headers */
@@ -307,7 +307,7 @@ function buildItemsTable(o) {
       </td>
       <td>
         ${item.proveedorPendiente
-          ? `<div style="font-size:12px;font-weight:600;">${item.proveedorNombre||'—'} <span class="new-badge">✦ Nuevo</span></div>`
+          ? `<div style="padding:6px 8px;font-size:12px;font-weight:600;border:1px solid var(--crust);border-radius:var(--radius);background:var(--base);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${item.proveedorNombre||'—'} <span class="new-badge">✦ Nuevo</span></div>`
           : `<select class="prov-sel-${o.id}-${i}" data-searchable>
                ${buildSupplierOpts(item.proveedorId||'')}
              </select>`
