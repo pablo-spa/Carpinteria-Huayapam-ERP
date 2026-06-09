@@ -693,13 +693,16 @@
       menuLayout = JSON.parse(JSON.stringify(defaultMenuLayout.filter(c => c.id !== 'cat-favoritos')));
     }
 
-    // 2a. Corregir items que están en la categoría incorrecta (p.ej. movidos en una actualización)
+    // 2a. Eliminar items que ya no existen en defaultMenuLayout (p.ej. "Nueva Cotización" removida)
+    // y corregir items que están en la categoría incorrecta
     const correctCat = {}; // itemId → catId correcto según defaultMenuLayout
     defaultMenuLayout.filter(c => c.id !== 'cat-favoritos').forEach(dCat => {
       dCat.items.forEach(dItem => { correctCat[dItem.id] = dCat.id; });
     });
     menuLayout.forEach(cat => {
       cat.items = cat.items.filter(item => {
+        // Si el item ya no existe en defaultMenuLayout, eliminarlo del layout guardado
+        if (!allItemsMap[item.id]) return false;
         const rightCat = correctCat[item.id];
         if (!rightCat || rightCat === cat.id) return true; // está en el lugar correcto
         // Mover al cat correcto

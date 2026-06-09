@@ -296,9 +296,11 @@
   }
 
   function recodifyAll() {
-    // Collect unique categories from inventory items
+    // Collect unique categories — exclude categories managed in other modules
     const usedCats = [...new Set(
-      STATE_INVENTORY.filter(i => !i._init && i.name && i.category).map(i => i.category)
+      STATE_INVENTORY
+        .filter(i => !i._init && i.name && i.category && i.category.toLowerCase() !== 'madera')
+        .map(i => i.category)
     )].sort();
 
     // Build the modal rows: each category shows its current catCode (editable) + item count
@@ -426,10 +428,14 @@
     locSel.innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
     if (locSel._ssInit) locSel._ssRefresh(); else SearchableSelect.init(locSel);
     // ── Detect unknown categories ────────────────────────────────────
+    // 'madera' is managed in Almacén de Madera — exclude from unknown-cat detection
+    const MANAGED_ELSEWHERE = new Set(['madera']);
     const catSet = new Set(catNames.map(n => n.toLowerCase().trim()));
     const unknownCats = [...new Set(
       STATE_INVENTORY
-        .filter(i => !i._init && i.category && !catSet.has(i.category.toLowerCase().trim()))
+        .filter(i => !i._init && i.category
+          && !catSet.has(i.category.toLowerCase().trim())
+          && !MANAGED_ELSEWHERE.has(i.category.toLowerCase().trim()))
         .map(i => i.category)
     )];
     if (unknownCats.length) {
