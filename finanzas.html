@@ -41,7 +41,7 @@
 .mov-row { background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; display: grid; grid-template-columns: 80px 56px 2fr 1.4fr 1fr 110px; gap: 14px; padding: 11px 16px; align-items: center; cursor: pointer; transition: all 0.12s; border-left: 3px solid transparent; }
 .mov-row.mov-in   { border-left-color: var(--green); }
 .mov-row.mov-out  { border-left-color: var(--red); }
-.mov-row.mov-tra  { border-left-color: var(--blue); }
+.mov-row.mov-tra  { border-left-color: var(--amber); }
 .mov-row.mov-debt { border-left-color: var(--mauve, #8839ef); }
 .ts-btn.act.t-debt { background: var(--mauve, #8839ef); color: #fff; }
 .cat-chip { display:inline-block; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:2px 7px; border-radius:5px; cursor:pointer; margin-top:4px; user-select:none; }
@@ -63,7 +63,7 @@
 .m-amt { font-size: 14px; font-weight: 800; text-align: right; }
 .amt-in  { color: var(--green); }
 .amt-out { color: var(--text); }
-.amt-neu { color: var(--subtext); }
+.amt-neu { color: var(--amber); }
 
 /* Detalle Expandido */
 .mov-detail { background: var(--base); border: 1px solid var(--blue); border-top: 1px dashed var(--crust); padding: 16px; border-radius: 0 0 8px 8px; margin-top: 0; margin-bottom: 8px; display: none; }
@@ -95,7 +95,7 @@
 .ts-btn.act { background: var(--base); color: var(--text); border-color: var(--surface1); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .ts-btn.act.t-inc { background: var(--green); color: #fff; }
 .ts-btn.act.t-exp { background: var(--red); color: #fff; }
-.ts-btn.act.t-tra { background: var(--surface1); color: var(--base); }
+.ts-btn.act.t-tra { background: var(--amber); color: #fff; }
 
 
 .f-row { display: flex; flex-direction: column; gap: 6px; }
@@ -444,24 +444,33 @@
     DBm = [..._allMovements];
     LOADED_MONTHS = [...new Set(_allMovements.map(m => (m.date||'').slice(0,7)).filter(Boolean))];
 
-    STATE_PROJECTS   = await window.DB.query("projects");
-    const rawCats    = await window.DB.query("expense_categories");
-    // expense_categories puede venir como array de docs con {name,type} o como doc único con {list:[]}
+    // Pre-cargar colecciones frescas desde Firestore
+    const p = window.parent;
+    if (p?.cargar_coleccion) {
+      await Promise.all([
+        p.cargar_coleccion('projects'),
+        p.cargar_coleccion('expense_categories'),
+        p.cargar_coleccion('contacts'),
+        p.cargar_coleccion('purchase_orders'),
+        p.cargar_coleccion('bank_accounts'),
+      ]);
+    }
+
+    STATE_PROJECTS = await window.DB.query("projects");
+
+    const rawCats = await window.DB.query("expense_categories");
     if (rawCats.length && rawCats[0]?.name) {
       STATE_CATEGORIES = rawCats;
     } else if (rawCats.length && rawCats[0]?.list) {
-      STATE_CATEGORIES = rawCats[0].list; // formato legacy
+      STATE_CATEGORIES = rawCats[0].list;
     } else {
       STATE_CATEGORIES = window.DB.get().expense_categories || [];
     }
-    // Forzar recarga de contactos desde contacts_lists (datos frescos)
-    const p = window.parent;
-    if (p?.DB_STATE) delete p.DB_STATE.contacts;
-    if (p?.cargar_coleccion) await p.cargar_coleccion('contacts');
+
     const rawContacts = await window.DB.query("contacts");
     STATE_CONTACTS = rawContacts.filter(c => c.activo !== false && (c.name || c.nombre || c.givenName));
     if (!STATE_CONTACTS.length) STATE_CONTACTS = window.DB.get().contacts || [];
-    
+
     STATE_ORDERS = await window.DB.query("purchase_orders");
     if (!STATE_ORDERS || STATE_ORDERS.length === 0) STATE_ORDERS = window.DB.get().orders || [];
 
