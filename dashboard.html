@@ -474,9 +474,11 @@
         await window.parent.cargar_coleccion('documentos').catch(() => {});
       const docsAll  = (window.parent?.DB_STATE?.documentos || []).filter(x => x.fechaVencimiento);
       const currentEmail = window.parent?.CURRENT_USER?.email || null;
+      const currentRole  = window.parent?.CURRENT_USER_ROLE || '';
+      const isSuperRole  = ['admin','gerencia','programador'].includes(currentRole);
       const docsTodayPlus30 = docsAll.filter(doc => {
-        // Solo mostrar al encargado, o a todos si no tiene encargado asignado
-        if (currentEmail && doc.encargado && doc.encargado !== currentEmail) return false;
+        // Admin/gerencia/programador ven todos; el resto solo los que tienen asignados
+        if (!isSuperRole && currentEmail && doc.encargado && doc.encargado !== currentEmail) return false;
         const today = new Date(); today.setHours(0,0,0,0);
         const venc  = new Date(doc.fechaVencimiento + 'T12:00:00');
         const days  = Math.round((venc - today) / 86400000);
