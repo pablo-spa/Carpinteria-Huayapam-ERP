@@ -16,34 +16,33 @@
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 20px; }
 .card-title { font-size: 14px; font-weight: 800; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; border-bottom: 1px solid var(--crust); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
-.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 12px; }
-.grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 
 .field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+.field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .03em; }
 .field input, .field select { padding: 9px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; transition: border-color .15s; }
 .field input:focus, .field select:focus { outline: none; border-color: var(--blue); }
+
+/* Stacked form rows inside a card — consistent 12px gap between rows */
+.card-fields { display: flex; flex-direction: column; gap: 12px; }
 
 .input-with-icon { position: relative; }
 .input-with-icon input { padding-left: 28px; width: 100%; }
 .input-with-icon span { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--subtext); font-size: 13px; font-weight: 700; pointer-events: none; }
 
 /* Dynamic tables */
-.dyn-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-.dyn-table th { text-align: left; padding: 6px 8px; font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; border-bottom: 2px solid var(--crust); }
+.dyn-table { width: 100%; border-collapse: collapse; }
+.dyn-table th { text-align: left; padding: 6px 8px; font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .03em; border-bottom: 2px solid var(--crust); }
 .dyn-table td { padding: 5px 4px; border-bottom: 1px solid var(--crust); vertical-align: middle; }
 .dyn-table input, .dyn-table select { width: 100%; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; }
 .dyn-table input:focus, .dyn-table select:focus { outline: none; border-color: var(--blue); }
 .del-btn { background: none; border: none; color: var(--red); font-size: 18px; cursor: pointer; padding: 4px; line-height: 1; }
-.add-btn { background: transparent; border: 1px dashed var(--surface1); color: var(--subtext); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; width: 100%; transition: all .15s; }
+.add-btn { background: transparent; border: 1px dashed var(--surface1); color: var(--subtext); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; transition: all .15s; }
 .add-btn:hover { background: var(--surface0); color: var(--text); border-color: var(--subtext); }
 
-.subtotal-lbl { font-size: 14px; font-weight: 800; color: var(--green); text-align: right; margin-top: 8px; }
-
-/* Simple total field */
-.total-field { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
-.total-field label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; white-space: nowrap; }
+/* Divider between content and subtotal — consistent across all cards */
+.subtotal-lbl { font-size: 14px; font-weight: 800; color: var(--green); text-align: right; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--crust); }
 
 /* Footer bar */
 .footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--mantle); border-top: 1px solid var(--crust); padding: 16px 24px; z-index: 20; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
@@ -92,18 +91,20 @@
   <!-- Info del Servicio -->
   <div class="card">
     <div class="card-title">📍 Información del Servicio</div>
-    <div class="field" style="margin-bottom:12px;">
-      <label>Concepto / Nombre del Servicio</label>
-      <input type="text" id="f-concepto" placeholder="Ej: Flete para entrega de cocina en Puerto Escondido">
-    </div>
-    <div class="grid2">
+    <div class="card-fields">
       <div class="field">
-        <label>Origen</label>
-        <input type="text" id="f-origen" value="Taller Huayapam">
+        <label>Concepto / Nombre del Servicio</label>
+        <input type="text" id="f-concepto" placeholder="Ej: Flete para entrega de cocina en Puerto Escondido">
       </div>
-      <div class="field">
-        <label>Destino</label>
-        <input type="text" id="f-destino" placeholder="Ej: Puerto Escondido">
+      <div class="grid2">
+        <div class="field">
+          <label>Origen</label>
+          <input type="text" id="f-origen" value="Taller Huayapam">
+        </div>
+        <div class="field">
+          <label>Destino</label>
+          <input type="text" id="f-destino" placeholder="Ej: Puerto Escondido">
+        </div>
       </div>
     </div>
   </div>
@@ -158,12 +159,12 @@
   <!-- Hospedaje -->
   <div class="card">
     <div class="card-title">🏨 Hospedaje</div>
-    <div class="grid2">
+    <div class="card-fields">
       <div class="field">
         <label>Concepto</label>
         <input type="text" id="f-hosp-concepto" placeholder="Ej: Hotel 3 noches, 2 personas" oninput="calcTotals()">
       </div>
-      <div class="field">
+      <div class="field" style="max-width:240px;">
         <label>Total ($)</label>
         <div class="input-with-icon">
           <span>$</span>
@@ -177,24 +178,26 @@
   <!-- Alimentos -->
   <div class="card">
     <div class="card-title">🍽️ Alimentos</div>
-    <div class="grid4">
+    <div class="card-fields">
       <div class="field">
         <label>Concepto</label>
-        <input type="text" id="f-alim-concepto" placeholder="Ej: Comidas viaje" oninput="calcTotals()">
+        <input type="text" id="f-alim-concepto" placeholder="Ej: Comidas durante el viaje" oninput="calcTotals()">
       </div>
-      <div class="field">
-        <label>Número de Personas</label>
-        <input type="number" id="f-personas" min="1" step="1" placeholder="0" oninput="calcTotals()">
-      </div>
-      <div class="field">
-        <label>Días</label>
-        <input type="number" id="f-dias" min="1" step="1" placeholder="0" oninput="calcTotals()">
-      </div>
-      <div class="field">
-        <label>Costo por Persona / Día</label>
-        <div class="input-with-icon">
-          <span>$</span>
-          <input type="number" id="f-precio-comida" min="0" step="10" placeholder="0" oninput="calcTotals()">
+      <div class="grid3">
+        <div class="field">
+          <label>Número de Personas</label>
+          <input type="number" id="f-personas" min="1" step="1" placeholder="0" oninput="calcTotals()">
+        </div>
+        <div class="field">
+          <label>Días</label>
+          <input type="number" id="f-dias" min="1" step="1" placeholder="0" oninput="calcTotals()">
+        </div>
+        <div class="field">
+          <label>Costo por Persona / Día</label>
+          <div class="input-with-icon">
+            <span>$</span>
+            <input type="number" id="f-precio-comida" min="0" step="10" placeholder="0" oninput="calcTotals()">
+          </div>
         </div>
       </div>
     </div>
