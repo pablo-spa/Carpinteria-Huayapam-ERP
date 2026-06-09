@@ -197,9 +197,6 @@
     
     <div class="sp-body">
       <input type="hidden" id="f-id">
-      <!-- DEBUG TEMPORAL - se quitará una vez resuelto -->
-      <div id="dbg-bar" style="background:#1e3a5f;color:#7dd3fc;font-size:11px;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-family:monospace;display:none;"></div>
-
       <!-- Type Selection -->
       <div class="type-selector" id="p-type-sel">
         <div class="ts-btn act t-exp" onclick="setPanelType('Gasto')">Gasto</div>
@@ -293,7 +290,7 @@
 
       <div class="f-row" id="cat-wrap">
         <label class="f-lbl">Categoría</label>
-        <select id="f-cat-input" class="f-input">
+        <select id="f-cat-input" class="f-input" data-searchable>
           <option value="">-- Sin categorizar (Pendiente) --</option>
         </select>
       </div>
@@ -511,8 +508,9 @@
       `<option value="">Todas las categorías</option>` +
       `<option value="pending">⚠️ Pendientes de categorizar${sinCat ? ' (' + sinCat + ')' : ''}</option>` +
       ingHtml + gasHtml + transHtml;
-    document.getElementById('f-cat-input').innerHTML =
-      '<option value="">-- Sin categorizar (Pendiente) --</option>' + ingHtmlInput + gasHtmlInput + transHtmlInput;
+    const catInputEl = document.getElementById('f-cat-input');
+    catInputEl.innerHTML = '<option value="">-- Sin categorizar (Pendiente) --</option>' + ingHtmlInput + gasHtmlInput + transHtmlInput;
+    if (catInputEl._ssInit) catInputEl._ssRefresh(); else SearchableSelect.init(catInputEl);
 
     // Cargar saldos reales desde account_balances
     const rawBal = await window.DB.query('account_balances');
@@ -869,22 +867,14 @@
   }
 
   function acceptLLM(cat) {
-    // If option doesn't exist, this fails gracefully or sets to empty, but we matched the options list mostly.
     const sel = document.getElementById('f-cat-input');
     const opts = Array.from(sel.options).map(o => o.value);
-    if(opts.includes(cat)) sel.value = cat;
+    if(opts.includes(cat)) { sel.value = cat; if (sel._ssSync) sel._ssSync(); }
     document.getElementById('llm-box').style.display = 'none';
   }
 
   // Panel Logic
   function openPanel(id=null) {
-    // DEBUG: mostrar estado actual de datos
-    const dbgEl = document.getElementById('dbg-bar');
-    if (dbgEl) {
-      const _dbs = window.parent?.DB_STATE || {};
-      dbgEl.textContent = `DBloaded:${window.parent?.DB_STATE_LOADED} | proj:${STATE_PROJECTS.length}(raw:${(_dbs.projects||[]).length}) | ctc:${STATE_CONTACTS.length}(raw:${(_dbs.contacts||[]).length}) | acc:${STATE_BANK_ACCOUNTS.length}(raw:${(_dbs.bank_accounts||[]).length}) | parent===win:${window.parent===window}`;
-      dbgEl.style.display = 'block';
-    }
     document.getElementById('panel-overlay').classList.add('open');
     document.getElementById('llm-box').style.display = 'none';
     
@@ -928,7 +918,9 @@
       document.getElementById('f-entity').value = entityVal;
       if (document.getElementById('f-entity')._ssSync) document.getElementById('f-entity')._ssSync();
       document.getElementById('f-concept').value = m.concept || '';
-      document.getElementById('f-cat-input').value = m.category || '';
+      const catEl = document.getElementById('f-cat-input');
+      catEl.value = m.category || '';
+      if (catEl._ssSync) catEl._ssSync();
       document.getElementById('f-notes').value = m.notes || '';
       const projEl = document.getElementById('f-proj');
       projEl.value = m.projectId || '';
@@ -962,7 +954,8 @@
       if (debtEl2._ssSync) debtEl2._ssSync();
       document.getElementById('f-entity').value = '';
       document.getElementById('f-concept').value = '';
-      document.getElementById('f-cat-input').value = '';
+      const catReset = document.getElementById('f-cat-input');
+      catReset.value = ''; if (catReset._ssSync) catReset._ssSync();
       document.getElementById('f-notes').value = '';
       document.getElementById('f-debt-amount').value = '';
       document.getElementById('f-debt-diff').value = '';
@@ -992,7 +985,9 @@
     }
     const opts = '<option value="">-- Sin categorizar --</option>' +
       cats.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-    document.getElementById('f-cat-input').innerHTML = opts;
+    const catInp = document.getElementById('f-cat-input');
+    catInp.innerHTML = opts;
+    if (catInp._ssInit) catInp._ssRefresh(); else SearchableSelect.init(catInp);
   }
 
   function setPanelType(type) {
@@ -1029,7 +1024,8 @@
       const projT = document.getElementById('f-proj'); projT.value = ''; if (projT._ssSync) projT._ssSync();
       const ocT   = document.getElementById('f-oc');   ocT.value   = ''; if (ocT._ssSync)   ocT._ssSync();
       document.getElementById('lbl-acc').textContent = 'Cuenta Origen';
-      document.getElementById('f-cat-input').value = 'Transferencia entre cuentas propias';
+      const catTrans = document.getElementById('f-cat-input');
+      catTrans.value = 'Transferencia entre cuentas propias'; if (catTrans._ssSync) catTrans._ssSync();
     } else if (type === 'Pago de Deuda' || type === 'Disposición de Deuda') {
       btns[3].classList.add('act', 't-debt');
       document.getElementById('debt-acc-wrap').style.display = 'flex';

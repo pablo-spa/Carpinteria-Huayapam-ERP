@@ -261,11 +261,20 @@ const SearchableSelect = (() => {
     function reposition() {
       const rect = trigger.getBoundingClientRect();
       const w = Math.max(rect.width, 280);
-      // Don't overflow viewport right edge
       const left = Math.min(rect.left, window.innerWidth - w - 8);
-      dropdown.style.top   = (rect.bottom + 4) + 'px';
-      dropdown.style.left  = left + 'px';
-      dropdown.style.width = w + 'px';
+      const dropH = Math.min(300, window.innerHeight * 0.5);
+      const spaceBelow = window.innerHeight - rect.bottom - 8;
+      const openUpward = spaceBelow < dropH && rect.top > dropH;
+      dropdown.style.left   = left + 'px';
+      dropdown.style.width  = w + 'px';
+      dropdown.style.maxHeight = Math.min(300, openUpward ? rect.top - 8 : spaceBelow) + 'px';
+      if (openUpward) {
+        dropdown.style.top    = 'auto';
+        dropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+      } else {
+        dropdown.style.top    = (rect.bottom + 4) + 'px';
+        dropdown.style.bottom = 'auto';
+      }
     }
 
     function open() {
