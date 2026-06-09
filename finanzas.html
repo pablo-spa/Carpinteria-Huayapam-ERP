@@ -197,7 +197,9 @@
     
     <div class="sp-body">
       <input type="hidden" id="f-id">
-      
+      <!-- DEBUG TEMPORAL - se quitará una vez resuelto -->
+      <div id="dbg-bar" style="background:#1e3a5f;color:#7dd3fc;font-size:11px;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-family:monospace;display:none;"></div>
+
       <!-- Type Selection -->
       <div class="type-selector" id="p-type-sel">
         <div class="ts-btn act t-exp" onclick="setPanelType('Gasto')">Gasto</div>
@@ -876,6 +878,13 @@
 
   // Panel Logic
   function openPanel(id=null) {
+    // DEBUG: mostrar estado actual de datos
+    const dbgEl = document.getElementById('dbg-bar');
+    if (dbgEl) {
+      const _dbs = window.parent?.DB_STATE || {};
+      dbgEl.textContent = `DBloaded:${window.parent?.DB_STATE_LOADED} | proj:${STATE_PROJECTS.length}(raw:${(_dbs.projects||[]).length}) | ctc:${STATE_CONTACTS.length}(raw:${(_dbs.contacts||[]).length}) | acc:${STATE_BANK_ACCOUNTS.length}(raw:${(_dbs.bank_accounts||[]).length}) | parent===win:${window.parent===window}`;
+      dbgEl.style.display = 'block';
+    }
     document.getElementById('panel-overlay').classList.add('open');
     document.getElementById('llm-box').style.display = 'none';
     
