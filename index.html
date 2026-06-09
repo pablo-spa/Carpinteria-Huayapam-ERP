@@ -464,7 +464,7 @@
         <h3 id="g-confirm-title" style="margin:0 0 12px; font-size:18px; color:var(--text);">Confirmar</h3>
         <p id="g-confirm-msg" style="margin:0 0 24px; color:var(--subtext); font-size:14px; line-height:1.5;"></p>
         <div style="display:flex; gap:12px; justify-content:flex-end;">
-          <button class="btn btn-ghost" onclick="document.getElementById('global-confirm-overlay').style.display='none'">Cancelar</button>
+          <button id="g-confirm-cancel-btn" class="btn btn-ghost">Cancelar</button>
           <button id="g-confirm-btn" class="btn btn-blue">Aceptar</button>
         </div>
       </div>
@@ -1543,17 +1543,29 @@
         };
 
         // Global UI Confirm Modal
-        window.showConfirm = function(title, msg, btnText, btnClass, onConfirm) {
+        window.showConfirm = function(title, msg, btnText, btnClass, onConfirm, onCancel) {
+          const overlay = document.getElementById('global-confirm-overlay');
           document.getElementById('g-confirm-title').textContent = title;
           document.getElementById('g-confirm-msg').innerHTML = msg.replace(/\n/g, '<br>');
           const btn = document.getElementById('g-confirm-btn');
+          const cancelBtn = document.getElementById('g-confirm-cancel-btn');
           btn.textContent = btnText || 'Aceptar';
           btn.className = 'btn ' + (btnClass || 'btn-blue');
+          
+          const hide = () => overlay.style.display = 'none';
+
           btn.onclick = () => {
-            document.getElementById('global-confirm-overlay').style.display = 'none';
+            hide();
             if (onConfirm) onConfirm();
           };
-          document.getElementById('global-confirm-overlay').style.display = 'flex';
+          cancelBtn.onclick = () => {
+            hide();
+            if (onCancel) onCancel();
+          };
+          overlay.onclick = (e) => {
+            if (e.target === overlay) { hide(); if(onCancel) onCancel(); }
+          };
+          overlay.style.display = 'flex';
         };
 
         window.incrementFieldInFirebase = async (col, docId, field, amount, extraUpdates = {}) => {

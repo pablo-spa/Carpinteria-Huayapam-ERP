@@ -153,7 +153,6 @@
 
   window.vaciarColeccion = async function() {
       if(!currentTable) return;
-      if(!confirm("¿Estás seguro de ELIMINAR TODOS los registros de: " + currentTable + "? Esto es irreversible.")) return;
       if(!await showConfirm('Vaciar Colección', `¿Estás seguro de ELIMINAR TODOS los registros de: <b>${currentTable}</b>? Esto es irreversible.`, 'Eliminar Todo', 'btn-red')) return;
 
       try {

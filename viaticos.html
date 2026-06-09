@@ -1072,7 +1072,8 @@ async function addGasto() {
 }
 
 async function delAnticipo(id) {
-  if(!confirm('¿Eliminar este anticipo? El movimiento en Finanzas se anulará y el saldo regresará a la cuenta.')) return;
+  const ok = await showConfirm('Eliminar Anticipo', '¿Eliminar este anticipo? El movimiento en Finanzas se anulará y el saldo regresará a la cuenta.', 'Eliminar', 'btn-red');
+  if(!ok) return;
   const allAnts = window.parent?.DB_STATE?.anticipos_viaticos || [];
   const ant = allAnts.find(a => a.id === id);
   
@@ -1103,20 +1104,12 @@ async function delGasto(id) {
   const gasto = (db.gastos_viaticos || []).find(g => g.id === id);
   if (!gasto) return;
 
-  const doDelete = async () => {
-    gasto.eliminado = true;
-    if (window.parent?.setDocumentInFirebase) {
-      await window.parent.setDocumentInFirebase('gastos_viaticos', id, gasto);
-    }
-    renderDetalles();
-    toast('Gasto eliminado', 'ok');
-  };
-
-  if (window.parent && window.parent.showConfirm) {
-    window.parent.showConfirm('Eliminar Gasto', `¿Estás seguro de eliminar este gasto de <b>${formatMoney(gasto.monto)}</b>?`, 'Eliminar', 'btn-red', doDelete);
-  } else {
-    if (confirm(`¿Eliminar este gasto de ${formatMoney(gasto.monto)}?`)) doDelete();
-  }
+  const ok = await showConfirm('Eliminar Gasto', `¿Estás seguro de eliminar este gasto de <b>${formatMoney(gasto.monto)}</b>?`, 'Eliminar', 'btn-red');
+  if (!ok) return;
+  gasto.eliminado = true;
+  if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('gastos_viaticos', id, gasto);
+  renderDetalles();
+  toast('Gasto eliminado', 'ok');
 }
 
 async function comenzarLiquidacion() {
@@ -1179,7 +1172,8 @@ async function comenzarLiquidacion() {
 }
 
 async function reabrirViaje() {
-  if(!confirm('¿Reabrir este viaje para modificaciones? Si hubo un ajuste de saldo al liquidarlo, se anulará y el dinero se revertirá.')) return;
+  const ok = await showConfirm('Reabrir Viaje', '¿Reabrir este viaje para modificaciones? Si hubo un ajuste de saldo al liquidarlo, se anulará y el dinero se revertirá.', 'Reabrir', 'btn-amber');
+  if(!ok) return;
   const db = window.DB.get();
   const v = (db.viajes || []).find(vx => vx.id === currentViajeId);
   if(v) {
@@ -1224,7 +1218,8 @@ function guardarYSalir() {
 }
 
 async function eliminarViaje() {
-  if (!currentViajeId || !window.confirm('¿Eliminar este viaje? Esta acción no se puede deshacer.')) return;
+  if (!currentViajeId) return;
+  if (!await showConfirm('Eliminar Viaje', '¿Eliminar este viaje? Esta acción no se puede deshacer.', 'Eliminar', 'btn-red')) return;
   try {
     await window.parent.deleteDocumentFromFirebase('viajes', currentViajeId);
     if (window.parent?.DB_STATE?.viajes) {

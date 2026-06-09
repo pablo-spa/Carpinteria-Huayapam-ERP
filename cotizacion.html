@@ -1287,65 +1287,65 @@ function linkClientToProject(d, pId, cId) {
 }
 
 function saveQuoteToProject() {
-  const d   = window.DB.get();
-  const cId = document.getElementById('clientInput').value;
-  const pId = document.getElementById('projectInput').value;
+    const d = window.DB.get();
+    const cId = document.getElementById('clientInput').value;
+    const pId = document.getElementById('projectInput').value;
 
-  if (!S.pieces || S.pieces.length === 0) { toast('No hay piezas cotizadas.', 'warn'); return; }
+    if (!S.pieces || S.pieces.length === 0) { toast('No hay piezas cotizadas.', 'warn'); return; }
 
-  const tot     = S.pieces.reduce((acc, p) => acc + calc(p).final * (p.qty||1), 0);
-  const pieces  = JSON.parse(JSON.stringify(S.pieces));
-  const cfg     = { EXTRAS, MARGIN, ERROR, TAX, COMMISSION };
-  const dateStr = new Date().toISOString().slice(0, 10);
+    const tot = S.pieces.reduce((acc, p) => acc + calc(p).final * (p.qty || 1), 0);
+    const pieces = JSON.parse(JSON.stringify(S.pieces));
+    const cfg = { EXTRAS, MARGIN, ERROR, TAX, COMMISSION };
+    const dateStr = new Date().toISOString().slice(0, 10);
 
-  // ── Modo edición ──────────────────────────────────────────────────────────
-  if (EDIT_STATE.id) {
-    const existing = (d.quotations||[]).find(q => q.id === EDIT_STATE.id);
-    if (!existing) { toast('No se encontró la cotización original.', 'warn'); return; }
+    // ── Modo edición ──────────────────────────────────────────────────────────
+    if (EDIT_STATE.id) {
+        const existing = (d.quotations || []).find(q => q.id === EDIT_STATE.id);
+        if (!existing) { toast('No se encontró la cotización original.', 'warn'); return; }
 
-    if (EDIT_STATE.originalStatus === 'Activa') {
-      if (!confirm(`Esta cotización está Activa.\n\nSe creará una nueva versión con los cambios y la actual quedará "En Pausa".\n\n¿Continuar?`)) return;
-      existing.status = 'En Pausa';
-      window.DB.updateQuote(existing);
-      const existingForProj = (d.quotations||[]).filter(q => pId ? q.projectId === pId : !q.projectId);
-      const folio = genFolio(dateStr, existingForProj.length + 1);
-      const copy = { id: crypto.randomUUID(), folio, projectId: pId||null, clientId: cId||null, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
-      window.DB.addQuote(copy);
-      if (pId && cId) linkClientToProject(d, pId, cId);
-      toast('✓ Nueva versión creada. La anterior quedó En Pausa.');
-    } else {
-      existing.pieces    = pieces;
-      existing.total     = tot;
-      existing.globalCfg = cfg;
-      existing.clientId  = cId || null;
-      existing.projectId = pId || null;
-      window.DB.updateQuote(existing);
-      if (pId && cId) linkClientToProject(d, pId, cId);
-      toast('✓ Cotización actualizada.');
+        if (EDIT_STATE.originalStatus === 'Activa') {
+            showConfirm('Cotización Activa', `Esta cotización está Activa.\n\nSe creará una nueva versión con los cambios y la actual quedará "En Pausa".\n\n¿Continuar?`, 'Continuar', 'btn-amber', () => {
+                existing.status = 'En Pausa';
+                window.DB.updateQuote(existing);
+                const existingForProj = (d.quotations || []).filter(q => pId ? q.projectId === pId : !q.projectId);
+                const folio = genFolio(dateStr, existingForProj.length + 1);
+                const copy = { id: crypto.randomUUID(), folio, projectId: pId || null, clientId: cId || null, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
+                window.DB.addQuote(copy);
+                if (pId && cId) linkClientToProject(d, pId, cId);
+                toast('✓ Nueva versión creada. La anterior quedó En Pausa.');
+                if (pId) navToProject(pId); else navToCotizaciones();
+            });
+        } else {
+            existing.pieces = pieces;
+            existing.total = tot;
+            existing.globalCfg = cfg;
+            existing.clientId = cId || null;
+            existing.projectId = pId || null;
+            window.DB.updateQuote(existing);
+            if (pId && cId) linkClientToProject(d, pId, cId);
+            toast('✓ Cotización actualizada.');
+            if (pId) navToProject(pId); else navToCotizaciones();
+        }
+        return;
     }
-    if (pId) navToProject(pId);
-    else navToCotizaciones();
-    return;
-  }
 
-  // ── Cotización nueva (o copia de revisión) ────────────────────────────────
-  if (!confirm(`¿Guardar cotización?`)) return;
+    // ── Cotización nueva (o copia de revisión) ────────────────────────────────
+    showConfirm('Guardar Cotización', '¿Guardar cotización?', 'Guardar', 'btn-blue', () => {
+        const existingForProj = (d.quotations || []).filter(q => pId ? q.projectId === pId : !q.projectId);
+        const folio = genFolio(dateStr, existingForProj.length + 1);
 
-  const existingForProj = (d.quotations||[]).filter(q => pId ? q.projectId === pId : !q.projectId);
-  const folio = genFolio(dateStr, existingForProj.length + 1);
+        const quote = { id: crypto.randomUUID(), folio, projectId: pId || null, clientId: cId || null, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
 
-  const quote = { id: crypto.randomUUID(), folio, projectId: pId||null, clientId: cId||null, date: dateStr, pieces, total: tot, globalCfg: cfg, status: 'Esperando Autorización' };
+        if (Q_state.baseQuoteId) {
+            const baseIdx = (d.quotations || []).findIndex(q => q.id === Q_state.baseQuoteId);
+            if (baseIdx > -1) d.quotations[baseIdx].status = 'En Pausa';
+        }
 
-  if (Q_state.baseQuoteId) {
-    const baseIdx = (d.quotations||[]).findIndex(q => q.id === Q_state.baseQuoteId);
-    if (baseIdx > -1) d.quotations[baseIdx].status = 'En Pausa';
-  }
-
-  window.DB.addQuote(quote);
-  if (pId && cId) linkClientToProject(d, pId, cId);
-  toast('✓ Cotización guardada.');
-  if (pId) navToProject(pId);
-  else navToCotizaciones();
+        window.DB.addQuote(quote);
+        if (pId && cId) linkClientToProject(d, pId, cId);
+        toast('✓ Cotización guardada.');
+        if (pId) navToProject(pId); else navToCotizaciones();
+    });
 }
 
 function genFolio(dateStr, n) {

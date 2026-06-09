@@ -589,7 +589,7 @@
       else window.location.href = 'cotizacion.html?projectId=' + projId;
     }
 
-    function changeQuoteStatus(qId, newStatus) {
+    async function changeQuoteStatus(qId, newStatus) {
       const d = window.DB.get();
       const quotes = d.quotations || [];
       const idx = quotes.findIndex(q => q.id === qId);
@@ -598,7 +598,7 @@
       // Confirmar activación/aprobación
       if (newStatus === 'Activa') {
         const label = quotes[idx].folio || qId.slice(0,8);
-        if (!confirm(`¿Aprobar la cotización "${label}"?\n\nUna vez activa, solo se podrá editar creando una nueva versión.`)) {
+        if (!await showConfirm('Aprobar Cotización', `¿Aprobar la cotización "${label}"?<br><br>Una vez activa, solo se podrá editar creando una nueva versión.`, 'Aprobar', 'btn-green')) {
           // Revertir el select visualmente
           renderQuotes(); return;
         }
@@ -635,7 +635,7 @@
     }
 
     async function deleteQuote(qId, label) {
-      if (!confirm(`¿Enviar la cotización "${label}" a la papelera (Eliminar)?\n\nPodrá ser recuperada por un administrador si es necesario.`)) return;
+      if (!await showConfirm('Eliminar Cotización', `¿Enviar la cotización "${label}" a la papelera?<br><br>Podrá ser recuperada por un administrador si es necesario.`, 'Eliminar', 'btn-red')) return;
       
       const d = window.DB.get();
       const qIdx = (d.quotations || []).findIndex(q => q.id === qId);
@@ -711,13 +711,13 @@
       if (window.parent?.openModule) window.parent.openModule('cotizacion_viaticos.html?projectId=' + projId, 'Nueva Cot. Viáticos');
       else window.location.href = 'cotizacion_viaticos.html?projectId=' + projId;
     }
-    function changeQuoteStatusViaticos(qId, newStatus) {
+    async function changeQuoteStatusViaticos(qId, newStatus) {
       const d = window.DB.get();
       const quotes = d.quotations_viaticos || [];
       const idx = quotes.findIndex(q => q.id === qId);
       if (idx < 0) return;
       if (newStatus === 'Activa') {
-        if (!confirm(`¿Aprobar la cotización?\n\nUna vez activa, solo se podrá editar creando una nueva versión.`)) { renderQuotesViaticos(); return; }
+        if (!await showConfirm('Aprobar Cotización', '¿Aprobar la cotización?<br><br>Una vez activa, solo se podrá editar creando una nueva versión.', 'Aprobar', 'btn-green')) { renderQuotesViaticos(); return; }
       }
       quotes[idx].status = newStatus;
       if (window.parent?.DB_STATE?.quotations_viaticos) {
@@ -731,7 +731,7 @@
       renderViaticos(d);
     }
     async function deleteQuoteViaticos(qId, label) {
-      if (!confirm(`¿Enviar la cotización a la papelera (Eliminar)?`)) return;
+      if (!await showConfirm('Eliminar Cotización', '¿Enviar la cotización a la papelera?', 'Eliminar', 'btn-red')) return;
       const d = window.DB.get();
       const qIdx = (d.quotations_viaticos || []).findIndex(q => q.id === qId);
       if (qIdx > -1) {
