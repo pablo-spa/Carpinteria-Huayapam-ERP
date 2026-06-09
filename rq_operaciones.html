@@ -44,7 +44,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
-    <button onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <div>
       <h2>Confirmar Pedidos</h2>
       <div class="hdr-sub" id="hdr-count">Cargando…</div>

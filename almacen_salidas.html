@@ -27,7 +27,7 @@
 <body>
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;">← Volver</button>
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <h2 style="font-size: 18px;">Vale de Salida (Entrega a Trabajador)</h2>
   </div>
   <button class="btn btn-amber" onclick="save()">Registrar Salida</button>

@@ -6,11 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bugs y Reportes</title>
 <style>
-.page-wrap { padding: 20px 24px; max-width: 780px; margin: 0 auto; }
-
-/* Toolbar */
-.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
-.page-title { font-size: 16px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.main { max-width: 860px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; justify-content: space-between; }
 .filter-tabs { display: flex; gap: 6px; }
 .ftab { background: var(--mantle); border: 1px solid var(--crust); border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; color: var(--subtext); display: flex; align-items: center; gap: 5px; }
 .ftab:hover { border-color: var(--surface1); color: var(--text); }
@@ -65,19 +62,23 @@
 </head>
 <body>
 
-<div class="page-wrap">
-  <div class="toolbar">
-    <div class="page-title">🐞 Bugs reportados</div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div class="filter-tabs" id="filter-tabs">
-        <div class="ftab active-all" data-f="todos" onclick="setFilter('todos')"><span class="ftab-dot"></span> Todos <span id="cnt-all">0</span></div>
-        <div class="ftab" data-f="abierto" onclick="setFilter('abierto')"><span class="ftab-dot"></span> Abiertos <span id="cnt-open">0</span></div>
-        <div class="ftab" data-f="resuelto" onclick="setFilter('resuelto')"><span class="ftab-dot"></span> Resueltos <span id="cnt-res">0</span></div>
-      </div>
-      <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" onclick="loadBugs()">⟳</button>
-    </div>
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
+    <div class="hdr-title">🐞 Bugs y Reportes</div>
   </div>
+</div>
 
+<div class="filters">
+  <div class="filter-tabs" id="filter-tabs">
+    <div class="ftab active-all" data-f="todos" onclick="setFilter('todos')"><span class="ftab-dot"></span> Todos <span id="cnt-all">0</span></div>
+    <div class="ftab" data-f="abierto" onclick="setFilter('abierto')"><span class="ftab-dot"></span> Abiertos <span id="cnt-open">0</span></div>
+    <div class="ftab" data-f="resuelto" onclick="setFilter('resuelto')"><span class="ftab-dot"></span> Resueltos <span id="cnt-res">0</span></div>
+  </div>
+  <button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;" onclick="loadBugs()">⟳ Actualizar</button>
+</div>
+
+<div class="main">
   <div class="bug-list" id="bug-list">
     <div class="empty-state"><div class="empty-icon">⏳</div>Cargando reportes...</div>
   </div>

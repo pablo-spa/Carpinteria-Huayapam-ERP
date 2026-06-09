@@ -9,6 +9,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+.main { max-width: 1000px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
 .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
@@ -25,17 +27,18 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <h2>Historial de Compras</h2>
+    <div class="hdr-title">Historial de Compras</div>
   </div>
+</div>
+
+<div class="filters">
   <div class="search-box">
     <span style="color:var(--subtext);font-size:14px;">🔍</span>
     <input type="text" id="srch" placeholder="Buscar por Folio, Proveedor..." oninput="applyFilter()">
   </div>
 </div>
 
-<div style="padding: 24px;">
-<div id="app"></div>
-</div>
+<div class="main" id="app"></div>
 
 <script src="db.js"></script>
 <script>

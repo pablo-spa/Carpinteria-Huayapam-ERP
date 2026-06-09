@@ -56,7 +56,7 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:16px;">
-    <button onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();" style="background:none;border:none;font-size:14px;font-weight:700;color:var(--subtext);cursor:pointer;padding:4px 8px;border-radius:6px; transition:0.15s;" onmouseover="this.style.background='var(--surface0)';this.style.color='var(--text)';" onmouseout="this.style.background='none';this.style.color='var(--subtext)';">← Volver</button>
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <h1>Escanear Madera</h1>
   </div>
 </div>

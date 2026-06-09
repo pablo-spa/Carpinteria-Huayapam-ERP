@@ -19,27 +19,23 @@
   .badge { background: var(--crust); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
 
   .main { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
-  .head { display: flex; justify-content: space-between; align-items: flex-end; }
-  .title { font-size: 24px; font-weight: 800; }
-  .subtitle { font-size: 13px; color: var(--subtext); margin-top: 4px; }
-  
-  .card { background: var(--base); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; }
-  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--blue); text-transform: uppercase; display: flex; justify-content: space-between;}
 
   .cols-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
   .col-pill { background: var(--mantle); border: 1px solid var(--crust); padding: 10px; border-radius: 8px; font-size: 13px; font-family: monospace; font-weight: 600; display: flex; justify-content: space-between; }
   
   .raw-preview { background: var(--crust); padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; color: var(--subtext); max-height: 300px; overflow-y: auto; overflow-x: auto; }
-  
-  button.danger { background: var(--red); color: #111; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; }
-  button { cursor: pointer; padding: 8px 16px; border: none; border-radius: 6px; background: var(--surface0); color: var(--text); font-weight: bold; }
 </style>
 </head>
 <body>
 
 <div class="layout">
   <div class="sidebar">
-    <div class="sb-header">Colecciones Firestore</div>
+    <div class="sb-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="back-btn" style="padding:4px 8px; margin-left:-8px;" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
+      </div>
+      <div style="margin-top:8px;">Colecciones Firestore</div>
+    </div>
     <div class="sb-list" id="table-list"></div>
   </div>
 
@@ -50,17 +46,17 @@
     </div>
     
     <div id="sel-view" style="display:none; flex-direction:column; gap:24px;">
-      <div class="head">
-        <div>
-          <div class="title" id="t-name">Colección</div>
-          <div class="subtitle" id="t-count">0 registros</div>
+      <div class="hdr" style="padding:0; border:none; background:transparent;">
+        <div style="display:flex; flex-direction:column;">
+          <div class="hdr-title" id="t-name" style="font-size:24px;">Colección</div>
+          <div style="font-size:13px; color:var(--subtext); margin-top:4px;" id="t-count">0 registros</div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-title">
             <span>Columnas Detectadas</span>
-            <button class="danger" onclick="vaciarColeccion()">Vaciar Colección</button>
+            <button class="btn btn-red" onclick="vaciarColeccion()">Vaciar Colección</button>
         </div>
         <div class="cols-grid" id="t-cols"></div>
       </div>
