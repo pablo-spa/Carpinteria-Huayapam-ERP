@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Configuración General</title>
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -169,8 +170,6 @@
 
   </div>
 
-  <div id="toast-wrap" style="position:fixed; top:70px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px;"></div>
-
 <script>
   // DB_STATE.settings viene de Firestore como array [{_id:'main',...campos}].
   // Después de un save en sesión puede ser un objeto plano. Esta función normaliza ambos casos.
@@ -245,12 +244,7 @@
       // Actualizar DB_STATE en el padre
       if (window.parent?.DB_STATE) window.parent.DB_STATE.settings = s;
 
-      const wrap = document.getElementById('toast-wrap');
-      const t = document.createElement('div');
-      t.style.cssText = 'background:var(--green);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.15);animation:toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);';
-      t.textContent = '✓ Cambios guardados correctamente';
-      wrap.appendChild(t);
-      setTimeout(() => t.remove(), 3000);
+      toast('✓ Cambios guardados correctamente');
     } catch (err) {
       alert('Error al guardar: ' + err.message);
       console.error(err);
