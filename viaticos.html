@@ -84,7 +84,7 @@ td { color: var(--text); }
     <div class="hdr-title">Gestión de Viáticos</div>
   </div>
   <div id="hdr-actions" style="display:flex; gap:8px; align-items:center;">
-    <button class="btn btn-blue" onclick="showView('form')">+ Nuevo Viaje</button>
+    <button class="btn btn-blue" onclick="crearNuevoViaje()">+ Nuevo Viaje</button>
   </div>
   <div id="hdr-actions-detail" style="display:none; gap: 8px;">
     <button class="btn btn-blue" onclick="guardarYSalir()">Guardar y Salir</button>
@@ -105,52 +105,6 @@ td { color: var(--text); }
   <div id="view-list" class="view active">
     <div id="list-container" class="trip-list">
       <!-- trips will be loaded here -->
-    </div>
-  </div>
-
-  <!-- VIEW: FORM (NEW/EDIT) -->
-  <div id="view-form" class="view">
-    <div class="card">
-      <h2 class="card-title">Registrar Nuevo Viaje</h2>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Proyecto</label>
-          <select id="f-project" class="form-control" data-searchable>
-            <option value="">— General / Sin proyecto —</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Descripción del viaje / Motivo</label>
-        <input type="text" id="f-desc" class="form-control" placeholder="Ej: Instalación de puertas y closets">
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Fecha Estimada de Salida</label>
-          <input type="date" id="f-salida" class="form-control">
-        </div>
-        <div class="form-group">
-          <label>Fecha Estimada de Regreso</label>
-          <input type="date" id="f-regreso" class="form-control">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Viático de comida por persona <span style="font-weight:400;color:var(--subtext);">($/persona/día — solo alimentación)</span></label>
-          <input type="number" id="f-viatico-dia" class="form-control" placeholder="0" step="50" min="0">
-        </div>
-        <div class="form-group"></div>
-      </div>
-
-      <div class="form-group" style="margin-top:24px;">
-        <button class="btn btn-blue" onclick="saveViaje()">Guardar Viaje</button>
-        <button class="btn" onclick="showView('list')">Cancelar</button>
-      </div>
-
     </div>
   </div>
 
@@ -461,19 +415,14 @@ async function init() {
   }
   document.getElementById('fa-por').innerHTML = '<option value="">— Seleccionar —</option>' + adminOpts;
 
-  // Init projects select (form nuevo viaje + detalle)
+  // Init projects select (detalle)
   const projects = await window.DB.query('projects');
   const projOpts = '<option value="">— General / Sin proyecto —</option>' +
     projects.filter(p => !p._init).map(p => `<option value="${p.id}">${p.codigo||p.code} - ${p.nombre||p.name}</option>`).join('');
-  const pSel = document.getElementById('f-project');
-  pSel.innerHTML = projOpts;
-  if (pSel._ssInit) pSel._ssRefresh(); else if (typeof SearchableSelect !== 'undefined') SearchableSelect.init(pSel);
   document.getElementById('d-project-sel').innerHTML = projOpts;
-  
+
   // Set default dates
   const today = new Date().toISOString().split('T')[0];
-  document.getElementById('f-salida').value = today;
-  document.getElementById('f-regreso').value = today;
   document.getElementById('fa-fecha').value = today;
   document.getElementById('fg-fecha').value = today;
 
@@ -610,39 +559,23 @@ function renderList() {
   list.innerHTML = html;
 }
 
-function saveViaje() {
-  const desc = document.getElementById('f-desc').value.trim();
-  if (!desc) {
-    document.getElementById('f-desc').focus();
-    toast('Escribe una descripción para el viaje.', 'warn');
-    return;
-  }
-
+function crearNuevoViaje() {
   const v = {
     id: crypto.randomUUID(),
     worker_ids: [],
-    project_id: document.getElementById('f-project').value.trim(),
-    descripcion: desc,
-    fecha_salida: document.getElementById('f-salida').value,
-    fecha_regreso_est: document.getElementById('f-regreso').value,
-viatico_diario: parseFloat(document.getElementById('f-viatico-dia').value) || 0,
+    project_id: '',
+    descripcion: '',
+    fecha_salida: new Date().toISOString().slice(0, 10),
+    fecha_regreso_est: '',
+    viatico_diario: 0,
     estado: 'activo',
     creado: new Date().toISOString().slice(0, 10)
   };
-
-  // Actualizar DB_STATE directamente (window.DB.save no es fiable para inserciones)
   dbStatePush('viajes', v);
-
-  // Persistir en Firestore
   if (window.parent?.setDocumentInFirebase) {
     window.parent.setDocumentInFirebase('viajes', v.id, v);
   }
-
-  // Limpiar form
-  document.getElementById('f-desc').value = '';
-
-  showView('list');
-  toast('Viaje creado.', 'ok');
+  openDetalle(v.id);
 }
 
 function openDetalle(id) {
