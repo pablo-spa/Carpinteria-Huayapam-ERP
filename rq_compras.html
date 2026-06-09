@@ -102,11 +102,11 @@
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <h2>Panel de Compras</h2>
   </div>
-  <button class="btn btn-blue" onclick="showNewOrderForm()">+ Nueva Orden</button>
+  <button class="btn btn-blue" onclick="window.parent?.openModule('rq_almacen.html?status=Confirmado','Hoja de Pedido')">Nueva Hoja de Pedido</button>
 </div>
 
-<!-- ── Formulario Nueva Orden ── -->
-<div id="new-order-panel" style="display:none;">
+<!-- ── Formulario Nueva Orden (reemplazado por rq_almacen) ── -->
+<div id="new-order-panel" style="display:none; pointer-events:none; visibility:hidden;">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
     <div style="font-size:16px; font-weight:800;">Nueva Orden de Compra</div>
     <button class="btn btn-dark" onclick="hideNewOrderForm()">✕ Cancelar</button>
@@ -830,7 +830,7 @@ async function cancelOrder(id) {
   const all = db.purchase_orders || db.orders || [];
   const order = all.find(o => o.id === id);
   if (!order) return;
-  if (!window.confirm(`¿Cancelar orden ${order.folio}?\nSe moverá al Historial de Compras.`)) return;
+  if (!await showConfirm('Cancelar Orden', `¿Cancelar orden ${order.folio}?\nSe moverá al Historial de Compras.`, 'Cancelar', 'btn-red')) return;
   order.status = 'Cancelado';
   order.cancelledAt = new Date().toISOString();
   if (window.parent?.setDocumentInFirebase)

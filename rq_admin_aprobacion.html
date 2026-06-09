@@ -16,11 +16,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .card-title { font-size: 15px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 12px; }
 .card-meta { font-size: 12px; color: var(--subtext); margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap; }
-.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); white-space: nowrap; }
-.badge-pending    { background: rgba(223,142,29,0.15); color: var(--amber); }
-.badge-quoted     { background: rgba(30,102,245,0.15); color: var(--blue); }
-.badge-confirmed  { background: rgba(30,102,245,0.15); color: var(--blue); }
-.badge-authorized { background: rgba(64,160,43,0.15);  color: var(--green); }
 .status-flow { display:flex; align-items:center; gap:3px; flex-wrap:wrap; margin:8px 0 4px; }
 .sf-step { font-size:10px; font-weight:700; padding:2px 7px; border-radius:99px; background:var(--surface0); color:var(--subtext); white-space:nowrap; }
 .sf-done  { background:rgba(64,160,43,0.15); color:var(--green); opacity:.7; }
@@ -55,11 +50,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       <div class="hdr-sub" id="hdr-count">Cargando…</div>
     </div>
   </div>
-  <button class="btn btn-green" onclick="openNewOrder()" style="padding:8px 14px; font-size:13px;">+ Nuevo Pedido Autorizado</button>
+  <button class="btn btn-green" onclick="window.parent?.openModule('rq_almacen.html?status=Autorizado','Hoja de Pedido')" style="padding:8px 14px; font-size:13px;">Nueva Hoja de Pedido</button>
 </div>
 
-<!-- New Order Modal -->
-<div id="new-order-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(2px);">
+<!-- New Order Modal (reemplazado por rq_almacen) -->
+<div id="new-order-modal" style="display:none; pointer-events:none; visibility:hidden; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(2px);">
   <div style="background:var(--base); border-radius:14px; width:100%; max-width:580px; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,.3); overflow:hidden;">
     <div style="padding:16px 20px; border-bottom:1px solid var(--crust); background:var(--mantle); display:flex; justify-content:space-between; align-items:center;">
       <span style="font-size:16px; font-weight:800;">Nuevo Pedido Autorizado</span>
