@@ -148,7 +148,10 @@ input.mat-price { text-align: right; font-size: 12px; }
     <h2 class="hdr-title">Nueva Cotización</h2>
     <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
   </div>
-  <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()">Guardar cotización</button>
+  <div style="display:flex; gap:8px;">
+    <button class="btn btn-amber" id="btn-edit-quote" style="display:none;" onclick="openEditMode()">✏ Editar</button>
+    <button class="btn btn-green" id="btn-save-quote" onclick="saveQuoteToProject()">Guardar cotización</button>
+  </div>
 </div>
 <div style="background:var(--base); border-bottom:1px solid var(--crust); padding:6px 24px; display:flex; gap:16px; align-items:center;">
   <div style="display:flex; align-items:center; gap:6px;">
@@ -1164,7 +1167,13 @@ function simulatePrintAI() {
 }
 
 // Global DB Load
-let Q_state = { baseQuoteId: null, isViewMode: false };
+let Q_state = { baseQuoteId: null, isViewMode: false, viewId: null };
+
+function openEditMode() {
+  const url = 'cotizacion.html?editId=' + Q_state.viewId;
+  if (window.parent?.openModule) window.parent.openModule(url, 'Editar Cotización');
+  else window.location.href = url;
+}
 
 async function loadOptions() {
   const clients = await window.DB.query("contacts");
@@ -1414,8 +1423,10 @@ function processURLParams() {
     // ── MODO SOLO LECTURA ──────────────────────────────────────────────────
     loadQ = (d.quotations||[]).find(q => q.id === viewId);
     Q_state.isViewMode = true;
+    Q_state.viewId = viewId;
     document.querySelector('.top-action-bar').style.display = 'none';
     document.getElementById('btn-save-quote').style.display = 'none';
+    document.getElementById('btn-edit-quote').style.display = '';
     document.getElementById('clientInput').disabled = true;
     document.getElementById('projectInput').disabled = true;
   }

@@ -88,7 +88,10 @@
     <h2 class="hdr-title">Cotización Fletes / Viáticos</h2>
     <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
   </div>
-  <button class="btn btn-green" id="btn-save-quote" onclick="saveQuote()">Guardar cotización</button>
+  <div style="display:flex; gap:8px;">
+    <button class="btn btn-amber" id="btn-edit-quote" style="display:none;" onclick="openEditMode()">✏ Editar</button>
+    <button class="btn btn-green" id="btn-save-quote" onclick="saveQuote()">Guardar cotización</button>
+  </div>
 </div>
 <div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
   <select class="hdr-select" id="clientInput" data-searchable></select>
@@ -260,7 +263,13 @@
 <script src="db.js"></script>
 <script>
 let EDIT_STATE = { id: null, folio: null, originalStatus: null };
-let Q_state = { isViewMode: false };
+let Q_state = { isViewMode: false, viewId: null };
+
+function openEditMode() {
+  const url = 'cotizacion_viaticos.html?editId=' + Q_state.viewId;
+  if (window.parent?.openModule) window.parent.openModule(url, 'Editar Cotización Viáticos');
+  else window.location.href = url;
+}
 let CASETAS = [];
 let EXTRAS = [];
 let currentPrintConds = "";
@@ -516,9 +525,11 @@ function processURLParams() {
   } else if (viewId) {
     loadQ = (d.quotations_viaticos||[]).find(q => q.id === viewId);
     Q_state.isViewMode = true;
+    Q_state.viewId = viewId;
     document.getElementById('btn-save-quote').style.display = 'none';
     document.querySelectorAll('input').forEach(i => i.disabled = true);
     document.querySelectorAll('button:not(.back-btn)').forEach(b => b.style.display = 'none');
+    document.getElementById('btn-edit-quote').style.display = '';
   }
 
   if (loadQ) {
