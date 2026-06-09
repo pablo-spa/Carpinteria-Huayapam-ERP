@@ -160,7 +160,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       const itemsHtml = (o.items||[]).map(i => i.tipo === 'madera' ? `
         <div class="ficha-item">
           <span class="ficha-item-name">🪵 ${i.especie||'Madera'}<span class="wood-badge">Madera</span></span>
-          <span class="ficha-item-qty">${i.cantidad||1} ${i.unit||'pza'}${i.notas ? ` · ${i.notas}` : ''}</span>
+          <span class="ficha-item-qty">${i.cantidad||1} ${i.unit||'pza'}</span>
         </div>` : `
         <div class="ficha-item">
           <span class="ficha-item-name">${i.name||i.code||'—'}${i.esHerramienta?'<span class="herr-badge">🔧</span>':''}</span>
@@ -382,8 +382,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           <input type="text" class="i-especie-custom" placeholder="Escribe la especie…"
             value="${isCustomEspecie?especie:''}"
             style="display:${isCustomEspecie?'block':'none'}; margin-top:4px;">
-          <input type="text" class="i-notas" placeholder="Notas (calidad, destino…)"
-            value="${notas}" style="margin-top:4px; font-size:12px; color:var(--subtext);">
         </div>
       </td>
       <td><input type="number" class="i-qty" value="${isWood?1:qty}" min="0.01" step="any" style="width:80px;"></td>
@@ -398,23 +396,28 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     if (!isWood) SearchableSelect.init(tr.querySelector('.i-unit'));
   }
 
+  function unitEl(tr) {
+    // SearchableSelect wraps the select in .ss-wrap — hide that instead of the raw select
+    const sel = tr.querySelector('.i-unit');
+    return sel.closest('.ss-wrap') || sel;
+  }
+
   function setTipoRow(tr, tipo) {
     tr.dataset.tipo = tipo;
     const spans      = tr.querySelectorAll('.tipo-toggle span');
     const matWrap    = tr.querySelector('.i-mat-wrap');
     const herrName   = tr.querySelector('.i-herr-name');
     const woodWrap   = tr.querySelector('.i-wood-wrap');
-    const unitSel    = tr.querySelector('.i-unit');
     const woodUnitSel= tr.querySelector('.i-wood-unit');
 
     spans[0].className = '';
     spans[1].className = '';
     spans[2].className = '';
 
-    matWrap.style.display  = 'none';
-    herrName.style.display = 'none';
-    woodWrap.style.display = 'none';
-    unitSel.style.display  = '';
+    matWrap.style.display     = 'none';
+    herrName.style.display    = 'none';
+    woodWrap.style.display    = 'none';
+    unitEl(tr).style.display  = '';
     woodUnitSel.style.display = 'none';
 
     if (tipo === 'material') {
@@ -423,10 +426,10 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       const iSel = tr.querySelector('.i-sel');
       if (!iSel._ssInit) SearchableSelect.init(iSel);
       else iSel._ssSync?.();
-      const iCustom = tr.querySelector('.i-custom');
-      iCustom.style.display = 'none';
-      unitSel.disabled = false;
-      unitSel.style.opacity = '';
+      tr.querySelector('.i-custom').style.display = 'none';
+      const rawUnit = tr.querySelector('.i-unit');
+      rawUnit.disabled = false;
+      rawUnit.style.opacity = '';
     } else if (tipo === 'herramienta') {
       spans[1].className = 'active-herr';
       herrName.style.display = 'block';
@@ -434,8 +437,8 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       herrName.focus();
     } else { // madera
       spans[2].className = 'active-wood';
-      woodWrap.style.display = '';
-      unitSel.style.display  = 'none';
+      woodWrap.style.display    = '';
+      unitEl(tr).style.display  = 'none';
       woodUnitSel.style.display = '';
     }
   }
@@ -505,8 +508,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           ? especieSel.value : especieCustom.value.trim();
         const cantidad = parseFloat(tr.querySelector('.i-qty').value) || 1;
         const unit     = tr.querySelector('.i-wood-unit').value;
-        const notas    = tr.querySelector('.i-notas').value.trim();
-        if (especie) items.push({ tipo: 'madera', especie, cantidad, unit, notas });
+        if (especie) items.push({ tipo: 'madera', especie, cantidad, unit });
 
       } else if (tipo === 'herramienta') {
         const name = tr.querySelector('.i-herr-name').value.trim();
