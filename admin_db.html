@@ -23,7 +23,13 @@
   .cols-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
   .col-pill { background: var(--mantle); border: 1px solid var(--crust); padding: 10px; border-radius: 8px; font-size: 13px; font-family: monospace; font-weight: 600; display: flex; justify-content: space-between; }
   
-  .raw-preview { background: var(--crust); padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; white-space: pre-wrap; color: var(--subtext); max-height: 300px; overflow-y: auto; overflow-x: auto; }
+  /* Estilos para la tabla Excel-like */
+  .db-table-wrapper { overflow: auto; background: var(--base); border-radius: 8px; }
+  .db-table { border-collapse: collapse; min-width: 100%; font-family: ui-monospace, monospace; font-size: 12px; white-space: nowrap; }
+  .db-table th { background: var(--surface0); color: var(--text); padding: 8px 12px; text-align: left; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid var(--crust); border-right: 1px solid var(--crust); font-weight: 800; }
+  .db-table td { padding: 8px 12px; border-bottom: 1px solid var(--crust); border-right: 1px solid var(--crust); color: var(--subtext); max-width: 250px; overflow: hidden; text-overflow: ellipsis; }
+  .db-table tr:hover td { background: var(--mantle); color: var(--text); }
+  .db-table td.null-val { color: var(--surface1); font-style: italic; }
 </style>
 </head>
 <body>
@@ -51,19 +57,15 @@
           <div class="hdr-title" id="t-name" style="font-size:24px;">Colección</div>
           <div style="font-size:13px; color:var(--subtext); margin-top:4px;" id="t-count">0 registros</div>
         </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">
-            <span>Columnas Detectadas</span>
-            <button class="btn btn-red" onclick="vaciarColeccion()">Vaciar Colección</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-green" onclick="exportarColeccionCSV()">📥 Exportar CSV</button>
+          <button class="btn btn-red" onclick="vaciarColeccion()">Vaciar Colección</button>
         </div>
-        <div class="cols-grid" id="t-cols"></div>
       </div>
 
       <div class="card">
-        <div class="card-title">Vista Previa (Primeros 3 Registros)</div>
-        <div class="raw-preview" id="t-raw"></div>
+        <div class="card-title" style="margin-bottom:0;">Vista Previa (Primeros 50 registros)</div>
+        <div class="db-table-wrapper" id="t-raw"></div>
       </div>
     </div>
   </div>
@@ -84,18 +86,22 @@
   // Colecciones reales en Firestore (suppliers no existe — proveedores están en contacts con tipo='proveedor')
   // Solo colecciones que realmente existen en Firestore
   const KNOWN_COLLECTIONS = [
-    // Core
-    'projects', 'quotations', 'quotations_viaticos', 'contacts', 'workers', 'users', 'settings', 'config_params',
-    // Inventario y compras
-    'inventory', 'inventory_salidas', 'purchase_orders',
+    // Core y Sistema
+    'settings', 'config_params', 'users', 'systemEvents', 'bugs',
+    // CRM, Empleados y Producción
+    'contacts', 'workers', 'attendance', 'attendance_logs', 'production_logs', 'worker_loans',
+    // Ventas y Proyectos
+    'projects', 'quotations', 'quotations_viaticos', 'fichas_tecnicas', 'documentos',
+    // Almacén y Compras
+    'inventory', 'inventory_salidas', 'purchase_orders', 'orders',
     // Contabilidad
-    'accounting_movements', 'account_balances', 'expense_categories',
-    // RRHH y producción
-    'attendance_logs', 'production_logs', 'worker_loans',
+    'accounting_movements', 'account_balances', 'expense_categories', 'bank_accounts', 'payment_methods',
     // Viáticos
     'viajes', 'anticipos_viaticos', 'gastos_viaticos',
-    // Madera (legacy)
-    'wood',
+    // Herramientas y Madera
+    'herramientas', 'tool_logs', 'wood_price_catalog', 'wood_formats', 'wood_types', 'wood_quality', 'wood_locations', 'wood',
+    // Listas (Catálogos)
+    'concept_categories', 'inventory_brands', 'concept_units', 'inventory_locations', 'tool_categories', 'tool_types', 'tool_states', 'document_categories',
     // Listas particionadas (solo lectura de metadatos)
     'contacts_lists', 'inventory_lists', 'accounting_by_month',
   ];
@@ -132,23 +138,41 @@
     const records = getState()[t] || [];
     document.getElementById('t-count').textContent = `${records.length} registros`;
 
+    // Escanear todos los registros para encontrar todas las "columnas" (propiedades JSON) existentes
     const cols = new Set();
     (records || []).forEach(r => {
       if (r !== null && typeof r === 'object') {
         Object.keys(r).forEach(k => cols.add(k));
       } else {
-        cols.add('ValorPrimitivo');
+        cols.add('Valor_Primitivo');
       }
     });
     
-    const cg = document.getElementById('t-cols');
-    if (cols.size === 0) {
-      cg.innerHTML = `<div style="color:var(--muted); font-size:13px;">No hay registros o no tienen columnas.</div>`;
-    } else {
-      cg.innerHTML = Array.from(cols).sort().map(c => `<div class="col-pill"><span>${c}</span></div>`).join('');
-    }
+    const cg = document.getElementById('t-raw');
+    const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 
-    document.getElementById('t-raw').textContent = records.length ? JSON.stringify(records.slice(0,3), null, 2) : '[]';
+    if (cols.size === 0 || records.length === 0) {
+      cg.innerHTML = `<div style="padding:40px; text-align:center; color:var(--subtext); font-size:13px;">La colección está vacía.</div>`;
+    } else {
+      const columns = Array.from(cols).sort();
+      let html = `<table class="db-table"><thead><tr>`;
+      columns.forEach(c => html += `<th>${c}</th>`);
+      html += `</tr></thead><tbody>`;
+      
+      // Mostrar los primeros 5 registros
+      records.slice(0, 5).forEach(r => {
+        html += `<tr>`;
+        columns.forEach(c => {
+          let val = r[c];
+          if (val === undefined || val === null) { html += `<td class="null-val">n/a</td>`; return; }
+          if (typeof val === 'object') val = JSON.stringify(val);
+          html += `<td title="${escHtml(val)}">${escHtml(val)}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</tbody></table>`;
+      cg.innerHTML = html;
+    }
   }
 
   window.vaciarColeccion = async function() {
@@ -169,6 +193,41 @@
           selectTable(currentTable);
       } catch(e) { toast('Error: ' + e.message, 'warn'); }
   }
+
+  window.exportarColeccionCSV = function() {
+    if (!currentTable) return;
+    const records = getState()[currentTable] || [];
+    if (records.length === 0) return toast('La colección está vacía', 'warn');
+
+    const cols = new Set();
+    records.forEach(r => {
+      if (r !== null && typeof r === 'object') Object.keys(r).forEach(k => cols.add(k));
+      else cols.add('Valor_Primitivo');
+    });
+    
+    const columns = Array.from(cols).sort();
+    const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    
+    const lines = [columns.map(esc).join(',')];
+    
+    records.forEach(r => {
+      const row = columns.map(c => {
+        let val = r[c];
+        if (val === undefined || val === null) return '';
+        if (typeof val === 'object') val = JSON.stringify(val);
+        return esc(val);
+      });
+      lines.push(row.join(','));
+    });
+    
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentTable}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   renderTables();
 

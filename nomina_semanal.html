@@ -7,33 +7,19 @@
 <title>Nómina Semanal — Carpintería Huayapam</title>
 <style>
 
-/* ── Week nav ── */
-.week-nav { display: flex; align-items: center; gap: 6px; }
-.wbtn {
-  cursor: pointer; background: transparent; border: 1px solid var(--crust);
-  border-radius: var(--radius); color: var(--subtext); font-size: 15px;
-  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
-  font-family: inherit; transition: .15s;
-}
-.wbtn:hover { background: var(--surface0); color: var(--text); }
-.week-lbl { font-size: 13px; font-weight: 700; }
-.week-sub { font-size: 11px; color: var(--subtext); font-weight: 600; margin-top: 1px; }
 .hdr-total { text-align: right; }
 .hdr-total .lbl { font-size: 10px; text-transform: uppercase; color: var(--subtext); font-weight: 800; letter-spacing: .05em; }
-.hdr-total .val  { font-size: 20px; font-weight: 900; color: var(--green); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.hdr-total .val  { font-size: 22px; font-weight: 900; color: var(--green); font-variant-numeric: tabular-nums; line-height: 1.1; }
 
 /* ── Tabs ── */
-.subbar { background: var(--base); border-bottom: 1px solid var(--crust); padding: 0 24px; position: sticky; top: 57px; z-index: 19; display: flex; align-items: center; }
-.week-block { display: flex; align-items: center; gap: 6px; padding: 8px 16px 8px 0; border-right: 1px solid var(--crust); margin-right: 8px; }
-.tabs { display: flex; gap: 0; flex: 1; }
-.tab {
-  cursor: pointer; padding: 10px 18px; font-size: 13px; font-weight: 700;
-  color: var(--subtext); background: transparent; border: none;
-  border-bottom: 2px solid transparent;
-  font-family: inherit; transition: color .15s, border-color .15s;
-}
-.tab:hover  { color: var(--text); }
-.tab.active { color: var(--text); border-bottom-color: var(--blue); }
+.tabs { display: flex; gap: 4px; padding: 0 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); position: sticky; top: 57px; z-index: 19; }
+.tab-btn { padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: all .15s; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+.filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; position: sticky; top: 97px; z-index: 18; }
+.week-lbl { font-size: 13px; font-weight: 800; color: var(--text); }
+.week-sub { font-size: 11px; color: var(--subtext); font-weight: 600; margin-top: 2px; }
 
 /* ── Main ── */
 .main { max-width: 1200px; margin: 0 auto; padding: 24px 24px 110px; }
@@ -53,44 +39,30 @@
 
 /* ── Worker card ── */
 .wcard {
-  background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px;
-  overflow: hidden; margin-bottom: 6px; transition: all .12s; border-left: 3px solid transparent;
+  background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px;
+  overflow: hidden; margin-bottom: 12px; transition: all .15s; border-left: 3px solid transparent;
 }
-.wcard:hover:not(.open-det) { background: var(--surface0); transform: translateX(2px); }
+.wcard:hover:not(.open-det) { border-color: var(--surface1); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
 .wcard.verif { border-left-color: var(--green); }
-.wcard.open-det { border-color: var(--blue); border-left-color: var(--blue); border-radius: 8px; background: var(--base); transform: none; }
+.wcard.open-det { border-color: var(--blue); border-radius: 12px; background: var(--base); transform: none; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
 
-.wrow { display: flex; align-items: center; gap: 14px; padding: 11px 16px; cursor: pointer; min-height: 54px; user-select: none; }
+.wrow { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; min-height: 54px; user-select: none; }
 .wrow:hover { background: transparent; }
 .avatar {
-  width: 38px; height: 38px; border-radius: 99px; flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; letter-spacing: -.5px;
-  background: var(--base); color: var(--subtext);
+  font-size: 14px; font-weight: 800;
+  background: var(--surface0); color: var(--text); border: 1px solid var(--surface1);
 }
-.wcard.verif .avatar { background: var(--green-bg); color: var(--green-text); }
+.wcard.verif .avatar { background: var(--green-bg); color: var(--green); border-color: transparent; }
 .winfo { flex: 1; min-width: 0; }
-.wname { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wname { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
 .wsub  { font-size: 12px; color: var(--subtext); margin-top: 1px; }
-.sum-chips { display: flex; gap: 5px; flex-wrap: wrap; flex-shrink: 0; }
-.chip       { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
-.chip-green { background: var(--green-bg); color: var(--green-text); }
-.chip-amber { background: var(--amber-bg); color: var(--amber-text); }
-.chip-red   { background: var(--red-bg);   color: var(--red-text); }
-.chip-blue  { background: var(--blue-bg);  color: var(--blue-text); }
-.chip-gray  { background: var(--base);     color: var(--subtext); border: 1px solid var(--crust); }
+.sum-chips { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
 .row-btns { display: flex; gap: 6px; flex-shrink: 0; }
-.abtn {
-  cursor: pointer; border: 1px solid var(--crust); border-radius: var(--radius);
-  background: var(--base); color: var(--subtext); font-size: 13px; font-weight: 700;
-  font-family: inherit; padding: 7px 14px; white-space: nowrap;
-}
-.abtn:hover { background: var(--surface0); }
-.abtn-verif { background: var(--green); border-color: var(--green); color: #fff; }
-.abtn-verif:hover { opacity: .9; }
 
 /* ── Detalle ── */
-.wdet { border-top: 1px dashed var(--crust); padding: 16px; display: none; flex-direction: column; gap: 14px; background: var(--base); }
+.wdet { border-top: 1px dashed var(--crust); padding: 20px; display: none; flex-direction: column; gap: 18px; background: var(--base); }
 .wdet.open { display: flex; }
 
 /* ── Tabla de días ── */
@@ -102,14 +74,15 @@
 .dst-btns { display: flex; gap: 4px; }
 .dsbtn {
   cursor: pointer; border: 1px solid var(--crust); border-radius: var(--radius);
-  background: var(--base); color: var(--subtext); font-size: 13px; font-weight: 700;
-  font-family: inherit; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  background: var(--mantle); color: var(--subtext); font-size: 13px; font-weight: 700;
+  font-family: inherit; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; transition: all .15s;
 }
+.dsbtn:hover { background: var(--surface0); }
 .dsbtn:active { transform: scale(.88); }
 .dsbtn.on-t { background: var(--green); border-color: var(--green); color: #fff; }
 .dsbtn.on-f { background: var(--red);   border-color: var(--red);   color: #fff; }
 .dsbtn.on-v { background: var(--blue);  border-color: var(--blue);  color: #fff; }
-.dsbtn.on-l { background: var(--base);  border-color: var(--crust); color: var(--hint); }
+.dsbtn.on-l { background: var(--surface1); border-color: var(--surface1); color: var(--text); }
 .hrs-input {
   background: var(--base); border: 1px solid var(--crust); border-radius: var(--radius);
   padding: 4px; color: var(--text); font-size: 16px; font-weight: 800;
@@ -256,20 +229,29 @@
     <div class="val" id="hdr-total">$0</div>
   </div>
 </div>
-<div class="subbar">
-  <div class="week-block">
-    <button class="wbtn" onclick="chgWeek(-1)">‹</button>
-    <div>
-      <div class="week-lbl" id="week-lbl">—</div>
-      <div class="week-sub" id="week-sub">—</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('nomina',this)">Nómina</button>
+  <button class="tab-btn"        onclick="showTab('efectivo',this)">Efectivo</button>
+  <button class="tab-btn"        onclick="showTab('resumen',this)">Resumen general</button>
+  <button class="tab-btn"        onclick="showTab('recibos',this)">Recibos individuales</button>
+</div>
+
+<div class="filters">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <button class="btn btn-ghost" style="padding:4px 8px;font-size:16px;" onclick="chgWeek(-1)">‹</button>
+    <div style="display:flex;flex-direction:column;align-items:center;min-width:140px;">
+      <span class="week-lbl" id="week-lbl">—</span>
+      <span class="week-sub" id="week-sub">—</span>
     </div>
-    <button class="wbtn" onclick="chgWeek(1)">›</button>
+    <button class="btn btn-ghost" style="padding:4px 8px;font-size:16px;" onclick="chgWeek(1)">›</button>
   </div>
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('nomina',this)">Nómina</button>
-    <button class="tab"        onclick="showTab('efectivo',this)">Efectivo</button>
-    <button class="tab"        onclick="showTab('resumen',this)">Resumen general</button>
-    <button class="tab"        onclick="showTab('recibos',this)">Recibos individuales</button>
+
+  <div style="margin-left:auto; display:flex; align-items:center; gap:12px;" id="filter-workers-wrap">
+    <label style="font-size:12px; font-weight:600; color:var(--subtext); display:flex; align-items:center; gap:6px; cursor:pointer;">
+      <input type="checkbox" id="show-all-chk" onchange="toggleShowAll()" style="accent-color:var(--blue); width:16px; height:16px;">
+      Mostrar todos los trabajadores
+    </label>
   </div>
 </div>
 
@@ -277,12 +259,7 @@
 
   <!-- ── NÓMINA ── -->
   <div id="tab-nomina" class="tab-pane active">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-      <div class="sec-lbl" id="lbl-pend" style="margin:0;">Por verificar (—)</div>
-      <button id="btn-show-all" onclick="toggleShowAll()" style="background:none;border:1px solid var(--crust);border-radius:var(--radius);color:var(--subtext);font-size:12px;font-weight:700;padding:4px 10px;cursor:pointer;font-family:inherit;">
-        Mostrar todos
-      </button>
-    </div>
+    <div class="sec-lbl" id="lbl-pend">Por verificar (—)</div>
     <div id="list-pend"></div>
     <div id="sec-verif" style="display:none">
       <div class="sec-lbl" id="lbl-verif">Verificados (0)</div>
@@ -614,7 +591,7 @@ function renderWorkerList() {
 }
 
 function toggleShowAll() {
-  showAllWorkers = !showAllWorkers;
+  showAllWorkers = document.getElementById('show-all-chk').checked;
   renderWorkerList();
   updLabels();
 }
@@ -691,14 +668,14 @@ function buildCard(w){
     <div class="wrow" onclick="togDet('${w.id}')">
       <div class="avatar" id="av-${w.id}">${w.ini}</div>
       <div class="winfo">
-        <div class="wname">${w.n} <span style="font-weight:500;color:var(--muted)">${w.ape}</span></div>
+        <div class="wname">${w.n} <span style="font-weight:600;color:var(--subtext)">${w.ape}</span></div>
         <div class="wsub">${w.cat} · $${w.base.toLocaleString('es-MX')}/sem</div>
       </div>
       <div class="sum-chips" id="chips-${w.id}"></div>
       <div class="row-btns" id="rowbtns-${w.id}">
-        <button class="abtn abtn-verif" onclick="event.stopPropagation();markVerif('${w.id}')">✓ Listo</button>
+        <button class="btn btn-green" style="padding:6px 14px;" onclick="event.stopPropagation();markVerif('${w.id}')">✓ Listo</button>
       </div>
-      <button class="abtn" id="editbtn-${w.id}" style="display:none" onclick="event.stopPropagation();undoVerif('${w.id}')">Editar</button>
+      <button class="btn btn-ghost" id="editbtn-${w.id}" style="display:none;padding:6px 14px;" onclick="event.stopPropagation();undoVerif('${w.id}')">✏️ Editar</button>
     </div>
     <div class="wdet" id="det-${w.id}">
       <div>
@@ -965,11 +942,11 @@ function buildChips(id,r){
   if(!el) return;
   const res=r||calcW(WORKERS.find(x=>x.id===id));
   if(!S[id].verificado){ el.innerHTML=''; return; }
-  let html=`<span class="chip chip-green">✓ $${res.total.toLocaleString('es-MX')}</span>`;
-  if(res.nFalta>0)  html+=`<span class="chip chip-red">${res.nFalta} falta${res.nFalta>1?'s':''}</span>`;
-  if(res.nVac>0)    html+=`<span class="chip chip-blue">☀ ${res.nVac} vac</span>`;
-  if(res.hExt_all>0)html+=`<span class="chip chip-amber">+${res.hExt_all.toFixed(1)}h extra</span>`;
-  if(res.prestDesc>0)html+=`<span class="chip chip-gray">−$${res.prestDesc.toLocaleString('es-MX')} prest.</span>`;
+  let html=`<span class="pill pill-green">✓ $${res.total.toLocaleString('es-MX')}</span>`;
+  if(res.nFalta>0)  html+=`<span class="pill pill-red">${res.nFalta} falta${res.nFalta>1?'s':''}</span>`;
+  if(res.nVac>0)    html+=`<span class="pill pill-blue">☀ ${res.nVac} vac</span>`;
+  if(res.hExt_all>0)html+=`<span class="pill pill-amber">+${res.hExt_all.toFixed(1)}h extra</span>`;
+  if(res.prestDesc>0)html+=`<span class="pill pill-gray">−$${res.prestDesc.toLocaleString('es-MX')} prest.</span>`;
   el.innerHTML=html;
 }
 
@@ -1172,6 +1149,7 @@ function showTab(name,btn){
   if(btn) btn.classList.add('active');
   if(name==='resumen') buildResumenPreview();
   if(name==='recibos') buildRecibosPreview();
+  document.getElementById('filter-workers-wrap').style.display = (name==='nomina') ? 'flex' : 'none';
 }
 
 const BCOL={1000:{bg:'#e0ccf8',tc:'#3d006b'},500:{bg:'#cce0f8',tc:'#003070'},

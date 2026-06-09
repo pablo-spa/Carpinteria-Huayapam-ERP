@@ -13,9 +13,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
-.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--surface0); color: var(--subtext); }
-.badge-done { background: rgba(64,160,43,0.15); color: var(--green); }
-.badge-red  { background: rgba(210,15,57,0.12); color: var(--red); }
 .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; }
 .item-subtext { color: var(--subtext); font-size: 11px; }
 .total-row { display: flex; justify-content: flex-end; font-weight: 700; font-size: 14px; padding-top: 12px; }
@@ -73,7 +70,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     let html = '';
 
     STATE_ORDERS.forEach(o => {
-       const badge = (o.status === 'Recibido' || o.status === 'Entregado') ? 'badge-done' : o.status === 'Cancelado' ? 'badge-red' : 'badge-amber';
+       const pill = (o.status === 'Recibido' || o.status === 'Entregado') ? 'pill-green' : o.status === 'Cancelado' ? 'pill-red' : 'pill-amber';
        let total = 0;
 
        let itmsHtml = `
@@ -105,7 +102,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
         <div class="card-title">
           <span>Folio ${o.folio} / ${o.project || 'Stock General'} — Proveedor: ${o.supplier || o.provider || '-'}</span>
           <div style="display:flex;align-items:center;gap:8px;">
-            <span class="badge ${badge}">${o.status}</span>
+            <span class="pill ${pill}">${o.status}</span>
             ${delBtn}
           </div>
         </div>

@@ -51,13 +51,6 @@
 
 .actions { display: flex; gap: 6px; justify-content: flex-end; }
 
-.badge { display: inline-block; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: .04em; }
-.badge-amber { background: rgba(223,142,29,.15); color: var(--amber); }
-.badge-green { background: rgba(64,160,43,.15);  color: var(--green); }
-.badge-blue  { background: rgba(30,102,245,.12);  color: var(--blue); }
-.badge-red   { background: rgba(210,15,57,.12);   color: var(--red); }
-.badge-gray  { background: var(--surface0); color: var(--subtext); }
-
 </style>
 </head>
 <body>
@@ -148,7 +141,7 @@ function render() {
       </td>
       <td>${q._proyNombre || '<span style="color:var(--subtext)">—</span>'}</td>
       <td>${q._clientNombre || '<span style="color:var(--subtext)">—</span>'}</td>
-      <td><span class="badge ${statusBadge}">${q.status || '—'}</span></td>
+      <td><span class="pill ${statusBadge}">${q.status || '—'}</span></td>
       <td style="text-align:right;">${fmt(q.total)}</td>
       <td>
         <div class="actions">
@@ -174,11 +167,11 @@ function render() {
 }
 
 function statusClass(s) {
-  if (!s) return 'badge-gray';
-  if (s === 'Activa')   return 'badge-green';
-  if (s === 'Aceptada') return 'badge-blue';
-  if (s === 'Cancelada') return 'badge-red';
-  return 'badge-amber';
+  if (!s) return 'pill-gray';
+  if (s === 'Activa')   return 'pill-green';
+  if (s === 'Aceptada') return 'pill-blue';
+  if (s === 'Cancelada') return 'pill-red';
+  return 'pill-amber';
 }
 
 async function restore(id, collection) {

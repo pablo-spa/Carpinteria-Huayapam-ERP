@@ -23,11 +23,6 @@
 .btn-primary { background: var(--green); color: var(--base); }
 .btn-blue { background: var(--blue); color: var(--base); }
 
-/* Status */
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; }
-.badge-borrador { background: var(--surface0); color: var(--subtext); }
-.badge-pagado   { background: var(--green-bg); color: var(--green); }
-
 select.state-select { padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; background: var(--base); border: 1px solid var(--surface1); color: var(--text); }
 select.state-select:focus { outline: none; border-color: var(--blue); }
 
@@ -136,7 +131,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
     <div class="header-title">Transacción y Movimiento</div>
   </div>
   <div class="header-meta">
-    <span class="badge badge-borrador" id="status-badge">● Pedido</span>
+    <span class="pill pill-amber" id="status-badge">● Pedido en Curso</span>
     <span class="tag" id="folio-tag">OC-0047</span>
     <select class="state-select" id="estado-global" onchange="onStateChange()">
         <option value="pedido">Modo: Compra a Proveedor ( Compras )</option>
@@ -512,11 +507,11 @@ function onStateChange() {
   const estado = document.getElementById('estado-global').value;
   const badge = document.getElementById('status-badge');
   if (estado==='pedido') {
-      badge.textContent = "● Pedido en Curso"; badge.className = "badge badge-borrador";
+      badge.textContent = "● Pedido en Curso"; badge.className = "pill pill-amber";
   } else if (estado==='entaller') {
-      badge.textContent = "✓ Aceptado en Taller"; badge.className = "badge badge-pagado";
+      badge.textContent = "✓ Aceptado en Taller"; badge.className = "pill pill-green";
   } else {
-      badge.textContent = "→ Extraído para Producción"; badge.className = "badge badge-pagado";
+      badge.textContent = "→ Extraído para Producción"; badge.className = "pill pill-blue";
   }
   renderStockPreview();
 }

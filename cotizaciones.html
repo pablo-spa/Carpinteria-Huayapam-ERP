@@ -59,15 +59,6 @@
 .q-total { font-size: 14px; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
 .q-date  { font-size: 11px; color: var(--subtext); white-space: nowrap; flex-shrink: 0; }
 
-.pill {
-  display: inline-flex; align-items: center; padding: 3px 8px;
-  border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; flex-shrink: 0;
-}
-.pill-espera   { background: var(--amber-bg);  color: var(--amber); }
-.pill-activa   { background: var(--green-bg);  color: var(--green); }
-.pill-pausa    { background: var(--surface1);  color: var(--subtext); }
-.pill-cancelada { background: var(--red-bg);   color: var(--red); }
-
 .proj-group { display: flex; flex-direction: column; gap: 6px; }
 .proj-group-hdr {
   display: flex; align-items: center; gap: 10px; padding: 6px 0;
@@ -173,10 +164,10 @@ function setMainTab(tab, el) {
 
 function statusPill(s) {
   const map = {
-    'Esperando Autorización': 'pill-espera',
-    'Activa': 'pill-activa',
-    'En Pausa': 'pill-pausa',
-    'Cancelada': 'pill-cancelada',
+    'Esperando Autorización': 'pill-amber',
+    'Activa': 'pill-green',
+    'En Pausa': 'pill-gray',
+    'Cancelada': 'pill-red',
   };
   return `<span class="pill ${map[s] || 'pill-pausa'}">${s || '—'}</span>`;
 }

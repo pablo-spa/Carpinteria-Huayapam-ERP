@@ -19,10 +19,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .card-title { font-size: 15px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 12px; }
 .card-meta { font-size: 12px; color: var(--subtext); margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap; }
-.badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-.badge-pedido    { background: rgba(30,102,245,0.15); color: var(--blue); }
-.badge-confirmed { background: rgba(64,160,43,0.15);  color: var(--green); }
-.badge-cancelled { background: rgba(210,15,57,0.12);  color: var(--red); }
 .item-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 8px 0; border-top: 1px solid var(--crust); gap: 8px; }
 .item-unit { color: var(--subtext); font-size: 11px; }
 .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--crust); }
@@ -64,6 +60,15 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <script>
   let ALL_ORDERS = [];
   let currentTab = 'pending';
+
+  const PILL_MAP = {
+    'Pedido':'pill-amber', 'Solicitado':'pill-amber',
+    'Confirmado':'pill-blue',
+    'Autorizado':'pill-green',
+    'Comprado':'pill-green',
+    'Recibido':'pill-green',
+    'Cancelado':'pill-red'
+  };
 
   async function init() {
     const orders = await window.DB.query('purchase_orders');
@@ -110,13 +115,14 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       filtered.forEach(o => {
         const proj = d.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
         const projLabel = proj ? `${proj.code||proj.codigo} – ${proj.name||proj.nombre}` : (o.project || 'Stock General');
+        const pillCls = PILL_MAP[o.status] || 'pill-amber';
         const card = document.createElement('div');
         card.className = 'ficha';
         card.id = 'card-' + o.id;
         card.innerHTML = `
           <div class="ficha-hdr">
             <span class="ficha-folio">${o.folio || o.id}</span>
-            <span class="pill pill-amber">Pendiente</span>
+            <span class="pill ${pillCls}">${o.status}</span>
           </div>
           <div class="ficha-meta">
             <span>📁 ${projLabel}</span>
@@ -162,7 +168,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     }
 
     if (historial.length) {
-      const PMAP = {'Confirmado':'pill-blue','Autorizado':'pill-green','Comprado':'pill-green','Recibido':'pill-green','Cancelado':'pill-red'};
       const isOpen = localStorage.getItem('rq_op_hist') !== 'closed';
       list.insertAdjacentHTML('beforeend', `
         <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--subtext);padding:20px 0 8px;cursor:pointer;display:flex;justify-content:space-between;" onclick="toggleOpHist(this)">
@@ -173,7 +178,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
         ${historial.map(o => {
           const proj = d.projects.find(p => (p.codigo||p.code) === o.project || p.id === o.projectId);
           const projLabel = proj ? `${proj.code||proj.codigo} – ${proj.name||proj.nombre}` : (o.project || 'Stock');
-          const pill = PMAP[o.status] || 'pill-gray';
+          const pill = PILL_MAP[o.status] || 'pill-gray';
           return `<div class="ficha" style="opacity:.75;">
             <div class="ficha-hdr"><span class="ficha-folio">${o.folio||o.id}</span><span class="pill ${pill}">${o.status}</span></div>
             <div class="ficha-meta"><span>📁 ${projLabel}</span>${o.requester?`<span>👤 ${o.requester}</span>`:''}${o.date?`<span>📅 ${o.date}</span>`:''}</div>
@@ -261,7 +266,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       order.items = newItems;
     }
 
-    if (!await showConfirm(`¿Confirmar pedido ${order.folio}?`)) return;
+    if (!await showConfirm('Confirmar Pedido', `¿Confirmar pedido ${order.folio}?`, 'Confirmar', 'btn-blue')) return;
     order.status = 'Confirmado';
     order.confirmedAt = new Date().toISOString();
 
@@ -278,19 +283,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     render();
   }
 
-  function showConfirm(msg, okLabel = 'Confirmar') {
-    return new Promise(resolve => {
-      const ov = document.createElement('div');
-      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
-      ov.innerHTML = `<div style="background:var(--base,#eff1f5);border-radius:12px;padding:24px 28px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.25);"><p style="margin:0 0 20px;font-size:14px;font-weight:600;color:var(--text,#4c4f69);line-height:1.5;">${msg}</p><div style="display:flex;gap:10px;justify-content:flex-end;"><button id="sc-no" style="padding:8px 18px;border-radius:7px;border:1px solid var(--crust,#dce0e8);background:var(--mantle,#e6e9ef);color:var(--text,#4c4f69);font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button><button id="sc-yes" style="padding:8px 18px;border-radius:7px;border:none;background:var(--blue,#1e66f5);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">${okLabel}</button></div></div>`;
-      document.body.appendChild(ov);
-      const done = v => { ov.remove(); resolve(v); };
-      ov.querySelector('#sc-no').onclick  = () => done(false);
-      ov.querySelector('#sc-yes').onclick = () => done(true);
-      ov.addEventListener('mousedown', e => { if (e.target === ov) done(false); });
-    });
-  }
-
   function toggleOpHist(hdr) {
     const body = document.getElementById('op-hist-body');
     if (!body) return;
@@ -304,7 +296,8 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const order = ALL_ORDERS.find(o => o.id === id);
     if (!order) return;
     const verb = newStatus === 'Confirmado' ? 'confirmar' : 'rechazar';
-    if (!await showConfirm(`¿Seguro que deseas ${verb} este pedido?`)) return;
+    const btnClass = newStatus === 'Confirmado' ? 'btn-blue' : 'btn-red';
+    if (!await showConfirm('Confirmar Acción', `¿Seguro que deseas ${verb} este pedido?`, verb==='confirmar'?'Confirmar':'Rechazar', btnClass)) return;
 
     order.status = newStatus;
 
