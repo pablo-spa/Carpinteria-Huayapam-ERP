@@ -39,9 +39,17 @@
 .mov-list { display: flex; flex-direction: column; gap: 4px; }
 .mov-row-wrap { display: flex; flex-direction: column; }
 .mov-row { background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; display: grid; grid-template-columns: 80px 56px 2fr 1.4fr 1fr 110px; gap: 14px; padding: 11px 16px; align-items: center; cursor: pointer; transition: all 0.12s; border-left: 3px solid transparent; }
-.mov-row.mov-in  { border-left-color: var(--green); }
-.mov-row.mov-out { border-left-color: var(--red); }
-.mov-row.mov-tra { border-left-color: var(--blue); }
+.mov-row.mov-in   { border-left-color: var(--green); }
+.mov-row.mov-out  { border-left-color: var(--red); }
+.mov-row.mov-tra  { border-left-color: var(--blue); }
+.mov-row.mov-debt { border-left-color: var(--mauve, #8839ef); }
+.ts-btn.act.t-debt { background: var(--mauve, #8839ef); color: #fff; }
+.cat-chip { display:inline-block; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:2px 7px; border-radius:5px; cursor:pointer; margin-top:4px; user-select:none; }
+.cat-banco    { background:var(--blue-bg);  color:var(--blue); }
+.cat-efectivo { background:var(--green-bg); color:var(--green); }
+.cat-otros    { background:var(--surface1); color:var(--subtext); }
+.cat-deuda    { background:var(--red-bg);   color:var(--red); }
+.acc-card.is-deuda { border-color: var(--red) !important; }
 .mov-row.active { border-color: var(--blue); border-left-color: var(--blue); border-radius: 8px 8px 0 0; border-bottom: none; }
 .mov-row:hover:not(.active) { background: var(--surface0); transform: translateX(2px); }
 @media (max-width: 800px) {
@@ -163,6 +171,8 @@
       <option value="Ingreso">Ingresos</option>
       <option value="Gasto">Gastos</option>
       <option value="Transferencia">Transferencias</option>
+      <option value="Pago de Deuda">Pagos de Deuda</option>
+      <option value="Disposición de Deuda">Disposiciones de Deuda</option>
     </select>
     <button class="btn btn-ghost" onclick="exportarCSV()" style="margin-left:auto;">📥 Exportar CSV</button>
   </div>
@@ -193,8 +203,17 @@
         <div class="ts-btn act t-exp" onclick="setPanelType('Gasto')">Gasto</div>
         <div class="ts-btn" onclick="setPanelType('Ingreso')">Ingreso</div>
         <div class="ts-btn" onclick="setPanelType('Transferencia')">Transfer.</div>
+        <div class="ts-btn" onclick="setPanelType('Pago de Deuda')">Deuda</div>
       </div>
       <input type="hidden" id="f-type-val" value="Gasto">
+
+      <!-- Sub-selector dirección deuda (visible solo cuando type = Deuda) -->
+      <div id="debt-dir-wrap" style="display:none; margin-top:-4px;">
+        <div style="display:flex; gap:4px; padding:4px; background:var(--surface0); border-radius:8px; border:1px solid var(--crust);">
+          <div id="dd-pago" class="ts-btn act" style="font-size:11px; padding:5px 8px;" onclick="setDebtDir('pago')">↓ Pago (reduce deuda)</div>
+          <div id="dd-disp" class="ts-btn" style="font-size:11px; padding:5px 8px;" onclick="setDebtDir('disposicion')">↑ Disposición (aumenta deuda)</div>
+        </div>
+      </div>
 
       <div class="f-row grid2">
         <div class="f-row">
@@ -203,7 +222,7 @@
         </div>
         <div class="f-row">
           <label class="f-lbl">Monto ($)</label>
-          <input type="number" id="f-amount" class="f-input" step="0.01">
+          <input type="number" id="f-amount" class="f-input" step="0.01" oninput="calcDebtDiff()">
         </div>
       </div>
 
@@ -219,6 +238,24 @@
           <select id="f-dest" class="f-input">
             <option value="">— Cuenta destino —</option>
           </select>
+        </div>
+        <div class="f-row" id="debt-acc-wrap" style="display:none;">
+          <label class="f-lbl" id="lbl-debt-acc">Cuenta de Deuda</label>
+          <select id="f-debt-acc" class="f-input">
+            <option value="">— Cuenta de deuda —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Campos específicos de Pago de Deuda -->
+      <div class="f-row grid2" id="debt-amounts-wrap" style="display:none;">
+        <div class="f-row">
+          <label class="f-lbl">Abono a Deuda ($)</label>
+          <input type="number" id="f-debt-amount" class="f-input" step="0.01" placeholder="0.00" oninput="calcDebtDiff()">
+        </div>
+        <div class="f-row">
+          <label class="f-lbl" style="color:var(--subtext);">Excedente calculado ($)</label>
+          <input type="text" id="f-debt-diff" class="f-input" readonly style="color:var(--subtext); background:var(--surface0);" placeholder="—">
         </div>
       </div>
 
@@ -308,6 +345,7 @@
   let STATE_CONTACTS = [];
   let STATE_ORDERS = [];
   
+  let STATE_CATEGORIAS   = {}; // acc → 'banco'|'efectivo'|'otros'|'deuda'
   let currentAccFilter = 'ALL';
   let llmTimer = null;
   let _allMovements = [];
@@ -476,10 +514,12 @@
     // Cargar cuentas y formas de pago con query async (no .get() síncrono)
     const rawAccSnap = await window.DB.query('bank_accounts');
     STATE_BANK_ACCOUNTS = rawAccSnap[0]?.list || [];
+    STATE_CATEGORIAS    = rawAccSnap[0]?.categorias || {};
     if (STATE_BANK_ACCOUNTS.length) {
       const accOpts = STATE_BANK_ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
       document.getElementById('f-acc').innerHTML  = accOpts;
       document.getElementById('f-dest').innerHTML = accOpts;
+      refreshDebtAccSelect();
     }
 
 
@@ -637,7 +677,7 @@
 
       // Filtering logic
       if (currentAccFilter !== 'ALL') {
-        if (m.account !== currentAccFilter && m.destAccount !== currentAccFilter) return;
+        if (m.account !== currentAccFilter && m.destAccount !== currentAccFilter && m.debtAccount !== currentAccFilter) return;
       }
       if(typeF && m.type !== typeF) return;
       if(catF) {
@@ -653,9 +693,13 @@
       let amtColor = 'amt-out'; let sign = '-';
       if(m.type==='Ingreso') { amtColor = 'amt-in'; sign = '+'; }
       if(m.type==='Transferencia') { amtColor = 'amt-neu'; sign = ''; }
+      if(m.type==='Pago de Deuda') { amtColor = 'amt-out'; sign = '-'; }
+      if(m.type==='Disposición de Deuda') { amtColor = 'amt-in'; sign = '+'; }
 
       let accLabel = m.account || '—';
       if(m.type==='Transferencia') accLabel = `${m.account} &rarr; ${m.destAccount}`;
+      if(m.type==='Pago de Deuda') accLabel = `${m.account} &rarr; ${m.debtAccount||'?'}${m.debtAmount && m.debtAmount !== m.amount ? ` (abono: ${fmt(m.debtAmount)})` : ''}`;
+      if(m.type==='Disposición de Deuda') accLabel = `${m.debtAccount||'?'} &rarr; ${m.account}`;
 
       let statPill = '';
       if(m.status === 'pendiente') statPill = '<span class="pill pill-amber hide-mob" style="margin-left:6px">Pendiente</span>';
@@ -663,7 +707,7 @@
 
       let catPill = m.category ? `<span class="pill pill-gray">${m.category}</span>` : `<span class="pill pill-gray" style="opacity:0.6;">Sin categorizar</span>`;
 
-      const rowClass = m.type==='Ingreso' ? 'mov-in' : m.type==='Gasto' ? 'mov-out' : 'mov-tra';
+      const rowClass = m.type==='Ingreso' ? 'mov-in' : m.type==='Gasto' ? 'mov-out' : (m.type==='Pago de Deuda'||m.type==='Disposición de Deuda') ? 'mov-debt' : 'mov-tra';
       d.innerHTML = `
         <div class="mov-row ${rowClass}" onclick="toggleDet('${mid}')" id="row-${mid}">
           <div class="m-date" style="white-space:pre-line">${fmtDate(m.date)}</div>
@@ -834,6 +878,11 @@
       document.getElementById('f-amount').value = m.amount;
       document.getElementById('f-acc').value = m.account;
       if(m.destAccount) document.getElementById('f-dest').value = m.destAccount;
+      if(m.debtAccount) document.getElementById('f-debt-acc').value = m.debtAccount;
+      if(m.debtAmount != null) {
+        document.getElementById('f-debt-amount').value = m.debtAmount;
+        calcDebtDiff();
+      }
       // Si el movimiento viene de una OC y no tiene entidad, auto-llenar desde la OC
       let entityVal = m.entity || '';
       if (!entityVal && m.purchase_order_id) {
@@ -897,26 +946,30 @@
 
   function setPanelType(type) {
     document.getElementById('f-type-val').value = type;
-    const btns = document.querySelectorAll('.ts-btn');
+    const btns = document.querySelectorAll('#p-type-sel .ts-btn');
     btns.forEach(b => b.className = 'ts-btn');
 
-    document.getElementById('dest-wrap').style.display = 'none';
-    document.getElementById('entity-wrap').style.display = 'flex';
-    document.getElementById('proj-wrap').style.display = 'flex';
-    document.getElementById('lbl-acc').textContent = 'Cuenta';
+    // Reset all conditional wraps
+    document.getElementById('dest-wrap').style.display         = 'none';
+    document.getElementById('debt-acc-wrap').style.display     = 'none';
+    document.getElementById('debt-dir-wrap').style.display     = 'none';
+    document.getElementById('debt-amounts-wrap').style.display = 'none';
+    document.getElementById('entity-wrap').style.display       = 'flex';
+    document.getElementById('proj-wrap').style.display         = 'flex';
+    document.getElementById('lbl-acc').textContent             = 'Cuenta';
 
     updateCategoryOptions(type);
 
-    if(type === 'Ingreso') {
+    if (type === 'Ingreso') {
       btns[1].classList.add('act', 't-inc');
       document.getElementById('lbl-entity').textContent = 'Depositante / Cliente';
       document.getElementById('oc-wrap').style.display = 'none';
       document.getElementById('f-oc').value = '';
-    } else if(type === 'Gasto') {
+    } else if (type === 'Gasto') {
       btns[0].classList.add('act', 't-exp');
       document.getElementById('lbl-entity').textContent = 'Beneficiario / Proveedor';
       document.getElementById('oc-wrap').style.display = 'flex';
-    } else {
+    } else if (type === 'Transferencia') {
       btns[2].classList.add('act', 't-tra');
       document.getElementById('dest-wrap').style.display = 'flex';
       document.getElementById('entity-wrap').style.display = 'none';
@@ -926,6 +979,18 @@
       document.getElementById('f-oc').value = '';
       document.getElementById('lbl-acc').textContent = 'Cuenta Origen';
       document.getElementById('f-cat-input').value = 'Transferencia entre cuentas propias';
+    } else if (type === 'Pago de Deuda' || type === 'Disposición de Deuda') {
+      btns[3].classList.add('act', 't-debt');
+      document.getElementById('debt-acc-wrap').style.display = 'flex';
+      document.getElementById('debt-dir-wrap').style.display = 'block';
+      document.getElementById('entity-wrap').style.display = 'none';
+      document.getElementById('proj-wrap').style.display = 'none';
+      document.getElementById('oc-wrap').style.display = 'none';
+      document.getElementById('f-proj').value = '';
+      document.getElementById('f-oc').value = '';
+      // Set direction sub-selector
+      const isDisp = type === 'Disposición de Deuda';
+      setDebtDir(isDisp ? 'disposicion' : 'pago');
     }
   }
 
@@ -947,6 +1012,13 @@
       projectId: document.getElementById('f-proj').value,
       orderId: document.getElementById('f-oc').value
     };
+
+    if (type === 'Pago de Deuda' || type === 'Disposición de Deuda') {
+      m.debtAccount = document.getElementById('f-debt-acc').value;
+      if (type === 'Pago de Deuda') {
+        m.debtAmount = parseFloat(document.getElementById('f-debt-amount').value) || 0;
+      }
+    }
 
     if(id) {
        // Edicion
@@ -1116,17 +1188,68 @@
 
   let _dragSrc = null;
 
+  // ── Categorías de cuentas ─────────────────────────────────────────────────
+  const CAT_CYCLE = ['banco', 'efectivo', 'otros', 'deuda'];
+  const CAT_LABEL = { banco:'Banco', efectivo:'Efectivo', otros:'Otros', deuda:'Deuda' };
+
+  function saveCategoriasToFirestore() {
+    if (window.parent?.setDocumentInFirebase) {
+      window.parent.setDocumentInFirebase('bank_accounts', 'main', {
+        list: [...STATE_BANK_ACCOUNTS],
+        categorias: { ...STATE_CATEGORIAS }
+      });
+    }
+  }
+
+  function cycleCategoria(acc, e) {
+    e.stopPropagation();
+    const cur = STATE_CATEGORIAS[acc] || 'otros';
+    const next = CAT_CYCLE[(CAT_CYCLE.indexOf(cur) + 1) % CAT_CYCLE.length];
+    STATE_CATEGORIAS[acc] = next;
+    saveCategoriasToFirestore();
+    renderDynamicCards();
+    calcBalances();
+    refreshDebtAccSelect();
+  }
+
+  function refreshDebtAccSelect() {
+    const debtOpts = STATE_BANK_ACCOUNTS
+      .filter(a => STATE_CATEGORIAS[a] === 'deuda')
+      .map(a => `<option value="${a}">${a}</option>`).join('');
+    document.getElementById('f-debt-acc').innerHTML =
+      `<option value="">— Cuenta de deuda —</option>` + debtOpts;
+  }
+
+  function calcDebtDiff() {
+    const total = parseFloat(document.getElementById('f-amount').value) || 0;
+    const abono = parseFloat(document.getElementById('f-debt-amount').value) || 0;
+    const diff = total - abono;
+    document.getElementById('f-debt-diff').value = diff > 0 ? '$' + diff.toLocaleString('es-MX', {minimumFractionDigits:2}) : '—';
+  }
+
+  function setDebtDir(dir) {
+    document.getElementById('dd-pago').className = 'ts-btn' + (dir === 'pago' ? ' act' : '');
+    document.getElementById('dd-disp').className = 'ts-btn' + (dir === 'disposicion' ? ' act' : '');
+    const isDisp = dir === 'disposicion';
+    document.getElementById('f-type-val').value = isDisp ? 'Disposición de Deuda' : 'Pago de Deuda';
+    document.getElementById('lbl-acc').textContent = isDisp ? 'Cuenta Destino' : 'Cuenta Origen';
+    document.getElementById('lbl-debt-acc').textContent = isDisp ? 'Cuenta de Deuda (Origen)' : 'Cuenta de Deuda (Destino)';
+    document.getElementById('debt-amounts-wrap').style.display = isDisp ? 'none' : 'grid';
+  }
+
   function renderDynamicCards() {
     const grid = document.getElementById('acc-grid');
     grid.querySelectorAll('.acc-card-dynamic').forEach(el => el.remove());
 
     STATE_BANK_ACCOUNTS.forEach(acc => {
       const div = document.createElement('div');
-      div.className = 'acc-card acc-card-dynamic';
+      const cat = STATE_CATEGORIAS[acc] || 'otros';
+      div.className = 'acc-card acc-card-dynamic' + (cat === 'deuda' ? ' is-deuda' : '');
       div.id = 'acard-' + acc;
       div.draggable = true;
-      div.innerHTML = `<div class="acc-name">${acc}</div><div class="acc-bal" id="bal-${acc}">$0.00</div><div class="acc-meta"><span class="acc-var" id="var-${acc}">—</span></div>`;
+      div.innerHTML = `<div class="acc-name">${acc}</div><div class="acc-bal" id="bal-${acc}">$0.00</div><div class="acc-meta"><span class="acc-var" id="var-${acc}">—</span></div><span class="cat-chip cat-${cat}" title="Clic para cambiar categoría">${CAT_LABEL[cat]}</span>`;
 
+      div.querySelector('.cat-chip').addEventListener('click', e => cycleCategoria(acc, e));
       div.onclick = () => filterAccount(acc);
 
       div.addEventListener('dragstart', e => {
@@ -1153,10 +1276,7 @@
         const toIdx   = STATE_BANK_ACCOUNTS.indexOf(acc);
         STATE_BANK_ACCOUNTS.splice(fromIdx, 1);
         STATE_BANK_ACCOUNTS.splice(toIdx, 0, _dragSrc);
-        // Guardar en Firestore
-        if (window.parent && window.parent.setDocumentInFirebase) {
-          window.parent.setDocumentInFirebase('bank_accounts', 'main', { list: [...STATE_BANK_ACCOUNTS] });
-        }
+        saveCategoriasToFirestore();
         renderDynamicCards();
         calcBalances();
       });
@@ -1176,12 +1296,16 @@
     if (!isNew && oldMov && (oldMov.status === 'confirmado' || oldMov.status === 'confirmed')) {
       // Revertir movimiento anterior
       const oldDelta = oldMov.type === 'Ingreso' ? -oldMov.amount : oldMov.type === 'Gasto' ? oldMov.amount : 0;
-      if (oldMov.type === 'Transferencia') { apply(oldMov.account, oldMov.amount); apply(oldMov.destAccount, -oldMov.amount); }
+      if (oldMov.type === 'Transferencia')        { apply(oldMov.account, oldMov.amount); apply(oldMov.destAccount, -oldMov.amount); }
+      else if (oldMov.type === 'Pago de Deuda')   { apply(oldMov.account, oldMov.amount); apply(oldMov.debtAccount, -(oldMov.debtAmount || 0)); }
+      else if (oldMov.type === 'Disposición de Deuda') { apply(oldMov.debtAccount, oldMov.amount); apply(oldMov.account, -oldMov.amount); }
       else apply(oldMov.account, oldDelta);
     }
     if (mov.status === 'confirmado' || mov.status === 'confirmed') {
       const delta = mov.type === 'Ingreso' ? mov.amount : mov.type === 'Gasto' ? -mov.amount : 0;
-      if (mov.type === 'Transferencia') { apply(mov.account, -mov.amount); apply(mov.destAccount, mov.amount); }
+      if (mov.type === 'Transferencia')        { apply(mov.account, -mov.amount); apply(mov.destAccount, mov.amount); }
+      else if (mov.type === 'Pago de Deuda')   { apply(mov.account, -mov.amount); apply(mov.debtAccount, mov.debtAmount || 0); }
+      else if (mov.type === 'Disposición de Deuda') { apply(mov.debtAccount, -mov.amount); apply(mov.account, mov.amount); }
       else apply(mov.account, delta);
     }
     return ops;
@@ -1215,10 +1339,8 @@
 
     // Agregar a la lista de cuentas
     STATE_BANK_ACCOUNTS.push(name);
-    const newList = [...STATE_BANK_ACCOUNTS];
-    if (window.parent && window.parent.setDocumentInFirebase) {
-      window.parent.setDocumentInFirebase('bank_accounts', 'main', { list: newList });
-    }
+    if (!STATE_CATEGORIAS[name]) STATE_CATEGORIAS[name] = 'otros';
+    saveCategoriasToFirestore();
 
     // Crear balance inicial en $0
     STATE_ACCOUNT_BALANCES[name] = { id: name, account: name, balance: 0, before_d7: 0, before_d30: 0, before_d180: 0, before_d365: 0, updated_at: new Date().toISOString() };
