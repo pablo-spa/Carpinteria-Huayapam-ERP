@@ -157,13 +157,36 @@ async function recibir(id) {
       await window.parent.setDocumentInFirebase('purchase_orders', id, order);
     }
 
-    // Actualizar stock del inventario esperando todas las operaciones
+    // Actualizar stock del inventario
     if (order.items) {
       const invPromises = [];
       order.items.forEach(i => {
-        if (i.code) invPromises.push(window.DB.logInventoryPurchase(i.code, parseFloat(i.qty)||0, parseFloat(i.price)||0, order.fechaRecepcion));
+        if (i.code && !i.esMadera) {
+          invPromises.push(window.DB.logInventoryPurchase(i.code, parseFloat(i.qty)||0, parseFloat(i.price)||0, order.fechaRecepcion));
+        }
       });
       await Promise.all(invPromises);
+
+      // Actualizar stock de madera (inventory_lists/madera)
+      const maderaItems = order.items.filter(i => i.esMadera && i.code);
+      if (maderaItems.length) {
+        const p = window.parent;
+        const invState = p?.DB_STATE?.inventory || [];
+        let changed = false;
+        maderaItems.forEach(i => {
+          const item = invState.find(inv => inv.code === i.code);
+          if (item) {
+            item.stock = (item.stock || 0) + (parseFloat(i.qty) || 0);
+            item.lastPurchaseDate = order.fechaRecepcion;
+            if (parseFloat(i.price) > 0) item.cost = parseFloat(i.price);
+            changed = true;
+          }
+        });
+        if (changed && p?.setDocumentInFirebase) {
+          const maderaList = invState.filter(inv => inv.category === 'madera');
+          await p.setDocumentInFirebase('inventory_lists', 'madera', { list: maderaList });
+        }
+      }
     }
 
     if (window.parent?.DB_STATE?.purchase_orders) {
