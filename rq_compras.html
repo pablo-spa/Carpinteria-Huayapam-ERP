@@ -136,16 +136,6 @@ async function init() {
   ACCOUNTS  = baDoc?.list?.length ? baDoc.list : ['CAJA','CHU','SATP'];
   PROJECTS  = (db.projects      || []).filter(p => !p._init && !p.archivado && !p.archived && (p.codigo||p.code));
 
-  // Populate project select in new order form
-  const pSel = document.getElementById('no-proyecto');
-  PROJECTS.forEach(p => {
-    const o = document.createElement('option');
-    const cod = p.codigo||p.code; const nom = p.nombre||p.name;
-    o.value = cod; o.textContent = `${cod} — ${nom}`;
-    pSel.appendChild(o);
-  });
-  if (pSel._ssInit) pSel._ssRefresh(); else SearchableSelect.init(pSel);
-
   renderOrders();
 }
 
