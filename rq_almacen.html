@@ -23,6 +23,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .btn-green { background: var(--green); color: #fff; }
 .btn-sm { background: var(--surface0); color: var(--text); padding: 6px 12px; font-size: 12px; }
 
+/* Section tabs */
+.sec-tabs { display: flex; gap: 0; margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid var(--crust); }
+.sec-tab { flex: 1; padding: 8px 14px; border: none; background: var(--surface0); color: var(--subtext); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: .15s; }
+.sec-tab:not(:last-child) { border-right: 1px solid var(--crust); }
+.sec-tab.act { background: var(--text); color: var(--base); }
+
 /* Orders list */
 .sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--crust); }
 .ord-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
@@ -36,7 +42,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .pill-gray   { background: var(--surface0);         color: var(--subtext); }
 .toast-wrap  { position: fixed; top: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
 
-/* Items table */
+/* Items table (materials/tools) */
 .items-table { width: 100%; border-collapse: collapse; }
 .items-table th { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid var(--crust); text-align: left; }
 .items-table td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: bottom; }
@@ -48,6 +54,13 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .tipo-toggle span.active-mat  { background:var(--blue-bg);  color:var(--blue); }
 .tipo-toggle span.active-herr { background:var(--amber-bg); color:var(--amber); }
 .herr-badge { display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:4px; background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); margin-left:5px; vertical-align:middle; }
+
+/* Wood table */
+.wood-table { width: 100%; border-collapse: collapse; }
+.wood-table th { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid var(--crust); text-align: left; }
+.wood-table td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: top; }
+.wood-table input, .wood-table select { padding: 7px 8px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
+.wood-table input:focus, .wood-table select:focus { outline: none; border-color: var(--green); }
 </style>
 </head>
 <body>
@@ -87,22 +100,47 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   </div>
 
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h3 style="margin:0;">Materiales Solicitados</h3>
-      <button class="btn btn-sm" onclick="addRow()">+ Añadir renglón</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="margin:0;">Artículos Solicitados</h3>
+      <button class="btn btn-sm" id="add-row-btn" onclick="addActiveRow()">+ Añadir renglón</button>
     </div>
 
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th style="width:45%">Material / Concepto</th>
-          <th style="width:20%">Cantidad</th>
-          <th style="width:20%">Unidad</th>
-          <th style="width:12%"></th>
-        </tr>
-      </thead>
-      <tbody id="itemsList"></tbody>
-    </table>
+    <!-- Section tabs -->
+    <div class="sec-tabs">
+      <button class="sec-tab act" id="tab-mat" onclick="switchTab('mat')">📦 Materiales / Herramientas</button>
+      <button class="sec-tab" id="tab-wood" onclick="switchTab('wood')">🪵 Madera</button>
+    </div>
+
+    <!-- Materials / Tools section -->
+    <div id="section-mat">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width:45%">Material / Concepto</th>
+            <th style="width:20%">Cantidad</th>
+            <th style="width:20%">Unidad</th>
+            <th style="width:12%"></th>
+          </tr>
+        </thead>
+        <tbody id="itemsList"></tbody>
+      </table>
+    </div>
+
+    <!-- Wood section -->
+    <div id="section-wood" style="display:none;">
+      <table class="wood-table">
+        <thead>
+          <tr>
+            <th style="width:30%">Especie</th>
+            <th style="width:15%">Cantidad</th>
+            <th style="width:18%">Unidad</th>
+            <th style="width:30%">Notas / Descripción</th>
+            <th style="width:7%"></th>
+          </tr>
+        </thead>
+        <tbody id="woodList"></tbody>
+      </table>
+    </div>
   </div>
 
 </div>
@@ -119,6 +157,70 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   let INV   = [];
   let UNITS = [];
   let ORDERS = [];
+  let WOOD_SPECIES = [];
+  let ACTIVE_TAB = 'mat';
+
+  // ── Tab switching ─────────────────────────────────────────────
+  function switchTab(tab) {
+    ACTIVE_TAB = tab;
+    document.getElementById('tab-mat').classList.toggle('act', tab === 'mat');
+    document.getElementById('tab-wood').classList.toggle('act', tab === 'wood');
+    document.getElementById('section-mat').style.display  = tab === 'mat'  ? '' : 'none';
+    document.getElementById('section-wood').style.display = tab === 'wood' ? '' : 'none';
+    document.getElementById('add-row-btn').textContent = tab === 'wood' ? '+ Añadir madera' : '+ Añadir renglón';
+  }
+
+  function addActiveRow() {
+    if (ACTIVE_TAB === 'wood') addWoodRow();
+    else addRow();
+  }
+
+  // ── Wood rows ─────────────────────────────────────────────────
+  function buildSpeciesOptions(selected) {
+    const opts = WOOD_SPECIES.map(s =>
+      `<option value="${s}" ${s===selected?'selected':''}>${s}</option>`
+    ).join('');
+    return `<option value="">— Especie —</option>${opts}<option value="_otro" style="font-weight:700;color:var(--blue);">+ Otra…</option>`;
+  }
+
+  const WOOD_UNITS = ['pza','m3','pt','tablon','viga','regla','carga','rollo'];
+
+  function addWoodRow(especie='', cantidad=1, unit='pza', notas='') {
+    const tbody = document.getElementById('woodList');
+    const tr = document.createElement('tr');
+    const unitOpts = WOOD_UNITS.map(u => `<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('');
+    tr.innerHTML = `
+      <td>
+        <select class="w-especie" onchange="handleEspecieChange(this)">
+          ${buildSpeciesOptions(especie)}
+        </select>
+        <input type="text" class="w-especie-custom" placeholder="Escribe especie…" value="${especie && !WOOD_SPECIES.includes(especie) ? especie : ''}" style="display:${especie && !WOOD_SPECIES.includes(especie) ? 'block':'none'}; margin-top:4px;">
+      </td>
+      <td>
+        <input type="number" class="w-cantidad" value="${cantidad}" min="0.01" step="any">
+      </td>
+      <td>
+        <select class="w-unit">${unitOpts}</select>
+      </td>
+      <td>
+        <input type="text" class="w-notas" value="${notas}" placeholder="Ej. para comedor, seco…">
+      </td>
+      <td><button class="rm-btn" onclick="this.closest('tr').remove()">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  function handleEspecieChange(sel) {
+    const tr = sel.closest('tr');
+    const custom = tr.querySelector('.w-especie-custom');
+    if (sel.value === '_otro') {
+      sel.value = '';
+      custom.style.display = 'block';
+      custom.focus();
+    } else {
+      custom.style.display = 'none';
+    }
+  }
 
   // ── Orders loading ────────────────────────────────────────────
   async function loadOrders() {
@@ -146,11 +248,21 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     let html = `<div class="sec-lbl">Pedidos Enviados (${pedidos.length})</div>`;
     pedidos.forEach(o => {
-      const itemsHtml = (o.items||[]).map(i => `
+      const matItems  = (o.items||[]).filter(i => !i.tipo || i.tipo !== 'madera');
+      const woodItems = (o.items||[]).filter(i => i.tipo === 'madera');
+
+      const matHtml = matItems.map(i => `
         <div class="ficha-item">
           <span class="ficha-item-name">${i.name||i.code||'—'}${i.esHerramienta?'<span class="herr-badge">🔧</span>':''}</span>
           <span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}</span>
         </div>`).join('');
+
+      const woodHtml = woodItems.map(i => `
+        <div class="ficha-item">
+          <span class="ficha-item-name">🪵 ${i.especie||'Madera'}</span>
+          <span class="ficha-item-qty">${i.cantidad||1} ${i.unit||'pza'}${i.notas ? ` · ${i.notas}` : ''}</span>
+        </div>`).join('');
+
       html += `
         <div class="ficha" id="rq-${o.id}">
           <div class="ficha-hdr">
@@ -164,7 +276,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             ${o.notes?`<span>📝 ${o.notes}</span>`:''}
           </div>
           ${sfFlow('Pedido')}
-          <div class="ficha-items">${itemsHtml}</div>
+          <div class="ficha-items">${matHtml}${woodHtml}</div>
           <div class="ficha-actions" style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
             <button class="btn btn-red" style="font-size:12px;padding:5px 12px;" onclick="cancelOrder('${o.id}')">✕ Cancelar</button>
             <button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="confirmOrder('${o.id}')">✓ Confirmar</button>
@@ -191,7 +303,10 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       <div id="hist-body" style="display:${isOpen ? 'block' : 'none'};">`;
     hist.forEach(o => {
       const cls = PILL_MAP[o.status] || 'pill-gray';
-      const itemsTxt = (o.items||[]).map(i => `${i.qty} ${i.unit||'pza'} — ${i.name||i.code}`).join(' · ');
+      const itemsTxt = (o.items||[]).map(i => i.tipo==='madera'
+        ? `${i.cantidad||1} ${i.unit||'pza'} — 🪵 ${i.especie||'Madera'}`
+        : `${i.qty} ${i.unit||'pza'} — ${i.name||i.code}`
+      ).join(' · ');
       html += `
         <div class="ficha" style="opacity:.75;">
           <div class="ficha-hdr">
@@ -280,11 +395,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   }
 
   async function init() {
-    const [projects, contacts, inventory, conceptUnits] = await Promise.all([
+    const [projects, contacts, inventory, conceptUnits, woodDb] = await Promise.all([
       window.DB.query('projects'),
       window.DB.query('contacts'),
       window.DB.query('inventory'),
       window.DB.query('concept_units'),
+      window.DB.query('wood').catch(() => []),
     ]);
 
     // Projects dropdown — active only
@@ -325,12 +441,23 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     SearchableSelect.init(projSel);
     SearchableSelect.init(reqSel);
 
-    // Inventory & units for rows
+    // Inventory & units for material rows
     INV = inventory.filter(i => i.code && i.name);
     const rawUnits = conceptUnits[0]?.list || [];
     UNITS = rawUnits.length ? rawUnits : ['pza','caja','mt','mt2','lt','kg','gln','rollo','par','juego','bolsa'];
 
-    addRow(); // start with one empty row
+    // Wood species from existing wood inventory
+    const speciesSet = new Set();
+    woodDb.forEach(w => {
+      if (w.especie) speciesSet.add(w.especie);
+      if (w.species) speciesSet.add(w.species);
+    });
+    // Always include common species
+    ['Cedro','Parota','Encino','Pino','Tzalam','Macuil','Mezquite','Tepeguaje','Guanacaste','Primavera','Caoba','Nogal'].forEach(s => speciesSet.add(s));
+    WOOD_SPECIES = [...speciesSet].sort();
+
+    addRow();       // start with one empty material row
+    addWoodRow();   // start with one empty wood row
     await loadOrders();
   }
 
@@ -445,9 +572,10 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const requester = document.getElementById('requester').value;
     const notes = document.getElementById('notes').value.trim();
 
-    const rows = document.querySelectorAll('#itemsList tr');
     const items = [];
-    rows.forEach(tr => {
+
+    // Collect material / tool rows
+    document.querySelectorAll('#itemsList tr').forEach(tr => {
       const sel   = tr.querySelector('.i-sel');
       const custom = tr.querySelector('.i-custom');
       const qty   = parseFloat(tr.querySelector('.i-qty').value) || 0;
@@ -469,7 +597,23 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       if ((name || code) && qty > 0) items.push({ code, name, qty, unit, price: 0, esHerramienta: esHerr || undefined });
     });
 
-    if (!items.length) { toast('Agrega al menos un material.', 'warn'); return; }
+    // Collect wood rows
+    document.querySelectorAll('#woodList tr').forEach(tr => {
+      const especieSel    = tr.querySelector('.w-especie');
+      const especieCustom = tr.querySelector('.w-especie-custom');
+      const especie = especieSel.value && especieSel.value !== '_otro'
+        ? especieSel.value
+        : especieCustom.value.trim();
+      const cantidad = parseFloat(tr.querySelector('.w-cantidad').value) || 1;
+      const unit     = tr.querySelector('.w-unit').value;
+      const notas    = tr.querySelector('.w-notas').value.trim();
+
+      if (especie) {
+        items.push({ tipo: 'madera', especie, cantidad, unit, notas });
+      }
+    });
+
+    if (!items.length) { toast('Agrega al menos un artículo.', 'warn'); return; }
 
     const now = new Date();
     const folio = 'RQ-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') +
@@ -500,7 +644,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     document.getElementById('requester').value = '';
     document.getElementById('notes').value = '';
     document.getElementById('itemsList').innerHTML = '';
+    document.getElementById('woodList').innerHTML = '';
     addRow();
+    addWoodRow();
 
     ORDERS.push(request);
     renderActivePedidos();
