@@ -205,6 +205,25 @@
 .fstat .lbl { font-size: 10px; text-transform: uppercase; color: var(--subtext); font-weight: 800; letter-spacing: .04em; }
 .fstat .val  { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; }
 
+/* ── Preview tables (screen view) ── */
+.pvw-wrap { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 14px; }
+.pvw-title { font-size: 15px; font-weight: 900; text-align: center; margin-bottom: 4px; }
+.pvw-sub   { font-size: 12px; color: var(--subtext); text-align: center; margin-bottom: 12px; }
+.pvw-tbl   { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pvw-tbl th { background: var(--base); padding: 6px 8px; border: 1px solid var(--crust); font-size: 10px; color: var(--subtext); text-transform: uppercase; text-align: center; }
+.pvw-tbl td { padding: 6px 8px; border: 1px solid var(--crust); }
+.pvw-tbl tfoot td { background: var(--green-bg); font-weight: 900; color: var(--green-text); }
+.pvw-r  { text-align: right; }
+.pvw-c  { text-align: center; }
+.pvw-fw { font-weight: 800; }
+.rec-tbl    { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 8px; }
+.rec-tbl th { background: var(--base); padding: 4px 8px; border: 1px solid var(--crust); font-size: 10px; color: var(--subtext); text-align: center; }
+.rec-tbl td { padding: 4px 8px; border: 1px solid var(--crust); }
+.conc-tbl    { width: 100%; border-collapse: collapse; font-size: 11px; }
+.conc-tbl td { padding: 4px 0; border-bottom: 1px solid var(--crust); }
+.conc-tbl td:last-child { text-align: right; }
+.rec-total   { font-size: 13px; font-weight: 900; text-align: right; border-top: 1px solid var(--crust); margin-top: 6px; padding-top: 6px; }
+
 /* ── Print ── */
 #print-area { display: none; }
 @media print {
@@ -294,6 +313,7 @@
     </div>
     <div class="ef-card">
       <div class="ef-title">💵 Efectivo disponible — billetes y monedas en caja</div>
+      <div id="ef-alert" style="display:none;background:var(--red-bg);color:var(--red-text);padding:10px;border-radius:var(--radius);margin-bottom:15px;font-weight:500;font-size:14px;"></div>
       <div class="den-grid" id="den-grid"></div>
       <div class="ef-summ">
         <div class="ef-stat"><div class="lbl">Disponible</div><div class="val" id="ef-disp" style="color:var(--blue)">$0</div></div>
@@ -1200,8 +1220,7 @@ function updEfDiff(){
   if(disp===0){el.textContent='—';el.style.color='var(--muted)';}
   else if(diff>=0){el.textContent='+$'+diff.toLocaleString('es-MX');el.style.color='var(--green)';}
   else{el.textContent='−$'+Math.abs(diff).toLocaleString('es-MX');el.style.color='var(--red)';}
-  const alertEl = document.getElementById('ef-alert');
-  if(alertEl) alertEl.style.display = 'none';
+  document.getElementById('ef-alert').style.display = 'none';
 }
 function calcDist(){
   const pool={};
@@ -1209,26 +1228,12 @@ function calcDist(){
   const disp=DENS.reduce((s,d)=>s+pool[d.val]*d.val,0);
   const total=totalNomina();
   const alertEl = document.getElementById('ef-alert');
-  if(disp<total){
-    if(!alertEl){
-      const el = document.createElement('div');
-      el.id = 'ef-alert';
-      el.style.backgroundColor = 'var(--red-bg)';
-      el.style.color = 'var(--red-text)';
-      el.style.padding = '10px';
-      el.style.borderRadius = 'var(--radius)';
-      el.style.marginBottom = '15px';
-      el.style.fontWeight = '500';
-      el.style.fontSize = '14px';
-      const ref = document.getElementById('den-grid');
-      ref.parentNode.insertBefore(el, ref);
-    }
-    document.getElementById('ef-alert').textContent = `⚠ Efectivo insuficiente. Necesitas: $${total.toLocaleString('es-MX')} | Tienes: $${disp.toLocaleString('es-MX')} | Faltan: $${(total-disp).toLocaleString('es-MX')}`;
-    document.getElementById('ef-alert').style.display = 'block';
+  if (disp < total) {
+    alertEl.textContent = `⚠ Efectivo insuficiente. Necesitas: $${total.toLocaleString('es-MX')} | Tienes: $${disp.toLocaleString('es-MX')} | Faltan: $${(total-disp).toLocaleString('es-MX')}`;
+    alertEl.style.display = 'block';
     return;
-  } else if(alertEl) {
-    alertEl.style.display = 'none';
   }
+  alertEl.style.display = 'none';
   const workers=[...WORKERS].sort((a,b)=>calcW(b).total-calcW(a).total);
   const pc={...pool}; const results=[];
   for(const w of workers){
@@ -1265,40 +1270,38 @@ function buildResumenPreview() {
     const verified = s.verificado ? '<span style="color:var(--green-text)">✓</span>' : '';
     const notaHtml = s.nota ? `<div style="font-size:10px;color:var(--subtext);margin-top:2px;font-style:italic;">↳ ${s.nota}</div>` : '';
     return `<tr>
-      <td style="padding:6px 8px;border:1px solid var(--crust);">${w.n} ${w.ape} ${verified}${notaHtml}</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:right;">$${w.base.toLocaleString('es-MX')}</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;">${r.hNorm.toFixed(1)}h</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--red-text);">${r.nFalta > 0 ? r.nFalta : '—'}</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--blue-text);">${vacStr}</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--amber-text);">${hrsEx}</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;">${corrStr}</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:center;color:var(--red-text);">${prestDetail}</td>
-      <td style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-weight:800;">$${r.total.toLocaleString('es-MX')}</td>
+      <td>${w.n} ${w.ape} ${verified}${notaHtml}</td>
+      <td class="pvw-r">$${w.base.toLocaleString('es-MX')}</td>
+      <td class="pvw-c">${r.hNorm.toFixed(1)}h</td>
+      <td class="pvw-c" style="color:var(--red-text);">${r.nFalta > 0 ? r.nFalta : '—'}</td>
+      <td class="pvw-c" style="color:var(--blue-text);">${vacStr}</td>
+      <td class="pvw-c" style="color:var(--amber-text);">${hrsEx}</td>
+      <td class="pvw-c">${corrStr}</td>
+      <td class="pvw-c" style="color:var(--red-text);">${prestDetail}</td>
+      <td class="pvw-r pvw-fw">$${r.total.toLocaleString('es-MX')}</td>
     </tr>`;
   }).join('');
 
   area.innerHTML = `
-    <div style="background:var(--mantle);border:1px solid var(--crust);border-radius:var(--radius-lg);padding:14px;">
-      <div style="text-align:center;margin-bottom:12px;">
-        <div style="font-size:15px;font-weight:900;">Carpintería Huayapam</div>
-        <div style="font-size:12px;color:var(--subtext);margin-top:3px;">Resumen de Nómina · ${semStr}</div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead><tr style="background:var(--base);">
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:left;font-size:10px;color:var(--subtext);text-transform:uppercase;">Nombre / Nota</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-size:10px;color:var(--subtext);text-transform:uppercase;">Base/Sem</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Hrs Norm.</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Faltas</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Vac.</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Hrs Extra</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Correc.</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);text-transform:uppercase;">Desc/Prést</th>
-          <th style="padding:6px 8px;border:1px solid var(--crust);text-align:right;font-size:10px;color:var(--subtext);text-transform:uppercase;">Total</th>
+    <div class="pvw-wrap">
+      <div class="pvw-title">Carpintería Huayapam</div>
+      <div class="pvw-sub">Resumen de Nómina · ${semStr}</div>
+      <table class="pvw-tbl">
+        <thead><tr>
+          <th style="text-align:left;">Nombre / Nota</th>
+          <th style="text-align:right;">Base/Sem</th>
+          <th>Hrs Norm.</th>
+          <th>Faltas</th>
+          <th>Vac.</th>
+          <th>Hrs Extra</th>
+          <th>Correc.</th>
+          <th>Desc/Prést</th>
+          <th style="text-align:right;">Total</th>
         </tr></thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr style="background:var(--green-bg);">
-          <td colspan="8" style="padding:7px 8px;border:1px solid var(--crust);font-weight:900;color:var(--green-text);">TOTAL — ${WORKERS.length} trabajadores</td>
-          <td style="padding:7px 8px;border:1px solid var(--crust);font-weight:900;color:var(--green-text);">$${totalNomina().toLocaleString('es-MX')}</td>
+        <tfoot><tr>
+          <td colspan="8">TOTAL — ${WORKERS.length} trabajadores</td>
+          <td class="pvw-r">$${totalNomina().toLocaleString('es-MX')}</td>
         </tr></tfoot>
       </table>
     </div>`;
@@ -1325,22 +1328,22 @@ function buildRecibosPreview() {
       const ent = d.horaEnt ? d.horaEnt.substring(0,5) : (d.st==='trabajo' ? '—' : '');
       const sal = d.horaSal ? d.horaSal.substring(0,5) : (d.st==='trabajo' ? '—' : '');
       return `<tr>
-        <td style="padding:4px 8px;border:1px solid var(--crust);">${DIAS_N[di]} <span style="font-size:10px;color:var(--subtext)">${dt.toLocaleDateString('es-MX',{day:'numeric',month:'short'})}</span></td>
-        <td style="padding:4px 8px;border:1px solid var(--crust);">${stLbl}</td>
-        <td style="padding:4px 8px;border:1px solid var(--crust);text-align:center;">${ent}</td>
-        <td style="padding:4px 8px;border:1px solid var(--crust);text-align:center;">${sal}</td>
-        <td style="padding:4px 8px;border:1px solid var(--crust);text-align:right;font-weight:700;">${hLbl}</td>
+        <td>${DIAS_N[di]} <span style="font-size:10px;color:var(--subtext)">${dt.toLocaleDateString('es-MX',{day:'numeric',month:'short'})}</span></td>
+        <td>${stLbl}</td>
+        <td class="pvw-c">${ent}</td>
+        <td class="pvw-c">${sal}</td>
+        <td class="pvw-r" style="font-weight:700;">${hLbl}</td>
       </tr>`;
     }).filter(Boolean).join('');
 
-    let conc = `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);">Horas normales (${r.hNorm.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;">$${Math.round(r.basePay-r.hVacExtra*t).toLocaleString('es-MX')}</td></tr>`;
-    if (r.hExt15>0) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--amber-text)">Extra ×1.5 (${r.hExt15.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--amber-text)">+$${Math.round(r.ext15Pay).toLocaleString('es-MX')}</td></tr>`;
-    if (r.hExt2c>0) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--amber-text)">Extra ×2 (${r.hExt2c.toFixed(1)}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--amber-text)">+$${Math.round(r.ext2Pay).toLocaleString('es-MX')}</td></tr>`;
-    if (r.hSat>0)   conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--amber-text)">Sábado (${r.hSat}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--amber-text)">+$${Math.round(r.satPay).toLocaleString('es-MX')}</td></tr>`;
-    if (r.hSun>0)   conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--amber-text)">Domingo (${r.hSun}h)</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--amber-text)">+$${Math.round(r.sunPay).toLocaleString('es-MX')}</td></tr>`;
-    if (r.bonoPay!==0) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);">Corrección: ${s.nota||'—'}</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--${r.bonoPay>0?'green':'red'}-text)">${r.bonoPay>0?'+':''}$${r.bonoPay.toLocaleString('es-MX')}</td></tr>`;
+    let conc = `<tr><td>Horas normales (${r.hNorm.toFixed(1)}h)</td><td>$${Math.round(r.basePay-r.hVacExtra*t).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hExt15>0) conc += `<tr><td style="color:var(--amber-text)">Extra ×1.5 (${r.hExt15.toFixed(1)}h)</td><td style="color:var(--amber-text)">+$${Math.round(r.ext15Pay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hExt2c>0) conc += `<tr><td style="color:var(--amber-text)">Extra ×2 (${r.hExt2c.toFixed(1)}h)</td><td style="color:var(--amber-text)">+$${Math.round(r.ext2Pay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hSat>0)   conc += `<tr><td style="color:var(--amber-text)">Sábado (${r.hSat}h)</td><td style="color:var(--amber-text)">+$${Math.round(r.satPay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.hSun>0)   conc += `<tr><td style="color:var(--amber-text)">Domingo (${r.hSun}h)</td><td style="color:var(--amber-text)">+$${Math.round(r.sunPay).toLocaleString('es-MX')}</td></tr>`;
+    if (r.bonoPay!==0) conc += `<tr><td>Corrección: ${s.nota||'—'}</td><td style="color:var(--${r.bonoPay>0?'green':'red'}-text)">${r.bonoPay>0?'+':''}$${r.bonoPay.toLocaleString('es-MX')}</td></tr>`;
     (PRESTAMOS[w.id]||[]).forEach((p,i) => {
-      if (s.prestAplic[i]) conc += `<tr><td style="padding:4px 0;border-bottom:1px solid var(--crust);color:var(--red-text)">Abono: ${p.desc}</td><td style="padding:4px 0;border-bottom:1px solid var(--crust);text-align:right;color:var(--red-text)">−$${s.prestMonto[i].toLocaleString('es-MX')}</td></tr>`;
+      if (s.prestAplic[i]) conc += `<tr><td style="color:var(--red-text)">Abono: ${p.desc}</td><td style="color:var(--red-text)">−$${s.prestMonto[i].toLocaleString('es-MX')}</td></tr>`;
     });
 
     return `<div class="rec-card" style="opacity:${hasActivity?1:0.5};">
@@ -1348,20 +1351,18 @@ function buildRecibosPreview() {
         <div><div class="rec-emp">Carpintería Huayapam</div><div class="rec-worker">${w.n} ${w.ape}</div></div>
         <div class="rec-sem">Recibo de Nómina<br><span style="font-weight:400;font-size:11px;">${semStr}</span></div>
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;">
-        <thead><tr style="background:var(--base);">
-          <th style="padding:4px 8px;border:1px solid var(--crust);text-align:left;font-size:10px;color:var(--subtext);">Día</th>
-          <th style="padding:4px 8px;border:1px solid var(--crust);font-size:10px;color:var(--subtext);">Estado</th>
-          <th style="padding:4px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);">Entrada</th>
-          <th style="padding:4px 8px;border:1px solid var(--crust);text-align:center;font-size:10px;color:var(--subtext);">Salida</th>
-          <th style="padding:4px 8px;border:1px solid var(--crust);text-align:right;font-size:10px;color:var(--subtext);">Hrs</th>
+      <table class="rec-tbl">
+        <thead><tr>
+          <th style="text-align:left;">Día</th>
+          <th>Estado</th>
+          <th>Entrada</th>
+          <th>Salida</th>
+          <th style="text-align:right;">Hrs</th>
         </tr></thead>
-        <tbody>${diasRows||'<tr><td colspan="5" style="padding:6px;text-align:center;color:var(--subtext);font-size:11px;">Sin registros</td></tr>'}</tbody>
+        <tbody>${diasRows||'<tr><td colspan="5" style="text-align:center;color:var(--subtext);">Sin registros</td></tr>'}</tbody>
       </table>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;">${conc}</table>
-      <div style="font-size:13px;font-weight:900;text-align:right;border-top:1px solid var(--crust);margin-top:6px;padding-top:6px;">
-        Total: $${r.total.toLocaleString('es-MX')}
-      </div>
+      <table class="conc-tbl">${conc}</table>
+      <div class="rec-total">Total: $${r.total.toLocaleString('es-MX')}</div>
     </div>`;
   }).join('');
 
