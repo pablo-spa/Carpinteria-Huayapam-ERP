@@ -141,12 +141,18 @@
       <div class="card">
         <div class="card-title">
           Cotizaciones
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-dark" style="padding:4px 10px; font-size:11px;" onclick="newQuote('muebles')">+ Muebles</button>
-            <button class="btn btn-dark" style="padding:4px 10px; font-size:11px;" onclick="newQuote('viaticos')">+ Viáticos</button>
-          </div>
+          <button class="btn btn-dark" style="padding:4px 10px; font-size:11px;" onclick="newQuote()">+ Nueva</button>
         </div>
         <div id="quotes-list"></div>
+      </div>
+
+      <!-- Cotizaciones Viáticos -->
+      <div class="card">
+        <div class="card-title">
+          Cotizaciones Fletes/Viáticos
+          <button class="btn btn-dark" style="padding:4px 10px; font-size:11px;" onclick="newQuoteViaticos()">+ Nueva</button>
+        </div>
+        <div id="quotes-viaticos-list"></div>
       </div>
 
     </div>
@@ -538,14 +544,13 @@
 
       qList.innerHTML = quotes.map(q => {
         const label = q.folio;
-        const icon = q.type === 'viaticos' ? '🚚' : '🛋️';
         const statusOpts = QUOTE_STATUSES.map(s =>
           `<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`
         ).join('');
         return `
         <div class="quot-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
-            <strong style="font-size:14px;">${icon} Cotización ${label}</strong>
+            <strong style="font-size:14px;">🛋️ Cotización ${label}</strong>
             <select onchange="changeQuoteStatus('${q.id}', this.value)"
               style="font-size:11px;font-weight:800;color:${ST_COLOR[q.status]||'var(--subtext)'};background:transparent;border:none;cursor:pointer;padding:2px 4px;font-family:inherit;">
               ${statusOpts}
@@ -555,8 +560,8 @@
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="openPDFQuote('${q.id}')">Ver PDF</button>
             ${q.status === 'Activa'
-              ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--amber);" onclick="openEditQuote('${q.id}', '${q.type}')">Editar (nueva versión)</button>`
-              : `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--blue);" onclick="openEditQuote('${q.id}', '${q.type}')">Editar</button>`
+              ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--amber);" onclick="openEditQuote('${q.id}')">Editar (nueva versión)</button>`
+              : `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--blue);" onclick="openEditQuote('${q.id}')">Editar</button>`
             }
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="deleteQuote('${q.id}', '${label}')">Eliminar</button>
           </div>
@@ -565,24 +570,19 @@
     }
 
     function openPDFQuote(qId) {
-      // Redirigir a la vista correcta según el tipo si es necesario
-      const q = window.DB.get().quotations.find(x => x.id === qId);
-      const file = q?.type === 'viaticos' ? 'cotizacion_viaticos.html' : 'cotizacion.html';
-      if (window.parent?.openModule) window.parent.openModule(file + '?viewId=' + qId, 'Cotización');
-      else window.location.href = file + '?viewId=' + qId;
+      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?viewId=' + qId, 'Cotización');
+      else window.location.href = 'cotizacion.html?viewId=' + qId;
     }
 
-    function openEditQuote(qId, type) {
-      const file = type === 'viaticos' ? 'cotizacion_viaticos.html' : 'cotizacion.html';
-      if (window.parent?.openModule) window.parent.openModule(file + '?editId=' + qId, 'Editar Cotización');
-      else window.location.href = file + '?editId=' + qId;
+    function openEditQuote(qId) {
+      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?editId=' + qId, 'Editar Cotización');
+      else window.location.href = 'cotizacion.html?editId=' + qId;
     }
 
-    function newQuote(type) {
+    function newQuote() {
       if (!projId) { alert('Primero guarda el proyecto.'); return; }
-      const file = type === 'viaticos' ? 'cotizacion_viaticos.html' : 'cotizacion.html';
-      if (window.parent?.openModule) window.parent.openModule(file + '?projectId=' + projId, 'Nueva Cotización');
-      else window.location.href = file + '?projectId=' + projId;
+      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?projectId=' + projId, 'Nueva Cotización');
+      else window.location.href = 'cotizacion.html?projectId=' + projId;
     }
 
     function changeQuoteStatus(qId, newStatus) {
@@ -643,6 +643,97 @@
         window.DB.save(d);
       }
       renderQuotes();
+      toast('Cotización movida a la papelera.', 'warn');
+    }
+
+    // ── Lógica de Cotizaciones Fletes/Viáticos ──
+    function renderQuotesViaticos() {
+      const d = window.DB.get();
+      const qList = document.getElementById('quotes-viaticos-list');
+      if (!projId) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">Guarda el proyecto primero.</div>'; return; }
+      const quotes = (d.quotations_viaticos || []).filter(q => q.projectId === projId && !q.eliminada);
+      if (quotes.length === 0) { qList.innerHTML = '<div style="font-size:12px; color:var(--subtext);">No hay cotizaciones de fletes/viáticos.</div>'; return; }
+      
+      quotes.sort((a, b) => new Date(a.date) - new Date(b.date)); // ascendente para numerar
+      quotes.forEach((q, i) => {
+        if (!q.folio) {
+          q.folio = `${q.date}-V${String(i + 1).padStart(2, '0')}`;
+          if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('quotations_viaticos', q.id, q);
+        }
+      });
+      quotes.sort((a, b) => new Date(b.date) - new Date(a.date)); // descendente para mostrar
+
+      qList.innerHTML = quotes.map(q => {
+        const label = q.folio;
+        const statusOpts = QUOTE_STATUSES.map(s =>
+          `<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`
+        ).join('');
+        return `
+        <div class="quot-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+            <strong style="font-size:14px;">🚚 Cotización ${label}</strong>
+            <select onchange="changeQuoteStatusViaticos('${q.id}', this.value)"
+              style="font-size:11px;font-weight:800;color:${ST_COLOR[q.status]||'var(--subtext)'};background:transparent;border:none;cursor:pointer;padding:2px 4px;font-family:inherit;">
+              ${statusOpts}
+            </select>
+          </div>
+          <div style="font-size:12px; color:var(--subtext); margin-bottom:8px;">${q.date} &nbsp;|&nbsp; ${fmt(q.total||0)}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="openPDFQuoteViaticos('${q.id}')">Ver PDF</button>
+            ${q.status === 'Activa'
+              ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--amber);" onclick="openEditQuoteViaticos('${q.id}')">Editar (nueva versión)</button>`
+              : `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--blue);" onclick="openEditQuoteViaticos('${q.id}')">Editar</button>`
+            }
+            <button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="deleteQuoteViaticos('${q.id}', '${label}')">Eliminar</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function openPDFQuoteViaticos(qId) {
+      if (window.parent?.openModule) window.parent.openModule('cotizacion_viaticos.html?viewId=' + qId, 'Cotización Viáticos');
+      else window.location.href = 'cotizacion_viaticos.html?viewId=' + qId;
+    }
+    function openEditQuoteViaticos(qId) {
+      if (window.parent?.openModule) window.parent.openModule('cotizacion_viaticos.html?editId=' + qId, 'Editar Cot. Viáticos');
+      else window.location.href = 'cotizacion_viaticos.html?editId=' + qId;
+    }
+    function newQuoteViaticos() {
+      if (!projId) { alert('Primero guarda el proyecto.'); return; }
+      if (window.parent?.openModule) window.parent.openModule('cotizacion_viaticos.html?projectId=' + projId, 'Nueva Cot. Viáticos');
+      else window.location.href = 'cotizacion_viaticos.html?projectId=' + projId;
+    }
+    function changeQuoteStatusViaticos(qId, newStatus) {
+      const d = window.DB.get();
+      const quotes = d.quotations_viaticos || [];
+      const idx = quotes.findIndex(q => q.id === qId);
+      if (idx < 0) return;
+      if (newStatus === 'Activa') {
+        if (!confirm(`¿Aprobar la cotización?\n\nUna vez activa, solo se podrá editar creando una nueva versión.`)) { renderQuotesViaticos(); return; }
+      }
+      quotes[idx].status = newStatus;
+      if (window.parent?.DB_STATE?.quotations_viaticos) {
+        const li = window.parent.DB_STATE.quotations_viaticos.findIndex(q => q.id === qId);
+        if (li >= 0) window.parent.DB_STATE.quotations_viaticos[li].status = newStatus;
+      }
+      if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('quotations_viaticos', qId, quotes[idx]);
+      window.DB.save(d);
+      renderQuotesViaticos();
+    }
+    async function deleteQuoteViaticos(qId, label) {
+      if (!confirm(`¿Enviar la cotización a la papelera (Eliminar)?`)) return;
+      const d = window.DB.get();
+      const qIdx = (d.quotations_viaticos || []).findIndex(q => q.id === qId);
+      if (qIdx > -1) {
+        d.quotations_viaticos[qIdx].eliminada = true;
+        if (window.parent?.setDocumentInFirebase) await window.parent.setDocumentInFirebase('quotations_viaticos', qId, d.quotations_viaticos[qIdx]);
+        if (window.parent?.DB_STATE?.quotations_viaticos) {
+          const li = window.parent.DB_STATE.quotations_viaticos.findIndex(q => q.id === qId);
+          if (li >= 0) window.parent.DB_STATE.quotations_viaticos[li].eliminada = true;
+        }
+        window.DB.save(d);
+      }
+      renderQuotesViaticos();
       toast('Cotización movida a la papelera.', 'warn');
     }
 
@@ -856,6 +947,7 @@
 
       await window.DB.query('projects');
       await window.DB.query('quotations');
+      await window.DB.query('quotations_viaticos');
       await window.DB.query('inventory');
       await window.DB.query('inventory_salidas');
 
@@ -927,6 +1019,7 @@
       renderHoursTable();
       renderTimeline();
       renderQuotes();
+      renderQuotesViaticos();
       renderPayments(d);
       renderActualMaterials(d);
       renderViaticos(d);

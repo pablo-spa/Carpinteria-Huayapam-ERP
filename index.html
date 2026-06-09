@@ -1774,7 +1774,7 @@
         window.syncAllData = async function() {
           const btn = document.getElementById('btn-sync');
           if (btn) { btn.textContent = '⏳ Actualizando…'; btn.disabled = true; }
-          const criticalCols = ['accounting_movements', 'contacts', 'projects', 'quotations', 'purchase_orders'];
+          const criticalCols = ['accounting_movements', 'contacts', 'projects', 'quotations', 'quotations_viaticos', 'purchase_orders'];
           for (const col of criticalCols) {
             if (window.DB_STATE) delete window.DB_STATE[col];
           }

@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cotizaciones</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 .hdr {
   position: sticky; top: 0; z-index: 100;
@@ -85,6 +86,11 @@
   text-align: center; padding: 40px; color: var(--subtext);
   font-size: 13px; border: 1px dashed var(--crust); border-radius: 10px;
 }
+
+.tabs-bar { display: flex; gap: 8px; padding: 0 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); }
+.tab-btn { padding: 10px 16px; border: none; background: transparent; color: var(--subtext); font-size: 13px; font-weight: 700; cursor: pointer; border-bottom: 2px solid transparent; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.act { color: var(--blue); border-bottom-color: var(--blue); }
 </style>
 </head>
 <body>
@@ -94,7 +100,12 @@
     <button class="back-btn" onclick="window.history.back()">← Volver</button>
     <div class="hdr-title">Cotizaciones</div>
   </div>
-  <button class="btn btn-green" onclick="openNueva()">+ Nueva Cotización</button>
+  <button class="btn btn-green" id="btn-nueva" onclick="openNueva()">+ Nueva Cotización</button>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn act" onclick="setMainTab('muebles', this)">Muebles y Proyectos</button>
+  <button class="tab-btn" onclick="setMainTab('viaticos', this)">Fletes y Viáticos</button>
 </div>
 
 <div class="filters">
@@ -114,29 +125,33 @@
 <div class="main" id="main-content"></div>
 
 <script src="db.js"></script>
-<script src="ui.js"></script>
 <script>
-let ALL = [];
+let ALL_MUEBLES = [];
+let ALL_VIATICOS = [];
 let PROJECTS = {};
 let CLIENTS  = {};
+let currentTab = 'muebles';
 
 async function init() {
   const p = window.parent;
   if (p?.cargar_coleccion) {
     await Promise.all([
       p.cargar_coleccion('quotations'),
+      p.cargar_coleccion('quotations_viaticos'),
       p.cargar_coleccion('projects'),
       p.cargar_coleccion('contacts'),
     ]);
   }
 
-  const [quotes, projects, contacts] = await Promise.all([
+  const [quotes, quotesViaticos, projects, contacts] = await Promise.all([
     window.DB.query('quotations'),
+    window.DB.query('quotations_viaticos'),
     window.DB.query('projects'),
     window.DB.query('contacts'),
   ]);
 
-  ALL = (quotes || []).filter(q => !q.eliminada);
+  ALL_MUEBLES = (quotes || []).filter(q => !q.eliminada);
+  ALL_VIATICOS = (quotesViaticos || []).filter(q => !q.eliminada);
 
   PROJECTS = {};
   (projects || []).forEach(p => { PROJECTS[p.id] = p; });
@@ -145,6 +160,14 @@ async function init() {
   (contacts || []).forEach(c => { CLIENTS[c.id] = c; });
 
   document.getElementById('srch').addEventListener('input', render);
+  render();
+}
+
+function setMainTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('act'));
+  el.classList.add('act');
+  document.getElementById('btn-nueva').textContent = tab === 'muebles' ? '+ Nueva Cotización' : '+ Cotización de Viáticos';
   render();
 }
 
@@ -169,13 +192,13 @@ function quoteCard(q) {
   const projCode   = proj   ? (proj.codigo  || proj.code   || '') : '';
   const projName   = proj   ? (proj.nombre  || proj.name   || '') : '';
   const sub = [clientName, projCode && projName ? `${projCode} – ${projName}` : ''].filter(Boolean).join(' · ');
-  const piecesLabel = q.pieces?.length === 1 ? '1 pieza' : `${q.pieces?.length || 0} piezas`;
+  const descLabel = currentTab === 'muebles' ? (q.pieces?.length === 1 ? '1 pieza' : `${q.pieces?.length || 0} piezas`) : (q.ruta || 'Viaje');
 
   return `<div class="q-card" onclick="openQuote('${q.id}')">
     <div class="q-folio">${q.folio || '—'}</div>
     <div style="flex:1;min-width:0;">
-      <div class="q-name">${q.pieces?.map(p => p.name).filter(Boolean).join(', ') || '(Sin nombre)'}</div>
-      ${sub ? `<div class="q-sub">${sub}</div>` : `<div class="q-sub">${piecesLabel}</div>`}
+      <div class="q-name">${currentTab === 'muebles' ? (q.pieces?.map(p => p.name).filter(Boolean).join(', ') || '(Sin nombre)') : (q.concepto || 'Flete/Viático')}</div>
+      ${sub ? `<div class="q-sub">${sub}</div>` : `<div class="q-sub">${descLabel}</div>`}
     </div>
     ${statusPill(q.status)}
     <div class="q-date">${q.date || ''}</div>
@@ -186,8 +209,9 @@ function quoteCard(q) {
 function render() {
   const term      = document.getElementById('srch').value.toLowerCase().trim();
   const statusFil = document.getElementById('fil-status').value;
+  const sourceList = currentTab === 'muebles' ? ALL_MUEBLES : ALL_VIATICOS;
 
-  let quotes = ALL.filter(q => {
+  let quotes = sourceList.filter(q => {
     if (statusFil && q.status !== statusFil) return false;
     if (!term) return true;
     const proj   = q.projectId ? PROJECTS[q.projectId] : null;
@@ -273,13 +297,15 @@ function toggleGroup(hdr) {
 }
 
 function openQuote(id) {
-  if (window.parent?.openModule) window.parent.openModule('cotizacion.html?viewId=' + id, 'Cotización');
-  else window.location.href = 'cotizacion.html?viewId=' + id;
+  const file = currentTab === 'muebles' ? 'cotizacion.html' : 'cotizacion_viaticos.html';
+  if (window.parent?.openModule) window.parent.openModule(file + '?viewId=' + id, 'Cotización');
+  else window.location.href = file + '?viewId=' + id;
 }
 
 function openNueva() {
-  if (window.parent?.openModule) window.parent.openModule('cotizacion.html', 'Nueva Cotización');
-  else window.location.href = 'cotizacion.html';
+  const file = currentTab === 'muebles' ? 'cotizacion.html' : 'cotizacion_viaticos.html';
+  if (window.parent?.openModule) window.parent.openModule(file, 'Nueva Cotización');
+  else window.location.href = file;
 }
 
 document.addEventListener('DOMContentLoaded', init);
