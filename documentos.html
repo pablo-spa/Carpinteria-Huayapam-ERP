@@ -264,6 +264,28 @@
   background: var(--blue-bg); color: var(--blue);
 }
 
+.exp-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 99px; font-size: 10px; font-weight: 700;
+}
+.exp-badge.exp-red    { background: rgba(210,15,57,.12);  color: var(--red); }
+.exp-badge.exp-amber  { background: rgba(223,142,29,.12); color: var(--amber); }
+.exp-badge.exp-ok     { background: rgba(64,160,43,.10);  color: var(--green); }
+
+/* Markdown en descripción */
+.md-body { font-size: 13px; line-height: 1.65; color: var(--text); }
+.md-body p  { margin-bottom: 10px; }
+.md-body ul, .md-body ol { padding-left: 18px; margin-bottom: 10px; }
+.md-body li { margin-bottom: 4px; }
+.md-body strong { color: var(--text); font-weight: 700; }
+.md-body em { font-style: italic; }
+.md-body code { background: var(--surface0); padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+.md-body h1, .md-body h2, .md-body h3 { font-weight: 700; margin: 14px 0 6px; color: var(--text); }
+.md-body h1 { font-size: 16px; } .md-body h2 { font-size: 14px; } .md-body h3 { font-size: 13px; }
+.md-body blockquote { border-left: 3px solid var(--blue); padding-left: 10px; color: var(--subtext); margin: 8px 0; }
+.md-body a { color: var(--blue); }
+.md-body hr { border: none; border-top: 1px solid var(--crust); margin: 12px 0; }
+
 </style>
 </head>
 <body>
@@ -344,8 +366,26 @@
     </div>
 
     <div class="field">
-      <label>Descripción (opcional)</label>
-      <textarea id="f-desc" placeholder="Breve descripción del contenido..."></textarea>
+      <label>Encargado (opcional)</label>
+      <select id="f-encargado">
+        <option value="">— Sin encargado —</option>
+      </select>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div class="field">
+        <label>Fecha de inicio</label>
+        <input type="date" id="f-fecha-inicio">
+      </div>
+      <div class="field">
+        <label>Fecha de vencimiento</label>
+        <input type="date" id="f-fecha-venc">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Descripción (opcional · soporta Markdown)</label>
+      <textarea id="f-desc" placeholder="Breve descripción del contenido...&#10;&#10;Puedes usar **negrita**, *cursiva*, listas, etc." style="min-height:100px;"></textarea>
     </div>
 
     <div class="modal-actions">
@@ -355,6 +395,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="db.js"></script>
 <script src="ui.js"></script>
 <script>
@@ -364,10 +405,29 @@ const CAT_ICON_DEFAULT = '📄';
 let docs       = [];
 let projects   = [];
 let categories = [];
+let users      = [];
 let currentId  = null;
 let editingId  = null;
 let canEdit    = false;
 let activeCat  = null;
+
+marked.setOptions({ breaks: true, gfm: true });
+
+function expInfo(fechaVenc) {
+  if (!fechaVenc) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const venc  = new Date(fechaVenc + 'T12:00:00');
+  const days  = Math.round((venc - today) / 86400000);
+  if (days < 0)   return { cls: 'exp-red',   label: `Vencido hace ${-days}d`, days };
+  if (days <= 7)  return { cls: 'exp-red',   label: `Vence en ${days}d`,       days };
+  if (days <= 30) return { cls: 'exp-amber', label: `Vence en ${days}d`,       days };
+  return { cls: 'exp-ok', label: `Vence en ${days}d`, days };
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  return new Date(iso + 'T12:00:00').toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' });
+}
 
 // ── Util ──────────────────────────────────────────────────────────────
 function toDriveOpen(url) {
@@ -401,8 +461,9 @@ async function load() {
     console.error('Error cargando documentos:', e);
   }
 
-  // Proyectos (ya cargados por defecto)
+  // Proyectos y usuarios (ya cargados por defecto)
   projects = (window.parent.DB_STATE?.projects || []);
+  users    = Object.values(window.parent.DB_STATE?.users || {}).filter(u => u?.email);
 
   const role = window.parent?.CURRENT_USER_ROLE || 'programador';
   canEdit = ['programador', 'admin', 'gerencia'].includes(role);
@@ -465,11 +526,15 @@ function renderList() {
     groups[cat].forEach(d => {
       const proyNombre = d.proyectoId ? (projects.find(p => p.id === d.proyectoId)?.nombre || projects.find(p => p.id === d.proyectoId)?.codigo || '') : '';
       const active = d.id === currentId ? ' active' : '';
+      const exp = expInfo(d.fechaVencimiento);
+      const badge = exp && exp.days <= 30
+        ? `<span class="exp-badge ${exp.cls}" style="margin-left:4px;">${exp.label}</span>`
+        : '';
       html += `<div class="doc-item${active}" onclick="selectDoc('${d.id}')">
         <div class="doc-item-icon">${CAT_ICON_DEFAULT}</div>
         <div class="doc-item-body">
-          <div class="doc-item-title">${d.titulo || 'Sin título'}</div>
-          <div class="doc-item-meta">${proyNombre ? `📁 ${proyNombre}` : (d.descripcion || '')}</div>
+          <div class="doc-item-title">${d.titulo || 'Sin título'} ${badge}</div>
+          <div class="doc-item-meta">${proyNombre ? `📁 ${proyNombre}` : (d.descripcion || '').replace(/[#*_`]/g,'').slice(0,60)}</div>
         </div>
       </div>`;
     });
@@ -494,13 +559,17 @@ function selectDoc(id) {
   document.getElementById('card-title').textContent = d.titulo || 'Sin título';
 
   const proyNombre = d.proyectoId ? (projects.find(p => p.id === d.proyectoId)?.nombre || projects.find(p => p.id === d.proyectoId)?.codigo || '') : '';
-  const fecha = d.fecha ? new Date(d.fecha).toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' }) : '';
+  const fechaAgregado = d.fecha ? new Date(d.fecha).toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' }) : '';
+  const exp = expInfo(d.fechaVencimiento);
 
   let rows = '';
-  if (d.categoria)   rows += `<div class="doc-card-row"><span class="doc-card-row-label">Categoría</span><span class="doc-card-row-val">${d.categoria}</span></div>`;
-  if (proyNombre)    rows += `<div class="doc-card-row"><span class="doc-card-row-label">Proyecto</span><span class="doc-card-row-val">${proyNombre}</span></div>`;
-  if (d.descripcion) rows += `<div class="doc-card-row"><span class="doc-card-row-label">Descripción</span><span class="doc-card-row-val">${d.descripcion}</span></div>`;
-  if (fecha)         rows += `<div class="doc-card-row"><span class="doc-card-row-label">Agregado</span><span class="doc-card-row-val">${fecha}</span></div>`;
+  if (d.categoria)        rows += `<div class="doc-card-row"><span class="doc-card-row-label">Categoría</span><span class="doc-card-row-val">${d.categoria}</span></div>`;
+  if (proyNombre)         rows += `<div class="doc-card-row"><span class="doc-card-row-label">Proyecto</span><span class="doc-card-row-val">${proyNombre}</span></div>`;
+  if (d.encargado)        rows += `<div class="doc-card-row"><span class="doc-card-row-label">Encargado</span><span class="doc-card-row-val">👤 ${d.encargado}</span></div>`;
+  if (d.fechaInicio)      rows += `<div class="doc-card-row"><span class="doc-card-row-label">Fecha inicio</span><span class="doc-card-row-val">${fmtDate(d.fechaInicio)}</span></div>`;
+  if (d.fechaVencimiento) rows += `<div class="doc-card-row"><span class="doc-card-row-label">Vencimiento</span><span class="doc-card-row-val">${fmtDate(d.fechaVencimiento)}${exp ? ` <span class="exp-badge ${exp.cls}">${exp.label}</span>` : ''}</span></div>`;
+  if (d.descripcion)      rows += `<div class="doc-card-row" style="flex-direction:column;gap:6px;"><span class="doc-card-row-label">Descripción</span><div class="md-body">${marked.parse(d.descripcion)}</div></div>`;
+  if (fechaAgregado)      rows += `<div class="doc-card-row"><span class="doc-card-row-label">Agregado</span><span class="doc-card-row-val" style="color:var(--subtext);font-size:12px;">${fechaAgregado}</span></div>`;
   document.getElementById('card-rows').innerHTML = rows;
 
   document.getElementById('btn-drive').href = toDriveOpen(d.driveUrl);
@@ -513,17 +582,18 @@ function selectDoc(id) {
 function openModal(doc) {
   editingId = doc?.id || null;
   document.getElementById('modal-title').textContent = doc ? 'Editar Documento' : 'Agregar Documento';
-  document.getElementById('f-titulo').value = doc?.titulo      || '';
-  document.getElementById('f-drive').value  = doc?.driveUrl    || '';
-  document.getElementById('f-desc').value   = doc?.descripcion || '';
+  document.getElementById('f-titulo').value      = doc?.titulo          || '';
+  document.getElementById('f-drive').value       = doc?.driveUrl        || '';
+  document.getElementById('f-desc').value        = doc?.descripcion     || '';
+  document.getElementById('f-fecha-inicio').value = doc?.fechaInicio    || '';
+  document.getElementById('f-fecha-venc').value  = doc?.fechaVencimiento || '';
 
   // Poblar select de categorías
   const catSel = document.getElementById('f-categoria');
   catSel.innerHTML = '<option value="">— Seleccionar —</option>';
   categories.forEach(c => {
     const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
+    opt.value = c; opt.textContent = c;
     if (c === doc?.categoria) opt.selected = true;
     catSel.appendChild(opt);
   });
@@ -542,6 +612,19 @@ function openModal(doc) {
       sel.appendChild(opt);
     });
 
+  // Poblar select de encargados
+  const encSel = document.getElementById('f-encargado');
+  encSel.innerHTML = '<option value="">— Sin encargado —</option>';
+  users
+    .sort((a, b) => (a.email || '').localeCompare(b.email || ''))
+    .forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.email;
+      opt.textContent = u.nombre || u.name || u.email;
+      if (u.email === doc?.encargado) opt.selected = true;
+      encSel.appendChild(opt);
+    });
+
   document.getElementById('modal-overlay').classList.add('open');
   setTimeout(() => document.getElementById('f-titulo').focus(), 50);
 }
@@ -557,18 +640,29 @@ function editCurrent() {
 }
 
 async function saveModal() {
-  const titulo     = document.getElementById('f-titulo').value.trim();
-  const categoria  = document.getElementById('f-categoria').value;
-  const driveUrl   = document.getElementById('f-drive').value.trim();
-  const desc       = document.getElementById('f-desc').value.trim();
-  const proyectoId = document.getElementById('f-proyecto').value;
+  const titulo           = document.getElementById('f-titulo').value.trim();
+  const categoria        = document.getElementById('f-categoria').value;
+  const driveUrl         = document.getElementById('f-drive').value.trim();
+  const desc             = document.getElementById('f-desc').value.trim();
+  const proyectoId       = document.getElementById('f-proyecto').value;
+  const encargado        = document.getElementById('f-encargado').value;
+  const fechaInicio      = document.getElementById('f-fecha-inicio').value;
+  const fechaVencimiento = document.getElementById('f-fecha-venc').value;
 
   if (!titulo)    { alert('El título es obligatorio.'); return; }
   if (!categoria) { alert('Selecciona una categoría.'); return; }
   if (!driveUrl)  { alert('Pega el link de Google Drive.'); return; }
 
   const id   = editingId || ('doc_' + Date.now());
-  const data = { id, titulo, categoria, driveUrl, descripcion: desc, proyectoId: proyectoId || null, fecha: new Date().toISOString() };
+  const data = {
+    id, titulo, categoria, driveUrl,
+    descripcion:      desc             || null,
+    proyectoId:       proyectoId       || null,
+    encargado:        encargado        || null,
+    fechaInicio:      fechaInicio      || null,
+    fechaVencimiento: fechaVencimiento || null,
+    fecha: new Date().toISOString()
+  };
 
   try {
     await window.parent.setDocumentInFirebase('documentos', id, data);

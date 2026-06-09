@@ -468,6 +468,28 @@
     const sinCat = (d.accounting_movements||[]).filter(m => !m.eliminado && (m.status==='confirmado'||m.status==='confirmed') && (!m.category || m.category==='' || m.category==='pending'));
     if(sinCat.length > 0) alerts.push({ cls:'a-amber', icon:'🏷️', title:`${sinCat.length} movimiento${sinCat.length>1?'s':''} sin categorizar`, sub:'Sin categoría afecta los reportes financieros', file:'finanzas.html', mod:'Contabilidad' });
 
+    // Documentos por vencer — cargar si aún no están en DB_STATE
+    try {
+      if (window.parent?.cargar_coleccion && window.parent?.DB_STATE?.documentos === undefined)
+        await window.parent.cargar_coleccion('documentos').catch(() => {});
+      const docsAll  = (window.parent?.DB_STATE?.documentos || []).filter(x => x.fechaVencimiento);
+      const currentEmail = window.parent?.CURRENT_USER?.email || null;
+      const docsTodayPlus30 = docsAll.filter(doc => {
+        // Solo mostrar al encargado, o a todos si no tiene encargado asignado
+        if (currentEmail && doc.encargado && doc.encargado !== currentEmail) return false;
+        const today = new Date(); today.setHours(0,0,0,0);
+        const venc  = new Date(doc.fechaVencimiento + 'T12:00:00');
+        const days  = Math.round((venc - today) / 86400000);
+        return days <= 30;
+      });
+      const vencidos  = docsTodayPlus30.filter(doc => { const d2 = Math.round((new Date(doc.fechaVencimiento+'T12:00:00') - new Date()) / 86400000); return d2 < 0; });
+      const proximos7 = docsTodayPlus30.filter(doc => { const d2 = Math.round((new Date(doc.fechaVencimiento+'T12:00:00') - new Date()) / 86400000); return d2 >= 0 && d2 <= 7; });
+      const proximos30 = docsTodayPlus30.filter(doc => { const d2 = Math.round((new Date(doc.fechaVencimiento+'T12:00:00') - new Date()) / 86400000); return d2 > 7 && d2 <= 30; });
+      if (vencidos.length > 0)  alerts.push({ cls:'a-red',   icon:'📄', title:`${vencidos.length} documento${vencidos.length>1?'s':''} vencido${vencidos.length>1?'s':''}`, sub: vencidos.slice(0,2).map(x=>x.titulo).join(', '), file:'documentos.html', mod:'Documentos' });
+      if (proximos7.length > 0) alerts.push({ cls:'a-red',   icon:'📄', title:`${proximos7.length} documento${proximos7.length>1?'s':''} vence${proximos7.length>1?'n':''} esta semana`, sub: proximos7.slice(0,2).map(x=>x.titulo).join(', '), file:'documentos.html', mod:'Documentos' });
+      if (proximos30.length > 0) alerts.push({ cls:'a-amber', icon:'📄', title:`${proximos30.length} documento${proximos30.length>1?'s':''} vence${proximos30.length>1?'n':''} en los próximos 30 días`, sub: proximos30.slice(0,2).map(x=>x.titulo).join(', '), file:'documentos.html', mod:'Documentos' });
+    } catch(e) { /* sin documentos no bloquea el dashboard */ }
+
     const area = document.getElementById('alerts-area');
     const list = document.getElementById('alerts-list');
     if(alerts.length === 0) { area.style.display = 'none'; return; }
