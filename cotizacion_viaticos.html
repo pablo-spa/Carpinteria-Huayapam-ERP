@@ -429,8 +429,11 @@ function renderAlimentos() {
 
 function updateAlimento(id, field, val) {
   const item = ALIMENTOS.find(x => x.id === id);
-  if (item) item[field] = val;
-  renderAlimentos();
+  if (!item) return;
+  item[field] = val;
+  const idx = ALIMENTOS.indexOf(item);
+  const row = document.querySelector('#alimentos-table tbody').rows[idx];
+  if (row) row.cells[3].textContent = fmt((parseFloat(item.dias)||0) * (parseFloat(item.costoDia)||0));
   calcTotals();
 }
 
