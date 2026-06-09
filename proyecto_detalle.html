@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Detalle de Proyecto</title>
   <style>
-
     .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
     @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
 
@@ -142,7 +141,10 @@
       <div class="card">
         <div class="card-title">
           Cotizaciones
-          <button class="btn btn-dark" style="padding:4px 10px; font-size:11px;" onclick="newQuote()">+ Nueva</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-dark" style="padding:4px 10px; font-size:11px;" onclick="newQuote('muebles')">+ Muebles</button>
+            <button class="btn btn-dark" style="padding:4px 10px; font-size:11px;" onclick="newQuote('viaticos')">+ Viáticos</button>
+          </div>
         </div>
         <div id="quotes-list"></div>
       </div>
@@ -403,9 +405,9 @@
       document.getElementById('f-other-mat-est').value = otherCost.toFixed(2);
       updateMatDiff();
 
-      const labels = toUse.map(q => q.folio || q.date).join(', ');
+      const labels = quotesMuebles.map(q => q.folio || q.date).join(', ');
       const note = document.getElementById('quote-source-note');
-      note.textContent = `Calculado de ${toUse.length} cotización${toUse.length > 1 ? 'es' : ''}: ${labels}`;
+      note.textContent = `Calculado de ${quotesMuebles.length} cotización${quotesMuebles.length !== 1 ? 'es' : ''} de muebles: ${labels}`;
       note.style.display = 'block';
     }
 
@@ -536,13 +538,14 @@
 
       qList.innerHTML = quotes.map(q => {
         const label = q.folio;
+        const icon = q.type === 'viaticos' ? '🚚' : '🛋️';
         const statusOpts = QUOTE_STATUSES.map(s =>
           `<option value="${s}" ${s===q.status?'selected':''}>${s}</option>`
         ).join('');
         return `
         <div class="quot-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
-            <strong style="font-size:14px;">Cotización ${label}</strong>
+            <strong style="font-size:14px;">${icon} Cotización ${label}</strong>
             <select onchange="changeQuoteStatus('${q.id}', this.value)"
               style="font-size:11px;font-weight:800;color:${ST_COLOR[q.status]||'var(--subtext)'};background:transparent;border:none;cursor:pointer;padding:2px 4px;font-family:inherit;">
               ${statusOpts}
@@ -552,8 +555,8 @@
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px;" onclick="openPDFQuote('${q.id}')">Ver PDF</button>
             ${q.status === 'Activa'
-              ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--amber);" onclick="openEditQuote('${q.id}')">Editar (nueva versión)</button>`
-              : `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--blue);" onclick="openEditQuote('${q.id}')">Editar</button>`
+              ? `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--amber);" onclick="openEditQuote('${q.id}', '${q.type}')">Editar (nueva versión)</button>`
+              : `<button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--blue);" onclick="openEditQuote('${q.id}', '${q.type}')">Editar</button>`
             }
             <button class="btn btn-dark" style="padding:4px 8px; font-size:11px; color:var(--red);" onclick="deleteQuote('${q.id}', '${label}')">Eliminar</button>
           </div>
@@ -562,19 +565,24 @@
     }
 
     function openPDFQuote(qId) {
-      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?viewId=' + qId, 'Cotización');
-      else window.location.href = 'cotizacion.html?viewId=' + qId;
+      // Redirigir a la vista correcta según el tipo si es necesario
+      const q = window.DB.get().quotations.find(x => x.id === qId);
+      const file = q?.type === 'viaticos' ? 'cotizacion_viaticos.html' : 'cotizacion.html';
+      if (window.parent?.openModule) window.parent.openModule(file + '?viewId=' + qId, 'Cotización');
+      else window.location.href = file + '?viewId=' + qId;
     }
 
-    function openEditQuote(qId) {
-      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?editId=' + qId, 'Editar Cotización');
-      else window.location.href = 'cotizacion.html?editId=' + qId;
+    function openEditQuote(qId, type) {
+      const file = type === 'viaticos' ? 'cotizacion_viaticos.html' : 'cotizacion.html';
+      if (window.parent?.openModule) window.parent.openModule(file + '?editId=' + qId, 'Editar Cotización');
+      else window.location.href = file + '?editId=' + qId;
     }
 
-    function newQuote() {
+    function newQuote(type) {
       if (!projId) { alert('Primero guarda el proyecto.'); return; }
-      if (window.parent?.openModule) window.parent.openModule('cotizacion.html?projectId=' + projId, 'Nueva Cotización');
-      else window.location.href = 'cotizacion.html?projectId=' + projId;
+      const file = type === 'viaticos' ? 'cotizacion_viaticos.html' : 'cotizacion.html';
+      if (window.parent?.openModule) window.parent.openModule(file + '?projectId=' + projId, 'Nueva Cotización');
+      else window.location.href = file + '?projectId=' + projId;
     }
 
     function changeQuoteStatus(qId, newStatus) {
@@ -929,15 +937,6 @@
       if (hasQuotes && horasVacias && !projData.maderaPt && !projData.costoMateriales) {
         calcFromQuotation();
       }
-    }
-
-    function toast(msg, type='ok') {
-      const el = document.createElement('div');
-      const bg = type === 'warn' ? 'var(--amber)' : type === 'error' ? 'var(--red)' : 'var(--green)';
-      el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
-      el.textContent = msg;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 3000);
     }
 
     init();

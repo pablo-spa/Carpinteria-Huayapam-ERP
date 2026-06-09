@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <link rel="stylesheet" href="global.css">
+<script src="ui.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Permisos de Acceso</title>
@@ -205,16 +206,6 @@ async function savePermissions() {
   } catch(e) {
     toast('Error: ' + e.message, 'err');
   }
-}
-
-function toast(msg, type = 'ok') {
-  const wrap = document.getElementById('toast-wrap');
-  const bg = type === 'err' ? 'var(--red)' : 'var(--green)';
-  const el = document.createElement('div');
-  el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.18);`;
-  el.textContent = msg;
-  wrap.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
 }
 
 document.addEventListener('DOMContentLoaded', init);
