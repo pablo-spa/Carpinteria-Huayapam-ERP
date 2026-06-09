@@ -663,20 +663,20 @@
 
     for (const m of sorted) {
       const mid = m.id || m._id || '';
-      if (!mid) return; // skip orphan items with no id
-      if (m.eliminado) return; // Ocultar movimientos anulados de la lista
+      if (!mid) continue;
+      if (m.eliminado) continue;
 
       // Filtering logic
       if (currentAccFilter !== 'ALL') {
-        if (m.account !== currentAccFilter && m.destAccount !== currentAccFilter && m.debtAccount !== currentAccFilter) return;
+        if (m.account !== currentAccFilter && m.destAccount !== currentAccFilter && m.debtAccount !== currentAccFilter) continue;
       }
-      if(typeF && m.type !== typeF) return;
+      if(typeF && m.type !== typeF) continue;
       if(catF) {
-        if(catF==='pending' && m.category && m.category!=='') return;
-        if(catF!=='pending' && m.category !== catF) return;
+        if(catF==='pending' && m.category && m.category!=='') continue;
+        if(catF!=='pending' && m.category !== catF) continue;
       }
       const concept = m.concept || '';
-      if(term && !concept.toLowerCase().includes(term) && !(m.amount||'').toString().includes(term)) return;
+      if(term && !concept.toLowerCase().includes(term) && !(m.amount||'').toString().includes(term)) continue;
 
       const statPill = m.status === 'pendiente'
         ? '<span class="pill pill-amber hide-mob" style="margin-left:6px">Pendiente</span>'
