@@ -177,91 +177,114 @@
   /* WELCOME SCREEN */
   #welcome {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 16px;
-    padding: 32px 40px 60px;
-    overflow-y: auto;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 0;
+    overflow: hidden;
   }
-  .welcome-top { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 32px; }
-  .welcome-icon { font-size: 48px; }
-  #welcome h1 { font-size: 24px; color: var(--text); font-weight: 700; margin: 0; }
-  #welcome p  { font-size: 14px; color: var(--subtext); max-width: 440px; text-align: center; line-height: 1.6; margin: 0 0 8px; }
+  @media (max-width: 960px) {
+    #welcome { grid-template-columns: 1fr; }
+    #welcome-right { display: none; }
+  }
+
+  /* ── Left column ── */
+  #welcome-left {
+    display: flex; flex-direction: column; gap: 20px;
+    padding: 28px 28px 40px; overflow-y: auto;
+  }
+  .w-greeting { display: flex; flex-direction: column; gap: 4px; }
+  .w-greeting-name { font-size: 22px; font-weight: 800; color: var(--text); }
+  .w-greeting-date { font-size: 13px; color: var(--subtext); }
 
   /* Notifications panel */
-  #welcome-alerts {
-    display: none;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-    max-width: 640px;
-  }
-  #welcome-alerts-title {
+  #welcome-alerts { display: none; flex-direction: column; gap: 6px; }
+  .w-section-title {
     font-size: 11px; font-weight: 800; text-transform: uppercase;
     letter-spacing: .06em; color: var(--subtext); margin-bottom: 2px;
   }
   .w-alert {
     display: flex; align-items: center; gap: 10px;
     background: var(--mantle); border: 1px solid var(--crust);
+    border-left: 3px solid transparent;
     border-radius: 8px; padding: 10px 14px;
     cursor: pointer; transition: background .12s;
   }
   .w-alert:hover { background: var(--surface0); }
-  .w-alert-icon { font-size: 18px; flex-shrink: 0; }
+  .w-alert-icon { font-size: 16px; flex-shrink: 0; }
   .w-alert-label { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+  .w-alert-sub { font-size: 11px; color: var(--subtext); }
   .w-alert-arrow { font-size: 11px; color: var(--subtext); }
 
-  /* ── Weekly calendar widget ── */
-  #week-cal { width: 100%; max-width: 760px; display: none; }
-  .wc-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .wc-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); }
-  .wc-legend { display: flex; gap: 10px; }
-  .wc-leg { font-size: 10px; font-weight: 700; color: var(--subtext); display: flex; align-items: center; gap: 3px; }
-  .wc-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-  .wc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .wc-day { background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 7px 5px; min-height: 60px; }
-  .wc-day.wc-today { border-color: var(--blue); }
-  .wc-dw { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); margin-bottom: 1px; }
-  .wc-dd { font-size: 16px; font-weight: 800; margin-bottom: 3px; }
-  .wc-today .wc-dd { color: var(--blue); }
-  .wc-ev { font-size: 10px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ev-b { background: var(--green-bg); color: var(--green-text); }
-  .ev-p { background: var(--amber-bg); color: var(--amber-text); }
-  .ev-c { background: var(--blue-bg); color: var(--blue-text); }
-  .ev-v { background: rgba(139,92,246,.12); color: #7c3aed; }
-  .ev-x { background: var(--surface0); color: var(--subtext); }
-
-  .module-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    width: 100%;
-    max-width: 640px;
-  }
+  /* Shortcuts grid */
+  #welcome-shortcuts { display: none; flex-direction: column; gap: 8px; }
+  .module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .module-card {
-    background: var(--mantle);
-    border: 1px solid var(--crust);
-    border-radius: var(--radius);
-    padding: 20px;
-    cursor: pointer;
-    transition: all .2s;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
+    background: var(--mantle); border: 1px solid var(--crust);
+    border-radius: 10px; padding: 14px 16px;
+    cursor: pointer; transition: all .15s;
+    display: flex; align-items: center; gap: 12px;
   }
-  .module-card:hover { border-color: var(--surface1); background: var(--surface0); }
+  .module-card:hover { border-color: var(--blue); background: var(--surface0); }
   .module-card .mc-icon {
-    font-size: 22px;
-    background: var(--base);
-    border-radius: 8px;
-    width: 48px; height: 48px;
+    font-size: 20px; background: var(--base); border-radius: 8px;
+    width: 40px; height: 40px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; border: 1px solid var(--crust);
   }
-  .module-card .mc-text strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
-  .module-card .mc-text span  { font-size: 13px; color: var(--subtext); line-height: 1.4; display: block; }
+  .module-card .mc-text strong { display: block; font-size: 13px; font-weight: 700; color: var(--text); }
+  .module-card .mc-text span  { font-size: 11px; color: var(--subtext); line-height: 1.4; display: block; margin-top: 1px; }
+
+  /* ── Right column: calendar ── */
+  #welcome-right {
+    border-left: 1px solid var(--crust); background: var(--mantle);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #home-cal { display: flex; flex-direction: column; height: 100%; }
+  .hc-hdr {
+    padding: 14px 16px 10px; border-bottom: 1px solid var(--crust); flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .hc-nav { display: flex; align-items: center; gap: 8px; }
+  .hc-month { font-size: 14px; font-weight: 800; color: var(--text); flex: 1; }
+  .hc-nav-btn { background: transparent; border: 1px solid var(--crust); border-radius: 6px; color: var(--subtext); font-size: 14px; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: .12s; }
+  .hc-nav-btn:hover { background: var(--surface0); color: var(--text); }
+  .hc-legend { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hc-leg { font-size: 10px; font-weight: 700; color: var(--subtext); display: flex; align-items: center; gap: 3px; }
+  .hc-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .hc-body { flex: 1; overflow-y: auto; padding: 8px 8px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .hc-dow-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 2px; }
+  .hc-dow { text-align: center; font-size: 9px; font-weight: 800; color: var(--subtext); text-transform: uppercase; padding: 3px 0; }
+  .hc-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+  .hc-cell { min-height: 64px; background: var(--base); border: 1px solid var(--crust); border-radius: 6px; padding: 4px 4px; cursor: pointer; transition: border-color .12s; }
+  .hc-cell:hover { border-color: var(--blue); }
+  .hc-cell.hc-today { border-color: var(--blue); }
+  .hc-cell.hc-other { opacity: .4; }
+  .hc-dd { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+  .hc-today .hc-dd { color: var(--blue); }
+  .hc-ev { font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hev-b { background: var(--green-bg); color: var(--green-text); }
+  .hev-p { background: var(--amber-bg); color: var(--amber-text); }
+  .hev-c { background: var(--blue-bg); color: var(--blue-text); }
+  .hev-v { background: rgba(139,92,246,.12); color: #7c3aed; }
+  .hev-d { background: rgba(210,15,57,.10); color: var(--red); }
+  .hev-x { background: var(--surface0); color: var(--subtext); cursor: pointer; }
+
+  /* Popover */
+  #hc-popover {
+    display: none; position: fixed; z-index: 9500;
+    background: var(--base); border: 1px solid var(--crust);
+    border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    width: 260px; max-width: calc(100vw - 32px);
+    padding: 14px; pointer-events: all;
+  }
+  #hc-popover.open { display: block; }
+  .hcp-close { position: absolute; top: 8px; right: 10px; background: none; border: none; font-size: 15px; color: var(--subtext); cursor: pointer; padding: 2px 5px; border-radius: 4px; }
+  .hcp-close:hover { background: var(--surface0); }
+  .hcp-date { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--subtext); margin-bottom: 8px; }
+  .hcp-ev { display: flex; align-items: flex-start; gap: 7px; padding: 5px 0; border-bottom: 1px solid var(--crust); font-size: 12px; }
+  .hcp-ev:last-child { border-bottom: none; }
+  .hcp-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+  .hcp-empty { font-size: 12px; color: var(--subtext); }
 
   /* IFRAME WRAPPER */
   #frame-wrapper {
@@ -386,68 +409,63 @@
     
     <!-- Welcome -->
     <div id="welcome">
-      <div style="width:100%; display:flex; justify-content:flex-start; margin-bottom:-20px; margin-left:-20px;">
-        <button class="menu-toggle-btn" onclick="toggleSidebar()">☰</button>
-      </div>
-      <div class="welcome-top">
-        <div class="welcome-icon">🪵</div>
-        <h1>Carpintería Huayapam</h1>
-        <p>Selecciona un módulo en el menú lateral o desde los accesos rápidos.</p>
-      </div>
 
-      <!-- Notificaciones por rol (se llenan desde JS) -->
-      <div id="welcome-alerts">
-        <div id="welcome-alerts-title">Pendientes</div>
-      </div>
-
-      <!-- Weekly calendar widget -->
-      <div id="week-cal">
-        <div class="wc-hdr">
-          <div class="wc-title" id="wc-title">Semana</div>
-          <div class="wc-legend">
-            <span class="wc-leg"><span class="wc-dot" style="background:var(--green);"></span>Cumpleaños</span>
-            <span class="wc-leg"><span class="wc-dot" style="background:var(--amber);"></span>Proyectos</span>
-            <span class="wc-leg"><span class="wc-dot" style="background:var(--blue);"></span>Compras</span>
-            <span class="wc-leg"><span class="wc-dot" style="background:#8b5cf6;"></span>Viajes</span>
+      <!-- Left column -->
+      <div id="welcome-left">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="menu-toggle-btn" onclick="toggleSidebar()" id="hamburger-left">☰</button>
+          <div class="w-greeting">
+            <div class="w-greeting-name" id="w-greeting-name">Bienvenido</div>
+            <div class="w-greeting-date" id="w-greeting-date"></div>
           </div>
         </div>
-        <div class="wc-grid" id="wc-grid"></div>
+
+        <!-- Pendientes por rol -->
+        <div id="welcome-alerts">
+          <div class="w-section-title">Pendientes</div>
+        </div>
+
+        <!-- Accesos directos por rol -->
+        <div id="welcome-shortcuts">
+          <div class="w-section-title">Accesos directos</div>
+          <div class="module-grid" id="shortcut-grid"></div>
+        </div>
       </div>
 
-      <div class="module-grid">
-        <div class="module-card" onclick="openModule('produccion_diaria.html','Registro del Día', false, true)">
-          <div class="mc-icon">🔨</div>
-          <div class="mc-text"><strong>Trabajos del Día</strong><span>Asistencia, horas y actividades del día.</span></div>
-        </div>
-        <div class="module-card" onclick="openModule('cotizaciones.html','Cotizaciones', false, true)">
-          <div class="mc-icon">📋</div>
-          <div class="mc-text"><strong>Cotizaciones</strong><span>Presupuestos con desglose de materiales y mano de obra.</span></div>
-        </div>
-        <div class="module-card" onclick="openModule('finanzas.html','Contabilidad', false, true)">
-          <div class="mc-icon">💰</div>
-          <div class="mc-text"><strong>Contabilidad</strong><span>Libro mayor, ingresos, gastos y transferencias.</span></div>
-        </div>
-        <div class="module-card" onclick="openModule('proyectos.html','Proyectos', false, true)">
-          <div class="mc-icon">📁</div>
-          <div class="mc-text"><strong>Proyectos</strong><span>Seguimiento de obras, presupuestos y cronogramas.</span></div>
-        </div>
-        <div class="module-card" onclick="openModule('almacen_inventario.html','Inventario General', false, true)">
-          <div class="mc-icon">📦</div>
-          <div class="mc-text"><strong>Inventario</strong><span>Control de stock, insumos y herramientas.</span></div>
-        </div>
-        <div class="module-card" onclick="openModule('control_madera.html','Almacén de Madera', false, true)">
-          <div class="mc-icon">🪵</div>
-          <div class="mc-text"><strong>Almacén de Madera</strong><span>Catálogo de tablas por pieza individual.</span></div>
-        </div>
-        <div class="module-card" onclick="openModule('rq_compras.html','Panel de Compras', false, true)">
-          <div class="mc-icon">🛒</div>
-          <div class="mc-text"><strong>Panel de Compras</strong><span>Órdenes de compra, proveedores y precios.</span></div>
-        </div>
-        <div class="module-card" onclick="openModule('nomina_semanal.html','Nómina Semanal', false, true)">
-          <div class="mc-icon">💵</div>
-          <div class="mc-text"><strong>Nómina</strong><span>Cálculo de pagos semanales al personal.</span></div>
+      <!-- Right column: calendar -->
+      <div id="welcome-right">
+        <div id="home-cal">
+          <div class="hc-hdr">
+            <div class="hc-nav">
+              <div class="hc-month" id="hc-month-title">—</div>
+              <button class="hc-nav-btn" onclick="homeCalNav(-1)">‹</button>
+              <button class="hc-nav-btn" onclick="homeCalNav(1)">›</button>
+            </div>
+            <div class="hc-legend">
+              <span class="hc-leg"><span class="hc-dot" style="background:var(--green)"></span>Cumpleaños</span>
+              <span class="hc-leg"><span class="hc-dot" style="background:var(--amber)"></span>Proyectos</span>
+              <span class="hc-leg"><span class="hc-dot" style="background:var(--blue)"></span>Compras</span>
+              <span class="hc-leg"><span class="hc-dot" style="background:#8b5cf6"></span>Viajes</span>
+              <span class="hc-leg"><span class="hc-dot" style="background:var(--red)"></span>Docs</span>
+            </div>
+          </div>
+          <div class="hc-body">
+            <div class="hc-dow-row">
+              <div class="hc-dow">Lun</div><div class="hc-dow">Mar</div><div class="hc-dow">Mié</div>
+              <div class="hc-dow">Jue</div><div class="hc-dow">Vie</div><div class="hc-dow">Sáb</div><div class="hc-dow">Dom</div>
+            </div>
+            <div class="hc-grid" id="hc-grid"></div>
+          </div>
         </div>
       </div>
+
+    </div>
+
+    <!-- Popover calendario home -->
+    <div id="hc-popover">
+      <button class="hcp-close" onclick="document.getElementById('hc-popover').classList.remove('open')">✕</button>
+      <div class="hcp-date" id="hcp-date"></div>
+      <div id="hcp-events"></div>
     </div>
 
     <!-- Iframe wrapper -->
@@ -1183,145 +1201,274 @@
     if (window.saveUserPrefs) window.saveUserPrefs();
   };
 
+  // ── Accesos directos por rol ────────────────────────────────────────────
+  const ROLE_SHORTCUTS = {
+    programador: [
+      { icon:'📊', title:'Dashboard',      sub:'KPIs y resumen financiero',       file:'dashboard.html',           mod:'Dashboard' },
+      { icon:'📁', title:'Proyectos',      sub:'Estado y avance de obras',        file:'proyectos.html',           mod:'Proyectos' },
+      { icon:'💰', title:'Contabilidad',   sub:'Ingresos, gastos, transferencias',file:'finanzas.html',            mod:'Contabilidad' },
+      { icon:'📋', title:'Cotizaciones',   sub:'Presupuestos con IA',             file:'cotizaciones.html',        mod:'Cotizaciones' },
+      { icon:'🔨', title:'Producción',     sub:'Registro diario de trabajos',     file:'produccion_diaria.html',   mod:'Registro del Día' },
+      { icon:'🗂️', title:'Documentos',    sub:'Pólizas, contratos y más',        file:'documentos.html',          mod:'Documentos' },
+    ],
+    produccion: [
+      { icon:'🔨', title:'Registro del Día', sub:'Asistencia y horas trabajadas', file:'produccion_diaria.html',   mod:'Registro del Día' },
+      { icon:'📁', title:'Proyectos',        sub:'Ver avance de obras',           file:'proyectos.html',           mod:'Proyectos' },
+      { icon:'⏱️', title:'Reloj Checador',  sub:'Entrada y salida',              file:'reloj_checador.html',      mod:'Reloj Checador' },
+      { icon:'📦', title:'Inventario',       sub:'Stock de materiales',           file:'almacen_inventario.html',  mod:'Inventario' },
+    ],
+    compras: [
+      { icon:'🛒', title:'Panel de Compras', sub:'Órdenes listas para comprar',   file:'rq_compras.html',          mod:'Panel de Compras' },
+      { icon:'📥', title:'Recepción',        sub:'Confirmar entregas recibidas',  file:'rq_recepcion.html',        mod:'Recepción de Material' },
+      { icon:'📦', title:'Inventario',       sub:'Stock y precios de insumos',    file:'almacen_inventario.html',  mod:'Inventario' },
+      { icon:'📄', title:'Historial',        sub:'Todas las órdenes de compra',   file:'historial_compras.html',   mod:'Historial de Compras' },
+    ],
+    almacen: [
+      { icon:'📦', title:'Inventario',   sub:'Stock y movimientos',           file:'almacen_inventario.html', mod:'Inventario' },
+      { icon:'📤', title:'Salidas',      sub:'Entregar material a obras',     file:'salidas_almacen.html',     mod:'Salidas de Almacén' },
+      { icon:'📥', title:'Recepción',    sub:'Confirmar compras recibidas',   file:'rq_recepcion.html',        mod:'Recepción de Material' },
+      { icon:'🪵', title:'Madera',       sub:'Control de tablas',             file:'control_madera.html',      mod:'Almacén de Madera' },
+    ],
+    contador: [
+      { icon:'💰', title:'Contabilidad', sub:'Ingresos, gastos y transferencias', file:'finanzas.html',        mod:'Contabilidad' },
+      { icon:'💵', title:'Nómina',       sub:'Calcular pagos del equipo',         file:'nomina_semanal.html',  mod:'Nómina Semanal' },
+      { icon:'✈️', title:'Viáticos',    sub:'Gastos de viaje y comisiones',      file:'viaticos.html',        mod:'Viáticos' },
+      { icon:'🗂️', title:'Documentos', sub:'Pólizas y documentos legales',      file:'documentos.html',      mod:'Documentos' },
+    ],
+    ventas: [
+      { icon:'📋', title:'Cotizaciones', sub:'Presupuestos con IA',         file:'cotizaciones.html',  mod:'Cotizaciones' },
+      { icon:'📁', title:'Proyectos',    sub:'Seguimiento de obras',        file:'proyectos.html',     mod:'Proyectos' },
+      { icon:'👥', title:'Contactos',   sub:'Clientes y proveedores',      file:'contactos.html',     mod:'Contactos' },
+      { icon:'📄', title:'Cotizaciones lista', sub:'Todas las cotizaciones', file:'cotizaciones.html', mod:'Cotizaciones' },
+    ],
+  };
+  ROLE_SHORTCUTS.admin    = ROLE_SHORTCUTS.programador;
+  ROLE_SHORTCUTS.gerencia = ROLE_SHORTCUTS.programador;
+  ROLE_SHORTCUTS.default  = [
+    { icon:'📁', title:'Proyectos',      sub:'Estado y avance de obras',    file:'proyectos.html',         mod:'Proyectos' },
+    { icon:'🔨', title:'Registro del Día', sub:'Asistencia y horas',        file:'produccion_diaria.html', mod:'Registro del Día' },
+    { icon:'⏱️', title:'Reloj Checador', sub:'Entrada y salida',           file:'reloj_checador.html',    mod:'Reloj Checador' },
+    { icon:'📦', title:'Inventario',     sub:'Stock de materiales',         file:'almacen_inventario.html',mod:'Inventario' },
+  ];
+
   async function renderWelcomeNotifications() {
-    const role = window.CURRENT_USER_ROLE || 'ninguno';
-    const cont = document.getElementById('welcome-alerts');
-    const title = document.getElementById('welcome-alerts-title');
+    const role  = window.CURRENT_USER_ROLE || 'ninguno';
+    const user  = window.CURRENT_USER;
+    const email = user?.email || '';
+    const cont  = document.getElementById('welcome-alerts');
+    const grid  = document.getElementById('shortcut-grid');
+    const shorts = document.getElementById('welcome-shortcuts');
     if (!cont) return;
 
-    // Cargar purchase_orders bajo demanda si no está en estado
-    if (window.cargar_coleccion && window.DB_STATE && window.DB_STATE.purchase_orders === undefined) {
-      await window.cargar_coleccion('purchase_orders');
+    // Saludo
+    const nameEl = document.getElementById('w-greeting-name');
+    const dateEl = document.getElementById('w-greeting-date');
+    const DAYS_ES_L   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    const MONTHS_ES_L = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const now = new Date();
+    const hour = now.getHours();
+    const greet = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+    const displayName = user?.displayName || email.split('@')[0] || '';
+    if (nameEl) nameEl.textContent = displayName ? `${greet}, ${displayName}` : greet;
+    if (dateEl) dateEl.textContent = `${DAYS_ES_L[now.getDay()]} ${now.getDate()} de ${MONTHS_ES_L[now.getMonth()]} de ${now.getFullYear()}`;
+
+    // Accesos directos
+    const shortcuts = ROLE_SHORTCUTS[role] || ROLE_SHORTCUTS.default;
+    if (grid && shorts) {
+      grid.innerHTML = shortcuts.map(s => `
+        <div class="module-card" onclick="openModule('${s.file}','${s.mod}',false,true)">
+          <div class="mc-icon">${s.icon}</div>
+          <div class="mc-text"><strong>${s.title}</strong><span>${s.sub}</span></div>
+        </div>`).join('');
+      shorts.style.display = 'flex';
     }
+
+    // Cargar datos necesarios
+    const loads = ['purchase_orders'];
+    if (['programador','admin','gerencia','contador'].includes(role)) loads.push('documentos');
+    await Promise.all(loads.map(col =>
+      (window.cargar_coleccion && window.DB_STATE?.[col] === undefined)
+        ? window.cargar_coleccion(col).catch(()=>{}) : Promise.resolve()
+    ));
 
     const orders = (window.DB_STATE?.purchase_orders || []).filter(o => o.id && !o._init);
     const alerts = [];
 
-    // Por rol: qué notificaciones son relevantes
     const esAdmin     = ['programador','admin','gerencia'].includes(role);
     const esCompras   = ['programador','admin','compras'].includes(role);
     const esAlmacen   = ['programador','admin','almacen','compras'].includes(role);
     const esOperacion = ['programador','admin','gerencia','produccion'].includes(role);
-    const esFinanzas  = ['programador','admin','gerencia','contador'].includes(role);
     const esNomina    = ['programador','admin','contador'].includes(role);
 
-    // Pedidos esperando confirmación de operaciones
     const nConfirmar = orders.filter(o => o.status === 'Pedido' || o.status === 'Solicitado').length;
     if (esOperacion && nConfirmar > 0)
-      alerts.push({ icon:'📋', color:'var(--blue)', label: `${nConfirmar} pedido${nConfirmar>1?'s':''} esperando confirmación`, file:'rq_operaciones.html', mod:'Confirmar Pedidos' });
+      alerts.push({ icon:'📋', color:'var(--blue)', label:`${nConfirmar} pedido${nConfirmar>1?'s':''} esperando confirmación`, file:'rq_operaciones.html', mod:'Confirmar Pedidos' });
 
-    // Pedidos confirmados esperando autorización de admin
     const nAutorizar = orders.filter(o => o.status === 'Confirmado').length;
     if (esAdmin && nAutorizar > 0)
-      alerts.push({ icon:'🛡️', color:'var(--amber)', label: `${nAutorizar} pedido${nAutorizar>1?'s':''} esperando autorización`, file:'rq_admin_aprobacion.html', mod:'Autorizar Pedidos' });
+      alerts.push({ icon:'🛡️', color:'var(--amber)', label:`${nAutorizar} pedido${nAutorizar>1?'s':''} esperando autorización`, file:'rq_admin_aprobacion.html', mod:'Autorizar Pedidos' });
 
-    // Pedidos autorizados listos para comprar
     const nComprar = orders.filter(o => o.status === 'Autorizado').length;
     if (esCompras && nComprar > 0)
-      alerts.push({ icon:'🛒', color:'var(--green)', label: `${nComprar} orden${nComprar>1?'es':''} lista${nComprar>1?'s':''} para comprar`, file:'rq_compras.html', mod:'Panel de Compras' });
+      alerts.push({ icon:'🛒', color:'var(--green)', label:`${nComprar} orden${nComprar>1?'es':''} lista${nComprar>1?'s':''} para comprar`, file:'rq_compras.html', mod:'Panel de Compras' });
 
-    // Compras pendientes de recibir en almacén
     const nRecibir = orders.filter(o => o.status === 'Comprado').length;
     if (esAlmacen && nRecibir > 0)
-      alerts.push({ icon:'📦', color:'var(--blue)', label: `${nRecibir} compra${nRecibir>1?'s':''} pendiente${nRecibir>1?'s':''} de recibir`, file:'rq_recepcion.html', mod:'Recepción de Material' });
+      alerts.push({ icon:'📦', color:'var(--blue)', label:`${nRecibir} compra${nRecibir>1?'s':''} pendiente${nRecibir>1?'s':''} de recibir`, file:'rq_recepcion.html', mod:'Recepción de Material' });
 
-    // Viernes → recordatorio de nómina
     if (esNomina && new Date().getDay() === 5)
-      alerts.push({ icon:'💵', color:'var(--green)', label: 'Hoy es viernes — calcular nómina semanal', file:'nomina_semanal.html', mod:'Nómina Semanal' });
+      alerts.push({ icon:'💵', color:'var(--green)', label:'Hoy es viernes — calcular nómina semanal', file:'nomina_semanal.html', mod:'Nómina Semanal' });
 
-    if (alerts.length === 0) {
-      cont.style.display = 'none';
-      return;
+    // Documentos por vencer
+    if (esAdmin || esNomina) {
+      const isSuperRole = ['programador','admin','gerencia'].includes(role);
+      const docs = (window.DB_STATE?.documentos || []).filter(d => d.fechaVencimiento);
+      const today = new Date(); today.setHours(0,0,0,0);
+      docs.forEach(d => {
+        if (!isSuperRole && d.encargado && d.encargado !== email) return;
+        const days = Math.round((new Date(d.fechaVencimiento+'T12:00:00') - today) / 86400000);
+        if (days < 0)
+          alerts.push({ icon:'📄', color:'var(--red)',   label:`"${d.titulo}" está vencido`, file:'documentos.html', mod:'Documentos' });
+        else if (days <= 7)
+          alerts.push({ icon:'📄', color:'var(--red)',   label:`"${d.titulo}" vence en ${days}d`, file:'documentos.html', mod:'Documentos' });
+        else if (days <= 30)
+          alerts.push({ icon:'📄', color:'var(--amber)', label:`"${d.titulo}" vence en ${days}d`, file:'documentos.html', mod:'Documentos' });
+      });
     }
 
-    title.textContent = 'Pendientes';
+    if (alerts.length === 0) { cont.style.display = 'none'; return; }
     cont.style.display = 'flex';
-    const html = alerts.map(a => `
-      <div class="w-alert" style="border-left-color:${a.color};" onclick="openModule('${a.file}','${a.mod}', false, true)">
+    cont.innerHTML = `<div class="w-section-title">Pendientes</div>` + alerts.map(a => `
+      <div class="w-alert" style="border-left-color:${a.color};" onclick="openModule('${a.file}','${a.mod}',false,true)">
         <span class="w-alert-icon">${a.icon}</span>
         <span class="w-alert-label">${a.label}</span>
         <span class="w-alert-arrow">→</span>
       </div>`).join('');
-    cont.innerHTML = `<div id="welcome-alerts-title">Pendientes</div>${html}`;
   }
 
-  function renderWeekCalendar() {
-    const el = document.getElementById('week-cal');
-    const grid = document.getElementById('wc-grid');
-    const titleEl = document.getElementById('wc-title');
-    if (!el || !grid || !window.DB_STATE) return;
+  // ── Calendario mensual de inicio ────────────────────────────────────────
+  let HC_YEAR = new Date().getFullYear();
+  let HC_MONTH = new Date().getMonth();
+  let HC_EV_DATA = {};
 
-    const today = new Date();
-    const dow = today.getDay();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-    monday.setHours(0, 0, 0, 0);
+  function homeCalNav(delta) {
+    HC_MONTH += delta;
+    if (HC_MONTH > 11) { HC_MONTH = 0; HC_YEAR++; }
+    if (HC_MONTH < 0)  { HC_MONTH = 11; HC_YEAR--; }
+    renderHomeCalendar();
+  }
 
-    const days = Array.from({length: 7}, (_, i) => {
-      const d = new Date(monday); d.setDate(monday.getDate() + i); return d;
-    });
+  function renderHomeCalendar() {
+    const grid = document.getElementById('hc-grid');
+    const titleEl = document.getElementById('hc-month-title');
+    if (!grid || !window.DB_STATE) return;
 
-    const toISO = d => d.toISOString().slice(0, 10);
-    const todayISO = toISO(today);
-    const DAYS_ES  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    const MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const MONTHS_ES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    titleEl.textContent = `${MONTHS_ES_L[HC_MONTH]} ${HC_YEAR}`;
+
+    const today    = new Date();
+    const todayISO = today.toISOString().slice(0, 10);
+    const toISO    = d => d.toISOString().slice(0, 10);
 
     const workers  = (window.DB_STATE.workers  || []).filter(w => !w._init && w.birthDate);
     const projects = (window.DB_STATE.projects || []).filter(p => !p._init);
     const orders   = (window.DB_STATE.purchase_orders || []).filter(o => !o._init && o.date);
     const viajes   = (window.DB_STATE.viajes   || []).filter(v => !v._init && v.fecha_salida);
+    const docs     = (window.DB_STATE.documentos || []).filter(d => d.fechaVencimiento);
 
-    let html = '';
-    days.forEach(day => {
-      const iso = toISO(day);
-      const mm = day.getMonth(), dd = day.getDate();
-      const isToday = iso === todayISO;
-      const events = [];
+    // Build events map by ISO date
+    HC_EV_DATA = {};
+    const addEv = (iso, ev) => { if (!HC_EV_DATA[iso]) HC_EV_DATA[iso] = []; HC_EV_DATA[iso].push(ev); };
 
-      workers.forEach(w => {
-        const parts = (w.birthDate || '').split('-').map(Number);
-        if (parts[1] - 1 === mm && parts[2] === dd)
-          events.push({ cls: 'ev-b', text: `🎂 ${(w.nombre || w.name || '?').split(' ')[0]}` });
-      });
-
-      projects.forEach(p => {
-        const start = (p.fechaInicio || p.startDate || '').slice(0, 10);
-        const end   = (p.fechaFin    || p.endDate   || '').slice(0, 10);
-        const code  = p.codigo || p.code || 'Proyecto';
-        if (start === iso) events.push({ cls: 'ev-p', text: `▶ ${code}` });
-        else if (end === iso) events.push({ cls: 'ev-p', text: `■ ${code}` });
-      });
-
-      orders.forEach(o => {
-        if ((o.date || '').slice(0,10) === iso)
-          events.push({ cls: 'ev-c', text: `🛒 ${o.folio || 'Compra'}` });
-      });
-
-      viajes.forEach(v => {
-        const sal = (v.fecha_salida || '').slice(0, 10);
-        const reg = (v.fecha_regreso_real || v.fecha_regreso_est || sal).slice(0, 10);
-        if (sal <= iso && iso <= reg)
-          events.push({ cls: 'ev-v', text: `✈ ${v.destino || 'Viaje'}` });
-      });
-
-      const MAX = 3;
-      const evHtml = events.slice(0, MAX).map(e =>
-        `<div class="wc-ev ${e.cls}" title="${e.text}">${e.text}</div>`
-      ).join('') + (events.length > MAX ? `<div class="wc-ev ev-x">+${events.length - MAX}</div>` : '');
-
-      html += `<div class="wc-day${isToday ? ' wc-today' : ''}">
-        <div class="wc-dw">${DAYS_ES[day.getDay()]}</div>
-        <div class="wc-dd">${dd}</div>${evHtml}</div>`;
+    workers.forEach(w => {
+      const parts = (w.birthDate || '').split('-').map(Number);
+      if (!parts[1]) return;
+      const iso = `${HC_YEAR}-${String(parts[1]).padStart(2,'0')}-${String(parts[2]).padStart(2,'0')}`;
+      addEv(iso, { cls:'hev-b', badge:'hev-b', text:`🎂 ${(w.nombre||w.name||'?').split(' ')[0]}`, type:'Cumpleaños', title:(w.nombre||w.name||'?') });
+    });
+    projects.forEach(p => {
+      const start = (p.fechaInicio||p.startDate||'').slice(0,10);
+      const end   = (p.fechaFin||p.endDate||'').slice(0,10);
+      const code  = p.codigo||p.code||p.nombre||'Proyecto';
+      if (start) addEv(start, { cls:'hev-p', badge:'hev-p', text:`▶ ${code}`, type:'Inicio proyecto', title:code });
+      if (end && end !== start) addEv(end, { cls:'hev-p', badge:'hev-p', text:`■ ${code}`, type:'Fin proyecto', title:code });
+    });
+    orders.forEach(o => {
+      const iso = (o.date||'').slice(0,10);
+      if (iso) addEv(iso, { cls:'hev-c', badge:'hev-c', text:`🛒 ${o.folio||'Compra'}`, type:'Compra', title:o.folio||'Orden de compra' });
+    });
+    viajes.forEach(v => {
+      const sal = (v.fecha_salida||'').slice(0,10);
+      const reg = (v.fecha_regreso_real||v.fecha_regreso_est||sal).slice(0,10);
+      // Add to each day in range (only within current month for perf)
+      let cur = new Date(sal+'T12:00:00');
+      const endD = new Date(reg+'T12:00:00');
+      while (cur <= endD) {
+        addEv(toISO(cur), { cls:'hev-v', badge:'hev-v', text:`✈ ${v.destino||'Viaje'}`, type:'Viaje', title:v.destino||'Viaje' });
+        cur.setDate(cur.getDate()+1);
+      }
+    });
+    docs.forEach(d => {
+      addEv(d.fechaVencimiento, { cls:'hev-d', badge:'hev-d', text:`📄 ${d.titulo}`, type:'Vencimiento doc.', title:d.titulo });
     });
 
-    const m1 = days[0], m7 = days[6];
-    const range = m1.getMonth() === m7.getMonth()
-      ? `${m1.getDate()}–${m7.getDate()} de ${MONTHS_ES[m1.getMonth()]} ${m1.getFullYear()}`
-      : `${m1.getDate()} ${MONTHS_ES[m1.getMonth()]} – ${m7.getDate()} ${MONTHS_ES[m7.getMonth()]} ${m7.getFullYear()}`;
-    titleEl.textContent = `Semana del ${range}`;
+    // First day of month (Monday-based grid)
+    const firstDay = new Date(HC_YEAR, HC_MONTH, 1);
+    const lastDay  = new Date(HC_YEAR, HC_MONTH + 1, 0);
+    const startDow = (firstDay.getDay() + 6) % 7; // 0=Mon
+
+    let html = '';
+    // Empty cells before month start
+    for (let i = 0; i < startDow; i++) {
+      const d = new Date(HC_YEAR, HC_MONTH, 1 - (startDow - i));
+      const iso = toISO(d);
+      html += `<div class="hc-cell hc-other" onclick="showHcPopover('${iso}', event)"><div class="hc-dd">${d.getDate()}</div></div>`;
+    }
+    // Days of month
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const d   = new Date(HC_YEAR, HC_MONTH, day);
+      const iso = toISO(d);
+      const isToday = iso === todayISO;
+      const evs = HC_EV_DATA[iso] || [];
+      const MAX = 2;
+      const evHtml = evs.slice(0, MAX).map(e =>
+        `<div class="hc-ev ${e.cls}" title="${e.text}">${e.text}</div>`
+      ).join('') + (evs.length > MAX ? `<div class="hc-ev hev-x" onclick="showHcPopover('${iso}',event)">+${evs.length-MAX}</div>` : '');
+      html += `<div class="hc-cell${isToday?' hc-today':''}" onclick="showHcPopover('${iso}',event)"><div class="hc-dd">${day}</div>${evHtml}</div>`;
+    }
+    // Fill remaining cells
+    const totalCells = startDow + lastDay.getDate();
+    const remaining  = (7 - (totalCells % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+      const d = new Date(HC_YEAR, HC_MONTH + 1, i);
+      html += `<div class="hc-cell hc-other" onclick="showHcPopover('${toISO(d)}',event)"><div class="hc-dd">${d.getDate()}</div></div>`;
+    }
     grid.innerHTML = html;
-    el.style.display = 'block';
   }
+
+  function showHcPopover(iso, e) {
+    e.stopPropagation();
+    const pop = document.getElementById('hc-popover');
+    const evs = HC_EV_DATA[iso] || [];
+    const MONTHS_ES_L = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const d = new Date(iso+'T12:00:00');
+    document.getElementById('hcp-date').textContent =
+      `${d.getDate()} de ${MONTHS_ES_L[d.getMonth()]} de ${d.getFullYear()}`;
+    document.getElementById('hcp-events').innerHTML = evs.length
+      ? evs.map(ev => `<div class="hcp-ev"><span class="hcp-badge ${ev.badge}">${ev.type}</span><span>${ev.title}</span></div>`).join('')
+      : '<div class="hcp-empty">Sin eventos</div>';
+    // Position near click
+    const x = Math.min(e.clientX + 8, window.innerWidth - 280);
+    const y = Math.min(e.clientY + 8, window.innerHeight - 200);
+    pop.style.left = x + 'px';
+    pop.style.top  = y + 'px';
+    pop.classList.add('open');
+  }
+
+  document.addEventListener('click', e => {
+    const pop = document.getElementById('hc-popover');
+    if (pop && !pop.contains(e.target)) pop.classList.remove('open');
+  });
 
   document.addEventListener('DOMContentLoaded', () => {
     // Inicializar tema al cargar la página
@@ -1901,7 +2048,7 @@
         // Render menu after state completes
         loadMenu();
         renderWelcomeNotifications();
-        renderWeekCalendar();
+        renderHomeCalendar();
       } else {
         window.CURRENT_USER = null;
         document.getElementById("login-screen").style.display = "flex";
