@@ -20,19 +20,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .btn:hover { opacity: .8; }
 .btn-blue  { background: var(--blue);  color: #fff; }
 .btn-green { background: var(--green); color: #fff; }
-.btn-amber { background: var(--amber); color: #fff; }
 .btn-sm { background: var(--surface0); color: var(--text); padding: 6px 12px; font-size: 12px; }
 
 /* Pre-approved status badge */
 .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 800; text-transform: uppercase; }
 .status-badge.confirmado { background: rgba(30,102,245,0.15); color: var(--blue); border: 1px solid var(--blue); }
 .status-badge.autorizado { background: rgba(64,160,43,0.15); color: var(--green); border: 1px solid var(--green); }
-
-/* Section tabs */
-.sec-tabs { display: flex; gap: 0; margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid var(--crust); }
-.sec-tab { flex: 1; padding: 8px 14px; border: none; background: var(--surface0); color: var(--subtext); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: .15s; }
-.sec-tab:not(:last-child) { border-right: 1px solid var(--crust); }
-.sec-tab.act { background: var(--text); color: var(--base); }
 
 /* Orders list */
 .sec-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--subtext); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--crust); }
@@ -43,25 +36,23 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 .pill-gray   { background: var(--surface0);         color: var(--subtext); }
 .toast-wrap  { position: fixed; top: 70px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
 
-/* Items table (materials/tools) */
+/* Items table */
 .items-table { width: 100%; border-collapse: collapse; }
 .items-table th { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid var(--crust); text-align: left; }
 .items-table td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: bottom; }
 .items-table input, .items-table select { padding: 7px 8px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
 .items-table input:focus, .items-table select:focus { outline: none; border-color: var(--blue); }
 .rm-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; padding: 4px 8px; }
+
+/* Row type toggle */
 .tipo-toggle { display:inline-flex; border-radius:6px; overflow:hidden; border:1px solid var(--crust); cursor:pointer; font-size:11px; font-weight:700; margin-bottom:5px; }
-.tipo-toggle span { padding:3px 9px; background:var(--surface0); color:var(--subtext); transition:.15s; }
+.tipo-toggle span { padding:3px 9px; background:var(--surface0); color:var(--subtext); transition:.15s; border-right:1px solid var(--crust); }
+.tipo-toggle span:last-child { border-right:none; }
 .tipo-toggle span.active-mat  { background:var(--blue-bg);  color:var(--blue); }
 .tipo-toggle span.active-herr { background:var(--amber-bg); color:var(--amber); }
+.tipo-toggle span.active-wood { background:rgba(64,160,43,.12); color:var(--green); }
 .herr-badge { display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:4px; background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber); margin-left:5px; vertical-align:middle; }
-
-/* Wood table */
-.wood-table { width: 100%; border-collapse: collapse; }
-.wood-table th { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; padding: 6px 8px; border-bottom: 2px solid var(--crust); text-align: left; }
-.wood-table td { padding: 6px 4px; border-bottom: 1px solid var(--crust); vertical-align: top; }
-.wood-table input, .wood-table select { padding: 7px 8px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-size: 13px; font-family: inherit; width: 100%; }
-.wood-table input:focus, .wood-table select:focus { outline: none; border-color: var(--green); }
+.wood-badge { display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:4px; background:rgba(64,160,43,.12); color:var(--green); border:1px solid var(--green); margin-left:5px; vertical-align:middle; }
 </style>
 </head>
 <body>
@@ -102,47 +93,21 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   </div>
 
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <h3 style="margin:0;">Artículos Solicitados</h3>
-      <button class="btn btn-sm" id="add-row-btn" onclick="addActiveRow()">+ Añadir renglón</button>
+      <button class="btn btn-sm" onclick="addRow()">+ Añadir renglón</button>
     </div>
-
-    <!-- Section tabs -->
-    <div class="sec-tabs">
-      <button class="sec-tab act" id="tab-mat" onclick="switchTab('mat')">Materiales / Herramientas</button>
-      <button class="sec-tab" id="tab-wood" onclick="switchTab('wood')">Madera</button>
-    </div>
-
-    <!-- Materials / Tools section -->
-    <div id="section-mat">
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th style="width:45%">Material / Concepto</th>
-            <th style="width:20%">Cantidad</th>
-            <th style="width:20%">Unidad</th>
-            <th style="width:12%"></th>
-          </tr>
-        </thead>
-        <tbody id="itemsList"></tbody>
-      </table>
-    </div>
-
-    <!-- Wood section -->
-    <div id="section-wood" style="display:none;">
-      <table class="wood-table">
-        <thead>
-          <tr>
-            <th style="width:30%">Especie</th>
-            <th style="width:15%">Cantidad</th>
-            <th style="width:18%">Unidad</th>
-            <th style="width:30%">Notas / Descripción</th>
-            <th style="width:7%"></th>
-          </tr>
-        </thead>
-        <tbody id="woodList"></tbody>
-      </table>
-    </div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:50%">Artículo / Concepto</th>
+          <th style="width:18%">Cantidad</th>
+          <th style="width:20%">Unidad</th>
+          <th style="width:12%"></th>
+        </tr>
+      </thead>
+      <tbody id="itemsList"></tbody>
+    </table>
   </div>
 
 </div>
@@ -160,65 +125,10 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   let UNITS = [];
   let ORDERS = [];
   let WOOD_SPECIES = [];
-  let ACTIVE_TAB = 'mat';
+  const WOOD_UNITS = ['pza','m3','pt','tablon','viga','regla','carga'];
 
   // INIT_STATUS: 'Pedido' (default), 'Confirmado' (from compras), 'Autorizado' (from admin)
   const INIT_STATUS = new URLSearchParams(location.search).get('status') || 'Pedido';
-
-  // ── Tab switching ─────────────────────────────────────────────
-  function switchTab(tab) {
-    ACTIVE_TAB = tab;
-    document.getElementById('tab-mat').classList.toggle('act', tab === 'mat');
-    document.getElementById('tab-wood').classList.toggle('act', tab === 'wood');
-    document.getElementById('section-mat').style.display  = tab === 'mat'  ? '' : 'none';
-    document.getElementById('section-wood').style.display = tab === 'wood' ? '' : 'none';
-    document.getElementById('add-row-btn').textContent = tab === 'wood' ? '+ Añadir madera' : '+ Añadir renglón';
-  }
-
-  function addActiveRow() {
-    if (ACTIVE_TAB === 'wood') addWoodRow();
-    else addRow();
-  }
-
-  // ── Wood rows ─────────────────────────────────────────────────
-  const WOOD_UNITS = ['pza','m3','pt','tablon','viga','regla','carga'];
-
-  function buildSpeciesOptions(selected) {
-    return `<option value="">— Especie —</option>` +
-      WOOD_SPECIES.map(s => `<option value="${s}" ${s===selected?'selected':''}>${s}</option>`).join('') +
-      `<option value="_otro" style="font-weight:700;color:var(--blue);">+ Otra…</option>`;
-  }
-
-  function addWoodRow(especie='', cantidad=1, unit='pza', notas='') {
-    const tbody = document.getElementById('woodList');
-    const tr = document.createElement('tr');
-    const unitOpts = WOOD_UNITS.map(u => `<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('');
-    const isCustom = especie && !WOOD_SPECIES.includes(especie);
-    tr.innerHTML = `
-      <td>
-        <select class="w-especie" onchange="handleEspecieChange(this)">
-          ${buildSpeciesOptions(isCustom ? '' : especie)}
-        </select>
-        <input type="text" class="w-especie-custom" placeholder="Escribe especie…" value="${isCustom ? especie : ''}" style="display:${isCustom ? 'block':'none'}; margin-top:4px;">
-      </td>
-      <td><input type="number" class="w-cantidad" value="${cantidad}" min="0.01" step="any"></td>
-      <td><select class="w-unit">${unitOpts}</select></td>
-      <td><input type="text" class="w-notas" value="${notas}" placeholder="Ej. para comedor, seco…"></td>
-      <td><button class="rm-btn" onclick="this.closest('tr').remove()">✕</button></td>
-    `;
-    tbody.appendChild(tr);
-  }
-
-  function handleEspecieChange(sel) {
-    const custom = sel.closest('tr').querySelector('.w-especie-custom');
-    if (sel.value === '_otro') {
-      sel.value = '';
-      custom.style.display = 'block';
-      custom.focus();
-    } else {
-      custom.style.display = 'none';
-    }
-  }
 
   // ── Orders loading ────────────────────────────────────────────
   async function loadOrders() {
@@ -247,21 +157,15 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     let html = `<div class="sec-lbl">Pedidos Enviados (${pedidos.length})</div>`;
     pedidos.forEach(o => {
-      const matItems  = (o.items||[]).filter(i => i.tipo !== 'madera');
-      const woodItems = (o.items||[]).filter(i => i.tipo === 'madera');
-
-      const matHtml = matItems.map(i => `
+      const itemsHtml = (o.items||[]).map(i => i.tipo === 'madera' ? `
+        <div class="ficha-item">
+          <span class="ficha-item-name">🪵 ${i.especie||'Madera'}<span class="wood-badge">Madera</span></span>
+          <span class="ficha-item-qty">${i.cantidad||1} ${i.unit||'pza'}${i.notas ? ` · ${i.notas}` : ''}</span>
+        </div>` : `
         <div class="ficha-item">
           <span class="ficha-item-name">${i.name||i.code||'—'}${i.esHerramienta?'<span class="herr-badge">🔧</span>':''}</span>
           <span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}</span>
         </div>`).join('');
-
-      const woodHtml = woodItems.map(i => `
-        <div class="ficha-item">
-          <span class="ficha-item-name">🪵 ${i.especie||'Madera'}</span>
-          <span class="ficha-item-qty">${i.cantidad||1} ${i.unit||'pza'}${i.notas ? ` · ${i.notas}` : ''}</span>
-        </div>`).join('');
-
       html += `
         <div class="ficha" id="rq-${o.id}">
           <div class="ficha-hdr">
@@ -275,7 +179,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             ${o.notes?`<span>📝 ${o.notes}</span>`:''}
           </div>
           ${sfFlow('Pedido')}
-          <div class="ficha-items">${matHtml}${woodHtml}</div>
+          <div class="ficha-items">${itemsHtml}</div>
           <div class="ficha-actions" style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
             <button class="btn" style="background:var(--red);color:#fff;font-size:12px;padding:5px 12px;" onclick="cancelOrder('${o.id}')">Cancelar</button>
             <button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="confirmOrder('${o.id}')">Confirmar</button>
@@ -370,7 +274,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       badge.className = 'status-badge confirmado';
       badge.textContent = 'Pedido Confirmado';
       btn.textContent = 'Guardar Pedido';
-      btn.className = 'btn btn-blue';
     } else if (INIT_STATUS === 'Autorizado') {
       badge.style.display = '';
       badge.className = 'status-badge autorizado';
@@ -387,125 +290,153 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       window.DB.query('wood').catch(() => []),
     ]);
 
-    // Projects dropdown — active only
+    // Projects dropdown
     const activeStatuses = ['Planificación', 'En Producción'];
     const activeProjs = projects.filter(p => (p.codigo||p.code) && (p.nombre||p.name) && activeStatuses.includes((p.estado||p.status)));
     const histProjs   = projects.filter(p => (p.codigo||p.code) && (p.nombre||p.name) && !activeStatuses.includes((p.estado||p.status)));
     const projSel = document.getElementById('proj');
     if (activeProjs.length) {
-      const grpActive = document.createElement('optgroup');
-      grpActive.label = 'Proyectos Activos';
-      activeProjs.forEach(p => {
-        const o = document.createElement('option');
-        o.value = (p.codigo||p.code); o.textContent = `${(p.codigo||p.code)} – ${(p.nombre||p.name)}`;
-        grpActive.appendChild(o);
-      });
-      projSel.appendChild(grpActive);
+      const g = document.createElement('optgroup'); g.label = 'Proyectos Activos';
+      activeProjs.forEach(p => { const o = document.createElement('option'); o.value = (p.codigo||p.code); o.textContent = `${(p.codigo||p.code)} – ${(p.nombre||p.name)}`; g.appendChild(o); });
+      projSel.appendChild(g);
     }
     if (histProjs.length) {
-      const grpHist = document.createElement('optgroup');
-      grpHist.label = 'Proyectos Anteriores';
-      histProjs.forEach(p => {
-        const o = document.createElement('option');
-        o.value = (p.codigo||p.code); o.textContent = `${(p.codigo||p.code)} – ${(p.nombre||p.name)}`;
-        grpHist.appendChild(o);
-      });
-      projSel.appendChild(grpHist);
+      const g = document.createElement('optgroup'); g.label = 'Proyectos Anteriores';
+      histProjs.forEach(p => { const o = document.createElement('option'); o.value = (p.codigo||p.code); o.textContent = `${(p.codigo||p.code)} – ${(p.nombre||p.name)}`; g.appendChild(o); });
+      projSel.appendChild(g);
     }
 
-    // Requester dropdown — workers
+    // Requester dropdown
     const reqSel = document.getElementById('requester');
     const workers = contacts.filter(c => c.tipo === 'trabajador' && c.activo !== false && (c.name || c.givenName));
-    workers.forEach(w => {
-      const o = document.createElement('option');
-      o.value = w.name || w.givenName; o.textContent = w.name || w.givenName;
-      reqSel.appendChild(o);
-    });
+    workers.forEach(w => { const o = document.createElement('option'); o.value = w.name||w.givenName; o.textContent = w.name||w.givenName; reqSel.appendChild(o); });
     SearchableSelect.init(projSel);
     SearchableSelect.init(reqSel);
 
-    // Inventory & units for material rows
+    // Inventory & units
     INV = inventory.filter(i => i.code && i.name);
     const rawUnits = conceptUnits[0]?.list || [];
     UNITS = rawUnits.length ? rawUnits : ['pza','caja','mt','mt2','lt','kg','gln','rollo','par','juego','bolsa'];
 
-    // Wood species from existing inventory + common defaults
+    // Wood species
     const speciesSet = new Set(['Cedro','Parota','Encino','Pino','Tzalam','Macuil','Mezquite','Tepeguaje','Guanacaste','Primavera','Caoba','Nogal']);
     woodDb.forEach(w => { if (w.especie) speciesSet.add(w.especie); if (w.species) speciesSet.add(w.species); });
     WOOD_SPECIES = [...speciesSet].sort();
 
     addRow();
-    addWoodRow();
     await loadOrders();
   }
 
   function buildInvOptions(selectedCode) {
     return `<option value="">— Buscar concepto —</option>` +
       INV.map(i => `<option value="${i.code}" data-unit="${i.unit||'pza'}" ${i.code===selectedCode?'selected':''}>${i.code} – ${i.name}</option>`).join('') +
-      `<option value="_new" style="font-weight:700; color:var(--blue);">+ Concepto nuevo…</option>`;
+      `<option value="_new" style="font-weight:700;color:var(--blue);">+ Concepto nuevo…</option>`;
   }
 
   function buildUnitOptions(selected) {
     return UNITS.map(u => `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
   }
 
-  function addRow(code='', name='', qty=1, unit='pza', esHerramienta=false) {
+  function buildWoodUnitOptions(selected) {
+    return WOOD_UNITS.map(u => `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
+  }
+
+  function buildSpeciesOptions(selected) {
+    return `<option value="">— Especie —</option>` +
+      WOOD_SPECIES.map(s => `<option value="${s}" ${s===selected?'selected':''}>${s}</option>`).join('') +
+      `<option value="_otro" style="font-weight:700;color:var(--blue);">+ Otra…</option>`;
+  }
+
+  function addRow(tipo='material', data={}) {
+    const { code='', name='', qty=1, unit='pza', especie='', woodUnit='pza', notas='' } = data;
     const tbody = document.getElementById('itemsList');
     const tr = document.createElement('tr');
-    tr.dataset.custom = (esHerramienta || !code || !INV.find(i => i.code === code)) ? '1' : '0';
-    tr.dataset.esHerramienta = esHerramienta ? '1' : '0';
+    tr.dataset.tipo = tipo;
+
+    const isHerr  = tipo === 'herramienta';
+    const isWood  = tipo === 'madera';
+    const isMat   = !isHerr && !isWood;
+    const isCustom = isMat && (!code || !INV.find(i => i.code === code));
+    const isCustomEspecie = isWood && especie && !WOOD_SPECIES.includes(especie);
+
     tr.innerHTML = `
       <td>
         <div class="tipo-toggle">
-          <span class="${esHerramienta?'':'active-mat'}" onclick="setTipoRow(this.closest('tr'),'material')">📦 Material</span>
-          <span class="${esHerramienta?'active-herr':''}" onclick="setTipoRow(this.closest('tr'),'herramienta')">🔧 Herramienta</span>
+          <span class="${isMat?'active-mat':''}"  onclick="setTipoRow(this.closest('tr'),'material')">📦 Material</span>
+          <span class="${isHerr?'active-herr':''}" onclick="setTipoRow(this.closest('tr'),'herramienta')">🔧 Herramienta</span>
+          <span class="${isWood?'active-wood':''}" onclick="setTipoRow(this.closest('tr'),'madera')">🪵 Madera</span>
         </div>
-        <div class="i-sel-wrap" style="${esHerramienta?'display:none':''}">
+        <div class="i-mat-wrap" style="${isHerr||isWood?'display:none':''}">
           <select class="i-sel" data-searchable data-allow-new onchange="handleConceptChange(this)">
             ${buildInvOptions(code)}
           </select>
+          <input type="text" class="i-custom" placeholder="Descripción del material" value="${name}"
+            style="display:${isCustom&&name?'block':'none'}; margin-top:4px;">
         </div>
-        <input type="text" class="i-custom"
-          placeholder="${esHerramienta ? 'Nombre de la herramienta…' : 'Descripción del material'}"
-          value="${name}"
-          style="display:${(tr.dataset.custom==='1' && name) || esHerramienta ? 'block':'none'}; margin-top:4px;">
+        <input type="text" class="i-herr-name" placeholder="Nombre de la herramienta…" value="${isHerr?name:''}"
+          style="display:${isHerr?'block':'none'};">
+        <div class="i-wood-wrap" style="${isWood?'':'display:none'}">
+          <select class="i-especie" onchange="handleEspecieChange(this)">
+            ${buildSpeciesOptions(isCustomEspecie?'':especie)}
+          </select>
+          <input type="text" class="i-especie-custom" placeholder="Escribe la especie…"
+            value="${isCustomEspecie?especie:''}"
+            style="display:${isCustomEspecie?'block':'none'}; margin-top:4px;">
+          <input type="text" class="i-notas" placeholder="Notas (calidad, destino…)"
+            value="${notas}" style="margin-top:4px; font-size:12px; color:var(--subtext);">
+        </div>
       </td>
-      <td><input type="number" class="i-qty" value="${qty}" min="0.01" step="any" style="width:80px;"></td>
-      <td><select class="i-unit" data-searchable>${buildUnitOptions(unit)}</select></td>
+      <td><input type="number" class="i-qty" value="${isWood?1:qty}" min="0.01" step="any" style="width:80px;"></td>
+      <td>
+        <select class="i-unit" data-searchable style="${isWood?'display:none':''}">${buildUnitOptions(unit)}</select>
+        <select class="i-wood-unit" style="${isWood?'':'display:none'}">${buildWoodUnitOptions(woodUnit)}</select>
+      </td>
       <td><button class="rm-btn" onclick="this.closest('tr').remove()">✕</button></td>
     `;
     tbody.appendChild(tr);
-    if (!esHerramienta) SearchableSelect.init(tr.querySelector('.i-sel'));
-    SearchableSelect.init(tr.querySelector('.i-unit'));
+    if (isMat) SearchableSelect.init(tr.querySelector('.i-sel'));
+    if (!isWood) SearchableSelect.init(tr.querySelector('.i-unit'));
   }
 
   function setTipoRow(tr, tipo) {
-    const selWrap = tr.querySelector('.i-sel-wrap');
-    const iSel    = tr.querySelector('.i-sel');
-    const iCustom = tr.querySelector('.i-custom');
-    const unitSel = tr.querySelector('.i-unit');
-    const spans   = tr.querySelectorAll('.tipo-toggle span');
+    tr.dataset.tipo = tipo;
+    const spans      = tr.querySelectorAll('.tipo-toggle span');
+    const matWrap    = tr.querySelector('.i-mat-wrap');
+    const herrName   = tr.querySelector('.i-herr-name');
+    const woodWrap   = tr.querySelector('.i-wood-wrap');
+    const unitSel    = tr.querySelector('.i-unit');
+    const woodUnitSel= tr.querySelector('.i-wood-unit');
 
-    if (tipo === 'herramienta') {
-      spans[0].className = '';
-      spans[1].className = 'active-herr';
-      selWrap.style.display = 'none';
-      iCustom.style.display = 'block';
-      iCustom.placeholder = 'Nombre de la herramienta…';
-      iCustom.value = '';
-      unitSel.disabled = false;
-      unitSel.style.opacity = '';
-      tr.dataset.custom = '1';
-      tr.dataset.esHerramienta = '1';
-    } else {
+    spans[0].className = '';
+    spans[1].className = '';
+    spans[2].className = '';
+
+    matWrap.style.display  = 'none';
+    herrName.style.display = 'none';
+    woodWrap.style.display = 'none';
+    unitSel.style.display  = '';
+    woodUnitSel.style.display = 'none';
+
+    if (tipo === 'material') {
       spans[0].className = 'active-mat';
-      spans[1].className = '';
-      selWrap.style.display = '';
+      matWrap.style.display = '';
+      const iSel = tr.querySelector('.i-sel');
       if (!iSel._ssInit) SearchableSelect.init(iSel);
       else iSel._ssSync?.();
+      const iCustom = tr.querySelector('.i-custom');
       iCustom.style.display = 'none';
-      tr.dataset.custom = '0';
-      tr.dataset.esHerramienta = '0';
+      unitSel.disabled = false;
+      unitSel.style.opacity = '';
+    } else if (tipo === 'herramienta') {
+      spans[1].className = 'active-herr';
+      herrName.style.display = 'block';
+      herrName.value = '';
+      herrName.focus();
+    } else { // madera
+      spans[2].className = 'active-wood';
+      woodWrap.style.display = '';
+      unitSel.style.display  = 'none';
+      woodUnitSel.style.display = '';
     }
   }
 
@@ -520,7 +451,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       customInput.style.display = 'block';
       if (typed) customInput.value = typed;
       customInput.focus();
-      tr.dataset.custom = '1';
       unitSel.disabled = false;
       unitSel.style.opacity = '';
     } else if (sel.value) {
@@ -531,12 +461,21 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
         unitSel.style.opacity = '.6';
       }
       customInput.style.display = 'none';
-      tr.dataset.custom = '0';
     } else {
       customInput.style.display = 'none';
-      tr.dataset.custom = '0';
       unitSel.disabled = false;
       unitSel.style.opacity = '';
+    }
+  }
+
+  function handleEspecieChange(sel) {
+    const custom = sel.closest('tr').querySelector('.i-especie-custom');
+    if (sel.value === '_otro') {
+      sel.value = '';
+      custom.style.display = 'block';
+      custom.focus();
+    } else {
+      custom.style.display = 'none';
     }
   }
 
@@ -556,37 +495,40 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const notes     = document.getElementById('notes').value.trim();
     const items = [];
 
-    // Collect material / tool rows
     document.querySelectorAll('#itemsList tr').forEach(tr => {
-      const sel    = tr.querySelector('.i-sel');
-      const custom = tr.querySelector('.i-custom');
-      const qty    = parseFloat(tr.querySelector('.i-qty').value) || 0;
-      const unit   = tr.querySelector('.i-unit').value;
-      const esHerr = tr.dataset.esHerramienta === '1';
-      let code = sel.value, name = '';
-      if (esHerr) {
-        name = custom?.value.trim() || '';
-        code = '';
-      } else if (code && code !== '_new') {
-        const inv = INV.find(i => i.code === code);
-        name = inv ? inv.name : sel.options[sel.selectedIndex]?.text || code;
-      } else {
-        name = custom?.value.trim() || '';
-        code = '';
-      }
-      if ((name || code) && qty > 0) items.push({ code, name, qty, unit, price: 0, esHerramienta: esHerr || undefined });
-    });
+      const tipo = tr.dataset.tipo || 'material';
 
-    // Collect wood rows
-    document.querySelectorAll('#woodList tr').forEach(tr => {
-      const especieSel    = tr.querySelector('.w-especie');
-      const especieCustom = tr.querySelector('.w-especie-custom');
-      const especie = especieSel.value && especieSel.value !== '_otro'
-        ? especieSel.value : especieCustom.value.trim();
-      const cantidad = parseFloat(tr.querySelector('.w-cantidad').value) || 1;
-      const unit     = tr.querySelector('.w-unit').value;
-      const notas    = tr.querySelector('.w-notas').value.trim();
-      if (especie) items.push({ tipo: 'madera', especie, cantidad, unit, notas });
+      if (tipo === 'madera') {
+        const especieSel    = tr.querySelector('.i-especie');
+        const especieCustom = tr.querySelector('.i-especie-custom');
+        const especie = especieSel.value && especieSel.value !== '_otro'
+          ? especieSel.value : especieCustom.value.trim();
+        const cantidad = parseFloat(tr.querySelector('.i-qty').value) || 1;
+        const unit     = tr.querySelector('.i-wood-unit').value;
+        const notas    = tr.querySelector('.i-notas').value.trim();
+        if (especie) items.push({ tipo: 'madera', especie, cantidad, unit, notas });
+
+      } else if (tipo === 'herramienta') {
+        const name = tr.querySelector('.i-herr-name').value.trim();
+        const qty  = parseFloat(tr.querySelector('.i-qty').value) || 0;
+        const unit = tr.querySelector('.i-unit').value;
+        if (name && qty > 0) items.push({ tipo: 'herramienta', name, qty, unit, esHerramienta: true });
+
+      } else { // material
+        const sel    = tr.querySelector('.i-sel');
+        const custom = tr.querySelector('.i-custom');
+        const qty    = parseFloat(tr.querySelector('.i-qty').value) || 0;
+        const unit   = tr.querySelector('.i-unit').value;
+        let code = sel.value, name = '';
+        if (code && code !== '_new') {
+          const inv = INV.find(i => i.code === code);
+          name = inv ? inv.name : sel.options[sel.selectedIndex]?.text || code;
+        } else {
+          name = custom?.value.trim() || '';
+          code = '';
+        }
+        if ((name || code) && qty > 0) items.push({ code, name, qty, unit, price: 0 });
+      }
     });
 
     if (!items.length) { toast('Agrega al menos un artículo.', 'warn'); return; }
@@ -619,16 +561,14 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     document.getElementById('requester').value = '';
     document.getElementById('notes').value = '';
     document.getElementById('itemsList').innerHTML = '';
-    document.getElementById('woodList').innerHTML = '';
     addRow();
-    addWoodRow();
 
     ORDERS.push(request);
 
     const statusMsg = INIT_STATUS === 'Autorizado'
       ? `Pedido ${folio} guardado como Autorizado`
       : INIT_STATUS === 'Confirmado'
-        ? `Pedido ${folio} guardado como Confirmado — aparece en Panel de Compras`
+        ? `Pedido ${folio} guardado — aparece en Panel de Compras`
         : `Pedido ${folio} enviado — pendiente de confirmación`;
     toast(statusMsg);
 
