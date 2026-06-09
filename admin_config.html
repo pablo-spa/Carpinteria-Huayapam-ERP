@@ -130,6 +130,43 @@
       </div>
     </div>
 
+    <!-- TARJETA: Códigos y Folios -->
+    <div class="card">
+      <div class="card-title" style="font-size:14px; color:var(--text);">🏷️ Reglas de Códigos y Folios</div>
+      <div class="card-body">
+        <div class="grid2">
+          <div class="field">
+            <label for="reglaIdTrabajador">Formato ID Personal (Trabajadores)</label>
+            <select id="reglaIdTrabajador" onchange="updateInfoIdTrabajador()">
+              <option value="rfc4">4 Letras RFC (Ej: SATP)</option>
+              <option value="ini_anio">Iniciales + Año Nac. (Ej: EDS92)</option>
+            </select>
+            <div class="info-text" id="info-id-trabajador">1ª letra y 1ª vocal int. Paterno + 1ª letra Materno + 1ª letra Nombre.</div>
+          </div>
+          <div class="field">
+            <label for="formatoInventario">Formato Código Inventario</label>
+            <input type="text" id="formatoInventario" placeholder="{CC}-{MMM}-{SEQ2}">
+            <div class="info-text">Variables: {CC} Categoría, {MMM} Marca, {SEQ2} Secuencial 2 díg.</div>
+          </div>
+          <div class="field">
+            <label for="formatoCotizacion">Formato Cotización Piezas</label>
+            <input type="text" id="formatoCotizacion" placeholder="{FECHA}-{SEQ3}">
+            <div class="info-text">Variables: {FECHA} YYYY-MM-DD, {SEQ3} Secuencial 3 díg.</div>
+          </div>
+          <div class="field">
+            <label for="formatoCotizacionViaticos">Formato Cotización Viáticos</label>
+            <input type="text" id="formatoCotizacionViaticos" placeholder="{FECHA}-V{SEQ2}">
+            <div class="info-text">Variables: {FECHA} YYYY-MM-DD, {SEQ2} Secuencial 2 díg.</div>
+          </div>
+          <div class="field">
+            <label for="formatoProyecto">Formato Código Proyecto</label>
+            <input type="text" id="formatoProyecto" placeholder="{SEQ4}">
+            <div class="info-text">Variables: {SEQ4} Secuencial 4 díg. Ej: PRY-{SEQ4}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div id="toast-wrap" style="position:fixed; top:70px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px;"></div>
@@ -149,6 +186,12 @@
     return fields;
   }
 
+  function updateInfoIdTrabajador() {
+    const val = document.getElementById('reglaIdTrabajador').value;
+    const txt = val === 'rfc4' ? '1ª letra y 1ª vocal int. Paterno + 1ª letra Materno + 1ª letra Nombre.' : '2 letras Nombre + 1 letra Paterno + 2 dígitos Año.';
+    document.getElementById('info-id-trabajador').textContent = txt;
+  }
+
   function loadSettings() {
     const d = window.DB.get();
     const s = unwrapSettings(d.settings);
@@ -161,6 +204,13 @@
     document.getElementById('penalizacionFalta').value   = s.penalizacionFalta   ?? 100;
     document.getElementById('penalizacionRetardo').value = s.penalizacionRetardo || '3 retardos = 1 falta';
     document.getElementById('diasAvisoFalta').value      = s.diasAvisoFalta      ?? 24;
+    
+    document.getElementById('reglaIdTrabajador').value           = s.reglaIdTrabajador           || 'rfc4';
+    document.getElementById('formatoInventario').value           = s.formatoInventario           || '{CC}-{MMM}-{SEQ2}';
+    document.getElementById('formatoCotizacion').value           = s.formatoCotizacion           || '{FECHA}-{SEQ3}';
+    document.getElementById('formatoCotizacionViaticos').value   = s.formatoCotizacionViaticos   || '{FECHA}-V{SEQ2}';
+    document.getElementById('formatoProyecto').value             = s.formatoProyecto             || '{SEQ4}';
+    updateInfoIdTrabajador();
   }
 
   async function saveSettings() {
@@ -181,6 +231,11 @@
         penalizacionFalta:   parseInt(document.getElementById('penalizacionFalta').value)   || 100,
         penalizacionRetardo: document.getElementById('penalizacionRetardo').value || '',
         diasAvisoFalta:      parseInt(document.getElementById('diasAvisoFalta').value)      || 24,
+        reglaIdTrabajador:         document.getElementById('reglaIdTrabajador').value,
+        formatoInventario:         document.getElementById('formatoInventario').value         || '{CC}-{MMM}-{SEQ2}',
+        formatoCotizacion:         document.getElementById('formatoCotizacion').value         || '{FECHA}-{SEQ3}',
+        formatoCotizacionViaticos: document.getElementById('formatoCotizacionViaticos').value || '{FECHA}-V{SEQ2}',
+        formatoProyecto:           document.getElementById('formatoProyecto').value           || '{SEQ4}',
       };
 
       // Escribir a Firestore

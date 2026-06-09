@@ -585,7 +585,10 @@ function saveQuote() {
 }
 
 function genFolio(dateStr, n) {
-  return `${dateStr}-V${String(n).padStart(2,'0')}`;
+  const d = window.DB.get();
+  const settings = (Array.isArray(d.settings) ? (d.settings.find(x=>x._id==='main')||d.settings[0]) : d.settings) || {};
+  const template = settings.formatoCotizacionViaticos || '{FECHA}-V{SEQ2}';
+  return template.replace('{FECHA}', dateStr).replace(/{SEQ(\d+)}/g, (match, p1) => String(n).padStart(parseInt(p1), '0'));
 }
 
 // ── processURLParams ──────────────────────────────────────────────────────────

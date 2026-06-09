@@ -1349,7 +1349,10 @@ function saveQuoteToProject() {
 }
 
 function genFolio(dateStr, n) {
-  return `${dateStr}-${String(n).padStart(3,'0')}`;
+  const d = window.DB.get();
+  const settings = (Array.isArray(d.settings) ? (d.settings.find(x=>x._id==='main')||d.settings[0]) : d.settings) || {};
+  const template = settings.formatoCotizacion || '{FECHA}-{SEQ3}';
+  return template.replace('{FECHA}', dateStr).replace(/{SEQ(\d+)}/g, (match, p1) => String(n).padStart(parseInt(p1), '0'));
 }
 
 function navToCotizaciones() {

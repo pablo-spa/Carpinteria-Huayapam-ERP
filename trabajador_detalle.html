@@ -491,15 +491,40 @@ function toggleEditWorker() {
   document.getElementById('edit-toggle-lbl').textContent = 'Cancelar';
   document.getElementById('btn-editar').textContent = '✕ Cancelar';
 }
+
+function rfcCode4(paterno, materno, nombre) {
+    const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z]/g, '');
+    const pat = norm(paterno);
+    const mat = norm(materno);
+    const nom = norm(nombre);
+    const firstInternalVowel = s => { for (let i = 1; i < s.length; i++) if ('AEIOU'.includes(s[i])) return s[i]; return s[1] || 'X'; };
+    return (pat[0] || 'X') + (firstInternalVowel(pat) || 'X') + (mat[0] || 'X') + (nom[0] || 'X');
+}
+
 function recalcPersonalId() {
   const g = document.getElementById('e-nombre').value.trim();
   const p = document.getElementById('e-paterno').value.trim();
+  const m = document.getElementById('e-materno').value.trim();
   const b = document.getElementById('e-birth').value;
-  if (g && p && b) {
-    const part1 = g.substring(0,2).toUpperCase();
-    const part2 = p.substring(0,1).toUpperCase();
-    const part3 = b.substring(2,4); // YY
-    document.getElementById('e-id-personal').value = `${part1}${part2}${part3}`;
+  
+  const d = window.DB.get();
+  const settings = (Array.isArray(d.settings) ? (d.settings.find(x=>x._id==='main')||d.settings[0]) : d.settings) || {};
+  const regla = settings.reglaIdTrabajador || 'rfc4';
+  
+  if (regla === 'rfc4') {
+    if (g || p || m) {
+      document.getElementById('e-id-personal').value = rfcCode4(p, m, g);
+    } else {
+      document.getElementById('e-id-personal').value = '';
+    }
+  } else {
+    if (g && p && b) {
+      let part1 = g.substring(0,2).toUpperCase();
+      if (part1.length === 1) part1 += 'X';
+      let part2 = p ? p.substring(0,1).toUpperCase() : 'X';
+      let part3 = b.substring(2,4); // YY
+      document.getElementById('e-id-personal').value = `${part1}${part2}${part3}`;
+    }
   }
 }
 

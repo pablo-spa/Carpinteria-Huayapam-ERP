@@ -343,19 +343,27 @@
       
       if (!d.contacts) d.contacts = [];
       
+      const settings = (Array.isArray(d.settings) ? (d.settings.find(x=>x._id==='main')||d.settings[0]) : d.settings) || {};
+      const regla = settings.reglaIdTrabajador || 'rfc4';
+      
       workers.forEach(w => {
         if(!w.personalId) {
           // Attempt to generate if missing
           const g = w.nombre || (w.name ? w.name.split(' ')[0] : '');
           const p = w.apellidoPaterno || (w.name && w.name.split(' ').length > 1 ? w.name.split(' ')[1] : '');
+          const m = w.apellidoMaterno || (w.name && w.name.split(' ').length > 2 ? w.name.split(' ')[2] : '');
           const bDate = w.birthDate || '2000-01-01'; // Fallback to 00 if no birth date
           
           if(g) {
-            let part1 = g.substring(0,2).toUpperCase();
-            if (part1.length === 1) part1 += 'X';
-            let part2 = p ? p.substring(0,1).toUpperCase() : 'X';
-            let part3 = bDate.substring(2,4);
-            w.personalId = `${part1}${part2}${part3}`;
+            if (regla === 'rfc4') {
+              w.personalId = rfcCode4(p, m, g);
+            } else {
+              let part1 = g.substring(0,2).toUpperCase();
+              if (part1.length === 1) part1 += 'X';
+              let part2 = p ? p.substring(0,1).toUpperCase() : 'X';
+              let part3 = bDate.substring(2,4);
+              w.personalId = `${part1}${part2}${part3}`;
+            }
             dbUpdated = true;
             
             // push to d.contacts to save
@@ -445,13 +453,27 @@
       document.getElementById('f-display-name').textContent = full || 'Nuevo Trabajador';
       document.getElementById('f-avatar').textContent = full ? full.charAt(0).toUpperCase() : 'N';
 
+      const d = window.DB.get();
+      const settings = (Array.isArray(d.settings) ? (d.settings.find(x=>x._id==='main')||d.settings[0]) : d.settings) || {};
+      const regla = settings.reglaIdTrabajador || 'rfc4';
+
       // Only auto-suggest ID from name if RFC field is empty
       const existingRfc = document.getElementById('f-rfc').value.trim();
       if (existingRfc.length >= 4) {
         document.getElementById('f-id-personal').value = existingRfc.substring(0, 4).toUpperCase();
+      } else if (regla === 'rfc4') {
+        if (g || p || m) {
+          document.getElementById('f-id-personal').value = rfcCode4(p, m, g);
+        } else {
+          document.getElementById('f-id-personal').value = '';
+        }
       } else if (p && g) {
         const code = rfcCode4(p, m, g);
-        document.getElementById('f-id-personal').value = code;
+        let part1 = g.substring(0,2).toUpperCase();
+        if (part1.length === 1) part1 += 'X';
+        let part2 = p ? p.substring(0,1).toUpperCase() : 'X';
+        let part3 = document.getElementById('f-birth').value.substring(2,4) || '00';
+        document.getElementById('f-id-personal').value = `${part1}${part2}${part3}`;
       } else {
         document.getElementById('f-id-personal').value = '';
       }

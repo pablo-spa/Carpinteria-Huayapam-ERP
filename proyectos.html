@@ -289,7 +289,9 @@ body {
       const n = parseInt(raw.replace(/\D/g, ''), 10);
       if (!isNaN(n) && n > max) max = n;
     });
-    return String(max + 1).padStart(4, '0');
+    const settings = (Array.isArray(d.settings) ? (d.settings.find(x=>x._id==='main')||d.settings[0]) : d.settings) || {};
+    const template = settings.formatoProyecto || '{SEQ4}';
+    return template.replace(/{SEQ(\d+)}/g, (match, p1) => String(max + 1).padStart(parseInt(p1), '0'));
   }
 
   function projectCard(p, d) {
