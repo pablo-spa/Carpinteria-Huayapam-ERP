@@ -24,14 +24,14 @@
 .filters::-webkit-scrollbar { display: none; }
 .search-box {
   display: flex; align-items: center; background: var(--mantle);
-  border: 1px solid var(--crust); border-radius: 8px; padding: 8px 12px;
-  width: 240px; gap: 8px; flex-shrink: 0;
+  border: 1px solid var(--crust); border-radius: 8px; padding: 0 12px;
+  height: 36px; width: 220px; gap: 8px; flex-shrink: 0;
 }
-.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; height: 100%; }
 .filter-select {
-  padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust);
+  padding: 0 12px; background: var(--mantle); border: 1px solid var(--crust);
   border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text);
-  cursor: pointer; outline: none; font-family: inherit;
+  cursor: pointer; outline: none; font-family: inherit; height: 36px;
 }
 .filter-select:focus { border-color: var(--blue); }
 
