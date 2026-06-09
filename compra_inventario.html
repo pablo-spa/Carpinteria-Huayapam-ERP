@@ -112,11 +112,6 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
 .summary-stat .s-val.green { color: var(--green); font-size: 24px; }
 .summary-actions { display: flex; gap: 12px; align-items: center; }
 
-/* Toast */
-.toast-container { position: fixed; top: 70px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
-.toast { background: var(--text); color: var(--base); padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 700; box-shadow: 0 4px 16px rgba(0,0,0,.2); animation: slideIn .2s; }
-.toast.green { background: var(--green); }
-@keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
 
 /* Modal overlay */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9000; align-items:center; justify-content:center; }
@@ -134,8 +129,6 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
 </style>
 </head>
 <body>
-
-<div class="toast-container" id="toasts"></div>
 
 <div class="header">
   <div style="display:flex; align-items:center; gap:16px; flex:1;">
@@ -399,6 +392,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
 </div>
 
 <script src="searchable-select.js"></script>
+<script src="ui.js"></script>
 <script>
 let items = [];
 let nextId = 1;
@@ -582,7 +576,7 @@ function addItem() {
   const proj  = document.getElementById('add-proj').value;
 
   if (!sel.value) { toast('Selecciona el material del catálogo', false); return; }
-  if (!qty) { toast('La cantidad es obligatoria', false); return; }
+  if (!qty) { toast('La cantidad es obligatoria', 'error'); return; }
 
   let name, invId, invCode, isHerramienta = false, herrId = null;
 
@@ -610,7 +604,7 @@ function addItem() {
   document.getElementById('add-qty').value = '';
   document.getElementById('add-unit').value = '';
   document.getElementById('add-price').value = '';
-  render(); toast('Renglón agregado', true);
+  render(); toast('Renglón agregado', 'ok');
 }
 
 /* ── Modal helpers ──────────────────────────────── */
@@ -636,7 +630,7 @@ function submitNuevaHerr() {
   closeModal('modal-herr');
   document.getElementById('herr-nombre').value = '';
   document.getElementById('herr-marca').value  = '';
-  render(); toast('Herramienta agregada a OC', true);
+  render(); toast('Herramienta agregada a OC', 'ok');
 }
 
 function submitNuevoConcepto() {
@@ -658,7 +652,7 @@ function submitNuevoConcepto() {
   closeModal('modal-inv');
   document.getElementById('inv-nombre').value = '';
   document.getElementById('inv-costo').value  = '';
-  render(); toast('Nuevo concepto agregado', true);
+  render(); toast('Nuevo concepto agregado', 'ok');
 }
 
 function removeItem(id) { items = items.filter(i => i.id !== id); render(); }
@@ -746,7 +740,7 @@ function updateSummary() {
 }
 
 async function confirmar() {
-  if (items.length === 0) { toast('La lista está vacía', false); return; }
+  if (items.length === 0) { toast('La lista está vacía', 'error'); return; }
 
   const estado = document.getElementById('estado-global').value;
   const proveedor = document.getElementById('proveedor').value === 'otro'
@@ -864,22 +858,14 @@ async function confirmar() {
       await Promise.all(promises);
     }
 
-    toast('✓ Movimiento guardado correctamente.', true);
+    toast('✓ Movimiento guardado correctamente.', 'ok');
     setTimeout(() => { if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back(); }, 800);
   } catch (e) {
     console.error("Error guardando movimiento de inventario:", e);
-    toast('Error al guardar. Verifica tu conexión.', false);
+    toast('Error al guardar. Verifica tu conexión.', 'error');
   }
 }
 
-function toast(msg, ok=true) {
-  const c = document.getElementById('toasts');
-  const el = document.createElement('div');
-  el.className = 'toast' + (ok ? ' green' : '');
-  el.textContent = msg;
-  c.appendChild(el);
-  setTimeout(() => el.remove(), 3200);
-}
 
 render();
 </script>

@@ -148,6 +148,7 @@
 
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
 let INV          = [];   // inventory items
 let SUPPLIERS    = [];   // contacts con tipo='proveedor'
@@ -838,7 +839,7 @@ async function cancelOrder(id) {
     const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === id);
     if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
   }
-  showToast('Orden cancelada — aparece en Historial de Compras.');
+  toast('Orden cancelada — aparece en Historial de Compras.');
   renderOrders();
 }
 
@@ -859,11 +860,11 @@ async function guardarPrecios(ordId) {
       const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
       if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
     }
-    showToast('✓ Precios guardados — selecciona la cuenta y marca como Comprado');
+    toast('✓ Precios guardados — selecciona la cuenta y marca como Comprado');
   } catch (e) {
     console.error("Error guardando precios:", e);
     Object.assign(order, originalOrder); // Revertir cambios locales
-    showToast('Error al sincronizar con la nube. Revisa tu conexión.', 'error');
+    toast('Error al sincronizar con la nube. Revisa tu conexión.', 'error');
   }
 }
 
@@ -909,14 +910,14 @@ async function act(ordId, newStatus) {
   const cuentaSel  = card.querySelector('.sel-cuenta-pago');
   const cuentaPago = cuentaSel?.value || '';
   if (!cuentaPago) {
-    showToast('Selecciona la cuenta de pago antes de marcar como comprado.', 'error');
+    toast('Selecciona la cuenta de pago antes de marcar como comprado.', 'error');
     cuentaSel?.focus();
     return;
   }
 
   const db    = window.DB.get();
   const order = (db.purchase_orders || db.orders || []).find(o => o.id === ordId);
-  if (!order) { showToast('Orden no encontrada', 'error'); return; }
+  if (!order) { toast('Orden no encontrada', 'error'); return; }
 
   // Respaldar orden original en caso de error de red
   const originalOrder = JSON.parse(JSON.stringify(order));
@@ -1013,23 +1014,13 @@ async function act(ordId, newStatus) {
       if (si >= 0) window.parent.DB_STATE.purchase_orders[si] = order;
     }
 
-    showToast(`✓ ${order.folio} → ${newStatus}`);
+    toast(`✓ ${order.folio} → ${newStatus}`);
     renderOrders();
   } catch (e) {
     console.error("Error conectando con la nube al procesar la compra:", e);
     Object.assign(order, originalOrder); // Revertimos la orden en memoria
-    showToast('Error al conectar con la base de datos. Se han revertido los cambios.', 'error');
+    toast('Error al conectar con la base de datos. Se han revertido los cambios.', 'error');
   }
-}
-
-// ── Toast ──────────────────────────────────────────────────────
-function showToast(msg, type='ok') {
-  const bg = type === 'error' ? 'var(--red)' : 'var(--green)';
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;top:16px;right:16px;z-index:9999;background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
 }
 
 document.addEventListener('DOMContentLoaded', init);

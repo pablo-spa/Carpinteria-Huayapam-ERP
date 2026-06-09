@@ -60,6 +60,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 </div>
 
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
   let ALL_ORDERS = [];
   let currentTab = 'pending';
@@ -275,16 +276,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     toast('✓ Pedido confirmado');
     ALL_ORDERS = ALL_ORDERS.map(o => o.id === id ? order : o);
     render();
-  }
-
-  function toast(msg, type = 'ok') {
-    let tw = document.getElementById('toast-ops');
-    if (!tw) { tw = document.createElement('div'); tw.id='toast-ops'; tw.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(tw); }
-    const t = document.createElement('div');
-    const bg = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
-    t.style.cssText=`background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
-    t.textContent = msg;
-    tw.appendChild(t); setTimeout(() => t.remove(), 3500);
   }
 
   function showConfirm(msg, okLabel = 'Confirmar') {

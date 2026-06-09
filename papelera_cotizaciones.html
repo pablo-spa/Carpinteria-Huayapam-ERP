@@ -58,7 +58,6 @@
 .badge-red   { background: rgba(210,15,57,.12);   color: var(--red); }
 .badge-gray  { background: var(--surface0); color: var(--subtext); }
 
-.toast-wrap { position:fixed; top:70px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
 </style>
 </head>
 <body>
@@ -79,9 +78,9 @@
 
 <div class="main" id="content"></div>
 
-<div class="toast-wrap" id="toast-wrap"></div>
 
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
 let ALL = [];
 
@@ -221,15 +220,6 @@ async function eliminate(id, collection) {
   reload();
 }
 
-function toast(msg, type = 'ok') {
-  const wrap = document.getElementById('toast-wrap');
-  const bg = type === 'err' ? 'var(--red)' : 'var(--green)';
-  const el = document.createElement('div');
-  el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.18);`;
-  el.textContent = msg;
-  wrap.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
 
 document.addEventListener('DOMContentLoaded', init);
 </script>

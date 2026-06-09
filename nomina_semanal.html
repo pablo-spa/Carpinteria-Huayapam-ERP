@@ -362,6 +362,7 @@
 </div>
 
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
 const CFG = { satRate:1.5, sunRate:2 };
 
@@ -970,15 +971,6 @@ function buildChips(id,r){
   if(res.hExt_all>0)html+=`<span class="chip chip-amber">+${res.hExt_all.toFixed(1)}h extra</span>`;
   if(res.prestDesc>0)html+=`<span class="chip chip-gray">−$${res.prestDesc.toLocaleString('es-MX')} prest.</span>`;
   el.innerHTML=html;
-}
-
-function toast(msg, type='ok') {
-  const bg = type === 'warn' ? 'var(--amber)' : type === 'error' ? 'var(--red)' : 'var(--green)';
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
 }
 
 async function guardarTrabajador(id) {

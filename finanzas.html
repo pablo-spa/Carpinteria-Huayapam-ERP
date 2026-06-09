@@ -338,6 +338,7 @@
 
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
   let DBm = []; // local var holding movements
   let STATE_PROJECTS = [];
@@ -436,6 +437,7 @@
 
   // Init Data Layer
   async function initData() {
+    try {
     // Carga los últimos 3 meses desde accounting_by_month (3 reads)
     // via cargar_coleccion en index.html que tiene el caso especial para accounting_movements
     const raw = await window.DB.query('accounting_movements');
@@ -453,8 +455,14 @@
         p.cargar_coleccion('contacts'),
         p.cargar_coleccion('purchase_orders'),
         p.cargar_coleccion('bank_accounts'),
-      ]);
+      ].map(pr => Promise.resolve(pr).catch(e => console.warn('[finanzas] cargar_coleccion error:', e))));
     }
+
+    // DEBUG temporal: mostrar qué hay en DB_STATE
+    const _dbs = window.parent?.DB_STATE;
+    const _dbg = `DB_STATE_LOADED:${window.parent?.DB_STATE_LOADED} | cargar_coleccion:${!!window.parent?.cargar_coleccion} | projects:${(_dbs?.projects||[]).length} | contacts:${(_dbs?.contacts||[]).length} | bank_accounts:${(_dbs?.bank_accounts||[]).length} | expense_categories:${(_dbs?.expense_categories||[]).length}`;
+    console.log('[finanzas DEBUG]', _dbg);
+    toast(_dbg, 'ok');
 
     STATE_PROJECTS = await window.DB.query("projects");
 
@@ -543,10 +551,14 @@
     populateOrders();
 
     if(window.innerWidth > 800) document.getElementById('desktop-new-btn').style.display = 'block';
-    
+
     updateMovBanner();
     calcBalances();
     renderList();
+    } catch(err) {
+      console.error('[finanzas] initData error:', err);
+      toast('ERROR initData: ' + err.message, 'err');
+    }
   }
 
   function contactDisplayName(c) {
@@ -1487,14 +1499,6 @@
     URL.revokeObjectURL(url);
     toast(`${rows.length} movimientos exportados.`);
   }
-
-function toast(msg, type='ok') {
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
 </script>
 
 <!-- Modal Nueva Cuenta -->

@@ -186,20 +186,10 @@
 .val-red   { color: var(--red); }
 .val-amber { color: var(--amber); }
 
-/* Toast */
-.toast-wrap { position: fixed; top: 70px; right: 14px; z-index: 999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-.toast { background: var(--text); color: var(--mantle); padding: 10px 16px; border-radius: var(--radius); font-size: 14px; font-weight: 600; box-shadow: 0 4px 14px rgba(0,0,0,.2); animation: tin .2s; max-width: 290px; }
-.toast.ok   { background: var(--green); color: #fff; }
-.toast.warn { background: var(--amber); color: var(--mantle); }
-.toast.err  { background: var(--red);   color: #fff; }
-@keyframes tin { from { transform: translateX(110%); opacity:0; } to { transform: translateX(0); opacity:1; } }
-
 .empty-state { text-align: center; padding: 20px; color: var(--subtext); font-size: 13px; font-weight: 600; }
 </style>
 </head>
 <body>
-
-<div class="toast-wrap" id="toasts"></div>
 
 <!-- ── Header ── -->
 <div class="hdr">
@@ -256,6 +246,7 @@
 
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
 // ── Constants ─────────────────────────────────────────────────
 const DIAS_L = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -1162,16 +1153,6 @@ function reabrirDia() {
   } else {
     if (confirm(`¿Reabrir el día ${currentDate}?\n\nLos datos ya guardados en Firebase NO se borran. Solo podrás volver a registrar. Al cerrar de nuevo se sobrescribirán los registros.`)) doReabrir();
   }
-}
-
-// ── Toast ─────────────────────────────────────────────────────
-function toast(msg, type='ok') {
-  const c  = document.getElementById('toasts');
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.textContent = msg;
-  c.appendChild(el);
-  setTimeout(() => el.remove(), 3400);
 }
 
 // ── Init ──────────────────────────────────────────────────────
