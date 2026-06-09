@@ -2,47 +2,40 @@
 <html lang="es">
 <head>
 <link rel="stylesheet" href="global.css">
-<script src="ui.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Permisos de Acceso</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-.page-hdr {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
-}
-.page-title { font-size: 20px; font-weight: 800; }
-.page-sub   { font-size: 13px; color: var(--subtext); margin-top: 2px; }
+.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; z-index: 10; }
+.hdr-title { font-size: 18px; font-weight: 800; }
+.hdr-sub { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+
+.main { max-width: 1000px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 
 .legend {
   display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
-  font-size: 12px; margin-bottom: 18px;
+  font-size: 12px; padding-bottom: 8px;
 }
 .leg-item { display: flex; align-items: center; gap: 6px; }
 .leg-dot  { width: 10px; height: 10px; border-radius: 50%; }
 
-.tbl-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--crust); }
-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 760px; }
-
-thead th {
-  background: var(--mantle); padding: 10px 12px; text-align: center;
-  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--subtext); white-space: nowrap; border-bottom: 2px solid var(--crust);
-}
-thead th:first-child { text-align: left; width: 220px; }
-
-tbody tr { border-bottom: 1px solid var(--crust); }
-tbody tr:last-child { border-bottom: none; }
-
-td { padding: 9px 10px; vertical-align: middle; }
-td:first-child { font-weight: 600; font-size: 13px; }
-td.desc { font-size: 11px; color: var(--subtext); padding-top: 1px; }
+/* Standard Table inside Card */
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
+.tbl-wrap { overflow-x: auto; width: 100%; }
+.tbl { width: 100%; border-collapse: collapse; min-width: 760px; }
+.tbl th { padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; text-align: center; }
+.tbl th:first-child { text-align: left; width: 220px; }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; }
+.tbl tbody tr:hover { background: var(--surface0); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl td:first-child { font-weight: 600; font-size: 13px; }
 
 .group-row td {
   background: var(--crust); color: var(--blue);
   font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
-  padding: 7px 12px;
+  padding: 8px 14px;
 }
 
 td.perm-cell { text-align: center; padding: 6px; }
@@ -64,14 +57,19 @@ td.perm-cell { text-align: center; padding: 6px; }
 </style>
 </head>
 <body>
-<div style="padding:20px;">
-  <div class="page-hdr">
+
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <div>
-      <div class="page-title">🔐 Permisos de Acceso</div>
-      <div class="page-sub">Haz clic en una celda para cambiar el nivel: Completo → Solo lectura → Sin acceso</div>
+      <div class="hdr-title">🔐 Permisos de Acceso</div>
+      <div class="hdr-sub">Haz clic en una celda para cambiar el nivel: Completo → Solo lectura → Sin acceso</div>
     </div>
-    <button class="btn btn-blue" onclick="savePermissions()">Guardar cambios</button>
   </div>
+  <button class="btn btn-blue" onclick="savePermissions()">Guardar cambios</button>
+</div>
+
+<div class="main">
 
   <div class="legend">
     <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div> Acceso completo</div>
@@ -80,8 +78,9 @@ td.perm-cell { text-align: center; padding: 6px; }
     <div class="leg-item" style="color:var(--subtext);">— Programador siempre tiene acceso completo</div>
   </div>
 
-  <div class="tbl-wrap">
-    <table>
+  <div class="card">
+    <div class="tbl-wrap">
+    <table class="tbl">
       <thead>
         <tr>
           <th>Módulo / Sección</th>
@@ -95,7 +94,9 @@ td.perm-cell { text-align: center; padding: 6px; }
       </thead>
       <tbody id="perm-body"></tbody>
     </table>
+    </div>
   </div>
+
 </div>
 <div class="toast-wrap" id="toast-wrap"></div>
 
@@ -206,6 +207,16 @@ async function savePermissions() {
   } catch(e) {
     toast('Error: ' + e.message, 'err');
   }
+}
+
+function toast(msg, type = 'ok') {
+  const wrap = document.getElementById('toast-wrap');
+  const bg = type === 'err' ? 'var(--red)' : 'var(--green)';
+  const el = document.createElement('div');
+  el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.18);`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
 document.addEventListener('DOMContentLoaded', init);

@@ -8,20 +8,23 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.page-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+.hdr {
+  background: var(--mantle); border-bottom: 1px solid var(--crust);
+  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  position: sticky; top: 0; z-index: 10;
 }
-.page-title { font-size: 20px; font-weight: 800; }
-.page-sub   { font-size: 13px; color: var(--subtext); margin-top: 2px; }
+.hdr-title { font-size: 18px; font-weight: 800; color: var(--text); }
 
-.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.toolbar input {
-  padding: 7px 12px; border: 1px solid var(--crust); border-radius: var(--radius);
-  background: var(--base); color: var(--text); font-size: 13px; font-family: inherit;
-  width: 220px;
+.filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
+.search-box {
+  display: flex; align-items: center; background: var(--mantle);
+  border: 1px solid var(--crust); border-radius: 8px; padding: 0 12px;
+  height: 36px; width: 260px; gap: 8px; flex-shrink: 0;
 }
-.toolbar input:focus { outline: none; border-color: var(--blue); }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; height: 100%; }
+.search-box input:focus { border-color: transparent; outline: none; }
+
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 
 .empty-state {
   text-align: center; padding: 60px 20px; color: var(--subtext);
@@ -29,16 +32,14 @@
 .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
 .empty-state p { font-size: 14px; }
 
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead th {
-  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
-  color: var(--subtext); padding: 8px 10px; border-bottom: 2px solid var(--crust);
-  text-align: left; white-space: nowrap;
-}
-tbody tr { border-bottom: 1px solid var(--crust); }
-tbody tr:last-child { border-bottom: none; }
-tbody tr:hover { background: var(--mantle); }
-td { padding: 10px 10px; vertical-align: middle; }
+/* Standard Table inside Card */
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
+.tbl-wrap { overflow-x: auto; width: 100%; }
+.tbl { width: 100%; border-collapse: collapse; min-width: 760px; }
+.tbl th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; }
+.tbl tbody tr:hover { background: var(--surface0); }
+.tbl tr:last-child td { border-bottom: none; }
 
 .folio { font-weight: 700; font-size: 13px; }
 .meta  { font-size: 12px; color: var(--subtext); margin-top: 2px; }
@@ -61,18 +62,23 @@ td { padding: 10px 10px; vertical-align: middle; }
 </style>
 </head>
 <body>
-<div id="app" style="padding:20px;">
-  <div class="page-header">
-    <div>
-      <div class="page-title">🗑 Papelera de Cotizaciones</div>
-      <div class="page-sub">Cotizaciones eliminadas — puedes restaurarlas o borrarlas definitivamente</div>
-    </div>
-    <div class="toolbar">
-      <input type="search" id="search" placeholder="Buscar folio, proyecto, cliente…" oninput="render()">
-    </div>
+
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
+    <div class="hdr-title">🗑 Papelera de Cotizaciones</div>
   </div>
-  <div id="content"></div>
 </div>
+
+<div class="filters">
+  <div class="search-box">
+    <span style="color:var(--subtext);font-size:14px;">🔍</span>
+    <input type="text" id="search" placeholder="Buscar folio, proyecto, cliente…" oninput="render()">
+  </div>
+</div>
+
+<div class="main" id="content"></div>
+
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script src="db.js"></script>
@@ -155,14 +161,16 @@ function render() {
   }).join('');
 
   cont.innerHTML = `
-    <div class="card" style="padding:0;overflow:hidden;">
-      <table>
+    <div class="card">
+      <div class="tbl-wrap">
+      <table class="tbl">
         <thead><tr>
           <th>Folio</th><th>Proyecto</th><th>Cliente</th><th>Estado</th>
           <th style="text-align:right;">Total</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
+      </div>
     </div>`;
 }
 

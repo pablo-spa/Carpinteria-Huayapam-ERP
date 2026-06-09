@@ -14,26 +14,23 @@
       --primary: var(--blue);
       --primary-hover: var(--blue);
     }
+
+    .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .filters { display: flex; gap: 12px; align-items: center; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); }
+    .filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; outline: none; font-family: inherit; transition: border-color .15s; }
+    .filter-select:focus { border-color: var(--blue); }
     
-    /* Tabla de trabajadores */
-    .table-container {
-      background: var(--surface);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      overflow-x: auto;
-    }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    th, td { padding: 11px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    th {
-      background: rgba(0,0,0,0.02);
-      font-weight: 700; color: var(--muted);
-      text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;
-    }
-    body.dark-mode th { background: rgba(255,255,255,0.02); }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr { cursor: pointer; transition: background 0.12s; }
-    tbody tr:hover { background: rgba(0,0,0,0.025); }
-    body.dark-mode tbody tr:hover { background: rgba(255,255,255,0.03); }
+    /* Standard Table inside Card */
+    .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
+    .tbl-wrap { overflow-x: auto; width: 100%; }
+    .tbl { width: 100%; border-collapse: collapse; min-width: 760px; }
+    .tbl th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
+    .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; white-space: nowrap; }
+    .tbl tbody tr:hover { background: var(--surface0); cursor: pointer; }
+    .tbl tr:last-child td { border-bottom: none; }
+    
+    .tbl tr.inactive { opacity: 0.5; }
+    .tbl tr.inactive:hover { opacity: 0.8; }
     
     .avatar {
       width: 32px;
@@ -121,42 +118,45 @@
     </div>
     <button class="btn btn-green" onclick="openFicha()">+ Nuevo Trabajador</button>
   </div>
-  <div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
-    <select id="sort-by" onchange="onSortChange(this.value)" style="font-size:13px; padding:6px 10px; border-radius:6px; border:1px solid var(--surface0); background:var(--base); color:var(--text); cursor:pointer; font-family:inherit;">
+  
+  <div class="filters">
+    <select id="sort-by" class="filter-select" onchange="onSortChange(this.value)">
       <option value="nombre">Ordenar: Nombre</option>
       <option value="paterno">Ordenar: Apellido</option>
       <option value="ingreso">Ordenar: Fecha ingreso</option>
       <option value="salario">Ordenar: Sueldo</option>
       <option value="id">Ordenar: ID Personal</option>
     </select>
+    
+    <label style="font-size:12px; font-weight:600; color:var(--subtext); display:flex; align-items:center; gap:6px; cursor:pointer; margin-left:auto;">
+      <input type="checkbox" id="show-inactive" onchange="renderList()" style="accent-color:var(--blue); width:16px; height:16px;">
+      Mostrar trabajadores de baja
+    </label>
   </div>
 
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:50px;"></th>
-                <th>ID Personal</th>
-                <th>Nombre</th>
-                <th>Puesto</th>
-                <th>RFC</th>
-                <th>Celular</th>
-                <th>Fecha Ingreso</th>
-                <th>Años</th>
-                <th>Vacaciones Disponibles</th>
-                <th>Sueldo Semanal ($)</th>
-              </tr>
-            </thead>
-            <tbody id="worker-list"></tbody>
-          </table>
-        </div>
-        <div style="text-align:center; padding:12px 0;">
-          <label style="font-size:12px; color:var(--muted); display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
-            <input type="checkbox" id="show-inactive" onchange="renderList()" style="accent-color:var(--primary);">
-            Mostrar trabajadores de baja
-          </label>
-        </div>
-
+  <div class="main">
+    <div class="card">
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:50px;"></th>
+              <th>ID Personal</th>
+              <th>Nombre</th>
+              <th>Puesto</th>
+              <th>RFC</th>
+              <th>Celular</th>
+              <th>Fecha Ingreso</th>
+              <th>Años</th>
+              <th>Vac. Disp.</th>
+              <th>Sueldo/Sem</th>
+            </tr>
+          </thead>
+          <tbody id="worker-list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <!-- Ficha Modal -->
   <div class="modal-overlay" id="ficha-modal">
@@ -395,8 +395,8 @@
           if (window.parent?.openModule) window.parent.openModule('trabajador_detalle.html?id=' + w.id, w.name || 'Trabajador');
           else window.location.href = 'trabajador_detalle.html?id=' + w.id;
         };
-        tr.style.cursor = 'pointer';
-        if (w.activo === false) tr.style.opacity = '0.45';
+        
+        if (w.activo === false) tr.classList.add('inactive');
         tr.innerHTML = `
           <td><div class="avatar">${namePart}</div></td>
           <td><b>${w.personalId || '-'}</b></td>
