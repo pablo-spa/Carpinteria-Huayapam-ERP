@@ -356,6 +356,7 @@
 </div>
 
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
 
 const CAT_ICON_DEFAULT = '📄';
@@ -593,19 +594,6 @@ async function deleteCurrent() {
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────
-function toast(msg) {
-  if (window.parent?.showToast) { window.parent.showToast(msg); return; }
-  const t = document.createElement('div');
-  t.textContent = msg;
-  Object.assign(t.style, {
-    position:'fixed', bottom:'24px', right:'24px', background:'var(--green)',
-    color:'#fff', padding:'10px 18px', borderRadius:'8px', fontSize:'13px',
-    fontWeight:'700', zIndex:'9999', boxShadow:'0 4px 12px rgba(0,0,0,.2)'
-  });
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2500);
-}
-
 // ── Init ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', load);
 

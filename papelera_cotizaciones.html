@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Papelera de Cotizaciones</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
 
 .page-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -76,6 +75,7 @@ td { padding: 10px 10px; vertical-align: middle; }
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
 let ALL = [];
 
@@ -194,16 +194,6 @@ async function eliminate(id) {
 
   toast('Cotización eliminada permanentemente.');
   reload();
-}
-
-function toast(msg, type = 'ok') {
-  const wrap = document.getElementById('toast-wrap');
-  const bg = type === 'err' ? 'var(--red)' : 'var(--green)';
-  const el = document.createElement('div');
-  el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.18);`;
-  el.textContent = msg;
-  wrap.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
 }
 
 document.addEventListener('DOMContentLoaded', init);

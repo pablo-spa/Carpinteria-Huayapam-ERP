@@ -4,11 +4,11 @@
 <link rel="stylesheet" href="global.css">
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Herramientas — Carpintería Huayapam</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
 
 .hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .hdr-title { font-size: 18px; font-weight: 800; flex-shrink: 0; }
@@ -769,14 +769,6 @@ function showConfirm(title, msg) {
 }
 
 /* ── Toast ─────────────────────────────── */
-function toast(msg, type = 'ok') {
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--red)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
-
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>

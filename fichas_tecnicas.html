@@ -303,6 +303,7 @@
 </div>
 
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
 
 const CAT_ICONS = {
@@ -481,14 +482,6 @@ async function deleteCurrent() {
     await load();
     toast('Ficha eliminada.');
   } catch(e) { alert('Error: ' + e.message); }
-}
-
-function toast(msg) {
-  const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999;background:var(--green);color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);';
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2800);
 }
 
 // ── Detectar error 403 en el iframe de Drive ─────────────────────────

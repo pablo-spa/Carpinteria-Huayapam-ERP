@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contactos CRM — Carpintería Huayapam</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Header */
 .hdr h1 { padding-right: 16px; border-right: 1px solid var(--crust); white-space: nowrap; }
@@ -262,6 +261,7 @@
 </div>
 
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
   let STATE_CONTACTS = [];
   let STATE_PROJECTS = [];
@@ -688,13 +688,6 @@
 
   init();
 
-function toast(msg, type='ok') {
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;top:70px;right:14px;z-index:9999;background:${type==='warn'?'var(--amber)':'var(--green)'};color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);`;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
 </script>
 </body>
 </html>

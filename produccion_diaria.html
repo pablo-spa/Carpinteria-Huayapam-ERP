@@ -256,6 +256,7 @@
 
 <script src="searchable-select.js"></script>
 <script src="db.js"></script>
+<script src="ui.js"></script>
 <script>
 // ── Constants ─────────────────────────────────────────────────
 const DIAS_L = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -1165,15 +1166,6 @@ function reabrirDia() {
 }
 
 // ── Toast ─────────────────────────────────────────────────────
-function toast(msg, type='ok') {
-  const c  = document.getElementById('toasts');
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.textContent = msg;
-  c.appendChild(el);
-  setTimeout(() => el.remove(), 3400);
-}
-
 // ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   try {
