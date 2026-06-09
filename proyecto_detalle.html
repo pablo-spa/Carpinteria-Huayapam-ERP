@@ -183,6 +183,10 @@
       <!-- Viáticos y Viajes -->
       <div class="card">
         <div class="card-title">Viáticos del Proyecto</div>
+        <div class="kv" style="border-bottom: 2px solid var(--crust); margin-bottom: 6px; padding-bottom: 8px;">
+          <span class="kv-lbl" style="font-weight:700; color:var(--text);">Cotizaciones Aprobadas</span>
+          <span class="kv-val" id="p-viat-cotizado" style="color:var(--blue);">$0.00</span>
+        </div>
         <div class="kv">
           <span class="kv-lbl">Anticipos Entregados</span>
           <span class="kv-val" id="p-viat-ant" style="color:var(--text);">$0.00</span>
@@ -724,6 +728,7 @@
       window.DB.save(d);
       syncValorCotizado(d);
       renderQuotesViaticos();
+      renderViaticos(d);
     }
     async function deleteQuoteViaticos(qId, label) {
       if (!confirm(`¿Enviar la cotización a la papelera (Eliminar)?`)) return;
@@ -740,6 +745,7 @@
         syncValorCotizado(d);
       }
       renderQuotesViaticos();
+      renderViaticos(d);
       toast('Cotización movida a la papelera.', 'warn');
     }
 
@@ -860,6 +866,10 @@
     function renderViaticos(d) {
       if (!projId) return;
       
+      const viaticosQuotes = (d.quotations_viaticos || []).filter(q => q.projectId === projId && !q.eliminada && q.status === 'Activa');
+      const totViaticos = viaticosQuotes.reduce((s, q) => s + (q.total || 0), 0);
+      document.getElementById('p-viat-cotizado').textContent = fmt(totViaticos);
+
       const viajes = (d.viajes || []).filter(v => v.project_id === projId);
       
       let totAnt = 0, totGas = 0, html = '';
