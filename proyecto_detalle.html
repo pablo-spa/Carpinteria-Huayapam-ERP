@@ -411,9 +411,9 @@
       document.getElementById('f-other-mat-est').value = otherCost.toFixed(2);
       updateMatDiff();
 
-      const labels = quotesMuebles.map(q => q.folio || q.date).join(', ');
+      const labels = toUse.map(q => q.folio || q.date).join(', ');
       const note = document.getElementById('quote-source-note');
-      note.textContent = `Calculado de ${quotesMuebles.length} cotización${quotesMuebles.length !== 1 ? 'es' : ''} de muebles: ${labels}`;
+      note.textContent = `Calculado de ${toUse.length} cotización${toUse.length !== 1 ? 'es' : ''} de piezas: ${labels}`;
       note.style.display = 'block';
     }
 
@@ -615,11 +615,15 @@
     }
 
     function syncValorCotizado(d) {
-      // Suma total de todas las cotizaciones 'Activa' del proyecto
-      const quotes = (d.quotations || []).filter(q => q.projectId === projId && !q.eliminada);
-      const activas = quotes.filter(q => q.status === 'Activa');
-      const total = activas.reduce((s, q) => s + (q.total || 0), 0);
-      if (activas.length > 0) {
+      // Suma total de todas las cotizaciones 'Activa' del proyecto (Piezas + Viáticos)
+      const qMuebles = (d.quotations || []).filter(q => q.projectId === projId && !q.eliminada && q.status === 'Activa');
+      const qViaticos = (d.quotations_viaticos || []).filter(q => q.projectId === projId && !q.eliminada && q.status === 'Activa');
+      
+      const totMuebles = qMuebles.reduce((s, q) => s + (q.total || 0), 0);
+      const totViaticos = qViaticos.reduce((s, q) => s + (q.total || 0), 0);
+      const total = totMuebles + totViaticos;
+      
+      if (qMuebles.length > 0 || qViaticos.length > 0) {
         document.getElementById('f-val').value = total;
         const pi = (d.projects || []).findIndex(p => p.id === projId);
         if (pi > -1) d.projects[pi].valorTotal = total;
@@ -718,6 +722,7 @@
       }
       if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('quotations_viaticos', qId, quotes[idx]);
       window.DB.save(d);
+      syncValorCotizado(d);
       renderQuotesViaticos();
     }
     async function deleteQuoteViaticos(qId, label) {
@@ -732,6 +737,7 @@
           if (li >= 0) window.parent.DB_STATE.quotations_viaticos[li].eliminada = true;
         }
         window.DB.save(d);
+        syncValorCotizado(d);
       }
       renderQuotesViaticos();
       toast('Cotización movida a la papelera.', 'warn');

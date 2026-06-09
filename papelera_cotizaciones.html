@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Papelera de Cotizaciones</title>
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 .page-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -75,7 +76,6 @@ td { padding: 10px 10px; vertical-align: middle; }
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script src="db.js"></script>
-<script src="ui.js"></script>
 <script>
 let ALL = [];
 
@@ -83,6 +83,7 @@ async function init() {
   if (window.parent?.cargar_coleccion) {
     await Promise.all([
       window.parent.cargar_coleccion('quotations'),
+      window.parent.cargar_coleccion('quotations_viaticos'),
       window.parent.cargar_coleccion('projects'),
       window.parent.cargar_coleccion('contacts'),
     ].map(p => p.catch(() => {})));
@@ -94,7 +95,11 @@ function reload() {
   const db = window.DB.get();
   const projects = db.projects || [];
   const contacts = db.contacts || [];
-  ALL = (db.quotations || [])
+  
+  const qMuebles = (db.quotations || []).map(q => ({ ...q, _collection: 'quotations' }));
+  const qViaticos = (db.quotations_viaticos || []).map(q => ({ ...q, _collection: 'quotations_viaticos' }));
+
+  ALL = [...qMuebles, ...qViaticos]
     .filter(q => q.eliminada === true)
     .map(q => {
       const proj = projects.find(p => p.id === q.projectId);
@@ -129,10 +134,11 @@ function render() {
 
   const rows = list.map(q => {
     const statusBadge = statusClass(q.status);
+    const icon = q.type === 'viaticos' ? '🚚' : '🛋️';
     const fmt = n => n != null ? '$' + Number(n).toLocaleString('es-MX', {minimumFractionDigits:0}) : '—';
     return `<tr>
       <td>
-        <div class="folio">${q.folio || q.id?.slice(0,8) || '—'}</div>
+        <div class="folio">${icon} ${q.folio || q.id?.slice(0,8) || '—'}</div>
         <div class="meta">${q.date || '—'}</div>
       </td>
       <td>${q._proyNombre || '<span style="color:var(--subtext)">—</span>'}</td>
@@ -141,8 +147,8 @@ function render() {
       <td style="text-align:right;">${fmt(q.total)}</td>
       <td>
         <div class="actions">
-          <button class="btn-restore" onclick="restore('${q.id}')">↩ Restaurar</button>
-          <button class="btn-del"     onclick="eliminate('${q.id}')">✕ Eliminar</button>
+          <button class="btn-restore" onclick="restore('${q.id}', '${q._collection}')">↩ Restaurar</button>
+          <button class="btn-del"     onclick="eliminate('${q.id}', '${q._collection}')">✕ Eliminar</button>
         </div>
       </td>
     </tr>`;
@@ -168,32 +174,53 @@ function statusClass(s) {
   return 'badge-amber';
 }
 
-async function restore(id) {
-  const q = ALL.find(x => x.id === id);
+async function restore(id, collection) {
+  const db = window.DB.get();
+  const targetArray = db[collection] || [];
+  const q = targetArray.find(x => x.id === id);
+  
   if (!q) return;
   delete q.eliminada;
   q.eliminada = false;
 
   if (window.parent?.setDocumentInFirebase)
-    await window.parent.setDocumentInFirebase('quotations', id, q);
-  if (window.parent?.DB_STATE?.quotations) {
-    const i = window.parent.DB_STATE.quotations.findIndex(x => x.id === id);
-    if (i >= 0) window.parent.DB_STATE.quotations[i].eliminada = false;
+    await window.parent.setDocumentInFirebase(collection, id, q);
+  if (window.parent?.DB_STATE?.[collection]) {
+    const i = window.parent.DB_STATE[collection].findIndex(x => x.id === id);
+    if (i >= 0) window.parent.DB_STATE[collection][i].eliminada = false;
   }
+  
+  window.DB.save(db);
   toast('Cotización restaurada.');
   reload();
 }
 
-async function eliminate(id) {
+async function eliminate(id, collection) {
   if (!window.confirm('¿Eliminar esta cotización definitivamente? Esta acción no se puede deshacer.')) return;
 
   if (window.parent?.deleteDocumentFromFirebase)
-    await window.parent.deleteDocumentFromFirebase('quotations', id);
-  if (window.parent?.DB_STATE?.quotations)
-    window.parent.DB_STATE.quotations = window.parent.DB_STATE.quotations.filter(x => x.id !== id);
+    await window.parent.deleteDocumentFromFirebase(collection, id);
+  if (window.parent?.DB_STATE?.[collection])
+    window.parent.DB_STATE[collection] = window.parent.DB_STATE[collection].filter(x => x.id !== id);
+    
+  const db = window.DB.get();
+  if (db[collection]) {
+      db[collection] = db[collection].filter(x => x.id !== id);
+      window.DB.save(db);
+  }
 
   toast('Cotización eliminada permanentemente.');
   reload();
+}
+
+function toast(msg, type = 'ok') {
+  const wrap = document.getElementById('toast-wrap');
+  const bg = type === 'err' ? 'var(--red)' : 'var(--green)';
+  const el = document.createElement('div');
+  el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.18);`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
 document.addEventListener('DOMContentLoaded', init);

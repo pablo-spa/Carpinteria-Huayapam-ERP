@@ -193,7 +193,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       section: 'Producción y Cotización',
       items: [
         { key: 'piece_types', col: 'piece_types', type: 'piece',
-          name: 'Tipos de Mueble / Pieza', desc: 'Puerta, Closet, Cocina, Mesa… (usados en cotizaciones)' },
+          name: 'Tipos de Pieza', desc: 'Puerta, Closet, Cocina, Mesa… (usados en cotizaciones)' },
         { key: 'actividades_trabajo', col: 'actividades_trabajo', type: 'list',
           name: 'Actividades de Trabajo', desc: 'Operaciones registradas en producción diaria (Cepillado, Corte, Barniz…)' },
       ]
@@ -384,7 +384,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
     } else if (currentDef.type === 'piece') {
       bar.innerHTML = `
-        <input type="text" id="new-val" placeholder="Nombre del mueble o pieza…" onkeydown="if(event.key==='Enter') addItem()">
+        <input type="text" id="new-val" placeholder="Nombre de la pieza…" onkeydown="if(event.key==='Enter') addItem()">
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
     } else if (currentDef.type === 'woodcat') {
       bar.innerHTML = `

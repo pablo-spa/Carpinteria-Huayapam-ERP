@@ -104,7 +104,7 @@
 </div>
 
 <div class="tabs-bar">
-  <button class="tab-btn act" onclick="setMainTab('muebles', this)">Muebles y Proyectos</button>
+  <button class="tab-btn act" onclick="setMainTab('piezas', this)">Piezas y Proyectos</button>
   <button class="tab-btn" onclick="setMainTab('viaticos', this)">Fletes y Viáticos</button>
 </div>
 
@@ -126,11 +126,11 @@
 
 <script src="db.js"></script>
 <script>
-let ALL_MUEBLES = [];
+let ALL_PIEZAS = [];
 let ALL_VIATICOS = [];
 let PROJECTS = {};
 let CLIENTS  = {};
-let currentTab = 'muebles';
+let currentTab = 'piezas';
 
 async function init() {
   const p = window.parent;
@@ -150,7 +150,7 @@ async function init() {
     window.DB.query('contacts'),
   ]);
 
-  ALL_MUEBLES = (quotes || []).filter(q => !q.eliminada);
+  ALL_PIEZAS = (quotes || []).filter(q => !q.eliminada);
   ALL_VIATICOS = (quotesViaticos || []).filter(q => !q.eliminada);
 
   PROJECTS = {};
@@ -167,7 +167,7 @@ function setMainTab(tab, el) {
   currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('act'));
   el.classList.add('act');
-  document.getElementById('btn-nueva').textContent = tab === 'muebles' ? '+ Nueva Cotización' : '+ Cotización de Viáticos';
+  document.getElementById('btn-nueva').textContent = tab === 'piezas' ? '+ Nueva Cotización' : '+ Cotización de Viáticos';
   render();
 }
 
@@ -192,12 +192,13 @@ function quoteCard(q) {
   const projCode   = proj   ? (proj.codigo  || proj.code   || '') : '';
   const projName   = proj   ? (proj.nombre  || proj.name   || '') : '';
   const sub = [clientName, projCode && projName ? `${projCode} – ${projName}` : ''].filter(Boolean).join(' · ');
-  const descLabel = currentTab === 'muebles' ? (q.pieces?.length === 1 ? '1 pieza' : `${q.pieces?.length || 0} piezas`) : (q.ruta || 'Viaje');
+  const rutaStr = q.origen && q.destino ? `${q.origen} → ${q.destino}` : 'Viaje';
+  const descLabel = currentTab === 'piezas' ? (q.pieces?.length === 1 ? '1 pieza' : `${q.pieces?.length || 0} piezas`) : rutaStr;
 
   return `<div class="q-card" onclick="openQuote('${q.id}')">
     <div class="q-folio">${q.folio || '—'}</div>
     <div style="flex:1;min-width:0;">
-      <div class="q-name">${currentTab === 'muebles' ? (q.pieces?.map(p => p.name).filter(Boolean).join(', ') || '(Sin nombre)') : (q.concepto || 'Flete/Viático')}</div>
+      <div class="q-name">${currentTab === 'piezas' ? (q.pieces?.map(p => p.name).filter(Boolean).join(', ') || '(Sin nombre)') : (q.concepto || 'Flete/Viático')}</div>
       ${sub ? `<div class="q-sub">${sub}</div>` : `<div class="q-sub">${descLabel}</div>`}
     </div>
     ${statusPill(q.status)}
@@ -209,7 +210,7 @@ function quoteCard(q) {
 function render() {
   const term      = document.getElementById('srch').value.toLowerCase().trim();
   const statusFil = document.getElementById('fil-status').value;
-  const sourceList = currentTab === 'muebles' ? ALL_MUEBLES : ALL_VIATICOS;
+  const sourceList = currentTab === 'piezas' ? ALL_PIEZAS : ALL_VIATICOS;
 
   let quotes = sourceList.filter(q => {
     if (statusFil && q.status !== statusFil) return false;
@@ -297,13 +298,13 @@ function toggleGroup(hdr) {
 }
 
 function openQuote(id) {
-  const file = currentTab === 'muebles' ? 'cotizacion.html' : 'cotizacion_viaticos.html';
+  const file = currentTab === 'piezas' ? 'cotizacion.html' : 'cotizacion_viaticos.html';
   if (window.parent?.openModule) window.parent.openModule(file + '?viewId=' + id, 'Cotización');
   else window.location.href = file + '?viewId=' + id;
 }
 
 function openNueva() {
-  const file = currentTab === 'muebles' ? 'cotizacion.html' : 'cotizacion_viaticos.html';
+  const file = currentTab === 'piezas' ? 'cotizacion.html' : 'cotizacion_viaticos.html';
   if (window.parent?.openModule) window.parent.openModule(file, 'Nueva Cotización');
   else window.location.href = file;
 }
