@@ -638,6 +638,7 @@
         { id: 'nav-herramientas-salida',html: `<span class="icon">🔧</span> Salida de Herramientas`,    file: 'herramientas_salida.html',   label: 'Salida de Herramientas' },
         { id: 'nav-madera',             html: `<span class="icon">🪵</span> Almacén de Madera`,         file: 'control_madera.html',        label: 'Almacén de Madera' },
         { id: 'nav-ingreso-madera',     html: `<span class="icon">🏷️</span> Escanear Madera`,           file: 'ingreso_madera.html',        label: 'Escanear Madera' },
+        { id: 'nav-precios-madera',     html: `<span class="icon">💰</span> Precios de Madera`,          file: 'rq_precios_madera.html',     label: 'Precios de Madera' },
         { id: 'nav-compras-panel',      html: `<span class="icon">🛒</span> Panel de Compras`,          file: 'rq_compras.html',            label: 'Panel de Compras' },
         { id: 'nav-historial',          html: `<span class="icon">📚</span> Historial Compras`,         file: 'historial_compras.html',     label: 'Historial de Compras' },
       ]
@@ -690,6 +691,7 @@
     'herramientas_salida.html': 'herramientas',
     'control_madera.html': 'madera',
     'ingreso_madera.html': 'madera',
+    'rq_precios_madera.html': 'madera',
     'produccion_diaria.html': 'produccion',
     'reloj_checador.html': 'reloj',
     'viaticos.html': 'viaticos',
@@ -1028,6 +1030,7 @@
     'rq_compras.html':         'nav-compras-panel',
     'control_madera.html':     'nav-madera',
     'ingreso_madera.html':     'nav-ingreso-madera',
+    'rq_precios_madera.html':  'nav-precios-madera',
     'contactos.html':         'nav-contactos',
     'admin_db.html':          'nav-db',
     'admin_config.html':      'nav-config',
@@ -1482,6 +1485,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
     import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, getDoc, doc, setDoc, deleteDoc, writeBatch, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
     import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-storage.js";
 
     const firebaseConfig = {
@@ -1528,6 +1532,9 @@
       if (user) {
         window.CURRENT_USER = user;
         document.getElementById("login-screen").style.display = "none";
+        // Mostrar estado de carga inmediatamente, SIN quitar la pantalla de login todavía
+        window.DB_STATE_IS_LOADING = true;
+        document.getElementById('db-loading-overlay').style.display = 'flex';
         
         let role = 'none';
         
@@ -1591,14 +1598,23 @@
         if (role === 'none') {
             const userRec = state.users.find(u => u.email === user.email);
             if (userRec && userRec.role) {
+            if (userRec && userRec.role && userRec.role !== 'ninguno') {
                 role = userRec.role;
             } else {
                 role = 'ninguno'; // default
                 // Optionally we could save the user record here if it doesn't exist
+                // ACCESO DENEGADO: Forzar cierre de sesión
+                await signOut(auth);
+                document.getElementById('db-loading-overlay').style.display = 'none';
+                document.getElementById("login-screen").style.display = "flex";
+                alert(`ACCESO DENEGADO\n\nTu correo (${user.email}) no está autorizado para usar este sistema o tu cuenta está bloqueada.\n\nSolicita acceso a un administrador.`);
+                return; // Corta la ejecución aquí, no carga la app
             }
         }
         
+        window.CURRENT_USER = user;
         window.CURRENT_USER_ROLE = role;
+        document.getElementById("login-screen").style.display = "none";
         
         // Expose Firebase mutators for iframes (solves cross-realm instance issues)
         window.saveUserToFirebase = async (userEmail, userRole) => {

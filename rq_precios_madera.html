@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="global.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Precios de Madera — Carpintería Huayapam</title>
+<style>
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.hdr-left { display: flex; align-items: center; gap: 12px; }
+.hdr-title { font-size: 18px; font-weight: 800; }
+
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 8px 12px; width: 220px; gap: 8px; }
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
+
+.filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
+.filters::-webkit-scrollbar { display: none; }
+.filter-btn { padding: 6px 14px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--subtext); cursor: pointer; white-space: nowrap; transition: .12s; }
+.filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+.filter-btn.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+.filter-label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
+
+.main { padding: 16px 24px; }
+
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
+
+/* Add form */
+.add-form { display: flex; gap: 8px; padding: 12px 16px; background: var(--surface0); border-bottom: 1px solid var(--crust); align-items: center; flex-wrap: wrap; }
+.add-form input, .add-form select { padding: 7px 10px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); outline: none; transition: .12s; }
+.add-form input:focus, .add-form select:focus { border-color: var(--blue); }
+.add-form input[name="nombre"] { flex: 2; min-width: 160px; }
+.add-form input[name="notas"] { flex: 3; min-width: 160px; }
+.add-form input[name="precio"] { width: 100px; text-align: right; }
+.add-form select[name="unidad"] { width: 90px; }
+.add-form-label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+
+/* Table */
+.tbl-wrap { overflow-x: auto; width: 100%; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; }
+.tbl tbody tr:hover { background: var(--surface0); }
+.tbl tr:last-child td { border-bottom: none; }
+
+/* Unit badge */
+.unit-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 800; }
+.unit-pt    { background: rgba(223,142,29,.12); color: var(--peach); }
+.unit-lam   { background: rgba(30,102,245,.12); color: var(--blue); }
+.unit-m2    { background: rgba(64,160,43,.12);  color: var(--green); }
+.unit-pieza { background: rgba(136,57,239,.12); color: var(--mauve); }
+
+/* Inline price edit */
+.price-cell { display: flex; align-items: center; gap: 6px; }
+.price-val { font-weight: 700; color: var(--text); }
+.price-inp { width: 90px; padding: 4px 8px; background: var(--surface0); border: 1px solid var(--blue); border-radius: 6px; font-size: 13px; font-weight: 700; font-family: inherit; color: var(--text); outline: none; text-align: right; display: none; }
+.price-inp:focus { border-color: var(--sapphire); }
+.edit-btn { padding: 3px 8px; font-size: 11px; font-weight: 700; background: var(--surface0); border: 1px solid var(--crust); border-radius: 5px; cursor: pointer; color: var(--subtext); transition: .12s; white-space: nowrap; }
+.edit-btn:hover { border-color: var(--blue); color: var(--blue); }
+.save-btn { padding: 3px 8px; font-size: 11px; font-weight: 700; background: var(--blue-bg); border: 1px solid var(--blue); border-radius: 5px; cursor: pointer; color: var(--blue); display: none; white-space: nowrap; }
+.del-btn { padding: 3px 7px; font-size: 11px; font-weight: 700; background: transparent; border: 1px solid var(--crust); border-radius: 5px; cursor: pointer; color: var(--subtext); transition: .12s; }
+.del-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+
+.notas-inp { width: 100%; padding: 4px 8px; background: var(--surface0); border: 1px solid var(--blue); border-radius: 6px; font-size: 12px; font-family: inherit; color: var(--text); outline: none; display: none; }
+.notas-val { font-size: 12px; color: var(--subtext); font-style: italic; }
+
+.empty { text-align: center; padding: 48px 24px; color: var(--subtext); }
+.empty-icon { font-size: 32px; margin-bottom: 8px; }
+.empty-txt { font-size: 14px; font-weight: 600; }
+
+.count-tag { font-size: 12px; color: var(--subtext); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
+    <div>
+      <div class="hdr-title">Precios de Madera</div>
+      <div style="font-size:12px;color:var(--subtext);margin-top:1px;">Catálogo de precios de referencia — cotizaciones y pedidos</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="search-box">
+      <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
+      <input id="search" type="text" placeholder="Buscar…" oninput="render()">
+    </div>
+  </div>
+</div>
+
+<div class="filters">
+  <span class="filter-label">Unidad:</span>
+  <button class="filter-btn active" data-unit="all" onclick="setUnit('all')">Todos</button>
+  <button class="filter-btn" data-unit="pt"    onclick="setUnit('pt')">pt (pie tabla)</button>
+  <button class="filter-btn" data-unit="lámina" onclick="setUnit('lámina')">lámina</button>
+  <button class="filter-btn" data-unit="m²"    onclick="setUnit('m²')">m²</button>
+  <button class="filter-btn" data-unit="pieza" onclick="setUnit('pieza')">pieza</button>
+</div>
+
+<div class="main">
+  <div class="card">
+
+    <!-- Add new entry -->
+    <div class="add-form">
+      <span class="add-form-label">+ Nuevo:</span>
+      <input name="nombre" type="text" placeholder="Nombre (ej: Cedro Primera, MDF 15mm…)" onkeydown="if(event.key==='Enter') addEntry()">
+      <select name="unidad">
+        <option value="pt">pt</option>
+        <option value="lámina">lámina</option>
+        <option value="m²">m²</option>
+        <option value="pieza">pieza</option>
+      </select>
+      <input name="precio" type="number" min="0" step="1" placeholder="$ Precio est." onkeydown="if(event.key==='Enter') addEntry()">
+      <input name="notas" type="text" placeholder="Notas opcionales…" onkeydown="if(event.key==='Enter') addEntry()">
+      <button class="btn btn-blue" style="padding:7px 16px;font-size:13px;" onclick="addEntry()">Agregar</button>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:30%;">Nombre</th>
+            <th style="width:80px;">Unidad</th>
+            <th style="width:140px;">Precio Est.</th>
+            <th>Notas</th>
+            <th style="width:60px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+    <div id="empty-state" class="empty" style="display:none;">
+      <div class="empty-icon">🪵</div>
+      <div class="empty-txt">Sin resultados</div>
+    </div>
+  </div>
+  <div style="padding:8px 4px;"><span class="count-tag" id="count-tag"></span></div>
+</div>
+
+<script src="db.js"></script>
+<script>
+const COL = 'wood_price_catalog';
+let DATA = [];
+let filterUnit = 'all';
+
+function unitBadge(u) {
+  const cls = u === 'pt' ? 'unit-pt' : u === 'lámina' ? 'unit-lam' : u === 'm²' ? 'unit-m2' : 'unit-pieza';
+  return `<span class="unit-badge ${cls}">${u}</span>`;
+}
+
+function fmt(n) { return '$' + (parseFloat(n)||0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function setUnit(u) {
+  filterUnit = u;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.unit === u));
+  render();
+}
+
+function render() {
+  const term = document.getElementById('search').value.toLowerCase().trim();
+  let items = DATA.filter(d => {
+    if (filterUnit !== 'all' && d.unidad !== filterUnit) return false;
+    if (term && !(d.nombre||'').toLowerCase().includes(term) && !(d.notas||'').toLowerCase().includes(term)) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('tbl-body');
+  const empty = document.getElementById('empty-state');
+  const countTag = document.getElementById('count-tag');
+
+  if (!items.length) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    countTag.textContent = '';
+    return;
+  }
+  empty.style.display = 'none';
+  countTag.textContent = `${items.length} concepto${items.length !== 1 ? 's' : ''}`;
+
+  tbody.innerHTML = items.map(d => `
+    <tr id="row-${d.id}">
+      <td style="font-weight:700;">${escHtml(d.nombre||'')}</td>
+      <td>${unitBadge(d.unidad||'pt')}</td>
+      <td>
+        <div class="price-cell">
+          <span class="price-val" id="pv-${d.id}">${fmt(d.precioEst)}</span>
+          <input class="price-inp" id="pi-${d.id}" type="number" min="0" step="1" value="${d.precioEst||0}"
+            onkeydown="if(event.key==='Enter') savePrice('${d.id}'); if(event.key==='Escape') cancelEdit('${d.id}')">
+          <button class="edit-btn" id="eb-${d.id}" onclick="startEdit('${d.id}')">Editar</button>
+          <button class="save-btn" id="sb-${d.id}" onclick="savePrice('${d.id}')">Guardar</button>
+        </div>
+      </td>
+      <td>
+        <span class="notas-val" id="nv-${d.id}">${escHtml(d.notas||'—')}</span>
+        <input class="notas-inp" id="ni-${d.id}" type="text" value="${escHtml(d.notas||'')}" placeholder="Notas…"
+          onkeydown="if(event.key==='Enter') savePrice('${d.id}'); if(event.key==='Escape') cancelEdit('${d.id}')">
+      </td>
+      <td>
+        <button class="del-btn" onclick="deleteEntry('${d.id}')">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function startEdit(id) {
+  document.getElementById('pv-'+id).style.display = 'none';
+  document.getElementById('pi-'+id).style.display = 'block';
+  document.getElementById('eb-'+id).style.display = 'none';
+  document.getElementById('sb-'+id).style.display = 'block';
+  document.getElementById('nv-'+id).style.display = 'none';
+  document.getElementById('ni-'+id).style.display = 'block';
+  document.getElementById('pi-'+id).focus();
+  document.getElementById('pi-'+id).select();
+}
+
+function cancelEdit(id) {
+  const d = DATA.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('pv-'+id).style.display = '';
+  document.getElementById('pi-'+id).style.display = 'none';
+  document.getElementById('eb-'+id).style.display = '';
+  document.getElementById('sb-'+id).style.display = 'none';
+  document.getElementById('nv-'+id).style.display = '';
+  document.getElementById('ni-'+id).style.display = 'none';
+  document.getElementById('pi-'+id).value = d.precioEst || 0;
+  document.getElementById('ni-'+id).value = d.notas || '';
+}
+
+async function savePrice(id) {
+  const precioEst = parseFloat(document.getElementById('pi-'+id).value) || 0;
+  const notas     = document.getElementById('ni-'+id).value.trim();
+  const d = DATA.find(x => x.id === id);
+  if (!d) return;
+  d.precioEst = precioEst;
+  d.notas = notas;
+  await window.DB.update(COL, id, { precioEst, notas });
+  document.getElementById('pv-'+id).textContent = fmt(precioEst);
+  document.getElementById('nv-'+id).textContent = notas || '—';
+  cancelEdit(id);
+}
+
+async function deleteEntry(id) {
+  const d = DATA.find(x => x.id === id);
+  if (!d) return;
+  if (!confirm(`¿Eliminar "${d.nombre}"?`)) return;
+  await window.DB.delete(COL, id);
+  DATA = DATA.filter(x => x.id !== id);
+  render();
+}
+
+async function addEntry() {
+  const nombre   = document.querySelector('.add-form input[name="nombre"]').value.trim();
+  const unidad   = document.querySelector('.add-form select[name="unidad"]').value;
+  const precioEst = parseFloat(document.querySelector('.add-form input[name="precio"]').value) || 0;
+  const notas    = document.querySelector('.add-form input[name="notas"]').value.trim();
+  if (!nombre) { document.querySelector('.add-form input[name="nombre"]').focus(); return; }
+
+  const id = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').slice(0,40) + '-' + Date.now().toString(36);
+  const entry = { id, nombre, unidad, precioEst, notas };
+  await window.DB.add(COL, entry, id);
+  DATA.push(entry);
+  DATA.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
+
+  document.querySelector('.add-form input[name="nombre"]').value = '';
+  document.querySelector('.add-form input[name="precio"]').value = '';
+  document.querySelector('.add-form input[name="notas"]').value = '';
+  document.querySelector('.add-form input[name="nombre"]').focus();
+  render();
+}
+
+async function init() {
+  const p = window.parent;
+  if (p?.DB_STATE) delete p.DB_STATE[COL];
+  if (p?.cargar_coleccion) await p.cargar_coleccion(COL);
+
+  DATA = await window.DB.query(COL, {});
+  DATA.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
