@@ -118,13 +118,6 @@ select { padding-right: 28px; appearance: auto; }
 .ficha-item-price { font-weight:700; white-space:nowrap; font-size:12px; }
 .ficha-total { display:flex; justify-content:flex-end; gap:8px; font-weight:800; font-size:14px; padding-top:10px; border-top:2px solid var(--crust); margin-top:4px; }
 .ficha-actions { display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-top:14px; padding-top:12px; border-top:1px solid var(--crust); flex-wrap:wrap; }
-/* Pills */
-.pill { padding:3px 9px; border-radius:99px; font-size:11px; font-weight:800; text-transform:uppercase; white-space:nowrap; display:inline-block; }
-.pill-amber  { background:var(--amber-bg,rgba(223,142,29,.15));  color:var(--amber-text,#b87315); }
-.pill-blue   { background:var(--blue-bg,rgba(30,102,245,.15));   color:var(--blue-text,#1750c1); }
-.pill-green  { background:var(--green-bg,rgba(64,160,43,.15));   color:var(--green-text,#317222); }
-.pill-red    { background:var(--red-bg,rgba(210,15,57,.12));     color:var(--red-text,#a80c2e); }
-.pill-gray   { background:var(--surface0,#ccd0da);               color:var(--subtext,#8c8fa1); }
 /* Status flow */
 .sf-flow { display:flex; align-items:center; gap:3px; flex-wrap:wrap; margin:8px 0 6px; }
 .sf-step { font-size:10px; font-weight:700; padding:2px 8px; border-radius:99px; background:var(--surface0,#ccd0da); color:var(--subtext,#8c8fa1); white-space:nowrap; }
