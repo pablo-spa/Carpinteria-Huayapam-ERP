@@ -150,6 +150,7 @@ window.DB = {
       saveDB(d);
     }
   },
+  // ── MADERA E INVENTARIO ──────────────────────────────────────────────────────
   addWood: (item) => {
     const d = getDB();
     if(!item.id) item.id = crypto.randomUUID();
@@ -188,6 +189,7 @@ window.DB = {
     
     saveDB(d);
   },
+  // ── FINANZAS ─────────────────────────────────────────────────────────────────
   addMovement: (mov) => {
     if(!mov.id) mov.id = crypto.randomUUID();
     // Siempre persistir en Firestore primero (no depende de que la colección esté cacheada)
@@ -256,6 +258,7 @@ window.DB = {
     }
     saveDB(d);
   },
+  // ── RRHH / NÓMINA ────────────────────────────────────────────────────────────
   addAttendance: (record) => {
     const d = getDB();
     if(!record.id) record.id = crypto.randomUUID();
@@ -326,6 +329,7 @@ window.DB = {
     
     saveDB(d);
   },
+  // ── CRM / CONTACTOS ──────────────────────────────────────────────────────────
   addContact: (contact) => {
     const d = getDB();
     if(!contact.id) contact.id = crypto.randomUUID();
@@ -342,6 +346,7 @@ window.DB = {
       saveDB(d);
     }
   },
+  // ── SISTEMA / CONFIGURACIÓN ──────────────────────────────────────────────────
   saveSettings: (settings) => {
     const d = getDB();
     d.settings = settings;
@@ -365,6 +370,7 @@ window.DB = {
       saveDB(d);
     }
   },
+  // ── COMPRAS / ÓRDENES ────────────────────────────────────────────────────────
   addOrder: (order) => {
     const d = getDB();
     if(!order.id) order.id = crypto.randomUUID();
@@ -388,6 +394,7 @@ window.DB = {
       saveDB(d);
     }
   },
+  // ── PROYECTOS Y COTIZACIONES ─────────────────────────────────────────────────
   addProject: (project) => {
     const d = getDB();
     if(!project.id) project.id = crypto.randomUUID();
