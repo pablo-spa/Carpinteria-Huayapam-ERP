@@ -147,6 +147,11 @@
     <!-- Tarjetas por cuenta se inyectan aquí por JS desde renderDynamicCards() -->
   </div>
 
+  <!-- Reparar saldos (admin, discreto) -->
+  <div style="text-align:right; margin-top:-8px;">
+    <button onclick="recalcularSaldos()" style="background:none;border:none;font-size:11px;color:var(--subtext);cursor:pointer;padding:2px 4px;opacity:0.5;" title="Recalcular saldos desde cero a partir de los movimientos cargados. Usar solo si los saldos están incorrectos.">⟳ reparar saldos</button>
+  </div>
+
   <!-- Avisos / Pendientes -->
   <div class="notice-block" id="notice-block">
     <div class="notice-title"><span>⚠️</span> Pendiente de tu atención</div>
@@ -222,7 +227,7 @@
       </div>
 
       <div class="f-row grid2">
-        <div class="f-row">
+        <div class="f-row" id="acc-row-wrap">
           <label class="f-lbl" id="lbl-acc">Cuenta Origen</label>
           <select id="f-acc" class="f-input" data-searchable>
             <option value="">— Cuenta —</option>
@@ -656,7 +661,7 @@
 
     const sorted = [...DBm].sort((a,b) => new Date(b.date) - new Date(a.date));
 
-    sorted.forEach(m => {
+    for (const m of sorted) {
       const mid = m.id || m._id || '';
       if (!mid) return; // skip orphan items with no id
       if (m.eliminado) return; // Ocultar movimientos anulados de la lista
@@ -673,55 +678,92 @@
       const concept = m.concept || '';
       if(term && !concept.toLowerCase().includes(term) && !(m.amount||'').toString().includes(term)) return;
 
+      const statPill = m.status === 'pendiente'
+        ? '<span class="pill pill-amber hide-mob" style="margin-left:6px">Pendiente</span>'
+        : (m.orderId || m.projectId ? '<span class="pill pill-blue hide-mob" style="margin-left:6px">Vinculado</span>' : '');
+      const catPill = m.category
+        ? `<span class="pill pill-gray">${m.category}</span>`
+        : `<span class="pill pill-gray" style="opacity:0.6;">Sin categorizar</span>`;
+      const confirmedPill = (m.status==='confirmado'||m.status==='confirmed') ? '<span class="pill pill-green">Confirmado</span>' : '';
+      const conceptSpan = `<span style="opacity:${m.status==='pendiente'?'0.7':'1'};font-style:${m.status==='pendiente'?'italic':'normal'};">${concept||'—'}</span>`;
+
+      const detailHTML = `
+        <div class="mov-detail" id="det-${mid}">
+          <div class="det-grid">
+            <div><div class="det-lbl">Concepto Completo</div><div class="det-val">${concept}</div></div>
+            <div><div class="det-lbl">Beneficiario/A</div><div class="det-val">${m.entity||'-'}</div></div>
+            <div><div class="det-lbl">Vínculos</div><div class="det-val" style="color:var(--blue)">${m.projectId?'Proyecto '+m.projectId:''} ${m.orderId?'OC '+m.orderId:''} ${(!m.projectId&&!m.orderId)?'Ninguno':''}</div></div>
+            <div><div class="det-lbl">Notas internas</div><div class="det-val" style="font-style:italic;color:var(--subtext)">${m.notes||'Sin notas'}</div></div>
+          </div>
+          <div class="det-actions">
+            <button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="openPanel('${mid}')">✏️ Editar Registro</button>
+          </div>
+        </div>`;
+
+      function makeRow(accLabel, amtColor, sign, amount, isFirst) {
+        const d2 = document.createElement('div');
+        d2.className = 'mov-row-wrap';
+        d2.innerHTML = `
+          <div class="mov-row mov-debt" onclick="toggleDet('${mid}')" id="${isFirst?'row-'+mid:''}">
+            <div class="m-date" style="white-space:pre-line">${fmtDate(m.date)}</div>
+            <div class="m-acc">${accLabel}</div>
+            <div class="m-concept">
+              ${conceptSpan}
+              <div class="m-subtitle" style="display:flex;align-items:center;margin-top:4px;">${catPill} ${statPill}</div>
+            </div>
+            <div class="hide-mob"><div style="font-size:12px;color:var(--text);font-weight:600">${m.entity||'--'}</div></div>
+            <div class="hide-mob" style="text-align:right;">${confirmedPill}</div>
+            <div class="m-amt ${amtColor}">${sign}${fmt(amount)}</div>
+          </div>
+          ${isFirst ? detailHTML : ''}`;
+        return d2;
+      }
+
+      if (m.type === 'Pago de Deuda') {
+        const debtAmt = m.debtAmount || 0;
+        const showBank = currentAccFilter === 'ALL' || m.account === currentAccFilter;
+        const showDebt = currentAccFilter === 'ALL' || m.debtAccount === currentAccFilter;
+        let firstAdded = false;
+        if (showBank) {
+          list.appendChild(makeRow(m.account||'—', 'amt-out', '-', m.amount, !firstAdded));
+          firstAdded = true;
+        }
+        if (showDebt && debtAmt > 0) {
+          const aboneLabel = `${m.debtAccount||'?'} <span style="font-size:10px;color:var(--green);font-weight:700;">↑ abono</span>`;
+          list.appendChild(makeRow(aboneLabel, 'amt-in', '+', debtAmt, !firstAdded));
+        }
+        continue;
+      }
+
       const d = document.createElement('div');
       d.className = 'mov-row-wrap';
 
       let amtColor = 'amt-out'; let sign = '-';
       if(m.type==='Ingreso') { amtColor = 'amt-in'; sign = '+'; }
       if(m.type==='Transferencia') { amtColor = 'amt-neu'; sign = ''; }
-      if(m.type==='Pago de Deuda') { amtColor = 'amt-out'; sign = '-'; }
-      if(m.type==='Disposición de Deuda') { amtColor = 'amt-in'; sign = '+'; }
+      if(m.type==='Disposición de Deuda') { amtColor = 'amt-out'; sign = '-'; }
 
       let accLabel = m.account || '—';
       if(m.type==='Transferencia') accLabel = `${m.account} &rarr; ${m.destAccount}`;
-      if(m.type==='Pago de Deuda') accLabel = `${m.account} &rarr; ${m.debtAccount||'?'}${m.debtAmount && m.debtAmount !== m.amount ? ` (abono: ${fmt(m.debtAmount)})` : ''}`;
-      if(m.type==='Disposición de Deuda') accLabel = `${m.debtAccount||'?'} &rarr; ${m.account}`;
+      if(m.type==='Disposición de Deuda') accLabel = `${m.debtAccount||'?'} <span style="font-size:10px;color:var(--red);font-weight:700;">↑ deuda</span>`;
 
-      let statPill = '';
-      if(m.status === 'pendiente') statPill = '<span class="pill pill-amber hide-mob" style="margin-left:6px">Pendiente</span>';
-      else if(m.orderId || m.projectId) statPill = '<span class="pill pill-blue hide-mob" style="margin-left:6px">Vinculado</span>';
-
-      let catPill = m.category ? `<span class="pill pill-gray">${m.category}</span>` : `<span class="pill pill-gray" style="opacity:0.6;">Sin categorizar</span>`;
-
-      const rowClass = m.type==='Ingreso' ? 'mov-in' : m.type==='Gasto' ? 'mov-out' : (m.type==='Pago de Deuda'||m.type==='Disposición de Deuda') ? 'mov-debt' : 'mov-tra';
+      const rowClass = m.type==='Ingreso' ? 'mov-in' : m.type==='Gasto' ? 'mov-out' : m.type==='Disposición de Deuda' ? 'mov-debt' : 'mov-tra';
       d.innerHTML = `
         <div class="mov-row ${rowClass}" onclick="toggleDet('${mid}')" id="row-${mid}">
           <div class="m-date" style="white-space:pre-line">${fmtDate(m.date)}</div>
           <div class="m-acc">${accLabel}</div>
           <div class="m-concept">
-            <span style="opacity: ${m.status==='pendiente'?'0.7':'1'}; font-style: ${m.status==='pendiente'?'italic':'normal'};">${concept || '—'}</span>
+            ${conceptSpan}
             <div class="m-subtitle" style="display:flex;align-items:center;margin-top:4px;">${catPill} ${statPill}</div>
           </div>
-          <div class="hide-mob">
-             <div style="font-size:12px;color:var(--text);font-weight:600">${m.entity || '--'}</div>
-          </div>
-          <div class="hide-mob" style="text-align:right;">${(m.status==='confirmado'||m.status==='confirmed')?'<span class="pill pill-green">Confirmado</span>':''}</div>
+          <div class="hide-mob"><div style="font-size:12px;color:var(--text);font-weight:600">${m.entity || '--'}</div></div>
+          <div class="hide-mob" style="text-align:right;">${confirmedPill}</div>
           <div class="m-amt ${amtColor}">${sign}${fmt(m.amount)}</div>
         </div>
-        <div class="mov-detail" id="det-${mid}">
-          <div class="det-grid">
-            <div><div class="det-lbl">Concepto Completo</div><div class="det-val">${concept}</div></div>
-            <div><div class="det-lbl">Beneficiario/A</div><div class="det-val">${m.entity||'-'}</div></div>
-            <div><div class="det-lbl">Vínculos</div><div class="det-val" style="color:var(--blue)">${m.projectId?'Proyecto '+m.projectId:''} ${m.orderId?'OC / Compra '+m.orderId:''} ${(!m.projectId && !m.orderId)?'Ninguno':''}</div></div>
-            <div><div class="det-lbl">Notas internas</div><div class="det-val" style="font-style:italic;color:var(--subtext)">${m.notes||'Sin notas'}</div></div>
-          </div>
-          <div class="det-actions">
-            <button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="openPanel('${mid}')">✏️ Editar Registro</button>
-          </div>
-        </div>
+        ${detailHTML}
       `;
       list.appendChild(d);
-    });
+    }
 
     if(list.children.length === 0) list.innerHTML = '<div style="padding:24px; text-align:center; color:var(--subtext);">No se encontraron movimientos.</div>';
   }
@@ -1209,8 +1251,10 @@
     document.getElementById('dd-disp').className = 'ts-btn' + (dir === 'disposicion' ? ' act' : '');
     const isDisp = dir === 'disposicion';
     document.getElementById('f-type-val').value = isDisp ? 'Disposición de Deuda' : 'Pago de Deuda';
-    document.getElementById('lbl-acc').textContent = isDisp ? 'Cuenta Destino' : 'Cuenta Origen';
-    document.getElementById('lbl-debt-acc').textContent = isDisp ? 'Cuenta de Deuda (Origen)' : 'Cuenta de Deuda (Destino)';
+    // Disposición: solo se registra el pasivo (cuenta de deuda). No se toca ninguna cuenta bancaria.
+    document.getElementById('acc-row-wrap').style.display = isDisp ? 'none' : 'flex';
+    document.getElementById('lbl-acc').textContent = 'Cuenta Origen';
+    document.getElementById('lbl-debt-acc').textContent = isDisp ? 'Cuenta de Deuda' : 'Cuenta de Deuda';
     document.getElementById('debt-amounts-wrap').style.display = isDisp ? 'none' : 'grid';
   }
 
@@ -1275,14 +1319,14 @@
       const oldDelta = oldMov.type === 'Ingreso' ? -oldMov.amount : oldMov.type === 'Gasto' ? oldMov.amount : 0;
       if (oldMov.type === 'Transferencia')        { apply(oldMov.account, oldMov.amount); apply(oldMov.destAccount, -oldMov.amount); }
       else if (oldMov.type === 'Pago de Deuda')   { apply(oldMov.account, oldMov.amount); apply(oldMov.debtAccount, -(oldMov.debtAmount || 0)); }
-      else if (oldMov.type === 'Disposición de Deuda') { apply(oldMov.debtAccount, oldMov.amount); apply(oldMov.account, -oldMov.amount); }
+      else if (oldMov.type === 'Disposición de Deuda') { apply(oldMov.debtAccount, oldMov.amount); } // solo revierte el pasivo
       else apply(oldMov.account, oldDelta);
     }
     if (mov.status === 'confirmado' || mov.status === 'confirmed') {
       const delta = mov.type === 'Ingreso' ? mov.amount : mov.type === 'Gasto' ? -mov.amount : 0;
       if (mov.type === 'Transferencia')        { apply(mov.account, -mov.amount); apply(mov.destAccount, mov.amount); }
       else if (mov.type === 'Pago de Deuda')   { apply(mov.account, -mov.amount); apply(mov.debtAccount, mov.debtAmount || 0); }
-      else if (mov.type === 'Disposición de Deuda') { apply(mov.debtAccount, -mov.amount); apply(mov.account, mov.amount); }
+      else if (mov.type === 'Disposición de Deuda') { apply(mov.debtAccount, -mov.amount); } // solo crea el pasivo, sin tocar cuentas bancarias
       else apply(mov.account, delta);
     }
     return ops;
@@ -1334,6 +1378,33 @@
     calcBalances();
     closeNuevaCuenta();
     toast(`Cuenta "${name}" creada.`);
+  }
+
+  async function recalcularSaldos() {
+    const showConfirmFn = window.parent?.showConfirm || ((t,m,b,c,fn) => { if(confirm(`${t}\n\n${m}`)) fn(); });
+    showConfirmFn('Reparar Saldos', 'Recalcula los saldos de todas las cuentas a partir de los movimientos confirmados actualmente cargados en pantalla.\n\nÚtil cuando los saldos están desincronizados.\n\n¿Continuar?', 'Recalcular', 'btn-blue', async () => {
+      const newBalances = {};
+      _allMovements.forEach(m => {
+        if (m.eliminado) return;
+        if (m.status !== 'confirmado' && m.status !== 'confirmed') return;
+        const apply = (acc, delta) => { if (!acc) return; newBalances[acc] = (newBalances[acc] || 0) + delta; };
+        if      (m.type === 'Ingreso')       apply(m.account, m.amount);
+        else if (m.type === 'Gasto')         apply(m.account, -m.amount);
+        else if (m.type === 'Transferencia') { apply(m.account, -m.amount); apply(m.destAccount, m.amount); }
+        else if (m.type === 'Pago de Deuda') { apply(m.account, -m.amount); apply(m.debtAccount, m.debtAmount || 0); }
+        else if (m.type === 'Disposición de Deuda') { apply(m.debtAccount, -m.amount); }
+      });
+      const ops = [];
+      for (const [acc, bal] of Object.entries(newBalances)) {
+        if (!STATE_ACCOUNT_BALANCES[acc]) STATE_ACCOUNT_BALANCES[acc] = { id: acc, account: acc, balance: 0 };
+        STATE_ACCOUNT_BALANCES[acc].balance = bal;
+        if (window.parent?.setDocumentInFirebase)
+          ops.push(window.parent.setDocumentInFirebase('account_balances', acc, { ...STATE_ACCOUNT_BALANCES[acc], balance: bal }));
+      }
+      await Promise.all(ops).catch(e => console.warn('Error guardando saldos:', e));
+      calcBalances();
+      toast('Saldos recalculados correctamente.', 'ok');
+    });
   }
 
   function toast(msg, type = 'ok') {
