@@ -569,7 +569,8 @@
         { id: 'nav-nomina', html: `<span class="icon">💵</span> Nómina Semanal`, file: 'nomina_semanal.html', label: 'Nómina Semanal' },
         { id: 'nav-trabajadores', html: `<span class="icon">👷‍♂️</span> Trabajadores`, file: 'rh_trabajadores.html', label: 'Trabajadores' },
         { id: 'nav-checador', html: `<span class="icon">⏰</span> Reloj Checador`, file: 'reloj_checador.html', label: 'Reloj Checador' },
-        { id: 'nav-viaticos', html: `<span class="icon">🗺️</span> Viáticos`, file: 'viaticos.html', label: 'Gestión de Viáticos' }
+        { id: 'nav-viaticos', html: `<span class="icon">🗺️</span> Viáticos`, file: 'viaticos.html', label: 'Gestión de Viáticos' },
+        { id: 'nav-accidentes', html: `<span class="icon">🩹</span> Bitácora Accidentes`, file: 'accidentes.html', label: 'Bitácora de Accidentes' }
       ]
     },
     {
@@ -599,7 +600,9 @@
       id: 'cat-operaciones', title: 'Operaciones',
       items: [
         { id: 'nav-produccion', html: `<span class="icon">🔨</span> Trabajos del Día`, file: 'produccion_diaria.html', label: 'Registro del Día' },
-{ id: 'nav-confirmacion', html: `<span class="icon">✅</span> Confirmar Pedidos`, file: 'rq_operaciones.html', label: 'Confirmación de Pedidos' }
+        { id: 'nav-confirmacion', html: `<span class="icon">✅</span> Confirmar Pedidos`, file: 'rq_operaciones.html', label: 'Confirmación de Pedidos' },
+        { id: 'nav-vehiculos', html: `<span class="icon">🚚</span> Vehículos`, file: 'vehiculos.html', label: 'Flotilla y Vehículos' },
+        { id: 'nav-mantenimiento', html: `<span class="icon">🛠️</span> Mantenimiento`, file: 'mantenimiento.html', label: 'Bitácora Mantenimiento' }
       ]
     },
     {
@@ -644,6 +647,9 @@
     'produccion_diaria.html': 'produccion',
     'reloj_checador.html': 'reloj',
     'viaticos.html': 'viaticos',
+    'vehiculos.html': 'vehiculos',
+    'mantenimiento.html': 'mantenimiento',
+    'accidentes.html': 'accidentes',
     'admin_listas.html': 'admin_listas',
     'admin_config.html': 'admin_listas',
     'admin_db.html': 'admin_db',
@@ -985,6 +991,9 @@
     'proyectos.html':         'nav-proyectos',
     'reloj_checador.html':    'nav-checador',
     'viaticos.html':          'nav-viaticos',
+    'vehiculos.html':         'nav-vehiculos',
+    'mantenimiento.html':     'nav-mantenimiento',
+    'accidentes.html':        'nav-accidentes',
     'admin_usuarios.html':    'nav-usuarios',
     'admin_permisos.html':    'nav-permisos',
     'admin_bugs.html':        'nav-bugs',
@@ -1817,6 +1826,9 @@
           madera:         { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'full', almacen: 'full', produccion: 'none' },
           produccion:     { programador: 'full', admin: 'full', gerencia: 'readonly', contador: 'none', compras: 'none', almacen: 'none', produccion: 'full' },
           reloj:          { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'full', produccion: 'full' },
+          vehiculos:      { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'none', almacen: 'none', produccion: 'none' },
+          mantenimiento:  { programador: 'full', admin: 'full', gerencia: 'full', contador: 'none', compras: 'none', almacen: 'readonly', produccion: 'full' },
+          accidentes:     { programador: 'full', admin: 'full', gerencia: 'full', contador: 'readonly', compras: 'none', almacen: 'none', produccion: 'none' },
           admin_usuarios: { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
           admin_listas:   { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
           admin_db:       { programador: 'full', admin: 'none', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
