@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Registro del Día — Carpintería Huayapam</title>
 <style>
-
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .date-input { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 4px 8px; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
 .date-input:focus { outline: none; border-color: var(--blue); }
 .dia-label { font-size: 13px; color: var(--subtext); font-weight: 600; }
@@ -30,10 +30,10 @@
 .cal-day.is-weekend.is-active { background: var(--blue-bg); opacity: 1; }
 .cal-day-name { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); margin-bottom: 3px; }
 .cal-day-num  { font-size: 17px; font-weight: 800; }
-.cal-day-status { font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px; padding: 2px 5px; border-radius: 4px; }
-.cs-cerrado { background: var(--green); color: #fff; }
-.cs-pendiente { background: var(--amber); color: #fff; }
-.cs-libre { color: var(--subtext); }
+.cal-day-status { font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px; padding: 2px 5px; border-radius: 4px; display: inline-block; }
+.cs-cerrado { background: var(--green-bg); color: var(--green); }
+.cs-pendiente { background: var(--amber-bg); color: var(--amber); }
+.cs-libre { background: var(--surface0); color: var(--subtext); }
 
 /* ── Banner ── */
 .banner {
@@ -88,6 +88,19 @@
 .sbtn.on-falta      { background: var(--red);    border-color: var(--red);    color: #fff; }
 .sbtn.on-retardo    { background: var(--amber);  border-color: var(--amber);  color: #fff; }
 .sbtn.on-vacaciones { background: var(--blue);   border-color: var(--blue);   color: #fff; }
+
+.dst-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.dsbtn {
+  cursor: pointer; border: 1px solid var(--crust); border-radius: 6px;
+  background: var(--mantle); color: var(--subtext); font-size: 11px; font-weight: 700;
+  font-family: inherit; padding: 6px 12px; height: 32px; display: flex; align-items: center; justify-content: center; transition: all .12s;
+}
+.dsbtn:hover { background: var(--surface0); }
+.dsbtn:active { transform: scale(.95); }
+.dsbtn.on-trabajo    { background: var(--green);  border-color: var(--green);  color: #fff; }
+.dsbtn.on-falta      { background: var(--red);    border-color: var(--red);    color: #fff; }
+.dsbtn.on-retardo    { background: var(--amber);  border-color: var(--amber);  color: #fff; }
+.dsbtn.on-vacaciones { background: var(--blue);   border-color: var(--blue);   color: #fff; }
 
 .edit-btn {
   cursor: pointer; background: var(--base); border: 1.5px solid var(--crust);
@@ -195,21 +208,20 @@
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <span style="font-size:18px;font-weight:800;">Registro del Día</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;font-weight:800;">Registro del Día</span>
+      <span class="badge" id="hdr-badge" style="font-size:11px;padding:2px 6px;background:var(--surface0);color:var(--subtext);border-radius:4px;font-weight:700;">—</span>
+    </div>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <button class="btn btn-green" id="btn-cerrar" onclick="cerrarDia()">✓ Cerrar día</button>
-    <button class="btn btn-amber" id="btn-reabrir" style="display:none;" onclick="reabrirDia()">↩ Reabrir día</button>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <input type="date" class="date-input" id="fecha" onchange="onDateChange()" style="padding:6px 10px;height:36px;font-size:13px;font-weight:600;">
+    <button class="btn btn-ghost" onclick="collapseAll()" style="padding:8px 12px;height:36px;font-size:13px;">Colapsar</button>
+    <button class="btn btn-green" id="btn-cerrar" onclick="cerrarDia()" style="height:36px;">✓ Cerrar día</button>
+    <button class="btn btn-amber" id="btn-reabrir" style="display:none;height:36px;" onclick="reabrirDia()">↩ Reabrir día</button>
   </div>
 </div>
 
-<!-- ── Calendar Strip + date controls ── -->
-<div style="background:var(--mantle);border-bottom:1px solid var(--crust);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-  <input type="date" class="date-input" id="fecha" onchange="onDateChange()">
-  <span class="dia-label" id="dia-label"></span>
-  <span class="badge" id="hdr-badge" style="margin-left:auto;">—</span>
-  <button class="btn btn-ghost" onclick="collapseAll()" style="padding:5px 12px;font-size:12px;">Colapsar</button>
-</div>
+<!-- ── Calendar Strip ── -->
 <div class="cal-wrap">
   <button class="cal-nav" onclick="navWeek(-1)" title="Semana anterior">‹</button>
   <div class="cal-strip" id="cal-strip"></div>
@@ -421,8 +433,6 @@ function setDate(dateStr) {
 // ── Date change ───────────────────────────────────────────────
 function onDateChange() {
   currentDate = document.getElementById('fecha').value;
-  const d = new Date(currentDate + 'T12:00:00');
-  document.getElementById('dia-label').textContent = DIAS_L[d.getDay()];
   buildCalendar();
 
   const dayState = getState(currentDate);
@@ -436,6 +446,7 @@ function updateCerradoUI() {
   document.getElementById('btn-cerrar').style.display    = diaCerrado ? 'none' : '';
   document.getElementById('btn-cerrar-ft').style.display = diaCerrado ? 'none' : '';
   document.getElementById('btn-reabrir').style.display   = diaCerrado ? ''     : 'none';
+  document.getElementById('hdr-badge').textContent = diaCerrado ? 'Cerrado' : 'Pendiente';
 }
 
 // ── Filtrar por asistencia del día ────────────────────────────
@@ -577,6 +588,17 @@ function buildCard(w) {
 
     <!-- Detail -->
     <div class="wcard-detail" id="det-${w.id}">
+ 
+      <!-- Estado de Asistencia Descriptivo -->
+      <div class="field" style="margin-bottom: 4px;">
+        <label>Estado de Asistencia</label>
+        <div class="dst-btns">
+          <button class="dsbtn${ws.status==='trabajo'?' on-trabajo':''}"    id="sb-det-trabajo-${w.id}"    onclick="setStatus('${w.id}','trabajo')">Trabajó</button>
+          <button class="dsbtn${ws.status==='falta'?' on-falta':''}"       id="sb-det-falta-${w.id}"      onclick="setStatus('${w.id}','falta')">Falta</button>
+          <button class="dsbtn${ws.status==='retardo'?' on-retardo':''}"    id="sb-det-retardo-${w.id}"    onclick="setStatus('${w.id}','retardo')">Retardo</button>
+          <button class="dsbtn${ws.status==='vacaciones'?' on-vacaciones':''}" id="sb-det-vacaciones-${w.id}" onclick="setStatus('${w.id}','vacaciones')">Vacaciones</button>
+        </div>
+      </div>
 
       <!-- Retardo -->
       <div id="retrow-${w.id}" style="display:${ws.status==='retardo'?'':'none'}">
@@ -851,6 +873,8 @@ function setStatus(wId, newStatus) {
   ['trabajo','falta','retardo','vacaciones'].forEach(st => {
     const btn = document.getElementById(`sb-${st}-${wId}`);
     if (btn) btn.className = `sbtn${ws.status===st?' on-'+st:''}`;
+    const btnDet = document.getElementById(`sb-det-${st}-${wId}`);
+    if (btnDet) btnDet.className = `dsbtn${ws.status===st?' on-'+st:''}`;
   });
 
   const retrow = document.getElementById(`retrow-${wId}`);

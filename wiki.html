@@ -94,7 +94,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     <div class="nav-item" data-search="produccion diaria tiempos horas trabajos registro asistencia" onclick="showArticle('art-produccion', this)">Producción y Tiempos</div>
     <div class="nav-item" data-search="almacen compras inventario salidas hoja pedido recepcion ordenes" onclick="showArticle('art-almacen', this)">Almacén y Compras</div>
     <div class="nav-item" data-search="flujo compras pedido confirmado autorizado comprado recibido ordenes compra" onclick="showArticle('art-flujo-compras', this)">Flujo de Compras (5 pasos)</div>
-    <div class="nav-item" data-search="madera ingreso control inventario especie espesor ancho largo pie tablon sku etiqueta" onclick="showArticle('art-madera', this)">Control de Madera</div>
+    <div class="nav-item" data-search="madera ingreso control inventario especie espesor ancho largo pie tablon sku etiqueta precios" onclick="showArticle('art-madera', this)">Inventario de Madera</div>
 
     <div class="nav-cat">Administrativos</div>
     <div class="nav-item" data-search="finanzas viaticos contabilidad movimientos ingresos gastos transferencia categoria ia libro mayor ledger" onclick="showArticle('art-finanzas', this)">Finanzas y Viáticos</div>
@@ -106,6 +106,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     <div class="nav-cat">Administración del Sistema</div>
     <div class="nav-item" data-search="admin usuarios permisos roles acceso listas categorias cuentas metodos pago marcas configuracion" onclick="showArticle('art-admin', this)">Usuarios, Roles y Permisos</div>
+    <div class="nav-item" data-search="contraseñas cuentas password manager accesos credenciales usuario clave url" onclick="showArticle('art-passwords', this)">Contraseñas y Cuentas</div>
 
     <div class="nav-cat">Técnico (Desarrollo)</div>
     <div class="nav-item" data-search="base datos firestore colecciones estructura db arquitectura tecnico" onclick="showArticle('art-db', this)">Estructura de Base de Datos</div>
@@ -616,6 +617,37 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     </div>
 
   </div><!-- wiki-content -->
+    <!-- ─────────────────────────── CONTRASEÑAS ─────────────────────────── -->
+    <div class="wiki-article" id="art-passwords">
+      <h1>Contraseñas y Cuentas</h1>
+      <p>Gestor de contraseñas interno del ERP. Centraliza los accesos a servicios, plataformas y sistemas que usa la empresa: Firebase, correos, bancos, redes sociales, etc.</p>
+
+      <div class="warn-box">
+        <strong>⚠️ Acceso restringido:</strong> Esta sección solo es visible para <strong>Programador, Admin y Gerencia</strong>. No aparece en el menú para otros roles.
+      </div>
+
+      <h2>¿Qué puedo guardar aquí?</h2>
+      <ul>
+        <li>Dirección / URL del servicio</li>
+        <li>Usuario o correo de acceso</li>
+        <li>Contraseña (oculta por defecto)</li>
+        <li>Descripción de para qué se usa la cuenta</li>
+        <li>Campos adicionales personalizados (PIN, código de seguridad, notas, etc.)</li>
+      </ul>
+
+      <h2>Cómo usar</h2>
+      <ul>
+        <li>Haz clic en una tarjeta para expandirla y ver sus datos.</li>
+        <li>La contraseña aparece como <strong>••••••••</strong>. Usa el botón 👁 para revelarla.</li>
+        <li>Cada campo tiene un botón <strong>Copiar</strong> para copiarlo al portapapeles sin tener que escribirlo.</li>
+        <li>Si hay una URL, el botón <strong>Abrir</strong> la abre en una nueva pestaña.</li>
+        <li>Usa <strong>✏️ Editar</strong> para modificar cualquier dato de la tarjeta.</li>
+      </ul>
+
+      <h2>Agregar campos extra</h2>
+      <p>Al crear o editar una cuenta, puedes usar el botón <strong>+ Agregar campo</strong> para incluir información adicional con un nombre de etiqueta personalizado. Útil para cuentas bancarias (número de cuenta, CLABE, sucursal), o servicios con múltiples claves.</p>
+    </div>
+
 </div><!-- main-container -->
 
 <script>
