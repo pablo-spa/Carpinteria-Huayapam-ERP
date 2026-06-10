@@ -153,26 +153,30 @@ window.DB = {
   addWood: (item) => {
     const d = getDB();
     if(!item.id) item.id = crypto.randomUUID();
-    
-    // Legacy support
+
+    if (!d.wood) d.wood = [];
     d.wood.unshift(item);
     if(window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase("wood", item.id, item);
-    
-    // New system: map wood directly into inventory
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.wood) window.parent.DB_STATE.wood = [];
+      window.parent.DB_STATE.wood.unshift(item);
+    }
+
+    // Map wood entry into inventory collection
     const nameStr = `${item.format || 'Tabla'} ${item.species} ${item.t}"x${item.w}"x${item.l}' (${item.quality})`;
     const invItem = {
-       id: item.id, // match ID
+       id: item.id,
        code: item.code,
        name: nameStr,
        category: 'madera',
-       stock: 1, // each scanned piece is 1
+       stock: 1,
        min: 0,
        unit: 'pieza',
        cost: item.cost || 0,
        location: item.location || '',
        details: `Lote: ${item.lote} | PT: ${item.pt ? item.pt.toFixed(2) : '-'}`,
        entryDate: item.entryDate,
-       // Include native wood properties for wood views
+       lastPurchaseDate: item.entryDate,
        species: item.species,
        lote: item.lote,
        format: item.format,
@@ -182,10 +186,15 @@ window.DB = {
        pt: item.pt,
        quality: item.quality
     };
-    
+
+    if (!d.inventory) d.inventory = [];
     d.inventory.unshift(invItem);
     if(window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase("inventory", invItem.id, invItem);
-    
+    if (window.parent?.DB_STATE) {
+      if (!window.parent.DB_STATE.inventory) window.parent.DB_STATE.inventory = [];
+      window.parent.DB_STATE.inventory.unshift(invItem);
+    }
+
     saveDB(d);
   },
   addMovement: (mov) => {

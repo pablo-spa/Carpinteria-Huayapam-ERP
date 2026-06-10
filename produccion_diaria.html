@@ -9,17 +9,66 @@
 .hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .date-input { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 4px 8px; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
 .date-input:focus { outline: none; border-color: var(--blue); }
-.dia-label { font-size: 13px; color: var(--subtext); font-weight: 600; }
-
-/* ── Calendar Strip ── */
-.cal-wrap {
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  display: flex; align-items: center; gap: 0;
+/* ── Calendar & Week Section ── */
+.cal-section {
+  background: var(--base);
+  border-bottom: 1px solid var(--crust);
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
 }
-.cal-nav { background: none; border: none; color: var(--subtext); font-size: 20px; cursor: pointer; padding: 10px 12px; flex-shrink: 0; }
-.cal-nav:hover { color: var(--text); }
-.cal-strip { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; flex: 1; scrollbar-width: none; }
-.cal-strip::-webkit-scrollbar { display: none; }
+.week-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.cal-nav-btn {
+  background: var(--mantle);
+  border: 1px solid var(--crust);
+  border-radius: 50%;
+  color: var(--text);
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+.cal-nav-btn:hover {
+  background: var(--surface0);
+  border-color: var(--surface1);
+}
+.cal-nav-btn:active {
+  transform: scale(0.92);
+}
+.week-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 220px;
+  text-align: center;
+  user-select: none;
+}
+.cal-strip {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+  justify-content: center;
+}
+@media (max-width: 480px) {
+  .cal-strip {
+    justify-content: space-between;
+    gap: 4px;
+  }
+}
 .cal-day {
   flex: 1; min-width: 44px; max-width: 56px; text-align: center; padding: 8px 4px; border-radius: 8px;
   cursor: pointer; transition: all 0.15s; border: 1.5px solid transparent;
@@ -209,7 +258,10 @@
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <span style="font-size:18px;font-weight:800;">Registro del Día</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;font-weight:800;">Registro del Día</span>
+      <span class="badge" id="hdr-badge" style="font-size:11px;padding:2px 6px;background:var(--surface0);color:var(--subtext);border-radius:4px;font-weight:700;">—</span>
+    </div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <button class="btn btn-green" id="btn-cerrar" onclick="cerrarDia()">✓ Cerrar día</button>
@@ -217,19 +269,20 @@
   </div>
 </div>
 
-<!-- ── Date controls sub-bar ── -->
-<div style="background:var(--mantle);border-bottom:1px solid var(--crust);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-  <input type="date" class="date-input" id="fecha" onchange="onDateChange()">
-  <span class="dia-label" id="dia-label"></span>
-  <span class="badge" id="hdr-badge" style="margin-left:auto;font-size:11px;padding:2px 6px;background:var(--surface0);color:var(--subtext);border-radius:4px;font-weight:700;">—</span>
-  <button class="btn btn-ghost" onclick="collapseAll()" style="padding:5px 12px;font-size:12px;">Colapsar</button>
-</div>
+<!-- ── Calendar & Week Section ── -->
+<div class="cal-section">
+  <!-- Hidden Date Picker (for state compatibility) -->
+  <input type="date" id="fecha" style="display:none;" onchange="onDateChange()">
+  
+  <!-- Week Selector Row -->
+  <div class="week-selector">
+    <button class="cal-nav-btn" onclick="navWeek(-1)" title="Semana anterior">‹</button>
+    <span class="week-label" id="week-label">Cargando semana…</span>
+    <button class="cal-nav-btn" onclick="navWeek(1)" title="Semana siguiente">›</button>
+  </div>
 
-<!-- ── Calendar Strip ── -->
-<div class="cal-wrap">
-  <button class="cal-nav" onclick="navWeek(-1)" title="Semana anterior">‹</button>
+  <!-- Calendar Strip -->
   <div class="cal-strip" id="cal-strip"></div>
-  <button class="cal-nav" onclick="navWeek(1)" title="Semana siguiente">›</button>
 </div>
 
 <!-- ── Banner (closed/reopen message) ── -->
@@ -393,7 +446,49 @@ function payWeekDays(weekOffset) {
   });
 }
 
+function getWeekOffsetForDate(dateStr) {
+  const targetDate = new Date(dateStr + 'T12:00:00');
+  const today = new Date();
+  today.setHours(12,0,0,0);
+  
+  // Find Saturday of target week
+  const targetDow = targetDate.getDay();
+  const targetDToSat = (targetDow + 1) % 7;
+  const targetSat = new Date(targetDate);
+  targetSat.setDate(targetDate.getDate() - targetDToSat);
+  targetSat.setHours(12,0,0,0);
+  
+  // Find Saturday of today's week
+  const todayDow = today.getDay();
+  const todayDToSat = (todayDow + 1) % 7;
+  const todaySat = new Date(today);
+  todaySat.setDate(today.getDate() - todayDToSat);
+  todaySat.setHours(12,0,0,0);
+  
+  // Calculate difference in weeks
+  const diffTime = targetSat.getTime() - todaySat.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  return Math.round(diffDays / 7);
+}
+
+function updateWeekLabel() {
+  const label = document.getElementById('week-label');
+  if (!label) return;
+  
+  const days = payWeekDays(calWeekOffset);
+  const start = days[0];
+  const end = days[6];
+  
+  const options = { day: 'numeric', month: 'short' };
+  const startStr = start.toLocaleDateString('es-MX', options);
+  const endStr = end.toLocaleDateString('es-MX', options);
+  const yearStr = end.getFullYear();
+  
+  label.textContent = `Semana: ${startStr} – ${endStr} (${yearStr})`;
+}
+
 function buildCalendar() {
+  updateWeekLabel();
   const days  = payWeekDays(calWeekOffset);
   const strip = document.getElementById('cal-strip');
   const db    = window.DB.get();
@@ -425,10 +520,24 @@ function buildCalendar() {
   }).join('');
 }
 
-function navWeek(dir) { calWeekOffset += dir; buildCalendar(); }
+function navWeek(dir) {
+  calWeekOffset += dir;
+  
+  // Keep the same day of the week selected
+  const oldDays = payWeekDays(calWeekOffset - dir);
+  let activeIndex = oldDays.findIndex(d => d.toISOString().slice(0,10) === currentDate);
+  if (activeIndex === -1) activeIndex = 2; // Default to Monday (index 2)
+  
+  const newDays = payWeekDays(calWeekOffset);
+  const newDateStr = newDays[activeIndex].toISOString().slice(0,10);
+  
+  document.getElementById('fecha').value = newDateStr;
+  onDateChange();
+}
 
 function setDate(dateStr) {
   if (dateStr === currentDate) return;
+  calWeekOffset = getWeekOffsetForDate(dateStr);
   document.getElementById('fecha').value = dateStr;
   onDateChange();
 }
@@ -436,8 +545,7 @@ function setDate(dateStr) {
 // ── Date change ───────────────────────────────────────────────
 function onDateChange() {
   currentDate = document.getElementById('fecha').value;
-  const d = new Date(currentDate + 'T12:00:00');
-  document.getElementById('dia-label').textContent = DIAS_L[d.getDay()];
+  calWeekOffset = getWeekOffsetForDate(currentDate);
   buildCalendar();
 
   const dayState = getState(currentDate);
