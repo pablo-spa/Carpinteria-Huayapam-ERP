@@ -13,7 +13,8 @@ function getDB() {
     workers: [], contacts: [], inventory: [], projects: [], quotations: [], quotations_viaticos: [], orders: [], accounting_movements: [],
     settings: {}, systemEvents: [], attendance: [],
     project_worker_hours: [], viajes: [], anticipos_viaticos: [], gastos_viaticos: [], notifications: [], wood: [],
-    actividades_trabajo: [], inventory_salidas: [], attendance_logs: []
+    actividades_trabajo: [], inventory_salidas: [], attendance_logs: [],
+    gasolina_vales: [], vehicles_log: [], vehicles_states: [], machine_logs: [], machine_states: [], accident_logs: []
   };
 }
 

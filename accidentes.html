@@ -9,14 +9,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-
-
-.main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
-.empty-icon { font-size: 72px; margin-bottom: 20px; opacity: 0.9; }
-.empty-title { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
-.empty-desc { font-size: 15px; color: var(--subtext); max-width: 440px; line-height: 1.6; }
-
-.wip-badge { display: inline-block; background: var(--red-bg); color: var(--red); padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; border: 1px solid rgba(210,15,57,0.2); }
+.main-scroll { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.inline-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; align-items: end; }
+.inline-form .form-group { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -28,14 +23,179 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   </div>
 </div>
 
-<div class="main">
-  <div class="wip-badge">Próximo Módulo</div>
-  <div class="empty-icon">🩹</div>
-  <div class="empty-title">En Planeación</div>
-  <div class="empty-desc">
-    Este módulo te permitirá llevar un registro formal de incidentes de salud y accidentes laborales para control de Recursos Humanos y seguimiento ante el seguro/IMSS.
+<div class="main-scroll">
+  <!-- Formulario Accidente Express -->
+  <div class="inline-form">
+    <div class="field">
+      <label>Trabajador Afectado</label>
+      <select id="acc-trabajador" class="form-control">
+        <option value="">— Seleccionar trabajador —</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Gravedad</label>
+      <select id="acc-gravedad" class="form-control">
+        <option value="leve">Leve (Primeros auxilios)</option>
+        <option value="moderado">Moderado (Requiere consulta médica)</option>
+        <option value="grave">Grave (Incapacidad / Hospital)</option>
+      </select>
+    </div>
+    <div class="field" style="grid-column: span 2;">
+      <label>Descripción del Incidente</label>
+      <input type="text" id="acc-desc" class="form-control" placeholder="Ej. Cortadura leve en dedo índice con astilla, caída de altura baja...">
+    </div>
+    <div class="field">
+      <label>Acción Tomada</label>
+      <input type="text" id="acc-accion" class="form-control" placeholder="Ej. Limpieza y vendaje, traslado al IMSS...">
+    </div>
+    <div class="field">
+      <label>Días de Incapacidad</label>
+      <input type="number" id="acc-dias" class="form-control" placeholder="0" min="0">
+    </div>
+    <div>
+      <button class="btn btn-blue" onclick="agregarAccidente()" style="width:100%; height:38px;">Registrar Incidente</button>
+    </div>
+  </div>
+
+  <!-- Historial de accidentes en tabla unificada -->
+  <div class="table-wrapper">
+    <table class="tbl" id="tbl-accidentes">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Trabajador</th>
+          <th>Gravedad</th>
+          <th>Descripción</th>
+          <th>Acción Tomada</th>
+          <th>Incapacidad</th>
+          <th style="width:40px;"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody-accidentes">
+        <!-- Dinámico -->
+      </tbody>
+    </table>
   </div>
 </div>
 
+<script src="db.js"></script>
+<script src="ui.js"></script>
+<script>
+let WORKERS = [];
+
+async function init() {
+  await Promise.all([
+    window.DB.query('accident_logs'),
+    window.DB.query('workers'),
+  ]);
+
+  const db = window.DB.get();
+  WORKERS = (db.workers || []).filter(w => !w._init);
+
+  populateSelects();
+  renderAccidentes();
+}
+
+function populateSelects() {
+  const tSel = document.getElementById('acc-trabajador');
+  tSel.innerHTML = `<option value="">— Seleccionar trabajador —</option>` +
+    WORKERS.map(w => `<option value="${w.id}">${w.nombre || w.name}</option>`).join('');
+}
+
+async function agregarAccidente() {
+  const trabajador = document.getElementById('acc-trabajador').value;
+  const gravedad = document.getElementById('acc-gravedad').value;
+  const desc = document.getElementById('acc-desc').value.trim();
+  const accion = document.getElementById('acc-accion').value.trim();
+  const dias = parseInt(document.getElementById('acc-dias').value) || 0;
+
+  if (!trabajador || !desc || !accion) {
+    toast('Por favor llena todos los campos obligatorios.', 'warn');
+    return;
+  }
+
+  const nuevoAccidente = {
+    id: crypto.randomUUID(),
+    trabajadorId: trabajador,
+    fecha: new Date().toISOString().slice(0, 10),
+    gravedad,
+    descripcion: desc,
+    accionTomada: accion,
+    diasIncapacidad: dias
+  };
+
+  const db = window.DB.get();
+  if (!db.accident_logs) db.accident_logs = [];
+  db.accident_logs.unshift(nuevoAccidente);
+
+  if (window.parent?.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('accident_logs', nuevoAccidente.id, nuevoAccidente);
+  }
+  window.DB.save(db);
+
+  document.getElementById('acc-desc').value = '';
+  document.getElementById('acc-accion').value = '';
+  document.getElementById('acc-dias').value = '';
+
+  toast('Incidente de salud registrado correctamente.');
+  renderAccidentes();
+}
+
+function renderAccidentes() {
+  const tbody = document.getElementById('tbody-accidentes');
+  const db = window.DB.get();
+  const logs = db.accident_logs || [];
+
+  if (logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--subtext);">No hay accidentes registrados.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = logs.map(l => {
+    const trabajador = WORKERS.find(w => w.id === l.trabajadorId);
+    const trabajadorName = trabajador ? (trabajador.nombre || trabajador.name) : '—';
+
+    let badgeCls = 'badge-gray';
+    if (l.gravedad === 'moderado') badgeCls = 'badge-amber';
+    if (l.gravedad === 'grave') badgeCls = 'badge-red';
+
+    return `
+      <tr>
+        <td>${l.fecha}</td>
+        <td style="font-weight:700;">${trabajadorName}</td>
+        <td><span class="badge ${badgeCls}">${l.gravedad.toUpperCase()}</span></td>
+        <td>${l.descripcion}</td>
+        <td>${l.accionTomada}</td>
+        <td>${l.diasIncapacidad ? `<span class="badge badge-red">🩹 ${l.diasIncapacidad} días</span>` : '—'}</td>
+        <td>
+          <button class="rm-btn" onclick="eliminarAccidente('${l.id}')">🗑</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function eliminarAccidente(id) {
+  const ok = await showConfirm('Eliminar registro', '¿Estás seguro de que deseas eliminar este registro?', 'Eliminar', 'btn-red');
+  if (!ok) return;
+
+  try {
+    if (window.parent?.deleteDocumentFromFirebase) {
+      await window.parent.deleteDocumentFromFirebase('accident_logs', id);
+    }
+    const db = window.DB.get();
+    if (db.accident_logs) {
+      db.accident_logs = db.accident_logs.filter(x => x.id !== id);
+      window.DB.save(db);
+    }
+    toast('Incidente eliminado.');
+    renderAccidentes();
+  } catch(e) {
+    toast('Error al eliminar: ' + e.message, 'error');
+  }
+}
+
+init();
+</script>
 </body>
 </html>
