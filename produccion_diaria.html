@@ -669,7 +669,8 @@ function buildCard(w) {
   const ws  = getWS(w.id);
   const div = document.createElement('div');
   div.id        = `card-${w.id}`;
-  div.className = `worker-card${ws.status?' st-'+ws.status:''}`;
+  const statusCls = ws.status ? (['trabajo','falta','retardo','vacaciones','falta_justificada'].includes(ws.status) ? ws.status : 'generic') : '';
+  div.className = `worker-card${statusCls ? ' st-'+statusCls : ''}`;
 
   div.innerHTML = `
     <!-- Row -->
@@ -681,10 +682,11 @@ function buildCard(w) {
       </div>
       <div class="chips" id="chips-${w.id}"></div>
       <div class="sbtn-row">
-        <button class="sbtn${ws.status==='trabajo'?' on-trabajo':''}"    id="sb-trabajo-${w.id}"    onclick="event.stopPropagation();setStatus('${w.id}','trabajo')"    title="Trabajó">✓</button>
-        <button class="sbtn${ws.status==='falta'?' on-falta':''}"       id="sb-falta-${w.id}"      onclick="event.stopPropagation();setStatus('${w.id}','falta')"       title="Falta">✗</button>
-        <button class="sbtn${ws.status==='retardo'?' on-retardo':''}"   id="sb-retardo-${w.id}"    onclick="event.stopPropagation();setStatus('${w.id}','retardo')"     title="Retardo">⏰</button>
-        <button class="sbtn${ws.status==='vacaciones'?' on-vacaciones':''}" id="sb-vacaciones-${w.id}" onclick="event.stopPropagation();setStatus('${w.id}','vacaciones')" title="Vacaciones">☀</button>
+        ${ATTENDANCE_STATES.map(st => {
+          const isKnown = ['trabajo','falta','retardo','vacaciones','falta_justificada'].includes(st.id);
+          const clsSuffix = isKnown ? st.id : 'generic';
+          return `<button class="sbtn${ws.status===st.id ? ' on-'+clsSuffix : ''}" id="sb-${st.id}-${w.id}" onclick="event.stopPropagation();setStatus('${w.id}','${st.id}')" title="${st.name}">${st.icon}</button>`;
+        }).join('')}
       </div>
       <button class="edit-btn" id="edit-${w.id}" onclick="event.stopPropagation();requestEdit('${w.id}')" style="display:none">Editar</button>
     </div>
@@ -705,10 +707,11 @@ function buildCard(w) {
       <div class="field" style="margin-bottom: 4px;">
         <label>Estado de Asistencia</label>
         <div class="dst-btns">
-          <button class="dsbtn${ws.status==='trabajo'?' on-trabajo':''}"    id="sb-det-trabajo-${w.id}"    onclick="setStatus('${w.id}','trabajo')">Trabajó</button>
-          <button class="dsbtn${ws.status==='falta'?' on-falta':''}"       id="sb-det-falta-${w.id}"      onclick="setStatus('${w.id}','falta')">Falta</button>
-          <button class="dsbtn${ws.status==='retardo'?' on-retardo':''}"    id="sb-det-retardo-${w.id}"    onclick="setStatus('${w.id}','retardo')">Retardo</button>
-          <button class="dsbtn${ws.status==='vacaciones'?' on-vacaciones':''}" id="sb-det-vacaciones-${w.id}" onclick="setStatus('${w.id}','vacaciones')">Vacaciones</button>
+          ${ATTENDANCE_STATES.map(st => {
+            const isKnown = ['trabajo','falta','retardo','vacaciones','falta_justificada'].includes(st.id);
+            const clsSuffix = isKnown ? st.id : 'generic';
+            return `<button class="dsbtn${ws.status===st.id ? ' on-'+clsSuffix : ''}" id="sb-det-${st.id}-${w.id}" onclick="setStatus('${w.id}','${st.id}')">${st.name}</button>`;
+          }).join('')}
         </div>
       </div>
 
@@ -980,13 +983,16 @@ function setStatus(wId, newStatus) {
 
   ws.status = (ws.status === newStatus) ? '' : newStatus;
   const card = document.getElementById(`card-${wId}`);
-  card.className = `worker-card${ws.status?' st-'+ws.status:''}`;
+  const statusCls = ws.status ? (['trabajo','falta','retardo','vacaciones','falta_justificada'].includes(ws.status) ? ws.status : 'generic') : '';
+  card.className = `worker-card${statusCls ? ' st-'+statusCls : ''}`;
 
-  ['trabajo','falta','retardo','vacaciones'].forEach(st => {
-    const btn = document.getElementById(`sb-${st}-${wId}`);
-    if (btn) btn.className = `sbtn${ws.status===st?' on-'+st:''}`;
-    const btnDet = document.getElementById(`sb-det-${st}-${wId}`);
-    if (btnDet) btnDet.className = `dsbtn${ws.status===st?' on-'+st:''}`;
+  ATTENDANCE_STATES.forEach(st => {
+    const btn = document.getElementById(`sb-${st.id}-${wId}`);
+    const isKnown = ['trabajo','falta','retardo','vacaciones','falta_justificada'].includes(st.id);
+    const clsSuffix = isKnown ? st.id : 'generic';
+    if (btn) btn.className = `sbtn${ws.status===st.id ? ' on-'+clsSuffix : ''}`;
+    const btnDet = document.getElementById(`sb-det-${st.id}-${wId}`);
+    if (btnDet) btnDet.className = `dsbtn${ws.status===st.id ? ' on-'+clsSuffix : ''}`;
   });
 
   const retrow = document.getElementById(`retrow-${wId}`);
@@ -1132,11 +1138,14 @@ function updateFooter() {
   let t=0, f=0, r=0, v=0, p=0, hrs=0;
   VISIBLE_WORKERS.forEach(w => {
     const ws = getWS(w.id);
-    if (ws.status === 'trabajo')         { t++; hrs += horasEq(ws); }
-    else if (ws.status === 'retardo')    { r++; hrs += horasEq(ws); }
-    else if (ws.status === 'falta')      f++;
-    else if (ws.status === 'vacaciones') v++;
-    else p++;
+    if (!ws.status) {
+      p++;
+    } else {
+      if (ws.status === 'trabajo')         { t++; hrs += horasEq(ws); }
+      else if (ws.status === 'retardo')    { r++; hrs += horasEq(ws); }
+      else if (ws.status === 'falta' || ws.status === 'falta_justificada') f++;
+      else if (ws.status === 'vacaciones') v++;
+    }
   });
   document.getElementById('f-t').textContent = t + r;
   document.getElementById('f-f').textContent = f;

@@ -106,6 +106,8 @@ body { padding-bottom: 40px; }
 .cal-cell.st-retardo    { background: var(--amber-bg);  border-color: var(--amber); }
 .cal-cell.st-vacaciones { background: var(--blue-bg);   border-color: var(--blue); }
 .cal-cell.st-viaje      { background: var(--purple-bg); border-color: var(--purple); }
+.cal-cell.st-falta_justificada { background: var(--purple-bg); border-color: var(--mauve); }
+.cal-cell.st-generic    { background: var(--surface0);  border-color: var(--subtext); }
 .cal-cell.st-trabajo.wknd, .cal-cell.st-retardo.wknd { background: var(--purple-bg); border-color: var(--purple); }
 
 .cell-num  { font-size: 11px; font-weight: 800; color: var(--subtext); line-height: 1; }
@@ -113,6 +115,8 @@ body { padding-bottom: 40px; }
 .st-falta .cell-hrs     { color: var(--red-text);   font-size: 11px; }
 .st-retardo .cell-hrs   { color: var(--amber-text); }
 .st-vacaciones .cell-hrs{ color: var(--blue-text);  font-size: 11px; }
+.st-falta_justificada .cell-hrs { color: var(--mauve); font-size: 11px; }
+.st-generic .cell-hrs   { color: var(--subtext); font-size: 11px; }
 .st-trabajo.wknd .cell-hrs, .st-retardo.wknd .cell-hrs { color: var(--purple); }
 .cell-projs { display: flex; flex-wrap: wrap; gap: 2px; margin-top: auto; }
 .cell-proj  { font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; background: rgba(0,0,0,0.12); color: inherit; white-space: nowrap; overflow: hidden; max-width: 40px; text-overflow: ellipsis; }
@@ -127,12 +131,14 @@ body { padding-bottom: 40px; }
 .day-panel-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--crust); }
 .day-panel-fecha { font-size: 15px; font-weight: 800; flex: 1; }
 
-.sbtn-row   { display: flex; gap: 6px; margin-bottom: 14px; }
+.sbtn-row   { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
 .sbtn       { cursor: pointer; border: 1.5px solid var(--crust); border-radius: 8px; background: var(--base); color: var(--subtext); font-size: 13px; font-weight: 700; font-family: inherit; padding: 8px 14px; transition: all .12s; }
 .sbtn.on-trabajo    { background: var(--green);  border-color: var(--green);  color: #fff; }
 .sbtn.on-falta      { background: var(--red);    border-color: var(--red);    color: #fff; }
 .sbtn.on-retardo    { background: var(--amber);  border-color: var(--amber);  color: #fff; }
 .sbtn.on-vacaciones { background: var(--blue);   border-color: var(--blue);   color: #fff; }
+.sbtn.on-falta_justificada { background: var(--mauve); border-color: var(--mauve); color: #fff; }
+.sbtn.on-generic    { background: var(--hint);   border-color: var(--hint);   color: #fff; }
 
 .hrs-grid   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .hr-wrap    { display: flex; flex-direction: column; gap: 4px; }
@@ -313,7 +319,7 @@ body { padding-bottom: 40px; }
       </div>
 
       <!-- Status buttons -->
-      <div class="sbtn-row">
+      <div class="sbtn-row" id="dp-status-buttons">
         <button class="sbtn" id="dp-sb-trabajo"    onclick="dpSetStatus('trabajo')">✓ Trabajó</button>
         <button class="sbtn" id="dp-sb-falta"      onclick="dpSetStatus('falta')">✗ Falta</button>
         <button class="sbtn" id="dp-sb-retardo"    onclick="dpSetStatus('retardo')">⏰ Retardo</button>
@@ -391,6 +397,7 @@ let selectedDay = null;
 let DP = { status:'', h1:'', h15:'', h2:'', retMin:'', proyectos:[], notas:'', existingId:null };
 let PROYECTOS = [];  // { id: codigo, n: "0042 — Nombre", pieces: [] }
 let ACTIVIDADES = [];
+let ATTENDANCE_STATES = [];
 
 function goBack() {
   if (window.parent?.goBackModule) window.parent.goBackModule();
@@ -588,7 +595,7 @@ function renderStats(year, month) {
     if (!rec) continue;
     if (rec.estado==='trabajo'||rec.estado==='retardo') { dias++; hrs+=rec.horasTotales; }
     if (rec.estado==='retardo')  ret++;
-    if (rec.estado==='falta')    faltas++;
+    if (rec.estado==='falta' || rec.estado==='falta_justificada')    faltas++;
   }
   document.getElementById('stats-lbl').textContent    = MESES[month]+' '+year;
   document.getElementById('stat-hrs').textContent     = hrs.toFixed(1);
@@ -628,9 +635,10 @@ function fmtFecha(d) { return d.toLocaleDateString('es-MX',{day:'numeric',month:
 // ── Calendar ──────────────────────────────────────────────────
 function cellClass(rec, isWknd) {
   if (!rec) return isWknd ? 'wknd' : '';
-  let cls = 'st-'+rec.estado;
-  if (isWknd && (rec.estado==='trabajo'||rec.estado==='retardo')) cls += ' wknd';
-  else if (isWknd) cls += ' wknd';
+  const known = ['trabajo','falta','retardo','vacaciones','viaje','falta_justificada'].includes(rec.estado);
+  const stateCls = known ? rec.estado : 'generic';
+  let cls = 'st-' + stateCls;
+  if (isWknd) cls += ' wknd';
   return cls;
 }
 
@@ -645,8 +653,16 @@ function buildCellContent(rec) {
     html += `<div class="cell-hrs">${hrsLabel}${retLabel}</div>`;
     const projs = (rec.proyectos||[]).filter(p=>p.p).slice(0,2);
     if (projs.length) html += `<div class="cell-projs">${projs.map(p=>`<span class="cell-proj">${p.p}</span>`).join('')}</div>`;
-  } else if (rec.estado==='falta')      { html += '<div class="cell-hrs">✗</div>'; }
-    else if (rec.estado==='vacaciones') { html += '<div class="cell-hrs">☀</div>'; }
+  } else {
+    const stateObj = ATTENDANCE_STATES.find(s => s.id === rec.estado);
+    if (stateObj) {
+      html += `<div class="cell-hrs">${stateObj.icon || '📋'}</div>`;
+    } else {
+      if (rec.estado==='falta')      { html += '<div class="cell-hrs">✗</div>'; }
+      else if (rec.estado==='vacaciones') { html += '<div class="cell-hrs">☀</div>'; }
+      else { html += `<div class="cell-hrs">📋</div>`; }
+    }
+  }
   const srcCls = rec.source==='produccion' ? 'src-prod' : rec.source==='viaje' ? '' : 'src-chk';
   if (srcCls) html += `<span class="src-dot ${srcCls}"></span>`;
   return html;
@@ -744,9 +760,11 @@ function selectDay(dateStr) {
 
 function renderDayPanel() {
   // Status buttons
-  ['trabajo','falta','retardo','vacaciones'].forEach(st => {
-    const btn = document.getElementById(`dp-sb-${st}`);
-    if (btn) btn.className = `sbtn${DP.status===st?' on-'+st:''}`;
+  ATTENDANCE_STATES.forEach(st => {
+    const btn = document.getElementById(`dp-sb-${st.id}`);
+    const isKnown = ['trabajo','falta','retardo','vacaciones','falta_justificada'].includes(st.id);
+    const clsSuffix = isKnown ? st.id : 'generic';
+    if (btn) btn.className = `sbtn${DP.status===st.id?' on-'+clsSuffix:''}`;
   });
   // Retardo row
   document.getElementById('dp-retrow').style.display = DP.status==='retardo' ? '' : 'none';
@@ -909,7 +927,7 @@ async function dpGuardar() {
     horasExtra:    parseFloat(DP.h15)     || 0,
     horasDoble:    parseFloat(DP.h2)      || 0,
     horasTotales:  eq,
-    proyectos:     DP.proyectos.filter(p => p.p || p.horas || p.descripcion),
+    proyectos:     (DP.status === 'trabajo' || DP.status === 'retardo') ? DP.proyectos.filter(p => p.p || p.horas || p.descripcion) : [],
     notas:         DP.notas,
     editado_manualmente: true,
     editado_por:   'perfil'
@@ -1100,12 +1118,30 @@ async function init() {
   ACTIVIDADES  = actDoc?.list || [];
 
   // Cargar asistencia y préstamos en paralelo (attendance no está en carga inicial)
-  const [, , prestamos] = await Promise.all([
+  const [, , prestamos, attStatesRaw] = await Promise.all([
     window.DB.query('attendance'),
     window.DB.query('attendance_logs'),
-    window.DB.query('worker_loans', { workerId })
+    window.DB.query('worker_loans', { workerId }),
+    window.DB.query('attendance_states')
   ]);
   PRESTAMOS_TRABAJADOR = prestamos || [];
+
+  const attStatesDoc = attStatesRaw?.find(r => r._id === 'main' || r.list);
+  ATTENDANCE_STATES = attStatesDoc?.list || [
+    { id: 'trabajo', name: 'Trabajó', icon: '✓' },
+    { id: 'falta', name: 'Falta', icon: '✗' },
+    { id: 'retardo', name: 'Retardo', icon: '⏰' },
+    { id: 'vacaciones', name: 'Vacaciones', icon: '☀' },
+    { id: 'falta_justificada', name: 'Falta Justificada', icon: '🏥' }
+  ];
+
+  // Render dynamic status buttons in day panel
+  const btnRow = document.getElementById('dp-status-buttons');
+  if (btnRow) {
+    btnRow.innerHTML = ATTENDANCE_STATES.map(st => `
+      <button class="sbtn" id="dp-sb-${st.id}" onclick="dpSetStatus('${st.id}')">${st.icon} ${st.name}</button>
+    `).join('');
+  }
 
   renderInfo();
   renderVacaciones();

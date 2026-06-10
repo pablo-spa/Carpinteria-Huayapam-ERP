@@ -116,9 +116,11 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     </div>
 
     <div class="input-grp">
-      <label class="lbl" style="text-align:center;">Escanea la etiqueta / Ingresa ID & Presiona Enter</label>
+      <label class="lbl" style="text-align:center;">Escanea la etiqueta / Ingresa ID</label>
       <input type="text" class="bcode-inp" id="barcode" placeholder="|||| ||| |||||" onkeydown="handleScan(event)" tabindex="9">
     </div>
+
+    <button id="btn-registrar" class="btn btn-green" style="width:100%;margin-top:16px;font-size:16px;padding:14px;" onclick="registrarTabla()" tabindex="10">✚ Registrar Tabla</button>
 
   </div>
 
@@ -211,58 +213,53 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     document.getElementById('pt-val').textContent = pt > 0 ? pt.toFixed(2) : '0.00';
   }
 
+  let _saving = false;
+
+  async function registrarTabla() {
+    if (_saving) return;
+    const code = document.getElementById('barcode').value.trim();
+    if (!code) { document.getElementById('barcode').focus(); return; }
+
+    _saving = true;
+    const btn = document.getElementById('btn-registrar');
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+    const pt = document.getElementById('pt-val').textContent;
+    const fmtType = document.getElementById('ctx-format').value;
+    const sp  = document.getElementById('ctx-species').value;
+    const lt  = document.getElementById('ctx-lote').value;
+    const ql  = document.getElementById('ctx-quality').value;
+    const dt  = document.getElementById('ctx-date').value;
+    const loc = document.getElementById('ctx-loc').value;
+    const thick  = parseFloat(document.getElementById('dim-t').value) || 0;
+    const width  = parseFloat(document.getElementById('dim-w').value) || 0;
+    const length = parseFloat(document.getElementById('dim-l').value) || 0;
+
+    await window.DB.addWood({ code, lote: lt, format: fmtType, species: sp, t: thick, w: width, l: length, pt: parseFloat(pt), quality: ql, entryDate: dt, location: loc });
+
+    const list = document.getElementById('hist-list');
+    const el = document.createElement('div');
+    el.className = 'h-item';
+    el.innerHTML = `
+      <div>
+        <div class="h-id">${code}</div>
+        <div class="h-det">${fmtType} | ${sp} (Lote: ${lt})</div>
+      </div>
+      <div class="h-pt">+${pt} pt</div>
+    `;
+    list.prepend(el);
+
+    document.getElementById('barcode').value = '';
+    const inp = document.getElementById('barcode');
+    inp.style.backgroundColor = 'var(--green-bg)';
+    setTimeout(() => { inp.style.backgroundColor = 'var(--base)'; inp.focus(); }, 150);
+
+    if (btn) { btn.disabled = false; btn.textContent = '✚ Registrar Tabla'; }
+    _saving = false;
+  }
+
   function handleScan(e) {
-    if (e.key === 'Enter') {
-      const code = document.getElementById('barcode').value.trim();
-      if (!code) return;
-
-      const pt = document.getElementById('pt-val').textContent;
-      const fmtType = document.getElementById('ctx-format').value;
-      const sp = document.getElementById('ctx-species').value;
-      const lt = document.getElementById('ctx-lote').value;
-      const ql = document.getElementById('ctx-quality').value;
-      const dt = document.getElementById('ctx-date').value;
-      const loc = document.getElementById('ctx-loc').value;
-      const thick = parseFloat(document.getElementById('dim-t').value) || 0;
-      const width = parseFloat(document.getElementById('dim-w').value) || 0;
-      const length = parseFloat(document.getElementById('dim-l').value) || 0;
-      
-      // Save to DB
-      window.DB.addWood({
-        code: code,
-        lote: lt,
-        format: fmtType,
-        species: sp,
-        t: thick,
-        w: width,
-        l: length,
-        pt: parseFloat(pt),
-        quality: ql,
-        entryDate: dt,
-        location: loc
-      });
-
-      // Add to UI history
-      const list = document.getElementById('hist-list');
-      const el = document.createElement('div');
-      el.className = 'h-item';
-      el.innerHTML = `
-        <div>
-          <div class="h-id">${code}</div>
-          <div class="h-det">${fmtType} | ${sp} (Lote: ${lt})</div>
-        </div>
-        <div class="h-pt">+${pt} pt</div>
-      `;
-      list.prepend(el);
-
-      // Reset scanner keeping dimensions
-      document.getElementById('barcode').value = '';
-      
-      // Optional: Flash background green quickly to confirm
-      const inp = document.getElementById('barcode');
-      inp.style.backgroundColor = 'var(--green-bg)';
-      setTimeout(() => inp.style.backgroundColor = 'var(--base)', 150);
-    }
+    if (e.key === 'Enter') registrarTabla();
   }
 
   calc();

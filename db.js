@@ -150,17 +150,17 @@ window.DB = {
       saveDB(d);
     }
   },
-  addWood: (item) => {
+  addWood: async (item) => {
     const d = getDB();
     if(!item.id) item.id = crypto.randomUUID();
 
     if (!d.wood) d.wood = [];
     d.wood.unshift(item);
-    if(window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase("wood", item.id, item);
     if (window.parent?.DB_STATE) {
       if (!window.parent.DB_STATE.wood) window.parent.DB_STATE.wood = [];
       window.parent.DB_STATE.wood.unshift(item);
     }
+    if(window.parent && window.parent.setDocumentInFirebase) await window.parent.setDocumentInFirebase("wood", item.id, item);
 
     // Map wood entry into inventory collection
     const nameStr = `${item.format || 'Tabla'} ${item.species} ${item.t}"x${item.w}"x${item.l}' (${item.quality})`;
@@ -187,15 +187,13 @@ window.DB = {
        quality: item.quality
     };
 
-    if (!d.inventory) d.inventory = [];
-    d.inventory.unshift(invItem);
-    if(window.parent && window.parent.setDocumentInFirebase) window.parent.setDocumentInFirebase("inventory", invItem.id, invItem);
     if (window.parent?.DB_STATE) {
       if (!window.parent.DB_STATE.inventory) window.parent.DB_STATE.inventory = [];
       window.parent.DB_STATE.inventory.unshift(invItem);
     }
-
-    saveDB(d);
+    if (!d.inventory) d.inventory = [];
+    d.inventory.unshift(invItem);
+    if(window.parent && window.parent.setDocumentInFirebase) await window.parent.setDocumentInFirebase("inventory", invItem.id, invItem);
   },
   addMovement: (mov) => {
     if(!mov.id) mov.id = crypto.randomUUID();

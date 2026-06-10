@@ -83,6 +83,8 @@
 .dsbtn.on-f { background: var(--red);   border-color: var(--red);   color: #fff; }
 .dsbtn.on-v { background: var(--blue);  border-color: var(--blue);  color: #fff; }
 .dsbtn.on-l { background: var(--surface1); border-color: var(--surface2); color: var(--text); }
+.dsbtn.on-falta_justificada { background: var(--mauve); border-color: var(--mauve); color: #fff; }
+.dsbtn.on-generic { background: var(--hint); border-color: var(--hint); color: #fff; }
 .hrs-input {
   background: var(--base); border: 1px solid var(--crust); border-radius: var(--radius);
   padding: 4px; color: var(--text); font-size: 16px; font-weight: 800;
@@ -357,13 +359,26 @@ const DIA_ORDER = [5, 6, 0, 1, 2, 3, 4];
 let WORKERS = [];
 let PRESTAMOS = {};
 let S = {};
+let ATTENDANCE_STATES = [];
 
 async function init() {
   try {
   // Query all workers, then exclude those explicitly marked as baja (activo: false)
-  const all  = await window.DB.query("contacts", { tipo: "trabajador" });
+  const [all, loans, attStatesRaw] = await Promise.all([
+    window.DB.query("contacts", { tipo: "trabajador" }),
+    window.DB.query("worker_loans", { estado: "activo" }),
+    window.DB.query("attendance_states")
+  ]);
   const dbs  = all.filter(w => w.activo !== false && (w.name || w.nombre));
-  const loans = await window.DB.query("worker_loans", { estado: "activo" });
+
+  const attStatesDoc = attStatesRaw?.find(r => r._id === 'main' || r.list);
+  ATTENDANCE_STATES = attStatesDoc?.list || [
+    { id: 'trabajo', name: 'Trabajó', icon: '✓' },
+    { id: 'falta', name: 'Falta', icon: '✗' },
+    { id: 'retardo', name: 'Retardo', icon: '⏰' },
+    { id: 'vacaciones', name: 'Vacaciones', icon: '☀' },
+    { id: 'falta_justificada', name: 'Falta Justificada', icon: '🏥' }
+  ];
 
   const sorted = window.parent?.getWorkersSorted ? window.parent.getWorkersSorted(dbs) : dbs;
   WORKERS = sorted.map(w => ({
@@ -472,13 +487,13 @@ function processRealCheckins(off) {
         );
         if (prod && prod.editado_manualmente) {
           const st = ((prod.estado || prod.status) || '').toLowerCase();
-          if (st === 'falta') {
-            S[w.id].dias[i] = { st: 'falta', hrs: 0 };
+          if (st === 'trabajo' || st === 'retardo') {
+            const hrs = parseFloat(prod.horasTotales ?? prod.horasNormal ?? prod.hours ?? 9) || 9;
+            S[w.id].dias[i] = { st, hrs };
           } else if (st === 'vacaciones' || st === 'vac') {
             S[w.id].dias[i] = { st: 'vac', hrs: 0 };
           } else {
-            const hrs = parseFloat(prod.horasTotales ?? prod.horasNormal ?? prod.hours ?? 9) || 9;
-            S[w.id].dias[i] = { st: st || 'trabajo', hrs };
+            S[w.id].dias[i] = { st: st || 'falta', hrs: 0 };
           }
           return;
         }
@@ -491,8 +506,8 @@ function processRealCheckins(off) {
         if (chk.length > 0) {
           const log = chk[0];
           const statusRaw = (log.status || log.estado || '').toLowerCase();
-          if (statusRaw === 'falta') {
-            S[w.id].dias[i] = { st: 'falta', hrs: 0, fromReloj: true };
+          if (statusRaw && statusRaw !== 'trabajo' && statusRaw !== 'retardo') {
+            S[w.id].dias[i] = { st: (statusRaw === 'vacaciones' || statusRaw === 'vac' ? 'vac' : statusRaw), hrs: 0, fromReloj: true };
             return;
           }
 
@@ -533,13 +548,13 @@ function processRealCheckins(off) {
         // 3. Registro de producción sin edición manual (fallback)
         if (prod) {
           const st = ((prod.estado || prod.status) || '').toLowerCase();
-          if (st === 'falta') {
-            S[w.id].dias[i] = { st: 'falta', hrs: 0 };
+          if (st === 'trabajo' || st === 'retardo') {
+            const hrs = parseFloat(prod.horasTotales ?? prod.horasNormal ?? prod.hours ?? 9) || 9;
+            S[w.id].dias[i] = { st, hrs };
           } else if (st === 'vacaciones' || st === 'vac') {
             S[w.id].dias[i] = { st: 'vac', hrs: 0 };
           } else {
-            const hrs = parseFloat(prod.horasTotales ?? prod.horasNormal ?? prod.hours ?? 9) || 9;
-            S[w.id].dias[i] = { st: st || 'trabajo', hrs };
+            S[w.id].dias[i] = { st: st || 'falta', hrs: 0 };
           }
         }
       });
@@ -598,8 +613,8 @@ function calcW(w){
 
   for(let i=0;i<5;i++){
     const d=s.dias[i];
-    if(d.st==='trabajo') monFriHrs+=Math.max(0,+d.hrs||0);
-    else if(d.st==='vac'){ monFriHrs+=9; nVac++; }
+    if(d.st==='trabajo' || d.st==='retardo') monFriHrs+=Math.max(0,+d.hrs||0);
+    else if(d.st==='vac' || d.st==='vacaciones'){ monFriHrs+=9; nVac++; }
     else nFalta++;
   }
 
@@ -610,8 +625,8 @@ function calcW(w){
 
   const hVacExtra = (s.diasVacExtra||0)*9;
   const satD=s.dias[5]; const sunD=s.dias[6];
-  const hSat=(satD.st==='trabajo')?Math.max(0,+satD.hrs||0):0;
-  const hSun=(sunD.st==='trabajo')?Math.max(0,+sunD.hrs||0):0;
+  const hSat=(satD.st==='trabajo' || satD.st==='retardo')?Math.max(0,+satD.hrs||0):0;
+  const hSun=(sunD.st==='trabajo' || sunD.st==='retardo')?Math.max(0,+sunD.hrs||0):0;
 
   const basePay  = (hNorm+hVacExtra)*t;
   const ext15Pay = hExt15*t*1.5;
@@ -717,12 +732,24 @@ function buildCard(w){
   return div;
 }
 
+function getBtnClass(stId, currentSt) {
+  let normalizedSt = currentSt;
+  if (currentSt === 'vac') normalizedSt = 'vacaciones';
+  if (normalizedSt !== stId) return '';
+  if (stId === 'trabajo' || stId === 'retardo') return 'on-t';
+  if (stId === 'falta') return 'on-f';
+  if (stId === 'vacaciones') return 'on-v';
+  if (stId === 'falta_justificada') return 'on-falta_justificada';
+  if (stId === 'libre') return 'on-l';
+  return 'on-generic';
+}
+
 function renderDias(id){
   const tbody=document.getElementById(`dias-${id}`);
   if(!tbody) return;
   const dates=dayDates(weekOffset);
   const s=S[id];
-
+ 
   let html='';
   for(let _i=0; _i<7; _i++){
     const i = DIA_ORDER[_i];
@@ -730,14 +757,10 @@ function renderDias(id){
     const dt=dates[i];
     const isWend=(i>=5);
     const esTrabajoORetardo = d.st==='trabajo' || d.st==='retardo';
-    const onT=esTrabajoORetardo?'on-t':'';
-    const onF=d.st==='falta'?'on-f':'';
-    const onV=d.st==='vac'?'on-v':'';
-    const onL=d.st==='libre'?'on-l':'';
     const showHrs=esTrabajoORetardo;
     const hrs=+d.hrs||0;
     const wrapCls=isWend?'class="dia-weekend"':'';
-
+ 
     if(isWend){
       const rateLabel=`<span style="font-size:11px;color:var(--muted)">(×${i===5?CFG.satRate:CFG.sunRate})</span>`;
       html+=`<tr ${wrapCls}>
@@ -747,8 +770,11 @@ function renderDias(id){
         </td>
         <td>
           <div class="dst-btns">
-            <button class="dsbtn ${onT}" onclick="setDia('${id}',${i},'trabajo')">Trabajó</button>
-            <button class="dsbtn ${onL}" onclick="setDia('${id}',${i},'libre')">Libre</button>
+            ${ATTENDANCE_STATES.map(st => {
+              const activeCls = getBtnClass(st.id, d.st);
+              return `<button class="dsbtn ${activeCls}" onclick="setDia('${id}',${i},'${st.id}')">${st.name}</button>`;
+            }).join('')}
+            <button class="dsbtn ${d.st==='libre'?'on-l':''}" onclick="setDia('${id}',${i},'libre')">Libre</button>
           </div>
         </td>
         <td style="text-align:center">
@@ -762,7 +788,7 @@ function renderDias(id){
       </tr>`;
     } else {
       const hExtra = (d.st==='trabajo' && hrs>9) ? `+${(hrs-9).toFixed(1)}h*` : '';
-
+ 
       // Celda de horario: si viene del reloj muestra entrada→salida; si no, input de horas
       let horarioCel = '';
       if (showHrs) {
@@ -786,7 +812,7 @@ function renderDias(id){
       } else {
         horarioCel = `<span style="color:var(--hint);font-size:18px;font-weight:800;">—</span>`;
       }
-
+ 
       html+=`<tr>
         <td>
           <div class="dia-name">${DIAS_N[i]}</div>
@@ -794,9 +820,10 @@ function renderDias(id){
         </td>
         <td>
           <div class="dst-btns">
-            <button class="dsbtn ${onT}" onclick="setDia('${id}',${i},'trabajo')">Trabajó</button>
-            <button class="dsbtn ${onF}" onclick="setDia('${id}',${i},'falta')">Falta</button>
-            <button class="dsbtn ${onV}" onclick="setDia('${id}',${i},'vac')">Vacaciones</button>
+            ${ATTENDANCE_STATES.map(st => {
+              const activeCls = getBtnClass(st.id, d.st);
+              return `<button class="dsbtn ${activeCls}" onclick="setDia('${id}',${i},'${st.id}')">${st.name}</button>`;
+            }).join('')}
           </div>
         </td>
         <td style="text-align:center">${horarioCel}</td>
@@ -804,7 +831,7 @@ function renderDias(id){
       </tr>`;
     }
   }
-
+ 
   const r=calcW(WORKERS.find(x=>x.id===id));
   html+=`<tr class="subtotal-row">
     <td colspan="2" style="font-size:12px;color:var(--muted);">
@@ -815,15 +842,15 @@ function renderDias(id){
       ${r.hExt_all>0?`<span style="color:var(--amber-text);font-weight:700;"> + ${r.hExt_all.toFixed(1)}h extra</span>`:''}
     </td>
   </tr>`;
-
+ 
   tbody.innerHTML=html;
 }
-
+ 
 function saveJornadaNomina(workerId, diaIdx) {
   const fechaStr = dayDates(weekOffset)[diaIdx].toISOString().slice(0,10);
   const d = S[workerId]?.dias[diaIdx];
   if (!d || d.st === 'libre') return Promise.resolve();
-  const estadoMap = { trabajo:'trabajo', falta:'falta', vac:'vacaciones', retardo:'retardo' };
+  const estadoMap = { trabajo:'trabajo', falta:'falta', vac:'vacaciones', vacaciones:'vacaciones', retardo:'retardo' };
   return window.DB.saveJornada(workerId, fechaStr, {
     estado:              estadoMap[d.st] || d.st,
     status:              estadoMap[d.st] || d.st,
@@ -833,12 +860,12 @@ function saveJornadaNomina(workerId, diaIdx) {
     editado_por:         'nomina',
   });
 }
-
+ 
 function setDia(id,i,st){
   const prev = S[id].dias[i];
   S[id].dias[i] = {
     st,
-    hrs:       st === 'trabajo' ? (prev.hrs || 9) : 0,
+    hrs:       (st === 'trabajo' || st === 'retardo') ? (prev.hrs || 9) : 0,
     // Conservar datos del reloj si solo cambia el estado (ej. marcar retardo como trabajo)
     horaEnt:   prev.horaEnt   || '',
     horaSal:   prev.horaSal   || '',

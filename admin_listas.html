@@ -163,6 +163,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       items: [
         { key: 'worker_roles', col: 'worker_roles', type: 'list',
           name: 'Puestos de Trabajadores', desc: 'Roles y categorías del personal' },
+        { key: 'attendance_states', col: 'attendance_states', type: 'att-state',
+          name: 'Estados de Asistencia', desc: 'Estados válidos para la asistencia (Trabajo, Falta, Retardo, Vacaciones, Falta Justificada...)' },
       ]
     },
     {
@@ -263,6 +265,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
               window.parent.setDocumentInFirebase(def.col, 'main', { list: ICON_DEFAULTS });
             if (window.parent?.DB_STATE)
               window.parent.DB_STATE[def.key] = [{ _id: 'main', list: ICON_DEFAULTS }];
+          }
+        } else if (def.type === 'att-state') {
+          STATE[def.key] = raw[0]?.list || raw.filter(x => x.id && x.name);
+          if (!STATE[def.key].length) {
+            const DEFAULT_STATES = [
+              { id: 'trabajo', name: 'Trabajó', icon: '✓' },
+              { id: 'falta', name: 'Falta', icon: '✗' },
+              { id: 'retardo', name: 'Retardo', icon: '⏰' },
+              { id: 'vacaciones', name: 'Vacaciones', icon: '☀' },
+              { id: 'falta_justificada', name: 'Falta Justificada', icon: '🏥' }
+            ];
+            STATE[def.key] = DEFAULT_STATES;
+            if (window.parent?.setDocumentInFirebase)
+              window.parent.setDocumentInFirebase(def.col, 'main', { list: DEFAULT_STATES });
+            if (window.parent?.DB_STATE)
+              window.parent.DB_STATE[def.key] = [{ _id: 'main', list: DEFAULT_STATES }];
           }
         } else if (def.type === 'list') {
           STATE[def.key] = raw[0]?.list || raw.filter(x => typeof x === 'string');
@@ -399,6 +417,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         </select>
         <input type="number" id="new-price" placeholder="$ Precio est." min="0" step="1" style="width:110px; text-align:right;">
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    } else if (currentDef.type === 'att-state') {
+      bar.innerHTML = `
+        <input type="text" id="new-icon" value="📋" style="width:52px;text-align:center;font-size:18px;padding:6px 8px;border:1px solid var(--crust);border-radius:6px;background:var(--base);color:var(--text);" title="Emoji">
+        <input type="text" id="new-val" placeholder="Nombre de estado de asistencia…" style="flex:1;" onkeydown="if(event.key==='Enter') addItem()">
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
     }
   }
 
@@ -509,6 +532,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
             onchange="updateItem(${i}, this.value, 'precioEst')" onblur="updateItem(${i}, this.value, 'precioEst')">
           <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
         </div>`).join('');
+    } else if (currentDef.type === 'att-state') {
+      container.innerHTML = `
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+          <span style="width:52px;text-align:center;">Emoji</span>
+          <span style="flex:1;">Nombre del Estado</span>
+          <span style="width:140px;text-align:center;">Código Interno</span>
+          <span style="width:32px;"></span>
+        </div>` +
+        items.map((item, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.icon||'📋')}" style="width:52px;text-align:center;font-size:18px;padding:6px 8px;"
+            onchange="updateItem(${i}, this.value, 'icon')" onblur="updateItem(${i}, this.value, 'icon')">
+          <input class="item-inp" value="${escHtml(item.name||'')}" style="flex:1;"
+            onchange="updateItem(${i}, this.value, 'name')" onblur="updateItem(${i}, this.value, 'name')">
+          <span class="item-code" style="width:140px;text-align:center;">${escHtml(item.id)}</span>
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
     }
   }
 
@@ -557,6 +597,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       await saveItem(entry);
       const priceEl = document.getElementById('new-price');
       if (priceEl) priceEl.value = '';
+    } else if (currentDef.type === 'att-state') {
+      const icon = document.getElementById('new-icon')?.value.trim() || '📋';
+      const id = val.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+      if (STATE[currentDef.key].some(x => x.id === id)) return alert('Ya existe un estado con ese código.');
+      STATE[currentDef.key].push({ id, name: val, icon });
+      await saveList();
+      document.getElementById('new-icon').value = '📋';
     }
 
     document.getElementById('new-val').value = '';
@@ -569,6 +616,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     if (!newVal) return;
 
     if (currentDef.type === 'iconlist') {
+      STATE[currentDef.key][idx][field] = newVal;
+      await saveList();
+    } else if (currentDef.type === 'att-state') {
       STATE[currentDef.key][idx][field] = newVal;
       await saveList();
     } else if (currentDef.type === 'list') {
