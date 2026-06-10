@@ -178,7 +178,7 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Unidad</label>
-        <select id="m-unit" class="modal-input"></select>
+        <select id="m-unit" class="modal-input" data-searchable></select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Aviso Stock Bajo (Mínimo)</label>
@@ -188,7 +188,7 @@
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Costo Principal ($)</label>
         <input type="number" id="m-cost" class="modal-input" step="0.01">
       </div>
-      <div style="display:flex; flex-direction:column; gap:4px; justify-content:center;">
+      <div style="display:flex; flex-direction:column; gap:4px; justify-content:center; grid-column: span 2;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Registrar en Dashboard</label>
         <label style="display:flex;align-items:center;gap:10px;height:40px;cursor:pointer;font-size:13px;color:var(--text);">
           <input type="checkbox" id="m-track-stock" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
@@ -256,16 +256,23 @@
     if (window.parent?.DB_STATE && window.parent?.cargar_coleccion) {
       delete window.parent.DB_STATE.inventory;
       delete window.parent.DB_STATE.concept_categories;
+      delete window.parent.DB_STATE.concept_units;
+      delete window.parent.DB_STATE.inventory_locations;
+      delete window.parent.DB_STATE.inventory_brands;
       await Promise.all([
         window.parent.cargar_coleccion('inventory'),
         window.parent.cargar_coleccion('concept_categories'),
+        window.parent.cargar_coleccion('concept_units'),
+        window.parent.cargar_coleccion('inventory_locations'),
+        window.parent.cargar_coleccion('inventory_brands'),
       ]);
     }
-    const [invData, , catsRaw, brandsData] = await Promise.all([
+    const [invData, locsRaw, catsRaw, brandsData, unitsRaw] = await Promise.all([
       window.DB.query("inventory"),
-      window.DB.query("inventory_locations"),   // no se usa en este módulo
+      window.DB.query("inventory_locations"),
       window.DB.query("concept_categories"),
       window.DB.query("inventory_brands"),
+      window.DB.query("concept_units"),
     ]);
     STATE_INVENTORY = invData;
     // concept_categories guardado como doc 'main' con campo list:[{name, catCode}]
@@ -427,7 +434,7 @@
     if (brandSel._ssInit) brandSel._ssRefresh(); else SearchableSelect.init(brandSel);
     const unitSel = document.getElementById('m-unit');
     unitSel.innerHTML = '<option value="">— Sin unidad —</option>' + units.map(u => `<option value="${u}">${u}</option>`).join('');
-    // Plain select — no SearchableSelect, avoids display sync issues
+    if (unitSel._ssInit) unitSel._ssRefresh(); else SearchableSelect.init(unitSel);
     const locSel = document.getElementById('m-loc');
     locSel.innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
     if (locSel._ssInit) locSel._ssRefresh(); else SearchableSelect.init(locSel);

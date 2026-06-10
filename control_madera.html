@@ -44,7 +44,7 @@
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div class="hdr-title">Almacén de Madera</div>
+    <div class="hdr-title">Inventario de Madera</div>
   </div>
   <div class="search-box">
     <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
@@ -146,7 +146,13 @@
     tbody.innerHTML = items.map(w => {
       const stock = parseFloat(w.stock) || 0;
       const min   = parseFloat(w.min)   || 0;
-      const pillCls = stock === 0 ? 'pill-red' : stock <= min ? 'pill-amber' : 'pill-green';
+      const isLow = stock <= min;
+
+      let stockColor = '';
+      if (stock === 0) stockColor = 'color: var(--red); font-weight: 700;';
+      else if (isLow) stockColor = 'color: var(--amber); font-weight: 700;';
+      else stockColor = 'font-weight: 600;';
+
       return `<tr>
         <td class="col-code" style="font-family:monospace;font-size:12px;font-weight:700;white-space:nowrap;">${w.code || '—'}</td>
         <td>
@@ -154,7 +160,7 @@
           ${w.brand ? `<div class="td-hint">${w.brand}</div>` : ''}
         </td>
         <td style="font-size:12px;color:var(--subtext);">${w.unit || '—'}</td>
-        <td><span class="pill ${pillCls}">${stock}</span>${min ? `<div class="td-hint">Mín: ${min}</div>` : ''}</td>
+        <td><span style="${stockColor}">${stock}</span></td>
         <td class="col-cost" style="font-weight:600;">$${(w.cost||0).toFixed(2)}</td>
         <td class="col-date" style="font-size:12px;color:var(--subtext);">${w.lastPurchaseDate || '—'}</td>
         <td class="col-loc" style="font-size:12px;color:var(--subtext);">${w.location || '—'}</td>

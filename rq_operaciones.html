@@ -41,10 +41,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div>
-      <h2>Confirmar Pedidos</h2>
-      <div class="hdr-sub" id="hdr-count">Cargando…</div>
-    </div>
+    <div class="hdr-title">Confirmar Pedidos</div>
   </div>
 </div>
 
@@ -91,8 +88,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const d = window.DB.get();
 
     const pending = ALL_ORDERS.filter(o => o.status === 'Pedido' || o.status === 'Solicitado');
-    document.getElementById('hdr-count').textContent =
-      pending.length ? `${pending.length} pedido(s) esperando confirmación` : 'Sin pedidos pendientes';
 
     const TERMINAL = ['Cancelado','Recibido','Entregado'];
     const historial = ALL_ORDERS

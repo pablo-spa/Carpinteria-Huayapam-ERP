@@ -167,7 +167,20 @@
   </div>
 </div>
 
+<div id="toast-wrap" style="position:fixed;top:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
+
 <script src="db.js"></script>
+<script>
+function toast(msg, type = 'ok') {
+  const wrap = document.getElementById('toast-wrap');
+  const bg = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
+  const el = document.createElement('div');
+  el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);pointer-events:auto;`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+</script>
 <script>
 const COL = 'wood_price_catalog';
 let DATA = [];
@@ -253,10 +266,16 @@ async function commitEdit(id) {
   d.unidad    = document.getElementById('e-unidad').value;
   d.precioEst = parseFloat(document.getElementById('e-precio').value) || 0;
   d.notas     = document.getElementById('e-notas').value.trim();
-  await window.DB.update(COL, id, { nombre: d.nombre, categoria: d.categoria, unidad: d.unidad, precioEst: d.precioEst, notas: d.notas });
+  const payload = { ...d }; delete payload.id;
+  await window.parent.setDocumentInFirebase(COL, id, payload);
+  if (window.parent?.DB_STATE?.[COL]) {
+    const idx = window.parent.DB_STATE[COL].findIndex(x => x.id === id);
+    if (idx !== -1) window.parent.DB_STATE[COL][idx] = { ...d };
+  }
   editingId = null;
   DATA.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
   render();
+  toast('Precio actualizado.');
 }
 
 async function deleteEntry(id) {
@@ -267,7 +286,9 @@ async function deleteEntry(id) {
       () => resolve(true), () => resolve(false))
   );
   if (!confirmed) return;
-  await window.DB.delete(COL, id);
+  await window.parent.deleteDocumentFromFirebase(COL, id);
+  if (window.parent?.DB_STATE?.[COL])
+    window.parent.DB_STATE[COL] = window.parent.DB_STATE[COL].filter(x => x.id !== id);
   DATA = DATA.filter(x => x.id !== id);
   render();
 }
@@ -294,7 +315,12 @@ async function saveModal() {
 
   const id = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').slice(0,40) + '-' + Date.now().toString(36);
   const entry = { id, nombre, categoria, unidad, precioEst, notas };
-  await window.DB.add(COL, entry, id);
+  const payload = { nombre, categoria, unidad, precioEst, notas };
+  await window.parent.setDocumentInFirebase(COL, id, payload);
+  if (window.parent?.DB_STATE) {
+    if (!window.parent.DB_STATE[COL]) window.parent.DB_STATE[COL] = [];
+    window.parent.DB_STATE[COL].push({ ...entry });
+  }
   DATA.push(entry);
   DATA.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
   closeModal();

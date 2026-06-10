@@ -638,9 +638,9 @@
         { id: 'nav-recepcion',          html: `<span class="icon">🚚</span> Recepción de Almacén`,      file: 'rq_recepcion.html',          label: 'Recepción de Material' },
         { id: 'nav-herramientas',       html: `<span class="icon">🧰</span> Herramientas`,              file: 'herramientas.html',          label: 'Herramientas' },
         { id: 'nav-herramientas-salida',html: `<span class="icon">🔧</span> Salida de Herramientas`,    file: 'herramientas_salida.html',   label: 'Salida de Herramientas' },
-        { id: 'nav-madera',             html: `<span class="icon">🪵</span> Almacén de Madera`,         file: 'control_madera.html',        label: 'Almacén de Madera' },
+        { id: 'nav-madera',             html: `<span class="icon">📋</span> Inventario de Madera`,      file: 'control_madera.html',        label: 'Inventario de Madera' },
         { id: 'nav-ingreso-madera',     html: `<span class="icon">🏷️</span> Escanear Madera`,           file: 'ingreso_madera.html',        label: 'Escanear Madera' },
-        { id: 'nav-precios-madera',     html: `<span class="icon">💰</span> Precios de Madera`,          file: 'rq_precios_madera.html',     label: 'Precios de Madera' },
+        { id: 'nav-precios-madera',     html: `<span class="icon">🪵</span> Precios de Madera`,          file: 'rq_precios_madera.html',     label: 'Precios de Madera' },
         { id: 'nav-compras-panel',      html: `<span class="icon">🛒</span> Panel de Compras`,          file: 'rq_compras.html',            label: 'Panel de Compras' },
         { id: 'nav-historial',          html: `<span class="icon">📚</span> Historial Compras`,         file: 'historial_compras.html',     label: 'Historial de Compras' },
       ]
@@ -1232,7 +1232,7 @@
       { icon:'📦', title:'Inventario',   sub:'Stock y movimientos',           file:'almacen_inventario.html', mod:'Inventario' },
       { icon:'📤', title:'Salidas',      sub:'Entregar material a obras',     file:'salidas_almacen.html',     mod:'Salidas de Almacén' },
       { icon:'📥', title:'Recepción',    sub:'Confirmar compras recibidas',   file:'rq_recepcion.html',        mod:'Recepción de Material' },
-      { icon:'🪵', title:'Madera',       sub:'Control de tablas',             file:'control_madera.html',      mod:'Almacén de Madera' },
+      { icon:'📋', title:'Madera',       sub:'Control de tablas',             file:'control_madera.html',      mod:'Inventario de Madera' },
     ],
     contador: [
       { icon:'💰', title:'Contabilidad', sub:'Ingresos, gastos y transferencias', file:'finanzas.html',        mod:'Contabilidad' },
@@ -1818,13 +1818,20 @@
             const plainData = JSON.parse(JSON.stringify(data));
 
             if (col === 'contacts') {
-              // Actualizar en DB_STATE y reescribir la lista del tipo correspondiente
+              const oldContact = window.DB_STATE?.contacts?.find(x => (x.id || x._id) === docId);
+              const oldTipo = oldContact ? oldContact.tipo : null;
+
               if (window.DB_STATE?.contacts) {
                 const idx = window.DB_STATE.contacts.findIndex(x => (x.id || x._id) === docId);
                 if (idx >= 0) window.DB_STATE.contacts[idx] = plainData;
                 else window.DB_STATE.contacts.push(plainData);
               }
-              await writeContactList(plainData.tipo || 'cliente');
+              const promises = [writeContactList(plainData.tipo || 'cliente')];
+              if (oldTipo && oldTipo !== plainData.tipo) {
+                promises.push(writeContactList(oldTipo));
+              }
+              await Promise.all(promises);
+
               // Mantener workers sincronizado con contactos de tipo trabajador
               if (plainData.tipo === 'trabajador') {
                 await setDoc(doc(db, 'workers', docId), plainData);
@@ -1838,12 +1845,19 @@
             }
 
             if (col === 'inventory') {
+              const oldItem = window.DB_STATE?.inventory?.find(x => (x.id || x._id) === docId);
+              const oldCategory = oldItem ? oldItem.category : null;
+
               if (window.DB_STATE?.inventory) {
                 const idx = window.DB_STATE.inventory.findIndex(x => (x.id || x._id) === docId);
                 if (idx >= 0) window.DB_STATE.inventory[idx] = plainData;
                 else window.DB_STATE.inventory.push(plainData);
               }
-              await writeInventoryList(plainData.category || 'General');
+              const promises = [writeInventoryList(plainData.category || 'General')];
+              if (oldCategory && oldCategory !== plainData.category) {
+                promises.push(writeInventoryList(oldCategory));
+              }
+              await Promise.all(promises);
               return;
             }
 
@@ -1927,6 +1941,10 @@
                 const plainData = JSON.parse(JSON.stringify(op.data));
                 
                 if (op.col === 'contacts') {
+                  const oldContact = window.DB_STATE?.contacts?.find(x => (x.id || x._id) === op.id);
+                  if (oldContact && oldContact.tipo && oldContact.tipo !== plainData.tipo) {
+                    updateContactLists.add(oldContact.tipo);
+                  }
                   if (window.DB_STATE?.contacts) {
                     const idx = window.DB_STATE.contacts.findIndex(x => (x.id || x._id) === op.id);
                     if (idx >= 0) window.DB_STATE.contacts[idx] = plainData;
@@ -1934,6 +1952,10 @@
                   }
                   updateContactLists.add(plainData.tipo || 'cliente');
                 } else if (op.col === 'inventory') {
+                  const oldItem = window.DB_STATE?.inventory?.find(x => (x.id || x._id) === op.id);
+                  if (oldItem && oldItem.category && oldItem.category !== plainData.category) {
+                    updateInventoryLists.add(oldItem.category);
+                  }
                   if (window.DB_STATE?.inventory) {
                     const idx = window.DB_STATE.inventory.findIndex(x => (x.id || x._id) === op.id);
                     if (idx >= 0) window.DB_STATE.inventory[idx] = plainData;
