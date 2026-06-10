@@ -262,7 +262,11 @@ async function commitEdit(id) {
 async function deleteEntry(id) {
   const d = DATA.find(x => x.id === id);
   if (!d) return;
-  if (!await window.parent.showConfirm('Eliminar precio', `¿Eliminar "${d.nombre}"?`, 'Eliminar', 'btn-red')) return;
+  const confirmed = await new Promise(resolve =>
+    window.parent.showConfirm('Eliminar precio', `¿Eliminar "${d.nombre}"?`, 'Eliminar', 'btn-red',
+      () => resolve(true), () => resolve(false))
+  );
+  if (!confirmed) return;
   await window.DB.delete(COL, id);
   DATA = DATA.filter(x => x.id !== id);
   render();

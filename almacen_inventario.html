@@ -509,13 +509,13 @@
     tbody.innerHTML = items.map(i => {
       const stockNum = parseFloat(i.stock) || 0;
       const minNum   = parseFloat(i.min)   || 0;
-      const pillClass = stockNum === 0 ? 'pill-red' : stockNum <= minNum ? 'pill-amber' : 'pill-green';
       const isLow = stockNum <= minNum;
-      const isUnknownCat = i.category && !catSet.has(i.category.toLowerCase().trim());
-      const catObj  = STATE_CATS.find(c => c.name === i.category);
-      const catIcon = catObj?.icon || (isUnknownCat ? '⚠️' : '');
-      const catBadge = `<span class="cat-badge ${isUnknownCat ? 'unknown' : ''}">${catIcon ? catIcon + ' ' : ''}${i.category || '—'}</span>`;
       const stockOut = stockNum === 0 ? 'out' : isLow ? 'low' : 'ok';
+
+      let stockColor = '';
+      if (stockNum === 0) stockColor = 'color: var(--red); font-weight: 700;';
+      else if (isLow) stockColor = 'color: var(--amber); font-weight: 700;';
+      else stockColor = 'font-weight: 600;';
 
       return `<tr onclick="openModal('${i.id}')"
           data-cat="${(i.category||'').replace(/"/g,'&quot;')}"
@@ -527,8 +527,8 @@
           ${i.brand ? `<div class="td-hint">${i.brand}</div>` : ''}
           ${i.details ? `<div class="td-hint">${i.details}</div>` : ''}
         </td>
-        <td class="col-cat">${catBadge}</td>
-        <td><span class="pill ${pillClass}">${stockNum}</span><div class="td-hint">Mín: ${minNum}</div></td>
+        <td class="col-cat">${i.category || '—'}</td>
+        <td><span style="${stockColor}">${stockNum}</span></td>
         <td class="col-date" style="font-size:12px;color:var(--subtext);">${i.lastPurchaseDate || '—'}</td>
         <td class="col-cost" style="font-weight:600;">$${(i.cost||0).toFixed(2)}</td>
         <td class="col-loc" style="font-size:12px;color:var(--subtext);">${i.location || '—'}</td>
