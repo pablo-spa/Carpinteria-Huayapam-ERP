@@ -249,7 +249,7 @@ async function init() {
     window.DB.query('inventory_brands'),
     window.DB.query('concept_units'),
   ]);
-  STATE_INVENTORY = invData;
+  STATE_INVENTORY = dedup(invData);
   STATE_CATS   = (catsRaw[0]?.list || []).map(x => typeof x === 'string' ? {name:x,catCode:''} : x);
   STATE_BRANDS = brandsData.filter(b => b.name && !b._init);
   initSelects();
@@ -341,7 +341,6 @@ function renderTable() {
       <td class="col-brand" style="font-size:13px;color:var(--subtext);">${esc(i.brand||'—')}</td>
       <td style="text-align:right;">
         <span class="${stockCls}">${stock}</span>
-        ${i.unit ? `<span class="stock-unit">${esc(i.unit)}</span>` : ''}
       </td>
       <td class="col-date" style="font-size:12px;color:var(--subtext);">${i.lastPurchaseDate||'—'}</td>
       <td class="col-cost" style="text-align:right;">$${(i.cost||0).toFixed(2)}</td>
@@ -362,6 +361,16 @@ function renderTable() {
 function applyFilters() { renderTable(); }
 
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function dedup(arr) {
+  const seen = new Set();
+  return arr.filter(x => {
+    const key = x.id || x._id;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 // ── Toggle flags ──────────────────────────────────────────────────────────
 async function toggleFlag(id, field, value) {
@@ -574,7 +583,7 @@ async function saveItem() {
 
   window.DB.addOrUpdateInventory(item);
   closeModal();
-  STATE_INVENTORY = await window.DB.query('inventory');
+  STATE_INVENTORY = dedup(await window.DB.query('inventory'));
   renderTable();
 }
 
@@ -584,12 +593,7 @@ function deleteItem() {
   if (!id || !item) return;
 
   async function doDelete() {
-    await window.parent.deleteDocumentInFirebase('inventory', id);
-    const db = window.DB.get();
-    if (db.inventory) db.inventory = db.inventory.filter(x => x.id !== id);
-    window.DB.save(db);
-    if (window.parent?.DB_STATE?.inventory)
-      window.parent.DB_STATE.inventory = window.parent.DB_STATE.inventory.filter(x => (x.id||x._id) !== id);
+    await window.parent.deleteDocumentFromFirebase('inventory', id);
     STATE_INVENTORY = STATE_INVENTORY.filter(x => x.id !== id);
     closeModal();
     renderTable();
