@@ -9,8 +9,6 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Header */
-.hdr h1 { padding-right: 16px; border-right: 1px solid var(--crust); white-space: nowrap; }
-.hdr-right { display: flex; align-items: center; gap: 10px; }
 .search-box { display: flex; align-items: center; gap: 6px; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; width: 260px; }
 .search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-family: inherit; font-size: 13px; height: auto; padding: 0; width: 100%; }
 .btn-red  { background: var(--red-bg); color: var(--red); border-color: var(--red); }
@@ -109,7 +107,7 @@
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <h1>Directorio CRM</h1>
+    <h2 class="hdr-title">Directorio CRM</h2>
   </div>
   <button class="btn btn-blue" onclick="openPanel(null)">+ Nuevo Contacto</button>
 </div>
@@ -243,7 +241,7 @@
       <div id="proj-link-area" style="display:none; margin-top:4px;">
         <div style="font-size:11px; font-weight:700; color:var(--subtext); text-transform:uppercase; margin-bottom:8px;">Vincular Proyecto</div>
         <div class="proj-link-row">
-          <select id="proj-link-sel">
+          <select id="proj-link-sel" data-searchable>
             <option value="">— Seleccionar proyecto —</option>
           </select>
           <button class="btn btn-blue" onclick="linkProject()" style="padding:7px 12px; font-size:12px;">Vincular</button>
@@ -261,6 +259,7 @@
   </div>
 </div>
 
+<script src="searchable-select.js"></script>
 <script src="db.js"></script>
 <script src="ui.js"></script>
 <script>
@@ -638,6 +637,7 @@
     const sel = document.getElementById('proj-link-sel');
     sel.innerHTML = '<option value="">— Seleccionar proyecto —</option>' +
       unlinked.map(p => `<option value="${p.id}">${(p.codigo||p.code)} – ${(p.nombre||p.name)}</option>`).join('');
+    if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
 
     document.getElementById('proj-link-area').style.display = isEditing ? '' : 'none';
   }

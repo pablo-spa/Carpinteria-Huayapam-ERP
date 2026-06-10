@@ -73,10 +73,14 @@
 <body>
 
   <div class="hdr">
-    <button class="back-btn" onclick="goBack()">← Volver</button>
-    <div class="hdr-title" id="h-title">Cargando…</div>
-    <button class="btn btn-red" id="btn-archive" onclick="archiveProject()" style="padding:6px 12px; font-size:12px; display:none;">Archivar</button>
-    <button class="btn btn-blue" onclick="saveData()">Guardar Cambios</button>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button class="back-btn" onclick="goBack()">← Volver</button>
+      <h2 class="hdr-title" id="h-title">Cargando…</h2>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <button class="btn btn-red" id="btn-archive" onclick="archiveProject()" style="padding:6px 12px; font-size:12px; display:none;">Archivar</button>
+      <button class="btn btn-blue" onclick="saveData()">Guardar Cambios</button>
+    </div>
   </div>
 
   <div class="main">

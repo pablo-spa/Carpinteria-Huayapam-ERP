@@ -4,177 +4,443 @@
 <link rel="stylesheet" href="global.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catálogo de Tablas — Carpintería Huayapam</title>
+<title>Inventario de Madera</title>
 <style>
 .hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .hdr-title { font-size: 18px; font-weight: 800; }
-
-.search-box { display: flex; align-items: center; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 8px 12px; width: 240px; gap: 8px; }
+.search-box { display: flex; align-items: center; background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 8px 12px; width: 220px; gap: 8px; }
 .search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
 
-.filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); }
-.filters::-webkit-scrollbar { display: none; }
-.filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; outline: none; font-family: inherit; }
-.filter-select:focus { border-color: var(--blue); }
+.quick-bar { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 12px 24px; display: flex; align-items: center; gap: 10px; }
+.quick-lbl { font-size: 12px; font-weight: 700; color: var(--subtext); white-space: nowrap; }
+.quick-inp { flex: 1; max-width: 380px; padding: 10px 14px; border: 2px solid var(--crust); border-radius: 8px; background: var(--base); color: var(--text); font-size: 14px; font-family: ui-monospace, monospace; letter-spacing: .05em; }
+.quick-inp:focus { outline: none; border-color: var(--blue); }
 
-.main { padding: 16px 20px; }
+.main { padding: 20px 24px; display: flex; flex-direction: column; gap: 24px; max-width: 1000px; margin: 0 auto; }
+
+.sec-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sec-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--subtext); }
+.sec-meta { font-size: 12px; color: var(--subtext); }
 
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
-.tbl-wrap { overflow-x: auto; width: 100%; }
-.tbl { width: 100%; border-collapse: collapse; min-width: 760px; }
-.tbl th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
-.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; }
-.tbl tbody tr:hover { background: var(--surface0); cursor: pointer; }
-.tbl tr:last-child td { border-bottom: none; }
 
-.badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; white-space: nowrap; }
-.badge-verde { background: var(--green-bg); color: var(--green); }
-.badge-aire  { background: var(--amber-bg); color: var(--amber); }
-.badge-seco  { background: var(--blue-bg);  color: var(--blue); }
+/* Accordion */
+.group-hdr { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; border-bottom: 1px solid var(--crust); user-select: none; transition: background .1s; }
+.group-hdr:last-child { border-bottom: none; }
+.group-hdr:hover { background: var(--surface0); }
+.g-arrow { font-size: 10px; color: var(--subtext); transition: transform .15s; flex-shrink: 0; width: 14px; }
+.g-arrow.open { transform: rotate(90deg); }
+.g-name { font-weight: 700; font-size: 14px; flex: 1; }
+.g-sub { font-weight: 500; color: var(--subtext); }
+.g-badge { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 6px; background: var(--green-bg); color: var(--green); }
+.g-pt { font-size: 13px; font-weight: 800; color: var(--blue); min-width: 72px; text-align: right; }
 
-.td-hint { color: var(--subtext); font-size: 11px; font-weight: 600; display: block; margin-top: 2px; }
-.col-code { font-family: monospace; font-size: 12px; font-weight: 700; white-space: nowrap; }
-@media (max-width: 900px) { .col-loc, .col-date { display: none; } }
-@media (max-width: 600px) { .col-cost { display: none; } }
+.pieces-tbl { width: 100%; border-collapse: collapse; }
+.pieces-tbl th { text-align: left; padding: 8px 16px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); background: var(--surface0); border-bottom: 1px solid var(--crust); white-space: nowrap; }
+.pieces-tbl td { padding: 9px 16px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; }
+.pieces-tbl tr:last-child td { border-bottom: none; }
+.pieces-tbl tbody tr:hover { background: var(--surface0); }
 
+/* Panels */
+.panel-row { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-bottom: 1px solid var(--crust); }
+.panel-row:last-child { border-bottom: none; }
+.panel-info { flex: 1; }
+.panel-name { font-weight: 700; font-size: 14px; }
+.panel-sub { font-size: 11px; color: var(--subtext); margin-top: 2px; }
+.panel-stock { font-size: 20px; font-weight: 800; min-width: 72px; text-align: center; color: var(--text); }
+.panel-stock.low { color: var(--amber); }
+.panel-stock.empty { color: var(--red); }
+.panel-unit { font-size: 10px; font-weight: 700; color: var(--subtext); text-transform: uppercase; text-align: center; }
+.stock-btns { display: flex; gap: 6px; }
+.stock-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--crust); background: var(--surface0); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700; transition: background .1s; line-height: 1; }
+.stock-btn:hover { background: var(--surface1); }
+.stock-btn.plus { color: var(--green); border-color: rgba(64,160,43,.3); }
+.stock-btn.minus { color: var(--red); border-color: rgba(210,15,57,.25); }
+
+/* Modal */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+.modal { background: var(--mantle); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.modal-title { font-size: 16px; font-weight: 800; }
+.info-box { background: var(--surface0); border-radius: 8px; padding: 12px 14px; font-size: 13px; color: var(--subtext); line-height: 1.6; }
+.info-box strong { color: var(--text); display: block; font-size: 15px; margin-bottom: 4px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.lbl { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
+.inp { padding: 10px 12px; border: 1px solid var(--crust); border-radius: 8px; background: var(--base); color: var(--text); font-size: 14px; font-family: inherit; }
+.inp:focus { outline: none; border-color: var(--blue); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.empty-state { text-align: center; padding: 40px; color: var(--subtext); font-size: 13px; }
+#toast-wrap { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
 </style>
 </head>
 <body>
 
+<div id="toast-wrap"></div>
+
 <div class="hdr">
-  <div style="display:flex; align-items:center; gap:12px;">
+  <div style="display:flex;align-items:center;gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <div class="hdr-title">Inventario de Madera</div>
   </div>
-  <div class="search-box">
-    <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
-    <input type="text" placeholder="Buscar ID, especie…" autofocus>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <div class="search-box">
+      <span style="color:var(--subtext);font-size:14px;">🔍</span>
+      <input type="text" id="search-inp" placeholder="Especie, código, lote…" oninput="filterLumber()">
+    </div>
+    <button class="btn btn-blue" onclick="openAddPanel()">+ Panel</button>
   </div>
 </div>
 
-<div class="filters">
-  <select id="filt-format" class="filter-select" onchange="renderWood()">
-    <option value="all">Todos los formatos</option>
-  </select>
-  <select id="filt-species" class="filter-select" onchange="renderWood()">
-    <option value="all">Todas las especies</option>
-  </select>
-  <select id="filt-stock" class="filter-select" onchange="renderWood()">
-    <option value="all">Todo el stock</option>
-    <option value="in">Con stock</option>
-    <option value="out">Sin stock</option>
-  </select>
+<div class="quick-bar">
+  <span class="quick-lbl">Dar salida rápida:</span>
+  <input type="text" class="quick-inp" id="quick-code" placeholder="Escanea o escribe código y presiona Enter" onkeydown="if(event.key==='Enter') quickSalida()">
+  <button class="btn btn-dark" onclick="quickSalida()">Salida</button>
 </div>
 
 <div class="main">
-  <div class="card">
-    <div class="tbl-wrap">
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th class="col-code">Código</th>
-            <th>Especie / Material</th>
-            <th>Formato</th>
-            <th>Dimensiones</th>
-            <th>Stock</th>
-            <th class="col-cost">Costo</th>
-            <th class="col-date">Entrada</th>
-            <th class="col-loc">Ubicación</th>
-          </tr>
-        </thead>
-        <tbody id="wood-body"></tbody>
-      </table>
+
+  <div>
+    <div class="sec-hdr">
+      <span class="sec-title">Madera Aserrada</span>
+      <span class="sec-meta" id="lumber-meta"></span>
     </div>
+    <div class="card" id="lumber-card"><div class="empty-state">Cargando…</div></div>
   </div>
 
+  <div>
+    <div class="sec-hdr">
+      <span class="sec-title">Paneles y Tableros</span>
+    </div>
+    <div class="card" id="panel-card"><div class="empty-state">Cargando…</div></div>
+  </div>
+
+</div>
+
+<!-- Modal: Dar salida a pieza -->
+<div class="overlay" id="modal-salida" style="display:none;">
+  <div class="modal">
+    <div class="modal-title">Dar Salida a Pieza</div>
+    <div class="info-box" id="salida-info"></div>
+    <div class="field">
+      <label class="lbl">Proyecto (opcional)</label>
+      <select class="inp" id="salida-proyecto"><option value="">Sin asignar</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-dark" onclick="closeModal('modal-salida')">Cancelar</button>
+      <button class="btn btn-red" onclick="confirmSalida()">Confirmar Salida</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Entrada / Salida de panel -->
+<div class="overlay" id="modal-panel" style="display:none;">
+  <div class="modal">
+    <div class="modal-title" id="panel-modal-title">Entrada de Panel</div>
+    <div class="info-box" id="panel-modal-info"></div>
+    <div class="field">
+      <label class="lbl">Cantidad de hojas</label>
+      <input type="number" class="inp" id="panel-qty" min="0.5" step="0.5" value="1">
+    </div>
+    <div class="field" id="panel-proyecto-field" style="display:none;">
+      <label class="lbl">Proyecto (opcional)</label>
+      <select class="inp" id="panel-proyecto"><option value="">Sin asignar</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-dark" onclick="closeModal('modal-panel')">Cancelar</button>
+      <button class="btn btn-blue" id="panel-confirm-btn" onclick="confirmPanelChange()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Agregar panel -->
+<div class="overlay" id="modal-add-panel" style="display:none;">
+  <div class="modal">
+    <div class="modal-title">Agregar Tipo de Panel</div>
+    <div class="field">
+      <label class="lbl">Material</label>
+      <input type="text" class="inp" id="ap-material" placeholder="Ej: MDF, Triplay, Melanina, OSB…">
+    </div>
+    <div class="field">
+      <label class="lbl">Grosor / Descripción</label>
+      <input type="text" class="inp" id="ap-grosor" placeholder='Ej: 15mm, 12mm, 3/4"'>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label class="lbl">Stock inicial (hojas)</label>
+        <input type="number" class="inp" id="ap-stock" min="0" step="1" value="0">
+      </div>
+      <div class="field">
+        <label class="lbl">Costo por hoja ($)</label>
+        <input type="number" class="inp" id="ap-costo" min="0" step="0.01" value="0">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-dark" onclick="closeModal('modal-add-panel')">Cancelar</button>
+      <button class="btn btn-blue" onclick="saveNewPanel()">Agregar</button>
+    </div>
+  </div>
 </div>
 
 <script src="db.js"></script>
 <script>
-  let STATE_WOOD = [];
+  let STATE_LUMBER   = [];
+  let STATE_PANELS   = [];
+  let STATE_PROJECTS = [];
+  let _salidaId  = null;
+  let _panelId   = null;
+  let _panelDir  = 1;
 
   async function init() {
     const p = window.parent;
     if (p?.DB_STATE) delete p.DB_STATE.inventory;
     if (p?.cargar_coleccion) await p.cargar_coleccion('inventory');
 
-    STATE_WOOD = await window.DB.query('inventory', { category: 'madera' });
-    STATE_WOOD.sort((a, b) => (a.species || a.name || '').localeCompare(b.species || b.name || '', 'es'));
+    const all = await window.DB.query('inventory');
+    STATE_LUMBER   = all.filter(x => x.category === 'madera' && (parseFloat(x.stock) || 0) > 0);
+    STATE_PANELS   = all.filter(x => x.category === 'panel');
+    STATE_PROJECTS = await window.DB.query('projects');
 
-    populateFilters();
-    document.querySelector('.search-box input').addEventListener('input', renderWood);
-    renderWood();
+    STATE_LUMBER.sort((a, b) =>
+      (a.species || '').localeCompare(b.species || '', 'es') ||
+      (a.format  || '').localeCompare(b.format  || '', 'es') ||
+      (a.quality || '').localeCompare(b.quality || '', 'es')
+    );
+
+    fillProjectSelects();
+    renderLumber();
+    renderPanels();
   }
 
   document.addEventListener('DOMContentLoaded', init);
 
-  function populateFilters() {
-    const formats  = [...new Set(STATE_WOOD.map(w => w.format).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es'));
-    const species  = [...new Set(STATE_WOOD.map(w => w.species).filter(Boolean))].sort((a,b) => a.localeCompare(b,'es'));
-
-    const fmtSel = document.getElementById('filt-format');
-    const spSel  = document.getElementById('filt-species');
-
-    fmtSel.innerHTML = `<option value="all">Todos los formatos</option>` +
-      formats.map(f => `<option value="${f}">${f}</option>`).join('');
-    spSel.innerHTML  = `<option value="all">Todas las especies</option>` +
-      species.map(s => `<option value="${s}">${s}</option>`).join('');
+  function fillProjectSelects() {
+    const opts = `<option value="">Sin asignar</option>` +
+      STATE_PROJECTS
+        .filter(p => p.status !== 'completado' && p.status !== 'cancelado')
+        .sort((a, b) => (a.name || a.nombre || '').localeCompare(b.name || b.nombre || '', 'es'))
+        .map(p => `<option value="${p.id}">${p.name || p.nombre || p.id}</option>`)
+        .join('');
+    ['salida-proyecto', 'panel-proyecto'].forEach(id => document.getElementById(id).innerHTML = opts);
   }
 
-  function renderWood() {
-    const term    = document.querySelector('.search-box input').value.toLowerCase().trim();
-    const fFormat = document.getElementById('filt-format').value;
-    const fSpec   = document.getElementById('filt-species').value;
-    const fStock  = document.getElementById('filt-stock').value;
+  // ── LUMBER ──────────────────────────────────────────────────────────────────
 
-    let items = STATE_WOOD.filter(w => {
-      if (fFormat !== 'all' && (w.format || '') !== fFormat) return false;
-      if (fSpec   !== 'all' && (w.species || '') !== fSpec)  return false;
-      const s = parseFloat(w.stock) || 0;
-      if (fStock === 'in'  && s <= 0) return false;
-      if (fStock === 'out' && s >  0) return false;
-      if (term && !(w.species || w.name || '').toLowerCase().includes(term) &&
-                  !(w.code || '').toLowerCase().includes(term) &&
-                  !(w.lote || '').toLowerCase().includes(term)) return false;
-      return true;
+  function buildGroups(items) {
+    const map = new Map();
+    items.forEach(p => {
+      const key = `${p.species || '—'}__${p.format || '—'}__${p.quality || '—'}`;
+      if (!map.has(key)) map.set(key, {
+        species: p.species || '—', format: p.format || '—', quality: p.quality || '—', pieces: []
+      });
+      map.get(key).pieces.push(p);
     });
+    return [...map.values()];
+  }
 
-    const tbody = document.getElementById('wood-body');
-    if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--subtext);">Sin resultados</td></tr>`;
+  function renderLumber(term = '') {
+    const filtered = term
+      ? STATE_LUMBER.filter(p =>
+          (p.species || '').toLowerCase().includes(term) ||
+          (p.code    || '').toLowerCase().includes(term) ||
+          (p.format  || '').toLowerCase().includes(term) ||
+          (p.lote    || '').toLowerCase().includes(term))
+      : STATE_LUMBER;
+
+    const totalPT = STATE_LUMBER.reduce((s, p) => s + (parseFloat(p.pt) || 0), 0);
+    document.getElementById('lumber-meta').textContent =
+      `${STATE_LUMBER.length} piezas disponibles · ${totalPT.toFixed(1)} PT total`;
+
+    const card = document.getElementById('lumber-card');
+    if (!filtered.length) {
+      card.innerHTML = `<div class="empty-state">${term ? 'Sin resultados para "' + term + '"' : 'Sin piezas disponibles — usa Escanear Madera para ingresar'}</div>`;
       return;
     }
 
-    tbody.innerHTML = items.map(w => {
-      const stock = parseFloat(w.stock) || 0;
-      const min   = parseFloat(w.min)   || 0;
-      const isLow = stock <= min && min > 0;
+    const groups = buildGroups(filtered);
+    card.innerHTML = groups.map((g, gi) => {
+      const totalPT = g.pieces.reduce((s, p) => s + (parseFloat(p.pt) || 0), 0);
+      const rows = g.pieces.map(p => `
+        <tr>
+          <td style="font-family:monospace;font-weight:700;font-size:12px;">${p.code || '—'}</td>
+          <td style="font-family:monospace;font-size:12px;">${p.t ? `${p.t}"×${p.w}"×${p.l}'` : '—'}</td>
+          <td style="font-weight:700;color:var(--blue);">${(parseFloat(p.pt) || 0).toFixed(2)}</td>
+          <td style="font-size:12px;color:var(--subtext);">${p.lote || '—'}</td>
+          <td style="font-size:12px;color:var(--subtext);">${p.entryDate || '—'}</td>
+          <td><button class="btn btn-sm btn-red" onclick="openSalida('${p.id}')">Salida</button></td>
+        </tr>`).join('');
 
-      let stockColor = '';
-      if (stock === 0) stockColor = 'color: var(--red); font-weight: 700;';
-      else if (isLow) stockColor = 'color: var(--amber); font-weight: 700;';
-      else stockColor = 'font-weight: 600;';
-
-      const dims = (w.t && w.w && w.l)
-        ? `${w.t}"×${w.w}"×${w.l}'`
-        : (w.name || '—');
-
-      const sub = [w.lote ? `Lote: ${w.lote}` : '', w.quality || ''].filter(Boolean).join(' · ');
-
-      return `<tr>
-        <td class="col-code">${w.code || '—'}</td>
-        <td>
-          <div style="font-weight:700;">${w.species || w.name || '—'}</div>
-          ${sub ? `<div class="td-hint">${sub}</div>` : ''}
-        </td>
-        <td style="font-size:12px;">${w.format || '—'}</td>
-        <td style="font-size:12px;font-family:monospace;">${dims}</td>
-        <td><span style="${stockColor}">${stock}</span></td>
-        <td class="col-cost" style="font-weight:600;">$${(w.cost||0).toFixed(2)}</td>
-        <td class="col-date" style="font-size:12px;color:var(--subtext);">${w.entryDate || w.lastPurchaseDate || '—'}</td>
-        <td class="col-loc" style="font-size:12px;color:var(--subtext);">${w.location || '—'}</td>
-      </tr>`;
+      return `
+        <div class="group-hdr" onclick="toggleGroup(${gi})">
+          <span class="g-arrow" id="garr-${gi}">▶</span>
+          <span class="g-name">${g.species} <span class="g-sub">· ${g.format} · ${g.quality}</span></span>
+          <span class="g-badge">${g.pieces.length} ${g.pieces.length === 1 ? 'pieza' : 'piezas'}</span>
+          <span class="g-pt">${totalPT.toFixed(1)} PT</span>
+        </div>
+        <div id="gbody-${gi}" style="display:none;">
+          <table class="pieces-tbl">
+            <thead><tr><th>Código</th><th>Dimensiones</th><th>PT</th><th>Lote</th><th>Fecha entrada</th><th></th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
     }).join('');
+  }
+
+  function toggleGroup(gi) {
+    const body  = document.getElementById(`gbody-${gi}`);
+    const arrow = document.getElementById(`garr-${gi}`);
+    const open  = body.style.display !== 'none';
+    body.style.display  = open ? 'none' : 'block';
+    arrow.classList.toggle('open', !open);
+  }
+
+  function filterLumber() {
+    renderLumber(document.getElementById('search-inp').value.toLowerCase().trim());
+  }
+
+  // ── PANELS ──────────────────────────────────────────────────────────────────
+
+  function renderPanels() {
+    const card = document.getElementById('panel-card');
+    if (!STATE_PANELS.length) {
+      card.innerHTML = `<div class="empty-state">Sin paneles — <button class="btn btn-sm btn-blue" style="margin-left:6px;" onclick="openAddPanel()">+ Agregar</button></div>`;
+      return;
+    }
+    card.innerHTML = STATE_PANELS.map(p => {
+      const stock = parseFloat(p.stock) || 0;
+      const cls   = stock === 0 ? 'empty' : (stock <= (parseFloat(p.min) || 2) ? 'low' : '');
+      const grosor = p.grosor || p.thickness || '';
+      return `
+        <div class="panel-row">
+          <div class="panel-info">
+            <div class="panel-name">${p.name || p.material || '—'} ${grosor ? `<span style="font-weight:500;color:var(--subtext);font-size:12px;">${grosor}</span>` : ''}</div>
+            <div class="panel-sub">$${(p.cost || 0).toFixed(2)} por hoja${p.location ? ' · ' + p.location : ''}</div>
+          </div>
+          <div style="text-align:center;">
+            <div class="panel-stock ${cls}">${stock % 1 === 0 ? stock : stock.toFixed(1)}</div>
+            <div class="panel-unit">hojas</div>
+          </div>
+          <div class="stock-btns">
+            <button class="stock-btn minus" onclick="openPanelChange('${p.id}', -1)" title="Registrar salida">−</button>
+            <button class="stock-btn plus"  onclick="openPanelChange('${p.id}', +1)" title="Registrar entrada">+</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── MODAL SALIDA PIEZA ───────────────────────────────────────────────────────
+
+  function openSalida(pieceId) {
+    const p = STATE_LUMBER.find(x => x.id === pieceId);
+    if (!p) return;
+    _salidaId = pieceId;
+    document.getElementById('salida-info').innerHTML = `
+      <strong>${p.code || pieceId}</strong>
+      ${[p.species, p.format, p.quality].filter(Boolean).join(' · ')}<br>
+      ${p.t ? `${p.t}"×${p.w}"×${p.l}'` : ''}${p.pt ? ` · <strong style="color:var(--blue)">${(parseFloat(p.pt)).toFixed(2)} PT</strong>` : ''}
+      ${p.lote ? `<br>Lote: ${p.lote}` : ''}`;
+    document.getElementById('salida-proyecto').value = '';
+    document.getElementById('modal-salida').style.display = 'flex';
+  }
+
+  async function confirmSalida() {
+    const p = STATE_LUMBER.find(x => x.id === _salidaId);
+    if (!p) return;
+    const proyectoId = document.getElementById('salida-proyecto').value || null;
+    const updated = { ...p, stock: 0, status: 'usada', salidaDate: new Date().toISOString().split('T')[0], proyectoId };
+    await window.parent.setDocumentInFirebase('inventory', p.id, updated);
+    STATE_LUMBER = STATE_LUMBER.filter(x => x.id !== _salidaId);
+    closeModal('modal-salida');
+    renderLumber(document.getElementById('search-inp').value.toLowerCase().trim());
+    toast('Pieza registrada como usada.');
+  }
+
+  // ── MODAL PANEL ─────────────────────────────────────────────────────────────
+
+  function openPanelChange(panelId, dir) {
+    const p = STATE_PANELS.find(x => x.id === panelId);
+    if (!p) return;
+    _panelId  = panelId;
+    _panelDir = dir;
+    const isEntry = dir > 0;
+    const grosor  = p.grosor || p.thickness || '';
+    document.getElementById('panel-modal-title').textContent = isEntry ? 'Entrada de Panel' : 'Salida de Panel';
+    document.getElementById('panel-modal-info').innerHTML = `
+      <strong>${p.name || p.material || '—'} ${grosor}</strong>
+      Stock actual: <strong>${parseFloat(p.stock) || 0} hojas</strong>`;
+    document.getElementById('panel-qty').value = 1;
+    document.getElementById('panel-proyecto-field').style.display = isEntry ? 'none' : '';
+    document.getElementById('panel-proyecto').value = '';
+    const btn = document.getElementById('panel-confirm-btn');
+    btn.className = `btn ${isEntry ? 'btn-green' : 'btn-red'}`;
+    btn.textContent = isEntry ? 'Registrar Entrada' : 'Registrar Salida';
+    document.getElementById('modal-panel').style.display = 'flex';
+    setTimeout(() => document.getElementById('panel-qty').select(), 50);
+  }
+
+  async function confirmPanelChange() {
+    const p   = STATE_PANELS.find(x => x.id === _panelId);
+    if (!p) return;
+    const qty = parseFloat(document.getElementById('panel-qty').value) || 0;
+    if (qty <= 0) return;
+    const newStock = Math.max(0, (parseFloat(p.stock) || 0) + _panelDir * qty);
+    const proyectoId = _panelDir < 0 ? (document.getElementById('panel-proyecto').value || null) : null;
+    const updated = { ...p, stock: newStock };
+    if (proyectoId) updated.lastProyectoId = proyectoId;
+    await window.parent.setDocumentInFirebase('inventory', p.id, updated);
+    p.stock = newStock;
+    closeModal('modal-panel');
+    renderPanels();
+    toast(_panelDir > 0 ? `+${qty} hojas registradas.` : `-${qty} hojas registradas como salida.`);
+  }
+
+  // ── MODAL AGREGAR PANEL ──────────────────────────────────────────────────────
+
+  function openAddPanel() {
+    ['ap-material','ap-grosor'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ap-stock').value = '0';
+    document.getElementById('ap-costo').value  = '0';
+    document.getElementById('modal-add-panel').style.display = 'flex';
+    setTimeout(() => document.getElementById('ap-material').focus(), 50);
+  }
+
+  async function saveNewPanel() {
+    const material = document.getElementById('ap-material').value.trim();
+    const grosor   = document.getElementById('ap-grosor').value.trim();
+    if (!material) { document.getElementById('ap-material').focus(); return; }
+    const slug = material.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').slice(0,28);
+    const id   = `panel-${slug}${grosor ? '-' + grosor.toLowerCase().replace(/[^a-z0-9]/g,'') : ''}-${Date.now().toString(36)}`;
+    const panel = { id, name: material, grosor, category: 'panel', unit: 'hojas', stock: parseFloat(document.getElementById('ap-stock').value) || 0, cost: parseFloat(document.getElementById('ap-costo').value) || 0, min: 2 };
+    await window.parent.setDocumentInFirebase('inventory', id, panel);
+    STATE_PANELS.push(panel);
+    closeModal('modal-add-panel');
+    renderPanels();
+    toast(`Panel "${material}" agregado.`);
+  }
+
+  // ── SALIDA RÁPIDA ────────────────────────────────────────────────────────────
+
+  function quickSalida() {
+    const code = document.getElementById('quick-code').value.trim();
+    if (!code) return;
+    const p = STATE_LUMBER.find(x => x.code === code);
+    if (!p) { toast(`Código "${code}" no encontrado en el inventario.`, 'error'); return; }
+    document.getElementById('quick-code').value = '';
+    openSalida(p.id);
+  }
+
+  // ── UTILS ────────────────────────────────────────────────────────────────────
+
+  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+  function toast(msg, type = 'ok') {
+    const wrap = document.getElementById('toast-wrap');
+    const bg   = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
+    const el   = document.createElement('div');
+    el.style.cssText = `background:${bg};color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2);pointer-events:auto;`;
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
   }
 </script>
 </body>

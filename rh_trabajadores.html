@@ -207,7 +207,7 @@
           
           <div class="f-field">
             <label>Categoría</label>
-            <select class="f-input" id="f-role"></select>
+            <select class="f-input" id="f-role" data-searchable></select>
           </div>
           <div class="f-field">
             <label>Empleado en Carpintería</label>
@@ -312,6 +312,7 @@
     </div>
   </div>
 
+  <script src="searchable-select.js"></script>
   <script src="db.js"></script>
   <script src="ui.js"></script>
   <script>
@@ -574,7 +575,9 @@
         rolesList = rolesRaw[0]?.list || rolesRaw.filter(r => typeof r === 'string');
         if (!rolesList.length) rolesList = DEFAULT_ROLES;
       }
-      document.getElementById('f-role').innerHTML = '<option value="">-- Seleccionar Puesto --</option>' + rolesList.map(r => `<option value="${r}">${r}</option>`).join('');
+      const fRoleSel = document.getElementById('f-role');
+      fRoleSel.innerHTML = '<option value="">-- Seleccionar Puesto --</option>' + rolesList.map(r => `<option value="${r}">${r}</option>`).join('');
+      if (fRoleSel._ssInit) fRoleSel._ssRefresh(); else SearchableSelect.init(fRoleSel);
       
       if(w) {
         currentWorkerId = w.id;
@@ -588,7 +591,8 @@
         document.getElementById('f-name').value = w.name || '';
         document.getElementById('f-birth').value = w.birthDate || '';
         document.getElementById('f-rfc').value = w.rfc || '';
-        document.getElementById('f-role').value = w.puesto || w.role || '';
+        fRoleSel.value = w.puesto || w.role || '';
+        if (fRoleSel._ssSync) fRoleSel._ssSync();
         document.getElementById('f-in-workshop').value = w.inWorkshop || 'Si';
         document.getElementById('f-measure-att').value = w.measureAtt || 'Si';
         document.getElementById('f-phone').value = w.phone || '';
@@ -614,7 +618,8 @@
         document.getElementById('f-name').value = '';
         document.getElementById('f-birth').value = '';
         document.getElementById('f-rfc').value = '';
-        document.getElementById('f-role').value = '';
+        fRoleSel.value = '';
+        if (fRoleSel._ssSync) fRoleSel._ssSync();
         document.getElementById('f-in-workshop').value = 'Si';
         document.getElementById('f-measure-att').value = 'Si';
         document.getElementById('f-phone').value = '';

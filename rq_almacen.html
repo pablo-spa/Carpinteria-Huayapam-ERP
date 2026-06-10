@@ -62,7 +62,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <span class="hdr-title">Hoja de Pedido</span>
+    <h2 class="hdr-title">Hoja de Pedido</h2>
     <span id="status-badge-hdr" style="display:none;"></span>
   </div>
   <button class="btn btn-blue" id="submit-btn" onclick="submitRequest()">Enviar Solicitud</button>

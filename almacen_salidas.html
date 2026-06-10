@@ -7,16 +7,7 @@
 <title>Salidas de Almacén</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-.hdr { padding: 16px 24px; background: var(--mantle); border-bottom: 1px solid var(--crust); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
 .main { max-width: 800px; margin: 24px auto; padding: 24px; background: var(--mantle); border-radius: 12px; border: 1px solid var(--crust); display: flex; flex-direction: column; gap: 20px; }
-.field { display: flex; flex-direction: column; gap: 8px; }
-.field label { font-size: 13px; font-weight: 700; color: var(--subtext); }
-.field input, .field select, .field textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--surface0); background: var(--base); color: var(--text); font-size: 14px; font-family: inherit; }
-.field input:focus, .field select:focus { outline: none; border-color: var(--blue); }
-.btn { padding: 10px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: opacity .15s; font-family: inherit; font-size: 13px; }
-.btn:hover { opacity: .8; }
-.btn-amber { background: var(--amber); color: var(--mantle); }
-.btn-ghost { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
 .items-table { width: 100%; border-collapse: collapse; }
 .items-table th, .items-table td { padding: 10px; text-align: left; border-bottom: 1px solid var(--crust); font-size: 14px; }
 .items-table th { font-weight: 700; color: var(--subtext); font-size: 12px; text-transform: uppercase; }
@@ -26,9 +17,9 @@
 </head>
 <body>
 <div class="hdr">
-  <div style="display:flex; align-items:center; gap:16px;">
+  <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <h2 style="font-size: 18px;">Salidas de Almacén</h2>
+    <h2 class="hdr-title">Salidas de Almacén</h2>
   </div>
   <button class="btn btn-amber" onclick="save()">Registrar Salida</button>
 </div>

@@ -9,12 +9,6 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Header */
-.header {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 14px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-}
-.header-title { font-size: 16px; font-weight: 700; flex: 1; color: var(--text); }
 .header-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .tag { background: var(--surface0); color: var(--text); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
 .btn { cursor: pointer; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; transition: opacity .15s; font-family: inherit; }
@@ -125,10 +119,10 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
 </head>
 <body>
 
-<div class="header">
-  <div style="display:flex; align-items:center; gap:16px; flex:1;">
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div class="header-title">Transacción y Movimiento</div>
+    <h2 class="hdr-title">Transacción y Movimiento</h2>
   </div>
   <div class="header-meta">
     <span class="pill pill-amber" id="status-badge">● Pedido en Curso</span>

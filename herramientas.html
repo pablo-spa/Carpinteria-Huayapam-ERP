@@ -11,8 +11,6 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.hdr-title { font-size: 18px; font-weight: 800; flex-shrink: 0; }
 .hdr-right { display: flex; align-items: center; gap: 10px; }
 
 .filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
@@ -109,7 +107,7 @@
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div class="hdr-title">Herramientas</div>
+    <h2 class="hdr-title">Herramientas</h2>
   </div>
   <button class="btn btn-primary" onclick="openModal()">+ Agregar Herramienta</button>
 </div>
@@ -229,7 +227,7 @@
       </div>
       <div>
         <label class="form-label">Categoría</label>
-        <select class="form-input" id="f-categoria"></select>
+        <select class="form-input" id="f-categoria" data-searchable></select>
       </div>
       <div>
         <label class="form-label">Tipo</label>
@@ -240,7 +238,7 @@
       </div>
       <div id="row-assigned">
         <label class="form-label">Asignada a</label>
-        <select class="form-input" id="f-assigned"><option value="">— Sin asignar —</option></select>
+        <select class="form-input" id="f-assigned" data-searchable><option value="">— Sin asignar —</option></select>
       </div>
       <div>
         <label class="form-label">Estado</label>
@@ -289,7 +287,7 @@
   <div style="background:var(--base);border:1px solid var(--crust);border-radius:14px;width:100%;max-width:420px;padding:24px;" onclick="event.stopPropagation()">
     <div style="font-size:16px;font-weight:800;margin-bottom:14px;">Asignar herramienta a trabajador</div>
     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--subtext);display:block;margin-bottom:5px;">Herramienta disponible</label>
-    <select id="asign-tool-sel" class="form-input" style="width:100%;margin-bottom:16px;"></select>
+    <select id="asign-tool-sel" class="form-input" data-searchable style="width:100%;margin-bottom:16px;"></select>
     <div style="display:flex;justify-content:flex-end;gap:8px;">
       <button class="btn btn-ghost" onclick="closeAsignModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="confirmAsign()">Asignar</button>
@@ -381,14 +379,18 @@ function populateFilters() {
 }
 
 function populateCategoriaSelect() {
-  document.getElementById('f-categoria').innerHTML =
+  const sel = document.getElementById('f-categoria');
+  sel.innerHTML =
     CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
 }
 
 function populateAssignedSelect() {
-  document.getElementById('f-assigned').innerHTML =
+  const sel = document.getElementById('f-assigned');
+  sel.innerHTML =
     '<option value="">— Sin asignar —</option>' +
     workers.map(w => `<option value="${w.id}">${w.nombre || w.name}</option>`).join('');
+  if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
 }
 
 function autoCategoria() {
@@ -552,6 +554,7 @@ function openAsignModal(wId) {
     .sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'))
     .map(h => `<option value="${h.id}">${h.nombre}${h.codigo ? ' — ' + h.codigo : ''}${h.marca ? ' · ' + h.marca : ''}</option>`)
     .join('');
+  if (sel._ssInit) sel._ssRefresh(); else SearchableSelect.init(sel);
   document.getElementById('asign-modal').style.display = 'flex';
 }
 
@@ -649,9 +652,13 @@ function openModal(id) {
   document.getElementById('f-nombre').value       = tool?.nombre     || '';
   document.getElementById('f-codigo').value       = tool?.codigo     || '';
   document.getElementById('f-marca').value        = tool?.marca      || '';
-  document.getElementById('f-categoria').value    = tool?.categoria  || (CATS.find(c => /otro/i.test(c)) || CATS[0] || '');
+  const catSel = document.getElementById('f-categoria');
+  const assSel = document.getElementById('f-assigned');
+  catSel.value = tool?.categoria  || (CATS.find(c => /otro/i.test(c)) || CATS[0] || '');
+  if (catSel._ssSync) catSel._ssSync();
   document.getElementById('f-tipo').value         = tool?.tipo       || 'compartida';
-  document.getElementById('f-assigned').value     = tool?.assignedTo || '';
+  assSel.value = tool?.assignedTo || '';
+  if (assSel._ssSync) assSel._ssSync();
   document.getElementById('f-estado').value       = tool?.estado     || 'buena';
   document.getElementById('f-costo').value        = tool?.costo      || '';
   document.getElementById('f-fecha').value        = tool?.fecha_compra || '';
