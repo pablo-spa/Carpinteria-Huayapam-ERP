@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Registro del Día — Carpintería Huayapam</title>
 <style>
-.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .date-input { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 4px 8px; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; }
 .date-input:focus { outline: none; border-color: var(--blue); }
 .dia-label { font-size: 13px; color: var(--subtext); font-weight: 600; }
@@ -18,22 +18,23 @@
 }
 .cal-nav { background: none; border: none; color: var(--subtext); font-size: 20px; cursor: pointer; padding: 10px 12px; flex-shrink: 0; }
 .cal-nav:hover { color: var(--text); }
-.cal-strip { display: flex; gap: 6px; overflow-x: auto; padding: 10px 4px; flex: 1; scrollbar-width: none; }
+.cal-strip { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; flex: 1; scrollbar-width: none; }
 .cal-strip::-webkit-scrollbar { display: none; }
 .cal-day {
-  flex-shrink: 0; min-width: 60px; text-align: center; padding: 7px 6px; border-radius: 10px;
-  border: 1.5px solid var(--crust); cursor: pointer; transition: all 0.15s;
+  flex: 1; min-width: 44px; max-width: 56px; text-align: center; padding: 8px 4px; border-radius: 8px;
+  cursor: pointer; transition: all 0.15s; border: 1.5px solid transparent;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.cal-day:hover { border-color: var(--surface1); }
-.cal-day.is-active { border-color: var(--blue); background: var(--blue-bg); }
-.cal-day.is-weekend { background: var(--crust); opacity: 0.8; }
-.cal-day.is-weekend.is-active { background: var(--blue-bg); opacity: 1; }
-.cal-day-name { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); margin-bottom: 3px; }
-.cal-day-num  { font-size: 17px; font-weight: 800; }
-.cal-day-status { font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: 4px; padding: 2px 5px; border-radius: 4px; display: inline-block; }
-.cs-cerrado { background: var(--green-bg); color: var(--green); }
-.cs-pendiente { background: var(--amber-bg); color: var(--amber); }
-.cs-libre { background: var(--surface0); color: var(--subtext); }
+.cal-day:hover { background: var(--surface0); }
+.cal-day.is-active { border-color: var(--blue); background: var(--blue-bg); color: var(--blue); }
+.cal-day.is-weekend { opacity: 0.7; }
+.cal-day.is-weekend.is-active { opacity: 1; }
+.cal-day-name { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); margin-bottom: 2px; }
+.cal-day-num  { font-size: 16px; font-weight: 800; line-height: 1.2; }
+.cal-day-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 4px; display: inline-block; }
+.dot-cerrado { background: var(--green); }
+.dot-pendiente { background: var(--amber); }
+.dot-libre { background: var(--subtext); opacity: 0.3; }
 
 /* ── Banner ── */
 .banner {
@@ -208,17 +209,20 @@
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:18px;font-weight:800;">Registro del Día</span>
-      <span class="badge" id="hdr-badge" style="font-size:11px;padding:2px 6px;background:var(--surface0);color:var(--subtext);border-radius:4px;font-weight:700;">—</span>
-    </div>
+    <span style="font-size:18px;font-weight:800;">Registro del Día</span>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <input type="date" class="date-input" id="fecha" onchange="onDateChange()" style="padding:6px 10px;height:36px;font-size:13px;font-weight:600;">
-    <button class="btn btn-ghost" onclick="collapseAll()" style="padding:8px 12px;height:36px;font-size:13px;">Colapsar</button>
-    <button class="btn btn-green" id="btn-cerrar" onclick="cerrarDia()" style="height:36px;">✓ Cerrar día</button>
-    <button class="btn btn-amber" id="btn-reabrir" style="display:none;height:36px;" onclick="reabrirDia()">↩ Reabrir día</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="btn btn-green" id="btn-cerrar" onclick="cerrarDia()">✓ Cerrar día</button>
+    <button class="btn btn-amber" id="btn-reabrir" style="display:none;" onclick="reabrirDia()">↩ Reabrir día</button>
   </div>
+</div>
+
+<!-- ── Date controls sub-bar ── -->
+<div style="background:var(--mantle);border-bottom:1px solid var(--crust);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <input type="date" class="date-input" id="fecha" onchange="onDateChange()">
+  <span class="dia-label" id="dia-label"></span>
+  <span class="badge" id="hdr-badge" style="margin-left:auto;font-size:11px;padding:2px 6px;background:var(--surface0);color:var(--subtext);border-radius:4px;font-weight:700;">—</span>
+  <button class="btn btn-ghost" onclick="collapseAll()" style="padding:5px 12px;font-size:12px;">Colapsar</button>
 </div>
 
 <!-- ── Calendar Strip ── -->
@@ -253,7 +257,6 @@
     <div class="stat"><span class="lbl">Hrs equiv.</span><span class="val" id="f-h">0.0</span></div>
     <div class="stat"><span class="lbl">Pendientes</span><span class="val" id="f-p" style="color:var(--subtext)">0</span></div>
   </div>
-  <button class="btn btn-green" id="btn-cerrar-ft" onclick="cerrarDia()">✓ Cerrar día</button>
 </div>
 
 <script src="searchable-select.js"></script>
@@ -406,17 +409,17 @@ function buildCalendar() {
       cerrado = (db.attendance || []).some(a => (a.fecha || a.date) === dateStr && !a._init && a.diaCerrado === true);
     }
 
-    const statusHtml = cerrado
-      ? `<div class="cal-day-status cs-cerrado">Cerrado</div>`
+    const dotClass = cerrado
+      ? 'dot-cerrado'
       : isWknd
-        ? `<div class="cal-day-status cs-libre">Descanso</div>`
-        : `<div class="cal-day-status cs-pendiente">Pendiente</div>`;
+        ? 'dot-libre'
+        : 'dot-pendiente';
 
     return `
       <div class="cal-day ${isActive?'is-active':''} ${isWknd?'is-weekend':''}" onclick="setDate('${dateStr}')">
         <div class="cal-day-name">${DIAS_S[d.getDay()]}</div>
         <div class="cal-day-num">${d.getDate()}</div>
-        ${statusHtml}
+        <div class="cal-day-dot ${dotClass}"></div>
       </div>
     `;
   }).join('');
@@ -433,6 +436,8 @@ function setDate(dateStr) {
 // ── Date change ───────────────────────────────────────────────
 function onDateChange() {
   currentDate = document.getElementById('fecha').value;
+  const d = new Date(currentDate + 'T12:00:00');
+  document.getElementById('dia-label').textContent = DIAS_L[d.getDay()];
   buildCalendar();
 
   const dayState = getState(currentDate);
@@ -444,7 +449,6 @@ function onDateChange() {
 function updateCerradoUI() {
   document.getElementById('banner-cerrado').style.display = diaCerrado ? 'flex' : 'none';
   document.getElementById('btn-cerrar').style.display    = diaCerrado ? 'none' : '';
-  document.getElementById('btn-cerrar-ft').style.display = diaCerrado ? 'none' : '';
   document.getElementById('btn-reabrir').style.display   = diaCerrado ? ''     : 'none';
   document.getElementById('hdr-badge').textContent = diaCerrado ? 'Cerrado' : 'Pendiente';
 }
