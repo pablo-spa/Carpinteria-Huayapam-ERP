@@ -72,10 +72,6 @@
   font-size: 13px; border: 1px dashed var(--crust); border-radius: 10px;
 }
 
-.tabs-bar { display: flex; gap: 8px; padding: 0 24px; border-bottom: 1px solid var(--crust); background: var(--mantle); }
-.tab-btn { padding: 10px 16px; border: none; background: transparent; color: var(--subtext); font-size: 13px; font-weight: 700; cursor: pointer; border-bottom: 2px solid transparent; }
-.tab-btn:hover { color: var(--text); }
-.tab-btn.act { color: var(--blue); border-bottom-color: var(--blue); }
 </style>
 </head>
 <body>
@@ -88,8 +84,8 @@
   <button class="btn btn-green" id="btn-nueva" onclick="openNueva()">+ Nueva Cotización</button>
 </div>
 
-<div class="tabs-bar">
-  <button class="tab-btn act" onclick="setMainTab('piezas', this)">Piezas y Proyectos</button>
+<div class="tabs-hdr">
+  <button class="tab-btn active" onclick="setMainTab('piezas', this)">Piezas y Proyectos</button>
   <button class="tab-btn" onclick="setMainTab('viaticos', this)">Fletes y Viáticos</button>
 </div>
 
@@ -150,8 +146,8 @@ async function init() {
 
 function setMainTab(tab, el) {
   currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('act'));
-  el.classList.add('act');
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  el.classList.add('active');
   document.getElementById('btn-nueva').textContent = tab === 'piezas' ? '+ Nueva Cotización' : '+ Cotización de Viáticos';
   render();
 }

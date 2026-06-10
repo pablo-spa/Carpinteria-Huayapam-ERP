@@ -8,8 +8,8 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hdr-search { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; width: 240px; gap: 8px; }
-.hdr-search input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
+.hdr-search { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 0 12px; width: 240px; gap: 8px; height: 36px; }
+.hdr-search input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; height: 100%; }
 
 .main { padding: 16px 20px; }
 
@@ -208,9 +208,12 @@
       </div>
     </div>
 
-    <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:14px; border-top:1px solid var(--crust);">
-      <button onclick="closeModal()" class="btn">Cancelar</button>
-      <button onclick="saveItem()" class="btn btn-blue">Guardar</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px solid var(--crust);">
+      <button id="btn-delete-item" onclick="deleteItem()" class="btn btn-red" style="display:none;">Eliminar insumo</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button onclick="closeModal()" class="btn">Cancelar</button>
+        <button onclick="saveItem()" class="btn btn-blue">Guardar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -492,6 +495,8 @@ function openModal(id) {
   document.getElementById('mod-overlay').style.display = 'flex';
   const item = id ? (STATE_INVENTORY.find(x=>x.id===id)||window.DB.get().inventory?.find(x=>x.id===id)) : null;
 
+  document.getElementById('btn-delete-item').style.display = item ? 'block' : 'none';
+
   if (!item) {
     document.getElementById('mod-title').textContent = 'Nuevo Insumo';
     ['m-id','m-name','m-code'].forEach(f => document.getElementById(f).value = '');
@@ -571,6 +576,35 @@ async function saveItem() {
   closeModal();
   STATE_INVENTORY = await window.DB.query('inventory');
   renderTable();
+}
+
+function deleteItem() {
+  const id   = document.getElementById('m-id').value;
+  const item = STATE_INVENTORY.find(x => x.id === id);
+  if (!id || !item) return;
+
+  async function doDelete() {
+    await window.parent.deleteDocumentInFirebase('inventory', id);
+    const db = window.DB.get();
+    if (db.inventory) db.inventory = db.inventory.filter(x => x.id !== id);
+    window.DB.save(db);
+    if (window.parent?.DB_STATE?.inventory)
+      window.parent.DB_STATE.inventory = window.parent.DB_STATE.inventory.filter(x => (x.id||x._id) !== id);
+    STATE_INVENTORY = STATE_INVENTORY.filter(x => x.id !== id);
+    closeModal();
+    renderTable();
+  }
+
+  if (window.parent?.showConfirm) {
+    window.parent.showConfirm(
+      'Eliminar insumo',
+      `¿Eliminar "${item.name}"?\nEsta acción no se puede deshacer.`,
+      'Eliminar', 'btn-red',
+      doDelete
+    );
+  } else if (confirm(`¿Eliminar "${item.name}"?`)) {
+    doDelete();
+  }
 }
 </script>
 </body>
