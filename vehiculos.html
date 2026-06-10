@@ -37,13 +37,12 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   </div>
 </div>
 
-<div class="tabs-hdr">
-  <button class="tab-btn active" onclick="switchTab('tab-gasolina', this)">⛽ Vales de Gasolina</button>
-  <button class="tab-btn" onclick="switchTab('tab-mantenimiento', this)">🛠️ Mantenimiento y Trámites</button>
-  <button class="tab-btn" onclick="switchTab('tab-flotilla', this)">🚚 Estado de Flotilla</button>
-</div>
-
 <div class="main-scroll">
+  <div class="tabs-hdr">
+    <button class="tab-btn active" onclick="switchTab('tab-gasolina', this)">⛽ Vales de Gasolina</button>
+    <button class="tab-btn" onclick="switchTab('tab-mantenimiento', this)">🛠️ Mantenimiento y Trámites</button>
+    <button class="tab-btn" onclick="switchTab('tab-flotilla', this)">🚚 Estado de Flotilla</button>
+  </div>
 
   <!-- PESTAÑA: GASOLINA -->
   <div id="tab-gasolina" class="tab-pane active">

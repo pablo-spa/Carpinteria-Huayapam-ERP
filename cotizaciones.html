@@ -84,11 +84,6 @@
   <button class="btn btn-green" id="btn-nueva" onclick="openNueva()">+ Nueva Cotización</button>
 </div>
 
-<div class="tabs-hdr">
-  <button class="tab-btn active" onclick="setMainTab('piezas', this)">📐 Piezas y Proyectos</button>
-  <button class="tab-btn" onclick="setMainTab('viaticos', this)">🚚 Fletes y Viáticos</button>
-</div>
-
 <div class="filters">
   <div class="search-box">
     <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
@@ -103,7 +98,11 @@
   </select>
 </div>
 
-<div class="main" id="main-content"></div>
+<div class="main" id="main-content">
+  <div class="tabs-hdr">
+    <button class="tab-btn active" onclick="setMainTab('piezas', this)">📐 Piezas y Proyectos</button>
+    <button class="tab-btn" onclick="setMainTab('viaticos', this)">🚚 Fletes y Viáticos</button>
+  </div></div>
 
 <script src="db.js"></script>
 <script>
@@ -267,7 +266,15 @@ function render() {
     html = `<div class="empty-state">No hay cotizaciones que coincidan con los filtros.</div>`;
   }
 
-  document.getElementById('main-content').innerHTML = html;
+  // Conservar las pestañas y actualizar solo la lista de cotizaciones de abajo
+  const listCont = document.getElementById('q-list-container') || (() => {
+    const d = document.createElement('div');
+    d.id = 'q-list-container';
+    d.style.marginTop = '16px';
+    document.getElementById('main-content').appendChild(d);
+    return d;
+  })();
+  listCont.innerHTML = html;
 }
 
 function toggleGroup(hdr) {

@@ -37,12 +37,11 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   </div>
 </div>
 
-<div class="tabs-hdr">
-  <button class="tab-btn active" onclick="switchTab('tab-registros', this)">🛠️ Mantenimientos Preventivos y Correctivos</button>
-  <button class="tab-btn" onclick="switchTab('tab-maquinaria', this)">⚙️ Estado de Maquinaria</button>
-</div>
-
 <div class="main-scroll">
+  <div class="tabs-hdr">
+    <button class="tab-btn active" onclick="switchTab('tab-registros', this)">🛠️ Mantenimientos Preventivos y Correctivos</button>
+    <button class="tab-btn" onclick="switchTab('tab-maquinaria', this)">⚙️ Estado de Maquinaria</button>
+  </div>
 
   <!-- PESTAÑA: REGISTROS DE SERVICIOS -->
   <div id="tab-registros" class="tab-pane active">
