@@ -16,6 +16,7 @@
   .table-item { padding: 10px 12px; border-radius: 6px; cursor: pointer; color: var(--subtext); font-size: 13px; font-weight: 600; margin-bottom: 4px; transition: 0.1s; display: flex; justify-content: space-between; align-items: center; }
   .table-item:hover { background: var(--surface0); color: var(--text); }
   .table-item.act { background: var(--blue); color: #fff; }
+  .table-item.act .item-desc { color: rgba(255,255,255,0.7) !important; }
   .badge { background: var(--crust); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
 
   .main { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
@@ -56,6 +57,8 @@
         <div style="display:flex; flex-direction:column;">
           <div class="hdr-title" id="t-name" style="font-size:24px;">Colección</div>
           <div style="font-size:13px; color:var(--subtext); margin-top:4px;" id="t-count">0 registros</div>
+          <div style="font-size:13px; color:var(--text); margin-top:6px; max-width:600px; line-height:1.4;" id="t-desc"></div>
+          <div style="font-size:12px; color:var(--subtext); margin-top:6px;" id="t-count">0 registros</div>
         </div>
         <div style="display:flex; gap:8px;">
           <button class="btn btn-green" onclick="exportarColeccionCSV()">📥 Exportar CSV</button>
@@ -64,8 +67,11 @@
       </div>
 
       <div class="card">
-        <div class="card-title" style="margin-bottom:0;">Vista Previa (Primeros 50 registros)</div>
-        <div class="db-table-wrapper" id="t-raw"></div>
+        <div class="card-title" style="margin-bottom:0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>Vista Previa <span class="t-showing" style="font-size:11px; color:var(--subtext); font-weight:600; margin-left:8px;"></span></div>
+          <input type="text" id="t-search" placeholder="🔍 Buscar en registros..." style="padding:6px 12px; border-radius:8px; border:1px solid var(--crust); background:var(--base); color:var(--text); font-size:12px; font-family:inherit; min-width:240px;" oninput="renderRecordTable()">
+        </div>
+        <div class="db-table-wrapper" id="t-raw" style="max-height: 60vh;"></div>
       </div>
     </div>
   </div>
@@ -87,7 +93,7 @@
   // Solo colecciones que realmente existen en Firestore
   const KNOWN_COLLECTIONS = [
     // Core y Sistema
-    'settings', 'config_params', 'users', 'systemEvents', 'bugs',
+    'settings', 'config_params', 'users', 'systemEvents', 'bugs', 'auth_logs',
     // CRM, Empleados y Producción
     'contacts', 'workers', 'attendance', 'attendance_logs', 'production_logs', 'worker_loans',
     // Ventas y Proyectos
@@ -106,15 +112,72 @@
     'contacts_lists', 'inventory_lists', 'accounting_by_month',
   ];
 
+  // Descripciones legibles para entender qué guarda cada colección
+  const COLLECTION_DESC = {
+    'settings': 'Configuraciones globales de la empresa (horarios, tolerancias, reglas de códigos).',
+    'config_params': 'Parámetros internos del sistema, como el mapa de permisos por rol.',
+    'users': 'Accesos al sistema. Relaciona correos de Google con roles (admin, gerencia, etc.).',
+    'systemEvents': 'Registro de eventos del sistema (historial/logs técnicos).',
+    'bugs': 'Reportes de errores o incidencias enviados por los usuarios.',
+    'auth_logs': 'Bitácora de intentos de inicio de sesión (exitosos y bloqueados).',
+    'contacts': 'Directorio unificado (CRM) de clientes, proveedores y trabajadores.',
+    'workers': 'Datos extendidos de RRHH para cada trabajador (salario, vacaciones, etc.).',
+    'attendance': 'Registro diario consolidado de asistencia por trabajador.',
+    'attendance_logs': 'Entradas y salidas crudas marcadas desde el reloj checador.',
+    'production_logs': 'Horas dedicadas a cada proyecto, registradas en Producción Diaria.',
+    'worker_loans': 'Préstamos activos o pagados de los trabajadores y sus abonos.',
+    'projects': 'Seguimiento de obras, estado, progreso, fechas y presupuestos.',
+    'quotations': 'Cotizaciones de muebles y piezas con desglose de materiales y costos.',
+    'quotations_viaticos': 'Cotizaciones específicas para fletes, viajes y maniobras.',
+    'fichas_tecnicas': 'Manuales y guías operativas en PDF (vinculadas a Google Drive).',
+    'documentos': 'Repositorio de pólizas, contratos y facturas.',
+    'inventory': 'Catálogo de todos los insumos, herramientas y madera en el almacén.',
+    'inventory_salidas': 'Vales de salida de material hacia los proyectos o trabajadores.',
+    'purchase_orders': 'Órdenes de compra y pedidos en sus diferentes estados.',
+    'orders': '(Legacy) Órdenes de compra antiguas.',
+    'accounting_movements': 'Libro mayor (Finanzas). Todos los ingresos, gastos y transferencias.',
+    'account_balances': 'Saldos actuales calculados para cada cuenta bancaria/caja.',
+    'expense_categories': 'Lista de categorías financieras (Ingresos/Gastos).',
+    'bank_accounts': 'Lista de cuentas bancarias y cajas operativas configuradas.',
+    'payment_methods': 'Métodos de pago aceptados.',
+    'viajes': 'Cabeceras de viajes registrados en el módulo de Viáticos.',
+    'anticipos_viaticos': 'Dinero entregado a trabajadores para viajes específicos.',
+    'gastos_viaticos': 'Tickets y comprobantes de gasto realizados durante un viaje.',
+    'herramientas': 'Catálogo detallado de herramientas, su estado y a quién están asignadas.',
+    'tool_logs': 'Historial de préstamos y devoluciones de herramientas.',
+    'wood_price_catalog': 'Precios de referencia para distintos tipos de madera en cotizaciones.',
+    'wood_formats': 'Catálogo de formatos de madera (Tabla, Tablón, etc.).',
+    'wood_types': 'Catálogo de especies de madera (Pino, Cedro, Parota...).',
+    'wood_quality': 'Catálogo de calidades de madera (Primera, Segunda...).',
+    'wood_locations': 'Áreas de almacenamiento de madera en el taller.',
+    'wood': '(Legacy) Registros individuales de piezas de madera escaneadas.',
+    'concept_categories': 'Clasificación principal del inventario (Códigos CC).',
+    'inventory_brands': 'Marcas de productos en el almacén (Códigos MMM).',
+    'concept_units': 'Unidades de medida (pza, ml, m2, etc.).',
+    'inventory_locations': 'Ubicaciones físicas en el almacén general.',
+    'tool_categories': 'Clasificación de herramientas por uso (Corte, Perforación...).',
+    'tool_types': 'Tipos de pertenencia de herramientas (Personal o Compartida).',
+    'tool_states': 'Estados físicos de las herramientas (Nueva, Mantenimiento...).',
+    'document_categories': 'Tipos de documentos guardados en el sistema.',
+    'contacts_lists': 'Copia ligera (caché) agrupada de contactos para cargar rápido.',
+    'inventory_lists': 'Copia ligera (caché) agrupada del inventario por categoría.',
+    'accounting_by_month': 'Copia ligera agrupada de movimientos financieros por mes.'
+  };
+
   function renderTables() {
     const list = document.getElementById('table-list');
     const state = getState();
     list.innerHTML = KNOWN_COLLECTIONS.map(k => {
       const arr = state[k];
       const n = arr === undefined ? '?' : arr.length;
+      const desc = COLLECTION_DESC[k] || '';
       return `
       <div class="table-item${currentTable===k?' act':''}" onclick="selectTable('${k}')">
         <span>${k}</span>
+        <div style="display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; padding-right:12px;">
+          <span style="font-weight:700;">${k}</span>
+          <span class="item-desc" style="font-size:10px; color:var(--subtext); font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${desc}">${desc}</span>
+        </div>
         <span class="badge" style="${arr===undefined?'color:var(--amber)':''}">${n}</span>
       </div>
     `}).join('');
@@ -135,10 +198,32 @@
     document.getElementById('sel-view').style.display = 'flex';
 
     document.getElementById('t-name').textContent = t;
+    document.getElementById('t-desc').textContent = COLLECTION_DESC[t] || '';
     const records = getState()[t] || [];
     document.getElementById('t-count').textContent = `${records.length} registros`;
 
-    // Escanear todos los registros para encontrar todas las "columnas" (propiedades JSON) existentes
+    document.getElementById('t-search').value = '';
+    renderRecordTable();
+  }
+
+  window.renderRecordTable = function() {
+    const term = document.getElementById('t-search').value.toLowerCase().trim();
+    let records = getState()[currentTable] || [];
+    
+    // Invertir para ver siempre los registros más recientes primero
+    records = [...records].reverse();
+
+    if (term) {
+      records = records.filter(r => {
+        if (r === null) return false;
+        if (typeof r === 'object') {
+          // Búsqueda simple en todos los valores del objeto
+          return Object.values(r).some(v => String(v).toLowerCase().includes(term));
+        }
+        return String(r).toLowerCase().includes(term);
+      });
+    }
+
     const cols = new Set();
     (records || []).forEach(r => {
       if (r !== null && typeof r === 'object') {
@@ -152,15 +237,20 @@
     const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 
     if (cols.size === 0 || records.length === 0) {
-      cg.innerHTML = `<div style="padding:40px; text-align:center; color:var(--subtext); font-size:13px;">La colección está vacía.</div>`;
+      cg.innerHTML = `<div style="padding:40px; text-align:center; color:var(--subtext); font-size:13px;">La colección está vacía o sin coincidencias.</div>`;
+      document.querySelector('.t-showing').textContent = '';
     } else {
       const columns = Array.from(cols).sort();
+      // Mover 'id' o '_id' al principio de las columnas
+      if (columns.includes('id')) { columns.splice(columns.indexOf('id'), 1); columns.unshift('id'); }
+      else if (columns.includes('_id')) { columns.splice(columns.indexOf('_id'), 1); columns.unshift('_id'); }
+
       let html = `<table class="db-table"><thead><tr>`;
       columns.forEach(c => html += `<th>${c}</th>`);
       html += `</tr></thead><tbody>`;
       
-      // Mostrar los primeros 5 registros
-      records.slice(0, 5).forEach(r => {
+      const toShow = records.slice(0, 50);
+      toShow.forEach(r => {
         html += `<tr>`;
         columns.forEach(c => {
           let val = r[c];
@@ -172,6 +262,7 @@
       });
       html += `</tbody></table>`;
       cg.innerHTML = html;
+      document.querySelector('.t-showing').textContent = `(Mostrando ${toShow.length} de ${records.length})`;
     }
   }
 

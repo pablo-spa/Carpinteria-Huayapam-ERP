@@ -16,6 +16,43 @@ service cloud.firestore {
     function isContabilidad() {
       return isAdmin() || getUserRole() == 'gerencia' || getUserRole() == 'contador';
     }
+    function isGerencia() {
+      return getUserRole() == 'gerencia';
+    }
+    function isCompras() {
+      return getUserRole() == 'compras';
+    }
+    function isAlmacen() {
+      return getUserRole() == 'almacen';
+    }
+    function isProduccion() {
+      return getUserRole() == 'produccion';
+    }
+
+    function isProgramadorOrAdmin() {
+      return isLoggedIn() && (getUserRole() == 'programador' || getUserRole() == 'admin');
+    }
+
+    function canWriteProjects() {
+      return isProgramadorOrAdmin() || getUserRole() == 'gerencia';
+    }
+
+    function canWriteInventory() {
+      return isProgramadorOrAdmin() || getUserRole() == 'compras' || getUserRole() == 'almacen';
+    }
+
+    // Compras crea órdenes, Almacén recibe/confirma y Gerencia autoriza
+    function canWriteOrders() {
+      return isProgramadorOrAdmin() || getUserRole() == 'compras' || getUserRole() == 'almacen' || getUserRole() == 'gerencia';
+    }
+
+    function canWriteWorkers() {
+      return isProgramadorOrAdmin() || getUserRole() == 'gerencia';
+    }
+    
+    function canWriteHerramientas() {
+      return isProgramadorOrAdmin() || getUserRole() == 'almacen' || getUserRole() == 'produccion';
+    }
 
     // ── Colecciones protegidas ────────────────────────────────────────────
 
@@ -44,10 +81,117 @@ service cloud.firestore {
       allow write: if isContabilidad();
     }
 
-    // ── Resto de colecciones operativas ──────────────────────────────────
-    // La app ya maneja permisos visuales por rol. Aquí solo exigimos login.
-    match /{document=**} {
-      allow read, write: if isLoggedIn();
+    // Proyectos: lectura para todos (ver avance/fichar), escritura para admin/gerencia
+    match /projects/{projectId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteProjects();
     }
+
+    // Trabajadores: lectura para todos (calendario/nóminas), escritura restrictiva
+    match /workers/{workerId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteWorkers();
+    }
+
+    // Directorio CRM: trabajadores protegidos por canWriteWorkers, otros contactos libres
+    match /contacts/{contactId} {
+      allow read: if isLoggedIn();
+      allow write: if isLoggedIn() && (
+        (
+          (!request.resource.data.keys().hasAll(['tipo']) || request.resource.data.tipo != 'trabajador') &&
+          (resource == null || !resource.data.keys().hasAll(['tipo']) || resource.data.tipo != 'trabajador')
+        )
+        || canWriteWorkers()
+      );
+    }
+    match /contacts_lists/{docId} {
+      allow read: if isLoggedIn();
+      allow write: if isLoggedIn();
+    }
+
+    // Catálogo de Inventario y taxonomías del almacén
+    match /inventory/{itemId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteInventory();
+    }
+    match /inventory_lists/{docId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteInventory();
+    }
+    match /concept_categories/{docId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteInventory();
+    }
+    match /inventory_brands/{docId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteInventory();
+    }
+    match /inventory_locations/{docId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteInventory();
+    }
+
+    // Órdenes de compra y requisiciones
+    match /purchase_orders/{orderId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteOrders();
+    }
+    match /orders/{orderId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteOrders();
+    }
+
+    // Herramientas y asignaciones
+    match /herramientas/{toolId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteHerramientas();
+    }
+    match /tool_logs/{logId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteHerramientas();
+    }
+
+    // Configuraciones globales
+    match /settings/{docId} {
+      allow read: if isLoggedIn();
+      allow write: if canWriteWorkers();
+    }
+
+    // Bugs y reportes de errores
+    match /bugs/{bugId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn();
+      allow update, delete: if isProgramadorOrAdmin();
+    }
+
+    // Bitácora de accesos
+    match /auth_logs/{logId} {
+      allow read: if isProgramadorOrAdmin();
+      allow create: if true;
+    }
+
+    // ── Resto de colecciones operativas (exigen login) ───────────────────
+    match /attendance/{docId} { allow read, write: if isLoggedIn(); }
+    match /attendance_logs/{docId} { allow read, write: if isLoggedIn(); }
+    match /production_logs/{docId} { allow read, write: if isLoggedIn(); }
+    match /worker_loans/{docId} { allow read, write: if isLoggedIn(); }
+    match /viajes/{docId} { allow read, write: if isLoggedIn(); }
+    match /anticipos_viaticos/{docId} { allow read, write: if isLoggedIn(); }
+    match /gastos_viaticos/{docId} { allow read, write: if isLoggedIn(); }
+    match /documentos/{docId} { allow read, write: if isLoggedIn(); }
+    match /systemEvents/{docId} { allow read, write: if isLoggedIn(); }
+    match /fichas_tecnicas/{docId} { allow read, write: if isLoggedIn(); }
+    match /wood/{docId} { allow read, write: if isLoggedIn(); }
+    match /wood_price_catalog/{docId} { allow read, write: if isLoggedIn(); }
+    match /wood_formats/{docId} { allow read, write: if isLoggedIn(); }
+    match /wood_types/{docId} { allow read, write: if isLoggedIn(); }
+    match /wood_quality/{docId} { allow read, write: if isLoggedIn(); }
+    match /wood_locations/{docId} { allow read, write: if isLoggedIn(); }
+    match /concept_units/{docId} { allow read, write: if isLoggedIn(); }
+    match /tool_categories/{docId} { allow read, write: if isLoggedIn(); }
+    match /tool_types/{docId} { allow read, write: if isLoggedIn(); }
+    match /tool_states/{docId} { allow read, write: if isLoggedIn(); }
+    match /document_categories/{docId} { allow read, write: if isLoggedIn(); }
+    match /inventory_salidas/{docId} { allow read, write: if isLoggedIn(); }
   }
 }

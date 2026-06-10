@@ -110,6 +110,7 @@
   </div>
 </div>
 
+
 <!-- Modal recodificar -->
 <div id="recode-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
   <div style="background:var(--mantle); border:1px solid var(--crust); border-radius:14px; width:100%; max-width:480px; padding:24px; max-height:90vh; display:flex; flex-direction:column; gap:0;">
@@ -146,7 +147,7 @@
 <div class="modal-overlay" id="mod-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
   <div class="modal" style="background:var(--mantle); border:1px solid var(--crust); border-radius:12px; width:100%; max-width:650px; padding:24px; display:flex; flex-direction:column; gap:16px; max-height:90vh; overflow-y:auto;">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--crust); padding-bottom:12px;">
-      <h2 id="mod-title" style="font-size:18px;">Editar Insumo / Herramienta</h2>
+      <h2 id="mod-title" style="font-size:18px;">Insumo</h2>
       <button onclick="closeModal()" style="background:none;border:none;color:var(--subtext);font-size:20px;cursor:pointer;">✕</button>
     </div>
     <input type="hidden" id="m-id">
@@ -177,7 +178,7 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Unidad</label>
-        <select id="m-unit" class="modal-input" data-searchable></select>
+        <select id="m-unit" class="modal-input"></select>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Aviso Stock Bajo (Mínimo)</label>
@@ -186,6 +187,13 @@
       <div style="display:flex; flex-direction:column; gap:4px;">
         <label style="font-size:11px;font-weight:700;color:var(--subtext);">Costo Principal ($)</label>
         <input type="number" id="m-cost" class="modal-input" step="0.01">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px; justify-content:center;">
+        <label style="font-size:11px;font-weight:700;color:var(--subtext);">Registrar en Dashboard</label>
+        <label style="display:flex;align-items:center;gap:10px;height:40px;cursor:pointer;font-size:13px;color:var(--text);">
+          <input type="checkbox" id="m-track-stock" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
+          Mostrar en tarjeta de stock bajo
+        </label>
       </div>
     </div>
 
@@ -418,8 +426,8 @@
       STATE_BRANDS.map(b => `<option value="${b.id}">${b.brandCode} — ${b.name}</option>`).join('');
     if (brandSel._ssInit) brandSel._ssRefresh(); else SearchableSelect.init(brandSel);
     const unitSel = document.getElementById('m-unit');
-    unitSel.innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
-    if (unitSel._ssInit) unitSel._ssRefresh(); else SearchableSelect.init(unitSel);
+    unitSel.innerHTML = '<option value="">— Sin unidad —</option>' + units.map(u => `<option value="${u}">${u}</option>`).join('');
+    // Plain select — no SearchableSelect, avoids display sync issues
     const locSel = document.getElementById('m-loc');
     locSel.innerHTML = '<option value="">— Sin ubicación —</option>' + locs.map(l => `<option value="${l}">${l}</option>`).join('');
     if (locSel._ssInit) locSel._ssRefresh(); else SearchableSelect.init(locSel);
@@ -529,7 +537,7 @@
     applyFilters();
   }
 
-  function applyFilters() {
+function applyFilters() {
     const term = document.getElementById('srch').value.toLowerCase().trim();
     document.querySelectorAll('#inv-body tr').forEach(tr => {
       const catOk   = currentFilter === 'all' || tr.dataset.cat === currentFilter;
@@ -545,9 +553,55 @@
   }
 
   function openModal(id) {
-    const item = STATE_INVENTORY.find(x => x.id === id) || window.DB.get().inventory.find(x => x.id === id);
-    if (!item) return;
+    document.getElementById('mod-overlay').style.display = 'flex';
+    
+    let item;
+    if (id) {
+      item = STATE_INVENTORY.find(x => x.id === id) || window.DB.get().inventory.find(x => x.id === id);
+    }
+    
+    if (!id || !item) {
+      // Artículo nuevo
+      document.getElementById('mod-title').textContent = 'Nuevo Insumo';
+      document.getElementById('m-id').value = '';
+      document.getElementById('m-name').value = '';
+      document.getElementById('m-code').value = '';
+      
+      const catSel = document.getElementById('m-cat');
+      catSel.querySelectorAll('[data-legacy]').forEach(o => o.remove());
+      catSel.value = STATE_CATS[0]?.name || '';
+      catSel._ssSync?.();
+      
+      const brandSel = document.getElementById('m-brand');
+      brandSel.value = '';
+      brandSel._ssSync?.();
+      
+      const locSel2 = document.getElementById('m-loc');
+      locSel2.value = '';
+      locSel2._ssSync?.();
+      
+      document.getElementById('m-min').value = 0;
+      
+      const unitSel = document.getElementById('m-unit');
+      unitSel.querySelectorAll('[data-legacy]').forEach(o => o.remove());
+      unitSel.value = 'pieza';
+      unitSel._ssSync?.();
+      
+      document.getElementById('m-track-stock').checked = true;
+      document.getElementById('m-cost').value = 0;
+      document.getElementById('m-stock-disp').textContent = 0;
+      document.getElementById('m-stock').value = 0;
+      
+      document.getElementById('btn-unlock-stock').style.display = 'none';
+      document.getElementById('stock-edit-box').style.display = 'flex';
+      document.getElementById('m-last-date').textContent = 'Sin registro';
+      document.getElementById('m-price-hist').innerHTML = '<div style="color:var(--subtext);">- No hay historial registrado -</div>';
+      
+      autoGenCode();
+      return;
+    }
 
+    document.getElementById('mod-title').textContent = 'Editar Insumo';
     document.getElementById('m-id').value = item.id;
     document.getElementById('m-name').value = item.name;
     document.getElementById('m-code').value = item.code;
@@ -564,11 +618,30 @@
       catSel.insertBefore(opt, catSel.firstChild);
     }
     catSel.value = catVal;
+    catSel._ssSync?.();
 
-    document.getElementById('m-brand').value = item.brandId || '';
-    document.getElementById('m-loc').value = item.location || '';
+    const brandSel = document.getElementById('m-brand');
+    brandSel.value = item.brandId || '';
+    brandSel._ssSync?.();
+
+    const locSel2 = document.getElementById('m-loc');
+    locSel2.value = item.location || '';
+    locSel2._ssSync?.();
     document.getElementById('m-min').value = item.min;
-    document.getElementById('m-unit').value = item.unit;
+
+    // Unit: select
+    const unitSel = document.getElementById('m-unit');
+    unitSel.querySelectorAll('[data-legacy]').forEach(o => o.remove());
+    const unitVal = item.unit || '';
+    if (unitVal && !Array.from(unitSel.options).some(o => o.value === unitVal)) {
+      const uOpt = document.createElement('option');
+      uOpt.value = unitVal; uOpt.textContent = unitVal + ' (sin mapear)'; uOpt.dataset.legacy = '1';
+      unitSel.insertBefore(uOpt, unitSel.firstChild);
+    }
+    unitSel.value = unitVal;
+    unitSel._ssSync?.();
+
+    document.getElementById('m-track-stock').checked = item.trackStock === true;
     document.getElementById('m-cost').value = item.cost;
     
     document.getElementById('m-stock-disp').textContent = item.stock;
@@ -590,8 +663,6 @@
       ).join('');
     }
     document.getElementById('m-price-hist').innerHTML = histHtml;
-
-    document.getElementById('mod-overlay').style.display = 'flex';
   }
 
   function closeModal() {
@@ -600,13 +671,24 @@
 
   async function saveItem() {
     const id = document.getElementById('m-id').value;
-    const item = STATE_INVENTORY.find(x => x.id === id) || window.DB.get().inventory.find(x => x.id === id);
+    let item;
+    if (id) {
+      item = STATE_INVENTORY.find(x => x.id === id) || window.DB.get().inventory.find(x => x.id === id);
+    } else {
+      item = {
+        id: crypto.randomUUID(),
+        stock: 0,
+        min: 0,
+        cost: 0,
+        trackStock: true
+      };
+    }
     if (!item) return;
 
     item.name = document.getElementById('m-name').value.trim();
     const newCode = document.getElementById('m-code').value.trim();
     // Validar código único (excepto el propio item al editar)
-    const duplicate = STATE_INVENTORY.find(x => x.code === newCode && x.id !== id);
+    const duplicate = STATE_INVENTORY.find(x => x.code === newCode && x.id !== item.id);
     if (duplicate) { alert(`El código "${newCode}" ya está usado por: ${duplicate.name}. Elige otro.`); return; }
     item.code = newCode;
     item.category = document.getElementById('m-cat').value;
@@ -614,11 +696,12 @@
     item.brandId = brandSel.value || '';
     item.brand   = brandSel.value ? (STATE_BRANDS.find(b => b.id === brandSel.value)?.name || '') : '';
     item.location = document.getElementById('m-loc').value;
-    item.min = parseFloat(document.getElementById('m-min').value);
+    item.min = parseFloat(document.getElementById('m-min').value) || 0;
     item.unit = document.getElementById('m-unit').value;
+    item.trackStock = document.getElementById('m-track-stock').checked;
     
     // Save New Cost if changed
-    const newCost = parseFloat(document.getElementById('m-cost').value);
+    const newCost = parseFloat(document.getElementById('m-cost').value) || 0;
     if (newCost !== item.cost) {
       item.cost = newCost;
     }
@@ -626,7 +709,7 @@
     // Stock manually changed?
     const sBox = document.getElementById('stock-edit-box').style.display;
     if (sBox !== 'none') {
-      item.stock = parseFloat(document.getElementById('m-stock').value);
+      item.stock = parseFloat(document.getElementById('m-stock').value) || 0;
     }
 
     window.DB.addOrUpdateInventory(item);

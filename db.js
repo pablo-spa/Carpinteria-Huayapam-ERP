@@ -245,14 +245,18 @@ window.DB = {
   },
   addOrUpdateInventory: (item) => {
     const d = getDB();
-    const ex = d.inventory.find((i) => i.code === item.code);
-    if (ex) {
-      Object.assign(ex, item);
-      if(window.parent && window.parent.setDocumentInFirebase && ex.id) window.parent.setDocumentInFirebase("inventory", ex.id, ex);
+    const idx = d.inventory.findIndex((i) => i.id === item.id || (item.code && i.code === item.code));
+    if (idx !== -1) {
+      d.inventory[idx] = { ...d.inventory[idx], ...item };
+      if(window.parent && window.parent.setDocumentInFirebase && item.id) {
+        window.parent.setDocumentInFirebase("inventory", item.id, d.inventory[idx]);
+      }
     } else {
       if(!item.id) item.id = crypto.randomUUID();
       d.inventory.push(item);
-      if(window.parent && window.parent.setDocumentInFirebase && item.id) window.parent.setDocumentInFirebase("inventory", item.id, item);
+      if(window.parent && window.parent.setDocumentInFirebase && item.id) {
+        window.parent.setDocumentInFirebase("inventory", item.id, item);
+      }
     }
     saveDB(d);
   },

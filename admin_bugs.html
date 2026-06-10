@@ -193,7 +193,11 @@ window.loadBugs = async function() {
 };
 
 window.markResolved = async function(id) {
-  if (!await window.parent.showConfirm('Marcar como Resuelto', '¿Marcar este reporte como solucionado?', '✓ Solucionado', 'btn-green')) return;
+  const confirmed = await new Promise(resolve =>
+    window.parent.showConfirm('Marcar como Resuelto', '¿Marcar este reporte como solucionado?', '✓ Solucionado', 'btn-green',
+      () => resolve(true), () => resolve(false))
+  );
+  if (!confirmed) return;
   try {
     const bug = allBugs.find(b => b.id === id);
     if (!bug) return;
@@ -206,7 +210,11 @@ window.markResolved = async function(id) {
 };
 
 window.deleteBug = async function(id) {
-  if (!await window.parent.showConfirm('Eliminar Reporte', '¿Eliminar este reporte permanentemente?', 'Eliminar', 'btn-red')) return;
+  const confirmed = await new Promise(resolve =>
+    window.parent.showConfirm('Eliminar Reporte', '¿Eliminar este reporte permanentemente?', 'Eliminar', 'btn-red',
+      () => resolve(true), () => resolve(false))
+  );
+  if (!confirmed) return;
   try {
     await window.parent.deleteDocumentFromFirebase('bugs', id);
     allBugs = allBugs.filter(b => b.id !== id);

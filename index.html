@@ -177,91 +177,86 @@
   /* WELCOME SCREEN */
   #welcome {
     flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 0;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
   }
-  @media (max-width: 960px) {
-    #welcome { grid-template-columns: 1fr; }
-    #welcome-right { display: none; }
-  }
 
-  /* ── Left column ── */
+  /* ── Top bar: greeting + alerts + shortcuts ── */
   #welcome-left {
-    display: flex; flex-direction: column; gap: 20px;
-    padding: 28px 28px 40px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 14px 24px 12px; flex-shrink: 0;
+    border-bottom: 1px solid var(--crust);
+    background: var(--base);
   }
-  .w-greeting { display: flex; flex-direction: column; gap: 4px; }
-  .w-greeting-name { font-size: 22px; font-weight: 800; color: var(--text); }
-  .w-greeting-date { font-size: 13px; color: var(--subtext); }
+  .w-greeting { display: flex; flex-direction: column; gap: 2px; }
+  .w-greeting-name { font-size: 18px; font-weight: 800; color: var(--text); }
+  .w-greeting-date { font-size: 12px; color: var(--subtext); }
 
-  /* Notifications panel */
+  /* Notifications panel — vertical column */
   #welcome-alerts { display: none; flex-direction: column; gap: 6px; }
   .w-section-title {
     font-size: 11px; font-weight: 800; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--subtext); margin-bottom: 2px;
+    letter-spacing: .06em; color: var(--subtext); margin-bottom: 0;
   }
   .w-alert {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 6px;
     background: var(--mantle); border: 1px solid var(--crust);
     border-left: 3px solid transparent;
-    border-radius: 8px; padding: 10px 14px;
+    border-radius: 20px; padding: 5px 12px 5px 8px;
     cursor: pointer; transition: background .12s;
   }
   .w-alert:hover { background: var(--surface0); }
-  .w-alert-icon { font-size: 16px; flex-shrink: 0; }
-  .w-alert-label { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
-  .w-alert-sub { font-size: 11px; color: var(--subtext); }
+  .w-alert-icon { font-size: 13px; flex-shrink: 0; }
+  .w-alert-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .w-alert-sub { display: none; }
   .w-alert-arrow { font-size: 11px; color: var(--subtext); }
 
-  /* Shortcuts grid */
-  #welcome-shortcuts { display: none; flex-direction: column; gap: 8px; }
-  .module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  /* Shortcuts — horizontal compact chips */
+  #welcome-shortcuts { display: none; flex-direction: row; gap: 6px; flex-wrap: wrap; }
+  .module-grid { display: flex; gap: 6px; flex-wrap: wrap; }
   .module-card {
     background: var(--mantle); border: 1px solid var(--crust);
-    border-radius: 10px; padding: 14px 16px;
+    border-radius: 8px; padding: 6px 12px;
     cursor: pointer; transition: all .15s;
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 7px;
   }
   .module-card:hover { border-color: var(--blue); background: var(--surface0); }
-  .module-card .mc-icon {
-    font-size: 20px; background: var(--base); border-radius: 8px;
-    width: 40px; height: 40px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; border: 1px solid var(--crust);
-  }
-  .module-card .mc-text strong { display: block; font-size: 13px; font-weight: 700; color: var(--text); }
-  .module-card .mc-text span  { font-size: 11px; color: var(--subtext); line-height: 1.4; display: block; margin-top: 1px; }
+  .module-card .mc-icon { font-size: 15px; flex-shrink: 0; }
+  .module-card .mc-text strong { display: block; font-size: 12px; font-weight: 700; color: var(--text); }
+  .module-card .mc-text span  { display: none; }
 
-  /* ── Right column: calendar ── */
+  /* ── Calendar — main content, centered ── */
   #welcome-right {
-    border-left: 1px solid var(--crust); background: var(--mantle);
-    display: flex; flex-direction: column; overflow: hidden;
+    flex: 1; overflow: hidden;
+    display: flex; justify-content: center;
+    padding: 20px 28px 16px;
+    background: var(--base);
   }
-  #home-cal { display: flex; flex-direction: column; height: 100%; }
+  #home-cal { width: 100%; max-width: 1200px; display: flex; flex-direction: column; overflow: hidden; }
   .hc-hdr {
-    padding: 14px 16px 10px; border-bottom: 1px solid var(--crust); flex-shrink: 0;
-    display: flex; flex-direction: column; gap: 8px;
+    padding: 0 0 12px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   }
   .hc-nav { display: flex; align-items: center; gap: 8px; }
-  .hc-month { font-size: 14px; font-weight: 800; color: var(--text); flex: 1; }
-  .hc-nav-btn { background: transparent; border: 1px solid var(--crust); border-radius: 6px; color: var(--subtext); font-size: 14px; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: .12s; }
+  .hc-month { font-size: 20px; font-weight: 800; color: var(--text); flex: 1; }
+  .hc-nav-btn { background: transparent; border: 1px solid var(--crust); border-radius: 6px; color: var(--subtext); font-size: 16px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: .12s; }
   .hc-nav-btn:hover { background: var(--surface0); color: var(--text); }
-  .hc-legend { display: flex; gap: 8px; flex-wrap: wrap; }
-  .hc-leg { font-size: 10px; font-weight: 700; color: var(--subtext); display: flex; align-items: center; gap: 3px; }
-  .hc-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-  .hc-body { flex: 1; overflow-y: auto; padding: 8px 8px 16px; display: flex; flex-direction: column; gap: 2px; }
-  .hc-dow-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 2px; }
-  .hc-dow { text-align: center; font-size: 9px; font-weight: 800; color: var(--subtext); text-transform: uppercase; padding: 3px 0; }
-  .hc-grid { display: grid; grid-template-columns: repeat(7,1fr); grid-auto-rows: 70px; gap: 2px; }
-  .hc-cell { height: 70px; overflow: hidden; background: var(--base); border: 1px solid var(--crust); border-radius: 6px; padding: 4px 4px; cursor: pointer; transition: border-color .12s; }
+  .hc-legend { display: flex; gap: 10px; flex-wrap: wrap; }
+  .hc-leg { font-size: 11px; font-weight: 700; color: var(--subtext); display: flex; align-items: center; gap: 4px; }
+  .hc-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .hc-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .hc-dow-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-bottom: 2px; }
+  .hc-dow { text-align: center; font-size: 11px; font-weight: 800; color: var(--subtext); text-transform: uppercase; padding: 4px 0; }
+  .hc-grid { display: grid; grid-template-columns: repeat(7,1fr); grid-auto-rows: minmax(88px, 1fr); gap: 3px; }
+  .hc-cell { overflow: hidden; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; padding: 6px; cursor: pointer; transition: border-color .12s; }
   .hc-cell:hover { border-color: var(--blue); }
-  .hc-cell.hc-today { border-color: var(--blue); }
-  .hc-cell.hc-other { opacity: .4; }
-  .hc-dd { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+  .hc-cell.hc-today { border-color: var(--blue); background: rgba(30,102,245,.04); }
+  .hc-cell.hc-other { opacity: .35; }
+  .hc-dd { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
   .hc-today .hc-dd { color: var(--blue); }
-  .hc-ev { font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hc-ev { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: opacity .1s; }
+  .hc-ev:hover { opacity: .75; }
   .hev-b { background: var(--green-bg); color: var(--green-text); }
   .hev-p { background: var(--amber-bg); color: var(--amber-text); }
   .hev-c { background: var(--blue-bg); color: var(--blue-text); }
@@ -274,17 +269,25 @@
     display: none; position: fixed; z-index: 9500;
     background: var(--base); border: 1px solid var(--crust);
     border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.22);
-    width: 260px; max-width: calc(100vw - 32px);
-    padding: 14px; pointer-events: all;
+    width: 280px; max-width: calc(100vw - 32px);
+    padding: 16px; pointer-events: all;
   }
   #hc-popover.open { display: block; }
-  .hcp-close { position: absolute; top: 8px; right: 10px; background: none; border: none; font-size: 15px; color: var(--subtext); cursor: pointer; padding: 2px 5px; border-radius: 4px; }
+  .hcp-close { position: absolute; top: 10px; right: 12px; background: none; border: none; font-size: 16px; color: var(--subtext); cursor: pointer; padding: 2px 6px; border-radius: 4px; }
   .hcp-close:hover { background: var(--surface0); }
-  .hcp-date { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--subtext); margin-bottom: 8px; }
-  .hcp-ev { display: flex; align-items: flex-start; gap: 7px; padding: 5px 0; border-bottom: 1px solid var(--crust); font-size: 12px; }
+  .hcp-date { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing:.05em; color: var(--subtext); margin-bottom: 10px; }
+  /* Day list (cell click) */
+  .hcp-ev { display: flex; align-items: center; gap: 7px; padding: 5px 0; border-bottom: 1px solid var(--crust); font-size: 12px; cursor: pointer; }
   .hcp-ev:last-child { border-bottom: none; }
-  .hcp-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+  .hcp-ev:hover { color: var(--blue); }
+  .hcp-badge { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
   .hcp-empty { font-size: 12px; color: var(--subtext); }
+  /* Single event detail */
+  .hcp-type { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--subtext); margin-bottom:5px; }
+  .hcp-title { font-size:15px; font-weight:800; color:var(--text); margin-bottom:10px; line-height:1.3; }
+  .hcp-row { display:flex; gap:8px; font-size:12px; padding:3px 0; }
+  .hcp-row-label { color:var(--subtext); font-weight:700; min-width:80px; flex-shrink:0; }
+  .hcp-row-val { color:var(--text); }
 
   /* IFRAME WRAPPER */
   #frame-wrapper {
@@ -427,7 +430,6 @@
 
         <!-- Accesos directos por rol -->
         <div id="welcome-shortcuts">
-          <div class="w-section-title">Accesos directos</div>
           <div class="module-grid" id="shortcut-grid"></div>
         </div>
       </div>
@@ -1166,7 +1168,7 @@
   };
 
   function goHome() {
-    document.getElementById('welcome').style.display = 'grid';
+    document.getElementById('welcome').style.display = 'flex';
     document.getElementById('frame-wrapper').style.display = 'none';
     navHistory = [];
     if (window.innerWidth <= 850) {
@@ -1372,6 +1374,9 @@
     const today    = new Date();
     const todayISO = today.toISOString().slice(0, 10);
     const toISO    = d => d.toISOString().slice(0, 10);
+    const fmtDate  = iso => iso ? new Date(iso+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}) : '—';
+    const fmtMXN   = n => n != null ? '$'+Number(n).toLocaleString('es-MX') : null;
+    const short    = (s, n=22) => s && s.length > n ? s.slice(0,n)+'…' : (s||'');
 
     const workers  = (window.DB_STATE.workers  || []).filter(w => !w._init && w.birthDate);
     const projects = (window.DB_STATE.projects || []).filter(p => !p._init);
@@ -1379,40 +1384,94 @@
     const viajes   = (window.DB_STATE.viajes   || []).filter(v => !v._init && v.fecha_salida);
     const docs     = (window.DB_STATE.documentos || []).filter(d => d.fechaVencimiento);
 
-    // Build events map by ISO date
     HC_EV_DATA = {};
     const addEv = (iso, ev) => { if (!HC_EV_DATA[iso]) HC_EV_DATA[iso] = []; HC_EV_DATA[iso].push(ev); };
 
     workers.forEach(w => {
       const parts = (w.birthDate || '').split('-').map(Number);
       if (!parts[1]) return;
-      const iso = `${HC_YEAR}-${String(parts[1]).padStart(2,'0')}-${String(parts[2]).padStart(2,'0')}`;
-      addEv(iso, { cls:'hev-b', badge:'hev-b', text:`🎂 ${(w.nombre||w.name||'?').split(' ')[0]}`, type:'Cumpleaños', title:(w.nombre||w.name||'?') });
+      const iso  = `${HC_YEAR}-${String(parts[1]).padStart(2,'0')}-${String(parts[2]).padStart(2,'0')}`;
+      const nombre = w.nombre || w.name || '?';
+      const edad = parts[0] ? HC_YEAR - parts[0] : null;
+      addEv(iso, {
+        cls:'hev-b', badge:'hev-b', text:`🎂 ${nombre.split(' ')[0]}`,
+        typeLabel:'Cumpleaños', title: nombre,
+        rows: [
+          { label:'Fecha', val: fmtDate(iso) },
+          ...(edad ? [{ label:'Edad', val:`${edad} años` }] : []),
+        ],
+        nav:'rh_trabajadores.html', navLabel:'Trabajadores',
+      });
     });
+
     projects.forEach(p => {
-      const start = (p.fechaInicio||p.startDate||'').slice(0,10);
-      const end   = (p.fechaFin||p.endDate||'').slice(0,10);
-      const code  = p.codigo||p.code||p.nombre||'Proyecto';
-      if (start) addEv(start, { cls:'hev-p', badge:'hev-p', text:`▶ ${code}`, type:'Inicio proyecto', title:code });
-      if (end && end !== start) addEv(end, { cls:'hev-p', badge:'hev-p', text:`■ ${code}`, type:'Fin proyecto', title:code });
+      const nombre = p.nombre || p.name || '';
+      const codigo = p.codigo || p.code || '';
+      const label  = nombre && codigo ? `${nombre} (${codigo})` : nombre || codigo || 'Proyecto';
+      const chip   = short(nombre || codigo, 18);
+      const start  = (p.fechaInicio||p.startDate||'').slice(0,10);
+      const end    = (p.fechaFin||p.endDate||'').slice(0,10);
+      const baseRows = [
+        { label:'Código',  val: codigo || '—' },
+        { label:'Inicio',  val: fmtDate(start) },
+        { label:'Entrega', val: end ? fmtDate(end) : '—' },
+        ...(p.estado ? [{ label:'Estado', val: p.estado }] : []),
+      ];
+      if (start) addEv(start, { cls:'hev-p', badge:'hev-p', text:`▶ ${chip}`, typeLabel:'Inicio de proyecto', title:label, rows:baseRows, nav:'proyectos.html', navLabel:'Proyectos' });
+      if (end && end !== start) addEv(end, { cls:'hev-p', badge:'hev-p', text:`■ ${chip}`, typeLabel:'Fin de proyecto', title:label, rows:baseRows, nav:'proyectos.html', navLabel:'Proyectos' });
     });
+
     orders.forEach(o => {
       const iso = (o.date||'').slice(0,10);
-      if (iso) addEv(iso, { cls:'hev-c', badge:'hev-c', text:`🛒 ${o.folio||'Compra'}`, type:'Compra', title:o.folio||'Orden de compra' });
+      if (!iso) return;
+      const supplier = o.proveedor || o.supplier || o.provider || '';
+      addEv(iso, {
+        cls:'hev-c', badge:'hev-c', text:`🛒 ${o.folio||'Compra'}`,
+        typeLabel:'Orden de Compra', title: o.folio||'Orden de compra',
+        rows: [
+          { label:'Fecha', val: fmtDate(iso) },
+          ...(supplier ? [{ label:'Proveedor', val: supplier }] : []),
+          ...(o.total != null ? [{ label:'Total', val: fmtMXN(o.total) }] : []),
+        ],
+        nav:'historial_compras.html', navLabel:'Historial Compras',
+      });
     });
+
     viajes.forEach(v => {
-      const sal = (v.fecha_salida||'').slice(0,10);
-      const reg = (v.fecha_regreso_real||v.fecha_regreso_est||sal).slice(0,10);
-      // Add to each day in range (only within current month for perf)
+      const sal    = (v.fecha_salida||'').slice(0,10);
+      const regEst  = (v.fecha_regreso_est||'').slice(0,10);
+      const regReal = (v.fecha_regreso_real||'').slice(0,10);
+      const regEnd  = regReal || regEst || sal;
+      if (!sal) return;
+      const rows = [
+        { label:'Destino',      val: v.destino || '—' },
+        { label:'Salida',       val: fmtDate(sal) },
+        { label:'Regreso est.', val: regEst ? fmtDate(regEst) : '—' },
+        ...(regReal ? [{ label:'Regreso real', val: fmtDate(regReal) }] : []),
+        ...(v.estado ? [{ label:'Estado', val: v.estado }] : []),
+      ];
       let cur = new Date(sal+'T12:00:00');
-      const endD = new Date(reg+'T12:00:00');
+      const endD = new Date(regEnd+'T12:00:00');
       while (cur <= endD) {
-        addEv(toISO(cur), { cls:'hev-v', badge:'hev-v', text:`✈ ${v.destino||'Viaje'}`, type:'Viaje', title:v.destino||'Viaje' });
+        addEv(toISO(cur), { cls:'hev-v', badge:'hev-v', text:`✈ ${v.destino||'Viaje'}`, typeLabel:'Viaje', title:v.destino||'Viaje', rows, nav:'viaticos.html', navLabel:'Viáticos' });
         cur.setDate(cur.getDate()+1);
       }
     });
+
     docs.forEach(d => {
-      addEv(d.fechaVencimiento, { cls:'hev-d', badge:'hev-d', text:`📄 ${d.titulo}`, type:'Vencimiento doc.', title:d.titulo });
+      const iso = (d.fechaVencimiento||'').slice(0,10);
+      if (!iso) return;
+      const venced = new Date(iso+'T12:00:00') < new Date();
+      addEv(iso, {
+        cls:'hev-d', badge:'hev-d', text:`📄 ${d.titulo}`,
+        typeLabel:'Vencimiento doc.', title: d.titulo,
+        rows: [
+          { label:'Vence', val: fmtDate(iso) },
+          { label:'Estado', val: venced ? 'Vencido' : 'Próximo a vencer' },
+          ...(d.encargado ? [{ label:'Encargado', val: d.encargado }] : []),
+        ],
+        nav:'documentos.html', navLabel:'Documentos',
+      });
     });
 
     // First day of month (Monday-based grid)
@@ -1433,10 +1492,10 @@
       const iso = toISO(d);
       const isToday = iso === todayISO;
       const evs = HC_EV_DATA[iso] || [];
-      const MAX = 2;
-      const evHtml = evs.slice(0, MAX).map(e =>
-        `<div class="hc-ev ${e.cls}" title="${e.text}">${e.text}</div>`
-      ).join('') + (evs.length > MAX ? `<div class="hc-ev hev-x" onclick="showHcPopover('${iso}',event)">+${evs.length-MAX}</div>` : '');
+      const MAX = 3;
+      const evHtml = evs.slice(0, MAX).map((e, i) =>
+        `<div class="hc-ev ${e.cls}" title="${e.title}" onclick="event.stopPropagation();showHcEventCard('${iso}',${i},event)">${e.text}</div>`
+      ).join('') + (evs.length > MAX ? `<div class="hc-ev hev-x" onclick="event.stopPropagation();showHcPopover('${iso}',event)">+${evs.length-MAX} más</div>` : '');
       html += `<div class="hc-cell${isToday?' hc-today':''}" onclick="showHcPopover('${iso}',event)"><div class="hc-dd">${day}</div>${evHtml}</div>`;
     }
     // Fill remaining cells
@@ -1449,23 +1508,70 @@
     grid.innerHTML = html;
   }
 
+  function _hcPos(pop, e) {
+    const x = Math.min(e.clientX + 8, window.innerWidth  - 296);
+    const y = Math.min(e.clientY + 8, window.innerHeight - 320);
+    pop.style.left = Math.max(8, x) + 'px';
+    pop.style.top  = Math.max(8, y) + 'px';
+    pop.classList.add('open');
+  }
+
+  function _hcDateLabel(iso) {
+    const MONTHS_L = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const d = new Date(iso+'T12:00:00');
+    return `${d.getDate()} de ${MONTHS_L[d.getMonth()]} de ${d.getFullYear()}`;
+  }
+
+  function showHcEventCard(iso, idx, e) {
+    e.stopPropagation();
+    const pop = document.getElementById('hc-popover');
+    const ev = (HC_EV_DATA[iso] || [])[idx];
+    if (!ev) return;
+    document.getElementById('hcp-date').textContent = _hcDateLabel(iso);
+    const rowsHtml = (ev.rows || []).map(r =>
+      `<div class="hcp-row"><span class="hcp-row-label">${r.label}</span><span class="hcp-row-val">${r.val}</span></div>`
+    ).join('');
+    document.getElementById('hcp-events').innerHTML = `
+      <div class="hcp-type">${ev.typeLabel || ev.type || ''}</div>
+      <div class="hcp-title">${ev.title}</div>
+      ${rowsHtml ? `<div style="margin-bottom:10px;">${rowsHtml}</div>` : ''}
+      <div style="text-align:right;margin-top:8px;">
+        <button class="btn btn-blue" style="font-size:12px;padding:5px 14px;" onclick="document.getElementById('hc-popover').classList.remove('open');openModule('${ev.nav}','${ev.navLabel}',false,true)">Abrir →</button>
+      </div>`;
+    _hcPos(pop, e);
+  }
+
   function showHcPopover(iso, e) {
     e.stopPropagation();
     const pop = document.getElementById('hc-popover');
     const evs = HC_EV_DATA[iso] || [];
-    const MONTHS_ES_L = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    const d = new Date(iso+'T12:00:00');
-    document.getElementById('hcp-date').textContent =
-      `${d.getDate()} de ${MONTHS_ES_L[d.getMonth()]} de ${d.getFullYear()}`;
-    document.getElementById('hcp-events').innerHTML = evs.length
-      ? evs.map(ev => `<div class="hcp-ev"><span class="hcp-badge ${ev.badge}">${ev.type}</span><span>${ev.title}</span></div>`).join('')
-      : '<div class="hcp-empty">Sin eventos</div>';
-    // Position near click
-    const x = Math.min(e.clientX + 8, window.innerWidth - 280);
-    const y = Math.min(e.clientY + 8, window.innerHeight - 200);
-    pop.style.left = x + 'px';
-    pop.style.top  = y + 'px';
-    pop.classList.add('open');
+    document.getElementById('hcp-date').textContent = _hcDateLabel(iso);
+    if (evs.length === 0) {
+      document.getElementById('hcp-events').innerHTML = '<div class="hcp-empty">Sin eventos</div>';
+    } else if (evs.length === 1) {
+      // Single event: show detail directly
+      const ev = evs[0];
+      const rowsHtml = (ev.rows || []).map(r =>
+        `<div class="hcp-row"><span class="hcp-row-label">${r.label}</span><span class="hcp-row-val">${r.val}</span></div>`
+      ).join('');
+      document.getElementById('hcp-events').innerHTML = `
+        <div class="hcp-type">${ev.typeLabel || ev.type || ''}</div>
+        <div class="hcp-title">${ev.title}</div>
+        ${rowsHtml ? `<div style="margin-bottom:10px;">${rowsHtml}</div>` : ''}
+        <div style="text-align:right;margin-top:8px;">
+          <button class="btn btn-blue" style="font-size:12px;padding:5px 14px;" onclick="document.getElementById('hc-popover').classList.remove('open');openModule('${ev.nav}','${ev.navLabel}',false,true)">Abrir →</button>
+        </div>`;
+    } else {
+      // Multiple events: show list, each clickable to detail
+      document.getElementById('hcp-events').innerHTML = evs.map((ev, i) =>
+        `<div class="hcp-ev" onclick="event.stopPropagation();showHcEventCard('${iso}',${i},event)">
+           <span class="hcp-badge ${ev.badge}">${ev.typeLabel||ev.type}</span>
+           <span style="flex:1">${ev.title}</span>
+           <span style="font-size:10px;color:var(--subtext)">→</span>
+         </div>`
+      ).join('');
+    }
+    _hcPos(pop, e);
   }
 
   document.addEventListener('click', e => {

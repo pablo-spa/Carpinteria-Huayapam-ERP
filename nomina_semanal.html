@@ -247,19 +247,13 @@
     <button class="btn btn-ghost" style="padding:4px 8px;font-size:16px;" onclick="chgWeek(1)">›</button>
   </div>
 
-  <div style="margin-left:auto; display:flex; align-items:center; gap:12px;" id="filter-workers-wrap">
-    <label style="font-size:12px; font-weight:600; color:var(--subtext); display:flex; align-items:center; gap:6px; cursor:pointer;">
-      <input type="checkbox" id="show-all-chk" onchange="toggleShowAll()" style="accent-color:var(--blue); width:16px; height:16px;">
-      Mostrar todos los trabajadores
-    </label>
-  </div>
 </div>
 
 <div class="main">
 
   <!-- ── NÓMINA ── -->
   <div id="tab-nomina" class="tab-pane active">
-    <div class="sec-lbl" id="lbl-pend">Por verificar (—)</div>
+    <div class="sec-lbl" id="lbl-pend" style="display:none"></div>
     <div id="list-pend"></div>
     <div id="sec-verif" style="display:none">
       <div class="sec-lbl" id="lbl-verif">Verificados (0)</div>
@@ -565,35 +559,12 @@ function updWeekLbl(){
   document.getElementById('week-lbl').textContent=`Semana ${weekNum(mon)} — ${fri.getFullYear()}`;
   document.getElementById('week-sub').textContent=`${fmtS(sat)} – ${fmtS(fri)}`;
 }
-let showAllWorkers = false;
-
 function renderWorkerList() {
   const listPend = document.getElementById('list-pend');
   if (!listPend) return;
 
-  // Workers who attended = at least one day not 'libre'
-  const attended = WORKERS.filter(w => S[w.id]?.dias.some(d => d.st === 'trabajo' || d.st === 'retardo'));
-  const toShow   = showAllWorkers ? WORKERS : attended;
-
   listPend.innerHTML = '';
-  toShow.forEach(w => listPend.appendChild(buildCard(w)));
-
-  const btn = document.getElementById('btn-show-all');
-  if (btn) {
-    if (showAllWorkers) {
-      btn.textContent = `Solo asistentes (${attended.length})`;
-      btn.style.color = 'var(--blue)';
-    } else {
-      btn.textContent = `Mostrar todos (${WORKERS.length})`;
-      btn.style.color = 'var(--subtext)';
-    }
-  }
-}
-
-function toggleShowAll() {
-  showAllWorkers = document.getElementById('show-all-chk').checked;
-  renderWorkerList();
-  updLabels();
+  WORKERS.forEach(w => listPend.appendChild(buildCard(w)));
 }
 
 let _chgWeekTimer = null;

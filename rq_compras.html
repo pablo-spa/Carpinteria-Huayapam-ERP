@@ -70,11 +70,10 @@
 .row-rm:hover { background: var(--red-bg); color: var(--red); }
 
 .new-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10px; font-weight: 800; text-transform: uppercase;
-  background: var(--amber-bg); color: var(--amber-text);
-  border: 1px solid var(--amber); border-radius: 5px; padding: 2px 6px;
-  margin-top: 3px;
+  display: inline-flex; align-items: center;
+  font-size: 10px; font-weight: 600;
+  background: var(--surface0); color: var(--subtext);
+  border: 1px solid var(--crust); border-radius: 4px; padding: 1px 5px;
 }
 
 .add-row-btn { cursor: pointer; background: var(--base); border: 1.5px dashed var(--crust); border-radius: var(--radius); color: var(--subtext); font-size: 13px; font-weight: 600; padding: 9px 14px; font-family: inherit; width: 100%; text-align: left; transition: .15s; margin-bottom: 12px; }
@@ -131,11 +130,6 @@
   <div id="no-items-list"></div>
 
   <button class="add-row-btn" onclick="addNewItemRow()">+ Agregar renglón</button>
-
-  <div id="no-pending-notice" class="pending-notice" style="display:none;">
-    ⚠ Esta orden incluye <span id="no-pending-count">0</span> concepto(s) nuevo(s) y/o proveedor(es) nuevos que aún no están en el catálogo.
-    Se agregarán automáticamente al catálogo cuando autorices la compra.
-  </div>
 
   <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px; padding-top:14px; border-top:1px solid var(--crust);">
     <button class="btn btn-dark" onclick="hideNewOrderForm()">Cancelar</button>
@@ -399,9 +393,7 @@ function updPendingNotice() {
     if (!esHerr && row.querySelector('.ni-concepto-nuevo')?.style.display !== 'none') pendingCount++;
     if (row.querySelector('.ni-proveedor-nuevo')?.style.display !== 'none') pendingCount++;
   });
-  const notice = document.getElementById('no-pending-notice');
-  document.getElementById('no-pending-count').textContent = pendingCount;
-  notice.style.display = pendingCount > 0 ? 'block' : 'none';
+  // pending notice removed
 }
 
 function collectItems() {
@@ -619,11 +611,7 @@ function buildItemsTable(o) {
         <select class="iname" data-searchable data-allow-new data-order="${o.id}" data-idx="${i}" onchange="iconceptChange(this)">
           ${buildConceptNameOpts(nameVal)}
         </select>
-        ${(item.conceptoPendiente && !item.esHerramienta) ? `
-          <div class="add-cat-row">
-            <input type="checkbox" class="iadd-cat" data-order="${o.id}" data-idx="${i}" id="cat-${o.id}-${i}" checked style="width:14px;height:14px;accent-color:var(--amber);">
-            <label for="cat-${o.id}-${i}">✦ Agregar al catálogo</label>
-          </div>` : ''}
+        ${(item.conceptoPendiente && !item.esHerramienta) ? `<div style="font-size:10px;color:var(--subtext);margin-top:2px;">✦ Nuevo concepto</div>` : ''}
       </td>
       <td>
         <div style="display:flex;gap:4px;align-items:center;">
@@ -680,10 +668,7 @@ function buildActiveCard(o, mode) {
   const pillTxt   = isCotizar ? 'Por cotizar' : isManual ? 'Manual' : 'Autorizado';
   const cardCls   = isCotizar ? 'c-pending' : isManual ? 'c-manual' : 'c-ready';
 
-  const hasPending = o.items?.some(i => i.conceptoPendiente || i.proveedorPendiente);
-  const pendingHtml = hasPending
-    ? `<div class="pending-notice" style="margin-bottom:10px;">⚠ Esta orden tiene conceptos o proveedores nuevos que se confirmarán al autorizar.</div>`
-    : '';
+  const pendingHtml = '';
 
   const accts = ACCOUNTS.length ? ACCOUNTS : ['CAJA','CHU','SATP'];
   const cuentaOpts = accts.map(a => `<option value="${a}">${a}</option>`).join('');
