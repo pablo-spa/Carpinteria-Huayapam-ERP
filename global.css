@@ -180,3 +180,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .badge-cerrado, .badge-cancelled { background: var(--surface0); color: var(--subtext); border-color: var(--crust); }
 .badge-pending, .badge-pedido, .badge-borrador, .badge-quoted { background: var(--amber-bg); color: var(--amber-text); border-color: rgba(223,142,29,0.2); }
 .badge-verde, .badge-aire { background: var(--blue-bg); color: var(--blue-text); border-color: rgba(30,102,245,0.2); }
+
+/* ── Tablas Uniformes (UI Toolkit) ── */
+.table-wrapper { width: 100%; overflow-x: auto; margin-bottom: 16px; border: 1px solid var(--crust); border-radius: var(--radius-lg, 12px); background: var(--mantle); }
+table.tbl { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+table.tbl th { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); padding: 12px 16px; border-bottom: 2px solid var(--crust); background: var(--mantle); letter-spacing: 0.05em; }
+table.tbl td { padding: 12px 16px; border-bottom: 1px solid var(--crust); color: var(--text); vertical-align: middle; }
+table.tbl tr:last-child td { border-bottom: none; }
+table.tbl tr:hover td { background: rgba(30,102,245,0.02); }
+body.dark-mode table.tbl tr:hover td { background: rgba(140,170,238,0.02); }
+table.tbl th.num, table.tbl td.num { text-align: right; }

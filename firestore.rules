@@ -193,5 +193,8 @@ service cloud.firestore {
     match /tool_states/{docId} { allow read, write: if isLoggedIn(); }
     match /document_categories/{docId} { allow read, write: if isLoggedIn(); }
     match /inventory_salidas/{docId} { allow read, write: if isLoggedIn(); }
+    match /gasolina_vales/{docId} { allow read, write: if isLoggedIn(); }
+    match /vehicles_log/{docId} { allow read, write: if isLoggedIn(); }
+    match /vehicles_states/{docId} { allow read, write: if isLoggedIn(); }
   }
 }

@@ -9,14 +9,32 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
+.main-scroll { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.v-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
 
+/* Tabs system */
+.tabs-hdr { display: flex; gap: 8px; border-bottom: 1px solid var(--crust); margin-bottom: 20px; padding-bottom: 2px; }
+.tab-btn { background: transparent; border: none; padding: 8px 16px; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; border-radius: var(--radius); transition: all 0.15s; }
+.tab-btn:hover { background: var(--surface0); color: var(--text); }
+.tab-btn.active { background: var(--blue-bg); color: var(--blue-text); }
 
-.main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
-.empty-icon { font-size: 72px; margin-bottom: 20px; opacity: 0.9; }
-.empty-title { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
-.empty-desc { font-size: 15px; color: var(--subtext); max-width: 440px; line-height: 1.6; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
 
-.wip-badge { display: inline-block; background: var(--blue-bg); color: var(--blue); padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; border: 1px solid rgba(30,102,245,0.2); }
+/* Form layout */
+.inline-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; align-items: end; }
+.inline-form .form-group { margin-bottom: 0; }
+
+.vehicle-card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.15s; }
+.vehicle-card:hover { border-color: var(--surface1); }
+.vehicle-card-hdr { display: flex; justify-content: space-between; align-items: flex-start; }
+.vehicle-name { font-size: 15px; font-weight: 800; color: var(--text); }
+.vehicle-info-row { display: flex; justify-content: space-between; font-size: 12px; border-top: 1px solid var(--crust); padding-top: 8px; }
+.vehicle-info-lbl { color: var(--subtext); font-weight: 600; }
+.vehicle-info-val { font-weight: 700; color: var(--text); }
+
+.status-badge-click { cursor: pointer; transition: opacity 0.12s; }
+.status-badge-click:hover { opacity: 0.8; }
 </style>
 </head>
 <body>
@@ -28,14 +46,418 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   </div>
 </div>
 
-<div class="main">
-  <div class="wip-badge">En Desarrollo</div>
-  <div class="empty-icon">🚚</div>
-  <div class="empty-title">Próximamente</div>
-  <div class="empty-desc">
-    Módulo central para llevar el control de los vehículos de la empresa, gestionar pólizas de seguro, registrar gastos de gasolina y mantener bitácoras de viaje actualizadas.
+<div class="main-scroll">
+  <div class="tabs-hdr">
+    <button class="tab-btn active" onclick="switchTab('tab-gasolina', this)">⛽ Vales de Gasolina</button>
+    <button class="tab-btn" onclick="switchTab('tab-mantenimiento', this)">🛠️ Mantenimiento y Trámites</button>
+    <button class="tab-btn" onclick="switchTab('tab-flotilla', this)">🚚 Estado de Flotilla</button>
+  </div>
+
+  <!-- PESTAÑA: GASOLINA -->
+  <div id="tab-gasolina" class="tab-pane active">
+    <!-- Formulario Vales Express -->
+    <div class="inline-form">
+      <div class="field">
+        <label>Vehículo</label>
+        <select id="vg-vehiculo" class="form-control"></select>
+      </div>
+      <div class="field">
+        <label>Monto ($)</label>
+        <input type="number" id="vg-monto" class="form-control" placeholder="0.00" step="10">
+      </div>
+      <div class="field">
+        <label>Litros (Opcional)</label>
+        <input type="number" id="vg-litros" class="form-control" placeholder="0.00" step="0.01">
+      </div>
+      <div class="field">
+        <label>Folio Vale</label>
+        <input type="text" id="vg-folio" class="form-control" placeholder="Ej. 1234">
+      </div>
+      <div class="field">
+        <label>Recibe</label>
+        <select id="vg-recibe" class="form-control">
+          <option value="">— Seleccionar chofer —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Kilómetros (Opcional)</label>
+        <input type="number" id="vg-km" class="form-control" placeholder="Medidor roto = vacío">
+      </div>
+      <div>
+        <button class="btn btn-blue" onclick="agregarVale()" style="width:100%; height:38px;">Registrar Vale</button>
+      </div>
+    </div>
+
+    <!-- Historial de vales en tabla unificada -->
+    <div class="table-wrapper">
+      <table class="tbl" id="tbl-vales">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Vehículo</th>
+            <th>Folio</th>
+            <th>Monto</th>
+            <th>Litros</th>
+            <th>Responsable</th>
+            <th>Kms</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-vales">
+          <!-- Dinámico -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PESTAÑA: MANTENIMIENTO -->
+  <div id="tab-mantenimiento" class="tab-pane">
+    <!-- Formulario Mantenimiento Express -->
+    <div class="inline-form">
+      <div class="field">
+        <label>Vehículo</label>
+        <select id="vm-vehiculo" class="form-control"></select>
+      </div>
+      <div class="field">
+        <label>Tipo de Evento</label>
+        <select id="vm-tipo" class="form-control">
+          <option value="mantenimiento">Mantenimiento / Servicio</option>
+          <option value="seguro">Seguro (Póliza)</option>
+          <option value="tenencia">Tenencia / Trámite</option>
+          <option value="taller">Ingreso a Taller</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column: span 2;">
+        <label>Descripción / Detalle</label>
+        <input type="text" id="vm-desc" class="form-control" placeholder="Ej. Cambio de aceite, Póliza #9823...">
+      </div>
+      <div class="field">
+        <label>Costo ($)</label>
+        <input type="number" id="vm-costo" class="form-control" placeholder="0.00" step="50">
+      </div>
+      <div class="field">
+        <label>Vencimiento (Opcional)</label>
+        <input type="date" id="vm-vence" class="form-control">
+      </div>
+      <div>
+        <button class="btn btn-blue" onclick="agregarMantenimiento()" style="width:100%; height:38px;">Registrar Evento</button>
+      </div>
+    </div>
+
+    <!-- Historial de mantenimientos en tabla unificada -->
+    <div class="table-wrapper">
+      <table class="tbl" id="tbl-mantenimientos">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Vehículo</th>
+            <th>Tipo</th>
+            <th>Descripción</th>
+            <th>Costo</th>
+            <th>Próximo Vencimiento</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-mantenimientos">
+          <!-- Dinámico -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PESTAÑA: ESTADO DE FLOTILLA -->
+  <div id="tab-flotilla" class="tab-pane">
+    <div class="v-grid" id="flotilla-grid">
+      <!-- Dinámico -->
+    </div>
   </div>
 </div>
 
+<script src="db.js"></script>
+<script src="ui.js"></script>
+<script>
+let VEHICLES = [];
+let WORKERS  = [];
+
+async function init() {
+  // Asegurar que las colecciones requeridas estén cargadas
+  await Promise.all([
+    window.DB.query('vehicles_log'),
+    window.DB.query('gasolina_vales'),
+    window.DB.query('workers'),
+  ]);
+
+  const db = window.DB.get();
+  WORKERS = (db.workers || []).filter(w => !w._init);
+  
+  // Cargar vehículos desde la lista del sistema definidos en admin_listas.html
+  // En db.js o de manera global pueden estar mapeados bajo settings o directamente en su colección
+  const systemListDoc = (db.vehicles || []);
+  VEHICLES = systemListDoc.length ? systemListDoc.map(v => typeof v === 'string' ? { id: v, name: v } : v) 
+             : [{ id: 'Camioneta Roja', name: 'Camioneta Roja' }, { id: 'Camión Blanco', name: 'Camión Blanco' }];
+
+  populateSelects();
+  renderVales();
+  renderMantenimientos();
+  renderFlotilla();
+}
+
+function populateSelects() {
+  const gSel = document.getElementById('vg-vehiculo');
+  const mSel = document.getElementById('vm-vehiculo');
+  const rSel = document.getElementById('vg-recibe');
+
+  gSel.innerHTML = VEHICLES.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+  mSel.innerHTML = VEHICLES.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+  
+  rSel.innerHTML = `<option value="">— Seleccionar chofer —</option>` + 
+    WORKERS.map(w => `<option value="${w.id}">${w.nombre || w.name}</option>`).join('');
+}
+
+// ── Pestañas ──
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Vales de Gasolina ──
+async function agregarVale() {
+  const vehiculo = document.getElementById('vg-vehiculo').value;
+  const monto = parseFloat(document.getElementById('vg-monto').value);
+  const litros = parseFloat(document.getElementById('vg-litros').value) || 0;
+  const folio = document.getElementById('vg-folio').value.trim();
+  const recibe = document.getElementById('vg-recibe').value;
+  const km = parseInt(document.getElementById('vg-km').value) || '';
+
+  if (!monto || !folio || !recibe) {
+    toast('Por favor llena los campos obligatorios (monto, folio y chofer).', 'warn');
+    return;
+  }
+
+  const nuevoVale = {
+    id: crypto.randomUUID(),
+    vehiculoId: vehiculo,
+    fecha: new Date().toISOString().slice(0, 10),
+    monto,
+    litros,
+    folioVale: folio,
+    quienRecibe: recibe,
+    kmActual: km
+  };
+
+  const db = window.DB.get();
+  if (!db.gasolina_vales) db.gasolina_vales = [];
+  db.gasolina_vales.unshift(nuevoVale);
+
+  if (window.parent?.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('gasolina_vales', nuevoVale.id, nuevoVale);
+  }
+  window.DB.save(db);
+  
+  // Reset formulario
+  document.getElementById('vg-monto').value = '';
+  document.getElementById('vg-litros').value = '';
+  document.getElementById('vg-folio').value = '';
+  document.getElementById('vg-km').value = '';
+
+  toast('Vale de gasolina registrado correctamente.');
+  renderVales();
+}
+
+function renderVales() {
+  const tbody = document.getElementById('tbody-vales');
+  const db = window.DB.get();
+  const vales = db.gasolina_vales || [];
+
+  if (vales.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--subtext);">No hay vales de gasolina registrados.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = vales.map(v => {
+    const chofer = WORKERS.find(w => w.id === v.quienRecibe);
+    const choferName = chofer ? (chofer.nombre || chofer.name) : '—';
+    return `
+      <tr>
+        <td>${v.fecha}</td>
+        <td style="font-weight:700;">${v.vehiculoId}</td>
+        <td><span class="badge badge-gray">${v.folioVale}</span></td>
+        <td style="font-weight:800;">$${v.monto.toFixed(2)}</td>
+        <td>${v.litros ? v.litros + ' L' : '—'}</td>
+        <td>${choferName}</td>
+        <td>${v.kmActual ? parseInt(v.kmActual).toLocaleString() + ' km' : '<span style="color:var(--hint)">Roto/S.M.</span>'}</td>
+        <td>
+          <button class="rm-btn" onclick="eliminarDocumento('gasolina_vales', '${v.id}')">🗑</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ── Mantenimiento ──
+async function agregarMantenimiento() {
+  const vehiculo = document.getElementById('vm-vehiculo').value;
+  const tipo = document.getElementById('vm-tipo').value;
+  const desc = document.getElementById('vm-desc').value.trim();
+  const costo = parseFloat(document.getElementById('vm-costo').value) || 0;
+  const vence = document.getElementById('vm-vence').value;
+
+  if (!desc) {
+    toast('Por favor agrega una descripción del evento.', 'warn');
+    return;
+  }
+
+  const nuevoMantenimiento = {
+    id: crypto.randomUUID(),
+    vehiculoId: vehiculo,
+    fecha: new Date().toISOString().slice(0, 10),
+    tipo,
+    descripcion: desc,
+    costo,
+    fechaVencimiento: vence || ''
+  };
+
+  const db = window.DB.get();
+  if (!db.vehicles_log) db.vehicles_log = [];
+  db.vehicles_log.unshift(nuevoMantenimiento);
+
+  const batchOps = [{ type: 'set', col: 'vehicles_log', id: nuevoMantenimiento.id, data: nuevoMantenimiento }];
+
+  // Si ingresa al taller, actualizar automáticamente el estado del vehículo en la flotilla
+  if (tipo === 'taller') {
+    const vState = db.vehicles_states?.find(x => x.id === vehiculo) || { id: vehiculo };
+    vState.estado = 'taller';
+    if (!db.vehicles_states) db.vehicles_states = [];
+    if (!db.vehicles_states.find(x => x.id === vehiculo)) db.vehicles_states.push(vState);
+    batchOps.push({ type: 'set', col: 'vehicles_states', id: vehiculo, data: vState });
+  }
+
+  if (window.parent?.runBatchedWrites) {
+    await window.parent.runBatchedWrites(batchOps);
+  }
+  window.DB.save(db);
+
+  document.getElementById('vm-desc').value = '';
+  document.getElementById('vm-costo').value = '';
+  document.getElementById('vm-vence').value = '';
+
+  toast('Evento de mantenimiento registrado correctamente.');
+  renderMantenimientos();
+  renderFlotilla();
+}
+
+function renderMantenimientos() {
+  const tbody = document.getElementById('tbody-mantenimientos');
+  const db = window.DB.get();
+  const logs = db.vehicles_log || [];
+
+  if (logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--subtext);">No hay registros de mantenimiento.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = logs.map(l => {
+    let badgeCls = 'badge-blue';
+    if (l.tipo === 'seguro') badgeCls = 'badge-purple';
+    if (l.tipo === 'tenencia') badgeCls = 'badge-amber';
+    if (l.tipo === 'taller') badgeCls = 'badge-red';
+
+    return `
+      <tr>
+        <td>${l.fecha}</td>
+        <td style="font-weight:700;">${l.vehiculoId}</td>
+        <td><span class="badge ${badgeCls}">${l.tipo.toUpperCase()}</span></td>
+        <td>${l.descripcion}</td>
+        <td style="font-weight:800;">$${(l.costo || 0).toFixed(2)}</td>
+        <td>${l.fechaVencimiento ? `<span class="badge badge-gray">📅 ${l.fechaVencimiento}</span>` : '—'}</td>
+        <td>
+          <button class="rm-btn" onclick="eliminarDocumento('vehicles_log', '${l.id}')">🗑</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ── Estado de la Flotilla ──
+async function toggleEstado(vehiculoId) {
+  const db = window.DB.get();
+  if (!db.vehicles_states) db.vehicles_states = [];
+  let vState = db.vehicles_states.find(x => x.id === vehiculoId);
+  if (!vState) {
+    vState = { id: vehiculoId, estado: 'activo' };
+    db.vehicles_states.push(vState);
+  }
+
+  vState.estado = vState.estado === 'activo' ? 'taller' : 'activo';
+
+  if (window.parent?.setDocumentInFirebase) {
+    await window.parent.setDocumentInFirebase('vehicles_states', vehiculoId, vState);
+  }
+  window.DB.save(db);
+  toast(`Estado de ${vehiculoId} actualizado.`);
+  renderFlotilla();
+}
+
+function renderFlotilla() {
+  const grid = document.getElementById('flotilla-grid');
+  const db = window.DB.get();
+  const states = db.vehicles_states || [];
+  const logs = db.vehicles_log || [];
+  const vales = db.gasolina_vales || [];
+
+  grid.innerHTML = VEHICLES.map(v => {
+    const vState = states.find(x => x.id === v.id) || { estado: 'activo' };
+    const statusCls = vState.estado === 'activo' ? 'badge-green' : 'badge-red';
+    const statusText = vState.estado === 'activo' ? '🟢 EN RUTA / ACTIVO' : '🛠️ EN TALLER';
+
+    // Calcular costos totales históricos de este vehículo
+    const totalMaint = logs.filter(l => l.vehiculoId === v.id).reduce((s, l) => s + (l.costo || 0), 0);
+    const totalGas = vales.filter(l => l.vehiculoId === v.id).reduce((s, l) => s + (l.monto || 0), 0);
+
+    return `
+      <div class="vehicle-card">
+        <div class="vehicle-card-hdr">
+          <span class="vehicle-name">${v.name}</span>
+          <span class="badge ${statusCls} status-badge-click" onclick="toggleEstado('${v.id}')">${statusText}</span>
+        </div>
+        <div class="vehicle-info-row">
+          <span class="vehicle-info-lbl">Acumulado Mantenimiento</span>
+          <span class="vehicle-info-val" style="color:var(--red-text)">$${totalMaint.toLocaleString('es-MX', {minimumFractionDigits:2})}</span>
+        </div>
+        <div class="vehicle-info-row">
+          <span class="vehicle-info-lbl">Acumulado Gasolina</span>
+          <span class="vehicle-info-val" style="color:var(--green-text)">$${totalGas.toLocaleString('es-MX', {minimumFractionDigits:2})}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function eliminarDocumento(col, id) {
+  const ok = await showConfirm('Eliminar registro', '¿Estás seguro de que deseas eliminar este registro?', 'Eliminar', 'btn-red');
+  if (!ok) return;
+
+  try {
+    if (window.parent?.deleteDocumentFromFirebase) {
+      await window.parent.deleteDocumentFromFirebase(col, id);
+    }
+    const db = window.DB.get();
+    if (db[col]) {
+      db[col] = db[col].filter(x => x.id !== id);
+      window.DB.save(db);
+    }
+    toast('Registro eliminado.');
+    if (col === 'gasolina_vales') renderVales();
+    if (col === 'vehicles_log') renderMantenimientos();
+    renderFlotilla();
+  } catch(e) {
+    toast('Error al eliminar: ' + e.message, 'error');
+  }
+}
+
+init();
+</script>
 </body>
 </html>

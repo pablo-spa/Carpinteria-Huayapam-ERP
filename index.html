@@ -500,6 +500,9 @@
       <button class="btn-back" onclick="window.location.reload()" style="padding:10px 20px; background:var(--blue); color:#fff; border-color:var(--blue);">Reintentar Conexión</button>
     </div>
 
+    <!-- Contenedor Toast Global -->
+    <div class="toast-wrap" id="toast-wrap"></div>
+
     <!-- Modal de Confirmación Global -->
     <div id="global-confirm-overlay" style="display:none; position:absolute; inset:0; background:rgba(var(--mantle-rgb, 24,24,37), 0.6); backdrop-filter:blur(2px); z-index:10000; align-items:center; justify-content:center;">
       <div style="background:var(--base); padding:24px; border-radius:var(--radius-lg); max-width:400px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.2); border:1px solid var(--crust);">
@@ -514,8 +517,21 @@
 
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
-    <!-- BUG REPORTER GLOBAL -->
+    <!-- BUG REPORTER GLOBAL & TOAST GLOBAL -->
 <script>
+  window.showToast = function(msg, type = 'ok') {
+    const wrap = document.getElementById('toast-wrap');
+    if (!wrap) return;
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => {
+      el.style.animation = 'toast-out 0.3s forwards';
+      setTimeout(() => el.remove(), 300);
+    }, 3500);
+  };
+
   window.toggleSidebar = function() {
     document.querySelector('aside').classList.toggle('open');
     document.getElementById('sidebar-overlay').classList.toggle('open');
