@@ -8,8 +8,7 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hdr { position: sticky; top: 0; z-index: 100; background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.hdr-title { font-size: 18px; font-weight: 800; white-space: nowrap; }
+
 
 .filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
 .filters::-webkit-scrollbar { display: none; }
@@ -27,8 +26,6 @@
 .pm-table td { padding: 11px 14px; vertical-align: middle; border-bottom: 1px solid var(--crust); font-size: 13px; }
 .pm-table tbody tr:hover { background: var(--surface0); }
 .pm-table tr:last-child td { border-bottom: none; }
-
-.cat-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--surface0); color: var(--subtext); white-space: nowrap; }
 
 /* Inline edit */
 .editable { cursor: pointer; }
@@ -64,7 +61,7 @@
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div class="hdr-title">Precios de Madera</div>
+    <h2 class="hdr-title">Precios de Madera</h2>
   </div>
   <button class="btn btn-green" onclick="openModal()">+ Agregar</button>
 </div>
@@ -74,21 +71,14 @@
     <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
     <input type="text" id="srch" placeholder="Buscar…" oninput="render()">
   </div>
+  <select id="tipo-filter" class="filter-select" onchange="render()">
+    <option value="all">Todas las especies</option>
+  </select>
   <select id="cat-filter" class="filter-select" onchange="render()">
-    <option value="all">Todas las categorías</option>
-    <option value="Madera Maciza">Madera Maciza</option>
-    <option value="MDF">MDF</option>
-    <option value="Triplay">Triplay</option>
-    <option value="Tablón">Tablón</option>
-    <option value="Panel">Panel</option>
-    <option value="Otro">Otro</option>
+    <option value="all">Todos los formatos</option>
   </select>
   <select id="unit-filter" class="filter-select" onchange="render()">
     <option value="all">Todas las unidades</option>
-    <option value="pt">pt (pie tabla)</option>
-    <option value="lámina">lámina</option>
-    <option value="m²">m²</option>
-    <option value="pieza">pieza</option>
   </select>
 </div>
 
@@ -99,11 +89,13 @@
         <thead>
           <tr>
             <th>Nombre</th>
-            <th>Categoría</th>
+            <th>Especie</th>
+            <th>Formato</th>
+            <th>Calidad</th>
             <th>Unidad</th>
             <th>Precio Est.</th>
             <th>Notas</th>
-            <th style="width:80px;"></th>
+            <th style="width:64px;"></th>
           </tr>
         </thead>
         <tbody id="tbl-body"></tbody>
@@ -130,24 +122,22 @@
     </div>
     <div class="modal-row">
       <div class="modal-field">
-        <label>Categoría</label>
-        <select class="modal-input" id="m-cat">
-          <option value="Madera Maciza">Madera Maciza</option>
-          <option value="MDF">MDF</option>
-          <option value="Triplay">Triplay</option>
-          <option value="Tablón">Tablón</option>
-          <option value="Panel">Panel</option>
-          <option value="Otro">Otro</option>
-        </select>
+        <label>Especie / Tipo</label>
+        <select class="modal-input" id="m-tipo"></select>
+      </div>
+      <div class="modal-field">
+        <label>Formato</label>
+        <select class="modal-input" id="m-cat"></select>
+      </div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field">
+        <label>Calidad</label>
+        <select class="modal-input" id="m-calidad"></select>
       </div>
       <div class="modal-field">
         <label>Unidad</label>
-        <select class="modal-input" id="m-unidad">
-          <option value="pt">pt (pie tabla)</option>
-          <option value="lámina">lámina</option>
-          <option value="m²">m²</option>
-          <option value="pieza">pieza</option>
-        </select>
+        <select class="modal-input" id="m-unidad"></select>
       </div>
     </div>
     <div class="modal-row">
@@ -183,26 +173,48 @@ function toast(msg, type = 'ok') {
 </script>
 <script>
 const COL = 'wood_price_catalog';
-let DATA = [];
+
+// Listas cargadas desde Firebase en init()
+let TIPOS = [];  // wood_types: Pino, Cedro, Parota…
+let CATS  = [];  // wood_formats: Tabla, Tablón, MDF…
+let QUALS = [];  // wood_quality: Extra, Primera, Segunda…
+let UNITS = [];  // concept_units: pt, lámina, m²…
+
+let DATA      = [];
 let editingId = null;
 
 function fmt(n) { return '$' + (parseFloat(n)||0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+function tipoOpts(sel)  { return `<option value=""${!sel?' selected':''}>— N/A</option>` + TIPOS.map(v => `<option${sel===v?' selected':''}>${v}</option>`).join(''); }
+function catOpts(sel)   { return `<option value=""${!sel?' selected':''}>— N/A</option>` + CATS .map(v => `<option${sel===v?' selected':''}>${v}</option>`).join(''); }
+function qualOpts(sel)  { return `<option value=""${!sel?' selected':''}>— N/A</option>` + QUALS.map(v => `<option${sel===v?' selected':''}>${v}</option>`).join(''); }
+function unitOpts(sel)  { return `<option value=""${!sel?' selected':''}>— N/A</option>` + UNITS.map(v => `<option${sel===v?' selected':''}>${v}</option>`).join(''); }
+
+function getList(key) {
+  const raw = window.parent?.DB_STATE?.[key] || window.DB.get()[key] || [];
+  return raw[0]?.list || raw.filter(x => typeof x === 'string');
+}
+
 function render() {
-  const term = document.getElementById('srch').value.toLowerCase().trim();
+  const term  = document.getElementById('srch').value.toLowerCase().trim();
+  const tipoF = document.getElementById('tipo-filter').value;
   const catF  = document.getElementById('cat-filter').value;
   const unitF = document.getElementById('unit-filter').value;
 
-  let items = DATA.filter(d => {
-    if (catF  !== 'all' && (d.categoria||'Otro') !== catF)  return false;
-    if (unitF !== 'all' && d.unidad !== unitF) return false;
-    if (term && !(d.nombre||'').toLowerCase().includes(term) && !(d.notas||'').toLowerCase().includes(term) && !(d.categoria||'').toLowerCase().includes(term)) return false;
+  const items = DATA.filter(d => {
+    if (tipoF !== 'all' && (d.tipo||'') !== tipoF) return false;
+    if (catF  !== 'all' && (d.categoria||'') !== catF) return false;
+    if (unitF !== 'all' && (d.unidad||'') !== unitF) return false;
+    if (term && !(d.nombre||'').toLowerCase().includes(term) &&
+                !(d.notas||'').toLowerCase().includes(term) &&
+                !(d.tipo||'').toLowerCase().includes(term) &&
+                !(d.categoria||'').toLowerCase().includes(term)) return false;
     return true;
   });
 
-  const tbody = document.getElementById('tbl-body');
-  const empty = document.getElementById('empty-state');
+  const tbody    = document.getElementById('tbl-body');
+  const empty    = document.getElementById('empty-state');
   const countTag = document.getElementById('count-tag');
 
   if (!items.length) {
@@ -215,54 +227,66 @@ function render() {
   countTag.textContent = `${items.length} concepto${items.length !== 1 ? 's' : ''}`;
 
   tbody.innerHTML = items.map(d => {
-    const isEditing = editingId === d.id;
-    if (isEditing) {
-      return `<tr id="row-${d.id}" style="background:var(--base);">
+    if (editingId === d.id) {
+      return `<tr id="row-${d.id}" data-id="${d.id}" style="background:var(--base);">
         <td><input class="inline-inp" id="e-nombre" value="${esc(d.nombre)}" placeholder="Nombre"></td>
-        <td><select class="inline-sel" id="e-cat">
-          ${['Madera Maciza','MDF','Triplay','Tablón','Panel','Otro'].map(c=>`<option${(d.categoria||'Otro')===c?' selected':''}>${c}</option>`).join('')}
-        </select></td>
-        <td><select class="inline-sel" id="e-unidad">
-          ${['pt','lámina','m²','pieza'].map(u=>`<option${d.unidad===u?' selected':''}>${u}</option>`).join('')}
-        </select></td>
+        <td><select class="inline-sel" id="e-tipo">${tipoOpts(d.tipo||'')}</select></td>
+        <td><select class="inline-sel" id="e-cat">${catOpts(d.categoria||'')}</select></td>
+        <td><select class="inline-sel" id="e-calidad">${qualOpts(d.calidad||'')}</select></td>
+        <td><select class="inline-sel" id="e-unidad">${unitOpts(d.unidad||'')}</select></td>
         <td><input class="inline-inp num" id="e-precio" type="number" min="0" step="1" value="${d.precioEst||0}"></td>
-        <td><input class="inline-inp" id="e-notas" value="${esc(d.notas)}" placeholder="Notas…"></td>
+        <td><input class="inline-inp" id="e-notas" value="${esc(d.notas||'')}" placeholder="Notas…"></td>
         <td><div class="row-actions" style="opacity:1;">
-          <button class="act-btn save" onclick="commitEdit('${d.id}')">Guardar</button>
-          <button class="act-btn" onclick="cancelEdit()">✕</button>
+          <button class="act-btn save"   data-action="save"   data-id="${d.id}">✓</button>
+          <button class="act-btn danger" data-action="delete" data-id="${d.id}">🗑</button>
         </div></td>
       </tr>`;
     }
-    return `<tr id="row-${d.id}">
+    return `<tr id="row-${d.id}" data-id="${d.id}" style="cursor:pointer;" onclick="startEdit(this.dataset.id)">
       <td style="font-weight:700;">${esc(d.nombre)}</td>
-      <td><span class="cat-badge">${esc(d.categoria||'Otro')}</span></td>
-      <td style="color:var(--subtext);font-size:12px;font-weight:600;">${esc(d.unidad||'pt')}</td>
+      <td style="color:var(--subtext);font-size:12px;">${esc(d.tipo||'—')}</td>
+      <td style="color:var(--subtext);font-size:12px;">${esc(d.categoria||'—')}</td>
+      <td style="color:var(--subtext);font-size:12px;">${esc(d.calidad||'—')}</td>
+      <td style="color:var(--subtext);font-size:12px;font-weight:600;">${esc(d.unidad||'—')}</td>
       <td style="font-weight:700;">${fmt(d.precioEst)}</td>
       <td style="color:var(--subtext);font-size:12px;">${esc(d.notas||'—')}</td>
-      <td><div class="row-actions">
-        <button class="act-btn" onclick="startEdit('${d.id}')">Editar</button>
-        <button class="act-btn danger" onclick="deleteEntry('${d.id}')">🗑</button>
-      </div></td>
+      <td></td>
     </tr>`;
   }).join('');
 }
 
+// Buttons usan event delegation; row clicks usan onclick directo en cada <tr>
+document.addEventListener('DOMContentLoaded', () => {
+  const tbody = document.getElementById('tbl-body');
+
+  tbody.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    if (btn.dataset.action === 'save')   commitEdit(btn.dataset.id);
+    if (btn.dataset.action === 'delete') deleteEntry(btn.dataset.id);
+  });
+
+  tbody.addEventListener('keydown', e => {
+    if (!editingId) return;
+    if (e.key === 'Enter')  commitEdit(editingId);
+    if (e.key === 'Escape') { editingId = null; render(); }
+  });
+});
+
 function startEdit(id) {
+  if (id === editingId) return;
   editingId = id;
   render();
   document.getElementById('e-nombre')?.focus();
-}
-
-function cancelEdit() {
-  editingId = null;
-  render();
 }
 
 async function commitEdit(id) {
   const d = DATA.find(x => x.id === id);
   if (!d) return;
   d.nombre    = document.getElementById('e-nombre').value.trim() || d.nombre;
+  d.tipo      = document.getElementById('e-tipo').value;
   d.categoria = document.getElementById('e-cat').value;
+  d.calidad   = document.getElementById('e-calidad').value;
   d.unidad    = document.getElementById('e-unidad').value;
   d.precioEst = parseFloat(document.getElementById('e-precio').value) || 0;
   d.notas     = document.getElementById('e-notas').value.trim();
@@ -296,7 +320,11 @@ async function deleteEntry(id) {
 function openModal() {
   document.getElementById('m-nombre').value = '';
   document.getElementById('m-precio').value = '';
-  document.getElementById('m-notas').value = '';
+  document.getElementById('m-notas').value  = '';
+  document.getElementById('m-tipo').innerHTML    = tipoOpts('');
+  document.getElementById('m-cat').innerHTML     = catOpts('');
+  document.getElementById('m-calidad').innerHTML = qualOpts('');
+  document.getElementById('m-unidad').innerHTML  = unitOpts('');
   document.getElementById('modal-overlay').classList.add('open');
   setTimeout(() => document.getElementById('m-nombre').focus(), 50);
 }
@@ -307,15 +335,17 @@ function closeModal() {
 
 async function saveModal() {
   const nombre    = document.getElementById('m-nombre').value.trim();
+  const tipo      = document.getElementById('m-tipo').value;
   const categoria = document.getElementById('m-cat').value;
+  const calidad   = document.getElementById('m-calidad').value;
   const unidad    = document.getElementById('m-unidad').value;
   const precioEst = parseFloat(document.getElementById('m-precio').value) || 0;
   const notas     = document.getElementById('m-notas').value.trim();
   if (!nombre) { document.getElementById('m-nombre').focus(); return; }
 
-  const id = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').slice(0,40) + '-' + Date.now().toString(36);
-  const entry = { id, nombre, categoria, unidad, precioEst, notas };
-  const payload = { nombre, categoria, unidad, precioEst, notas };
+  const id      = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'').slice(0,40) + '-' + Date.now().toString(36);
+  const entry   = { id, nombre, tipo, categoria, calidad, unidad, precioEst, notas };
+  const payload = { nombre, tipo, categoria, calidad, unidad, precioEst, notas };
   await window.parent.setDocumentInFirebase(COL, id, payload);
   if (window.parent?.DB_STATE) {
     if (!window.parent.DB_STATE[COL]) window.parent.DB_STATE[COL] = [];
@@ -325,10 +355,46 @@ async function saveModal() {
   DATA.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
   closeModal();
   render();
+  toast('Precio agregado.');
+}
+
+function populateFilter(id, list, allLabel) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = `<option value="all">${allLabel}</option>` +
+    list.map(v => `<option value="${v}">${v}</option>`).join('');
 }
 
 async function init() {
   const p = window.parent;
+
+  // Cargar las cuatro listas desde Firebase
+  await Promise.all([
+    window.DB.query('wood_types'),
+    window.DB.query('wood_formats'),
+    window.DB.query('wood_quality'),
+    window.DB.query('concept_units'),
+  ]);
+
+  const DEFAULTS = {
+    wood_types:    ['Pino','Cedro','Parota','Encino','Mezquite','Fresno','Caoba','Nogal','Hule'],
+    wood_formats:  ['Tabla','Tablón','Tabloncillo','Duela','Viga','Cuartón','Triplay','MDF'],
+    wood_quality:  ['Extra','Primera','Segunda','Tercera'],
+    concept_units: ['pt','lámina','m²','pieza','pza','ml','kg'],
+  };
+  for (const [key, vals] of Object.entries(DEFAULTS)) {
+    if (!getList(key).length && p?.setDocumentInFirebase)
+      p.setDocumentInFirebase(key, 'main', { list: vals });
+  }
+
+  TIPOS = getList('wood_types')   || DEFAULTS.wood_types;
+  CATS  = getList('wood_formats') || DEFAULTS.wood_formats;
+  QUALS = getList('wood_quality') || DEFAULTS.wood_quality;
+  UNITS = getList('concept_units')|| DEFAULTS.concept_units;
+
+  populateFilter('tipo-filter', TIPOS, 'Todas las especies');
+  populateFilter('cat-filter',  CATS,  'Todos los formatos');
+  populateFilter('unit-filter', UNITS, 'Todas las unidades');
+
   if (p?.DB_STATE) delete p.DB_STATE[COL];
   if (p?.cargar_coleccion) await p.cargar_coleccion(COL);
   DATA = await window.DB.query(COL, {});

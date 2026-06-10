@@ -9,9 +9,6 @@
 :root { --radius: 10px; --radius-lg: 14px; }
 body { padding-bottom: 60px; min-height: 100vh; }
 
-.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; position: sticky; top: 0; z-index: 10; }
-.hdr h1 { font-size: 18px; font-weight: 700; color: var(--text); }
-
 .main { max-width: 600px; margin: 24px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
 
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: all 0.3s ease; }
@@ -57,7 +54,7 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:16px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <h1>Escanear Madera</h1>
+    <h2 class="hdr-title">Escanear Madera</h2>
   </div>
 </div>
 

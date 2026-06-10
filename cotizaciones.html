@@ -8,13 +8,7 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hdr {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 14px 24px; display: flex; align-items: center;
-  justify-content: space-between; gap: 16px;
-}
-.hdr-title { font-size: 18px; font-weight: 800; }
+
 
 .filters {
   display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
@@ -89,7 +83,7 @@
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div class="hdr-title">Cotizaciones</div>
+    <h2 class="hdr-title">Cotizaciones</h2>
   </div>
   <button class="btn btn-green" id="btn-nueva" onclick="openNueva()">+ Nueva Cotización</button>
 </div>

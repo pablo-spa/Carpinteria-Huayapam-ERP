@@ -8,12 +8,7 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-.hdr {
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  position: sticky; top: 0; z-index: 10;
-}
-.hdr-title { font-size: 18px; font-weight: 800; color: var(--text); }
+
 
 .filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
 .search-box {
@@ -58,7 +53,7 @@
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div class="hdr-title">🗑 Papelera de Cotizaciones</div>
+    <h2 class="hdr-title">🗑 Papelera de Cotizaciones</h2>
   </div>
 </div>
 

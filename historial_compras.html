@@ -7,8 +7,6 @@
 <title>Historial de Compras</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
-body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
 .main { max-width: 1000px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
 .filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
@@ -24,7 +22,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div class="hdr-title">Historial de Compras</div>
+    <h2 class="hdr-title">Historial de Compras</h2>
   </div>
 </div>
 

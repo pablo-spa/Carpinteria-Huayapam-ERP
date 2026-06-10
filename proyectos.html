@@ -14,12 +14,7 @@ body {
   background: var(--base); color: var(--text);
 }
 
-.hdr {
-  background: var(--mantle); border-bottom: 1px solid var(--crust);
-  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  position: sticky; top: 0; z-index: 10;
-}
-.hdr-title { font-size: 18px; font-weight: 800; color: var(--text); }
+
 .btn {
   padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
   cursor: pointer; transition: opacity .15s; border: none; font-family: inherit;
@@ -133,7 +128,7 @@ body {
 <div class="hdr">
   <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    <div class="hdr-title">Proyectos</div>
+    <h2 class="hdr-title">Proyectos</h2>
   </div>
   <button class="btn btn-blue" onclick="openModal(null)">+ Nuevo Proyecto</button>
 </div>

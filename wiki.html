@@ -14,8 +14,7 @@ body.dark-mode {
 
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--base); color: var(--text); overflow-y: hidden; height: 100vh; display: flex; flex-direction: column; }
 
-.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
-.hdr-title { font-size: 18px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 12px; }
+
 
 /* Barra de búsqueda */
 .search-input { background: var(--base); border: 1px solid var(--crust); border-radius: 8px; padding: 7px 14px; font-size: 13px; color: var(--text); width: 220px; font-family: inherit; outline: none; transition: border-color .15s; }
@@ -75,9 +74,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 <body>
 
 <div class="hdr">
-  <div class="hdr-title">
+  <div style="display:flex; align-items:center; gap:12px;">
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
-    📖 Manual del ERP — Carpintería Huayapam
+    <h2 class="hdr-title">📖 Manual del ERP — Carpintería Huayapam</h2>
   </div>
   <input class="search-input" type="search" placeholder="Buscar en el manual…" oninput="searchWiki(this.value)" />
 </div>

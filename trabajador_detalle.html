@@ -8,20 +8,10 @@
 <style>
 body { padding-bottom: 40px; }
 
-/* ── Header ── */
-.hdr { background: var(--mantle); border-bottom: 1px solid var(--crust); padding: 13px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
-.back-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--subtext); flex-shrink: 0; }
-.back-btn:hover { color: var(--text); }
-.hdr-info { flex: 1; }
+/* ── Header extras (worker name display) ── */
+.hdr-info { flex: 1; min-width: 0; }
 .hdr-nombre { font-size: 17px; font-weight: 800; }
 .hdr-sub    { font-size: 12px; color: var(--subtext); margin-top: 1px; }
-.btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: opacity .15s; white-space: nowrap; }
-.btn:hover { opacity: 0.85; }
-.btn-blue   { background: var(--blue); color: #fff; }
-.btn-green  { background: var(--green); color: #fff; }
-.btn-dark   { background: var(--surface0); color: var(--text); border: 1px solid var(--surface1); }
-.btn-red    { background: var(--red-bg); color: var(--red-text); border: 1px solid var(--red); }
-.btn-amber  { background: var(--amber); color: #fff; }
 
 /* ── Layout ── */
 .main { max-width: 1400px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
