@@ -583,11 +583,33 @@ function chgWeek(d){
   updWeekLbl();
   clearTimeout(_chgWeekTimer);
   _chgWeekTimer = setTimeout(() => {
+    // Al cambiar de semana, restablecemos el objeto S del estado de la semana
+    WORKERS.forEach(w => {
+      const prestAplic = {};
+      const prestMonto = {};
+      (PRESTAMOS[w.id]||[]).forEach((p,i)=>{
+        prestAplic[i] = true;
+        prestMonto[i] = Math.ceil(p.saldo / p.semanasPlan);
+      });
+      S[w.id] = {
+        dias: Array.from({length:7}, () => ({st:'libre', hrs:0})),
+        diasVacExtra: 0,
+        manualExt2:   0,
+        bono: 0,
+        nota: '',
+        prestAplic,
+        prestMonto,
+        verificado: false,
+      };
+    });
+
     processRealCheckins(weekOffset);
     renderWorkerList();
     rebuildDates();
     WORKERS.forEach(w => refreshCard(w.id));
-  }, 80);
+    updLabels();
+    updateFooter();
+  }, 100);
 }
 function rebuildDates(){
   const dates=dayDates(weekOffset);
