@@ -71,18 +71,18 @@
 .dias-tbl td { padding: 5px 4px; vertical-align: middle; }
 .dia-name { font-size: 13px; font-weight: 700; min-width: 80px; }
 .dia-date { font-size: 11px; color: var(--subtext); display: block; }
-.dst-btns { display: flex; gap: 4px; }
+.dst-btns { display: flex; gap: 4px; flex-wrap: wrap; }
 .dsbtn {
-  cursor: pointer; border: 1px solid var(--crust); border-radius: var(--radius);
-  background: var(--mantle); color: var(--subtext); font-size: 13px; font-weight: 700;
-  font-family: inherit; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; transition: all .15s;
+  cursor: pointer; border: 1px solid var(--crust); border-radius: 6px;
+  background: var(--mantle); color: var(--subtext); font-size: 11px; font-weight: 700;
+  font-family: inherit; padding: 6px 12px; height: 32px; display: flex; align-items: center; justify-content: center; transition: all .15s;
 }
 .dsbtn:hover { background: var(--surface0); }
-.dsbtn:active { transform: scale(.88); }
+.dsbtn:active { transform: scale(.95); }
 .dsbtn.on-t { background: var(--green); border-color: var(--green); color: #fff; }
 .dsbtn.on-f { background: var(--red);   border-color: var(--red);   color: #fff; }
 .dsbtn.on-v { background: var(--blue);  border-color: var(--blue);  color: #fff; }
-.dsbtn.on-l { background: var(--surface1); border-color: var(--surface1); color: var(--text); }
+.dsbtn.on-l { background: var(--surface1); border-color: var(--surface2); color: var(--text); }
 .hrs-input {
   background: var(--base); border: 1px solid var(--crust); border-radius: var(--radius);
   padding: 4px; color: var(--text); font-size: 16px; font-weight: 800;
@@ -747,8 +747,8 @@ function renderDias(id){
         </td>
         <td>
           <div class="dst-btns">
-            <button class="dsbtn ${onT}" title="Trabajó"  onclick="setDia('${id}',${i},'trabajo')">✓</button>
-            <button class="dsbtn ${onL}" title="Día libre" onclick="setDia('${id}',${i},'libre')">—</button>
+            <button class="dsbtn ${onT}" onclick="setDia('${id}',${i},'trabajo')">Trabajó</button>
+            <button class="dsbtn ${onL}" onclick="setDia('${id}',${i},'libre')">Libre</button>
           </div>
         </td>
         <td style="text-align:center">
@@ -794,9 +794,9 @@ function renderDias(id){
         </td>
         <td>
           <div class="dst-btns">
-            <button class="dsbtn ${onT}" title="Trabajó"   onclick="setDia('${id}',${i},'trabajo')">✓</button>
-            <button class="dsbtn ${onF}" title="Falta"     onclick="setDia('${id}',${i},'falta')">✗</button>
-            <button class="dsbtn ${onV}" title="Vac. pag." onclick="setDia('${id}',${i},'vac')">☀</button>
+            <button class="dsbtn ${onT}" onclick="setDia('${id}',${i},'trabajo')">Trabajó</button>
+            <button class="dsbtn ${onF}" onclick="setDia('${id}',${i},'falta')">Falta</button>
+            <button class="dsbtn ${onV}" onclick="setDia('${id}',${i},'vac')">Vacaciones</button>
           </div>
         </td>
         <td style="text-align:center">${horarioCel}</td>
@@ -808,7 +808,7 @@ function renderDias(id){
   const r=calcW(WORKERS.find(x=>x.id===id));
   html+=`<tr class="subtotal-row">
     <td colspan="2" style="font-size:12px;color:var(--muted);">
-      * Las horas extra se calculan sobre el total semanal (Modo B)
+      * Horas extra calculadas sobre el total semanal.
     </td>
     <td colspan="2" style="text-align:right;font-size:12px;">
       ${r.hNorm.toFixed(1)}h normales

@@ -664,6 +664,7 @@
         { id: 'nav-permisos', html: `<span class="icon">🔐</span> Admin Permisos`, file: 'admin_permisos.html', label: 'Permisos de Acceso' },
         { id: 'nav-wiki', html: `<span class="icon">📖</span> Manual del Sistema`, file: 'wiki.html', label: 'Manual del Sistema' },
         { id: 'nav-bugs', html: `<span class="icon">🐞</span> Bugs y Reportes`, file: 'admin_bugs.html', label: 'Bugs y Reportes' },
+        { id: 'nav-passwords', html: `<span class="icon">🗝️</span> Contraseñas y Cuentas`, file: 'admin_passwords.html', label: 'Contraseñas y Cuentas' },
         { id: 'nav-papelera', html: `<span class="icon">🗑</span> Papelera Cotizaciones`, file: 'papelera_cotizaciones.html', label: 'Papelera de Cotizaciones' }
       ]
     }
@@ -706,6 +707,7 @@
     'admin_permisos.html': 'admin_permisos',
     'admin_usuarios.html': 'admin_usuarios',
     'admin_bugs.html': 'admin_bugs',
+    'admin_passwords.html': 'passwords',
     'wiki.html': 'wiki',
     'fichas_tecnicas.html': 'fichas_tecnicas',
     'documentos.html': 'documentos',
@@ -2197,7 +2199,8 @@
           admin_listas:   { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
           admin_db:       { programador: 'full', admin: 'none', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
           admin_permisos: { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
-          admin_bugs:     { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' }
+          admin_bugs:     { programador: 'full', admin: 'full', gerencia: 'none', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' },
+          passwords:      { programador: 'full', admin: 'full', gerencia: 'full', contador: 'none', compras: 'none', almacen: 'none', produccion: 'none' }
         };
         window.PERMISOS = defaultPerms; // always set before Firestore so sidebar never blocks
         try {
