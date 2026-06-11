@@ -7,39 +7,22 @@
 <title>Precios de Madera — Carpintería Huayapam</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
-.filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
-.filters::-webkit-scrollbar { display: none; }
-.search-box { display: flex; align-items: center; background: var(--mantle); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; width: 220px; gap: 8px; flex-shrink: 0; }
-.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; }
-.filter-select { padding: 8px 12px; background: var(--mantle); border: 1px solid var(--crust); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; outline: none; font-family: inherit; transition: border-color .15s; }
-.filter-select:focus { border-color: var(--blue); }
-
+body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
 .main { padding: 16px 20px; }
-
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
 .table-wrap { overflow-x: auto; width: 100%; }
-.pm-table { width: 100%; border-collapse: collapse; }
-.pm-table th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
-.pm-table td { padding: 8px 10px; vertical-align: middle; border-bottom: 1px solid var(--crust); font-size: 13px; }
-.pm-table tbody tr:last-child td { border-bottom: none; }
-
-.inline-inp { padding: 6px 8px; background: var(--base); border: 1px solid var(--surface1); border-radius: 6px; font-size: 13px; font-family: inherit; color: var(--text); outline: none; width: 100%; }
-.inline-inp:focus { border-color: var(--blue); }
-.inline-inp.num { width: 90px; text-align: right; }
-
-.act-btn { padding: 3px 8px; font-size: 11px; font-weight: 700; background: var(--surface0); border: 1px solid var(--crust); border-radius: 5px; cursor: pointer; color: var(--subtext); white-space: nowrap; transition: .12s; }
-.act-btn.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
 
 .count-tag { font-size: 12px; color: var(--subtext); font-weight: 600; padding: 6px 2px; display: block; }
-
-/* Edit mode row highlight */
-.edit-row td { background: var(--base); }
-.edit-row td:first-child { border-left: 3px solid var(--blue); }
 
 /* Toast */
 #toast-wrap { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
 .toast-msg { background: var(--green); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+
+/* Modal */
+.modal-input { padding: 9px 10px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-family: inherit; width: 100%; font-size: 13px; height: 40px; outline: none; }
+.modal-input:focus { border-color: var(--blue); }
+.modal-label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; display: block; }
+.field-group { display: flex; flex-direction: column; }
 </style>
 </head>
 <body>
@@ -49,39 +32,27 @@
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <h2 class="hdr-title">Precios de Madera</h2>
   </div>
-  <div id="header-actions"></div>
-</div>
-
-<div class="filters">
-  <div class="search-box">
-    <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
-    <input type="text" id="srch" placeholder="Buscar…" oninput="render()">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div class="hdr-search">
+      <span style="color:var(--subtext);font-size:13px;flex-shrink:0;">🔍</span>
+      <input type="text" id="srch" placeholder="Buscar…" oninput="render()">
+    </div>
+    <button class="btn btn-green" onclick="openModal()">+ Agregar</button>
   </div>
-  <select id="tipo-filter" class="filter-select" onchange="render()">
-    <option value="all">Todas las especies</option>
-  </select>
-  <select id="cat-filter" class="filter-select" onchange="render()">
-    <option value="all">Todos los formatos</option>
-  </select>
-  <select id="unit-filter" class="filter-select" onchange="render()">
-    <option value="all">Todas las unidades</option>
-  </select>
 </div>
 
 <div class="main">
   <div class="card">
     <div class="table-wrap">
-      <table class="pm-table">
+      <table class="tbl">
         <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Especie</th>
-            <th>Formato</th>
-            <th>Calidad</th>
-            <th>Unidad</th>
-            <th>Precio Est.</th>
-            <th>Notas</th>
-            <th style="width:40px;"></th>
+          <tr id="tbl-head">
+            <th data-col="nombre" class="sortable sort-asc">Nombre</th>
+            <th data-col="tipo" class="sortable">Especie</th>
+            <th data-col="calidad" class="sortable">Calidad</th>
+            <th data-col="precio" class="sortable num" style="text-align:right;">Precio Est.</th>
+            <th data-col="lastUpdated" class="sortable">Últ. Actualización</th>
+            <th data-col="notas" class="sortable">Notas</th>
           </tr>
         </thead>
         <tbody id="tbl-body"></tbody>
@@ -95,6 +66,54 @@
   <span class="count-tag" id="count-tag"></span>
 </div>
 
+<!-- Modal de Madera -->
+<div id="mod-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:var(--mantle); border:1px solid var(--crust); border-radius:14px; width:100%; max-width:560px; padding:24px; display:flex; flex-direction:column; gap:16px; max-height:92vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--crust);">
+      <h2 id="mod-title" style="font-size:18px; font-weight:800;">Madera</h2>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--subtext);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="m-id">
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="field-group">
+        <label class="modal-label">Nombre del Concepto</label>
+        <input type="text" id="m-nombre" class="modal-input" placeholder="Ej. Pino de primera 1x4x10">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="field-group">
+          <label class="modal-label">Especie</label>
+          <select id="m-tipo" class="modal-input" data-searchable></select>
+        </div>
+        <div class="field-group">
+          <label class="modal-label">Formato</label>
+          <select id="m-categoria" class="modal-input" data-searchable></select>
+        </div>
+        <div class="field-group">
+          <label class="modal-label">Calidad</label>
+          <select id="m-calidad" class="modal-input" data-searchable></select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="modal-label">Precio Estimado ($)</label>
+        <input type="number" id="m-precio" class="modal-input" step="any" min="0" placeholder="0.00">
+      </div>
+      <div class="field-group">
+        <label class="modal-label">Notas</label>
+        <input type="text" id="m-notas" class="modal-input" placeholder="Observaciones...">
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px solid var(--crust);">
+      <button id="btn-delete-item" onclick="deleteItem()" class="btn btn-red" style="display:none;">Eliminar concepto</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button onclick="closeModal()" class="btn">Cancelar</button>
+        <button onclick="saveItem()" class="btn btn-blue">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast-wrap"></div>
 
 <script src="searchable-select.js"></script>
@@ -105,17 +124,30 @@ const COL = 'wood_price_catalog';
 let TIPOS = [];
 let CATS  = [];
 let QUALS = [];
-let UNITS = [];
-let DATA      = [];
-let editMode  = false;
+
+let FORMAT_UNIT_MAP = {};
+function unitForFormat(fmt) { return FORMAT_UNIT_MAP[fmt] || 'pt'; }
+function buildFormatUnitMap() {
+  const raw = window.parent?.DB_STATE?.wood_formats || window.DB.get().wood_formats || [];
+  const list = raw[0]?.list || raw;
+  list.forEach(x => {
+    if (typeof x === 'object' && x.name) FORMAT_UNIT_MAP[x.name] = x.unit || 'pt';
+    else if (typeof x === 'string') FORMAT_UNIT_MAP[x] = 'pt';
+  });
+}
+let DATA  = [];
+let sortCol = 'nombre';
+let sortDir = 1; // 1 asc, -1 desc
 
 function fmt(n) { return '$' + (parseFloat(n)||0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function tipoOpts(sel)  { return `<option value=""${!sel?' selected':''}>— N/A</option>` + TIPOS.map(v => `<option${sel===v?' selected':''}>${v}</option>`).join(''); }
-function catOpts(sel)   { return `<option value=""${!sel?' selected':''}>— N/A</option>` + CATS .map(v => `<option${sel===v?' selected':''}>${v}</option>`).join(''); }
-function qualOpts(sel)  { return `<option value=""${!sel?' selected':''}>— N/A</option>` + QUALS.map(v => `<option${sel===v?' selected':''}>${v}</option>`).join(''); }
-function unitOpts(sel)  { return `<option value=""${!sel?' selected':''}>— N/A</option>` + UNITS.map(v => `<option${sel===v?' selected':''}>${v}</option>`).join(''); }
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  const [d,m,y] = dateStr.split('/').map(Number);
+  const then = new Date(y, m-1, d);
+  return Math.floor((Date.now() - then) / 86400000);
+}
+function todayStr() { const n = new Date(); return `${n.getDate()}/${n.getMonth()+1}/${n.getFullYear()}`; }
 
 function getList(key) {
   const raw = window.parent?.DB_STATE?.[key] || window.DB.get()[key] || [];
@@ -130,35 +162,59 @@ function toast(msg) {
   setTimeout(() => el.remove(), 3000);
 }
 
-function updateHeader() {
-  const el = document.getElementById('header-actions');
-  if (editMode) {
-    el.innerHTML = `
-      <button class="btn" onclick="cancelEditMode()">Cancelar</button>
-      <button class="btn btn-blue" onclick="addRow()">+ Agregar fila</button>
-      <button class="btn btn-green" onclick="saveAll()">Guardar cambios</button>
-    `;
-  } else {
-    el.innerHTML = `<button class="btn btn-blue" onclick="enterEditMode()">✎ Editar lista</button>`;
+// ── Sort ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('tbl-head').addEventListener('click', e => {
+    const th = e.target.closest('th[data-col]');
+    if (!th) return;
+    const col = th.dataset.col;
+    if (sortCol === col) sortDir *= -1;
+    else { sortCol = col; sortDir = 1; }
+    render();
+  });
+});
+
+function updateSortHeaders() {
+  document.querySelectorAll('#tbl-head th').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    if (th.dataset.col === sortCol) th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  });
+}
+
+function sortValue(item, col) {
+  switch (col) {
+    case 'nombre':    return (item.nombre    || '').toLowerCase();
+    case 'tipo':      return (item.tipo      || '').toLowerCase();
+    case 'categoria': return (item.categoria || '').toLowerCase();
+    case 'calidad':   return (item.calidad   || '').toLowerCase();
+    case 'unidad':    return (item.unidad    || '').toLowerCase();
+    case 'precio':       return parseFloat(item.precioEst) || 0;
+    case 'lastUpdated':  return item.lastUpdated || '';
+    case 'notas':        return (item.notas     || '').toLowerCase();
+    default:          return '';
   }
 }
 
 function render() {
+  updateSortHeaders();
   const term  = document.getElementById('srch').value.toLowerCase().trim();
-  const tipoF = document.getElementById('tipo-filter').value;
-  const catF  = document.getElementById('cat-filter').value;
-  const unitF = document.getElementById('unit-filter').value;
 
-  const items = DATA.filter(d => {
-    if (d._isNew) return true; // siempre mostrar filas nuevas
-    if (tipoF !== 'all' && (d.tipo||'') !== tipoF) return false;
-    if (catF  !== 'all' && (d.categoria||'') !== catF) return false;
-    if (unitF !== 'all' && (d.unidad||'') !== unitF) return false;
-    if (term && !(d.nombre||'').toLowerCase().includes(term) &&
-                !(d.notas||'').toLowerCase().includes(term) &&
-                !(d.tipo||'').toLowerCase().includes(term) &&
-                !(d.categoria||'').toLowerCase().includes(term)) return false;
-    return true;
+  let items = DATA.slice();
+
+  if (term) {
+    items = items.filter(d =>
+      (d.nombre||'').toLowerCase().includes(term) ||
+      (d.notas||'').toLowerCase().includes(term) ||
+      (d.tipo||'').toLowerCase().includes(term) ||
+      (d.categoria||'').toLowerCase().includes(term)
+    );
+  }
+
+  items.sort((a, b) => {
+    const av = sortValue(a, sortCol);
+    const bv = sortValue(b, sortCol);
+    if (typeof av === 'number') return (av - bv) * sortDir;
+    return av.localeCompare(bv, 'es') * sortDir;
   });
 
   const tbody    = document.getElementById('tbl-body');
@@ -172,144 +228,140 @@ function render() {
     return;
   }
   empty.style.display = 'none';
-  countTag.textContent = editMode ? '' : `${items.length} concepto${items.length !== 1 ? 's' : ''}`;
+  countTag.textContent = `${items.length} concepto${items.length !== 1 ? 's' : ''}`;
 
-  if (editMode) {
-    tbody.innerHTML = items.map(d => `
-      <tr class="edit-row" data-id="${d.id}">
-        <td><input class="inline-inp" id="e-nombre-${d.id}" value="${esc(d.nombre)}" placeholder="Nombre del concepto"></td>
-        <td><select id="e-tipo-${d.id}" data-searchable>${tipoOpts(d.tipo||'')}</select></td>
-        <td><select id="e-cat-${d.id}" data-searchable>${catOpts(d.categoria||'')}</select></td>
-        <td><select id="e-calidad-${d.id}" data-searchable>${qualOpts(d.calidad||'')}</select></td>
-        <td><select id="e-unidad-${d.id}" data-searchable>${unitOpts(d.unidad||'')}</select></td>
-        <td><input class="inline-inp num" id="e-precio-${d.id}" type="number" min="0" step="1" value="${d.precioEst||0}"></td>
-        <td><input class="inline-inp" id="e-notas-${d.id}" value="${esc(d.notas||'')}" placeholder="Notas…"></td>
-        <td><button class="act-btn danger" data-action="delete" data-id="${d.id}">🗑</button></td>
-      </tr>
-    `).join('');
-
-    // Inicializar SearchableSelect en todos los selects de la tabla
-    document.querySelectorAll('#tbl-body select[data-searchable]').forEach(sel => SearchableSelect.init(sel));
-
-  } else {
-    tbody.innerHTML = items.map(d => `
-      <tr data-id="${d.id}">
-        <td style="font-weight:700;">${esc(d.nombre)}</td>
-        <td style="color:var(--subtext);font-size:12px;">${esc(d.tipo||'—')}</td>
-        <td style="color:var(--subtext);font-size:12px;">${esc(d.categoria||'—')}</td>
-        <td style="color:var(--subtext);font-size:12px;">${esc(d.calidad||'—')}</td>
-        <td style="color:var(--subtext);font-size:12px;font-weight:600;">${esc(d.unidad||'—')}</td>
-        <td style="font-weight:700;">${fmt(d.precioEst)}</td>
-        <td style="color:var(--subtext);font-size:12px;">${esc(d.notas||'—')}</td>
-        <td></td>
-      </tr>
-    `).join('');
-  }
+  tbody.innerHTML = items.map(d => {
+    const age = d.lastUpdated ? daysSince(d.lastUpdated) : null;
+    const dateCls = age === null ? '' : age > 180 ? 'color:var(--red);font-weight:600;' : age > 60 ? 'color:var(--amber);' : 'color:var(--subtext);';
+    return `
+    <tr class="clickable" onclick="openModal('${d.id}')">
+      <td>
+        ${esc(d.nombre)}
+        ${d.categoria ? `<div style="font-size:11px;color:var(--subtext);margin-top:2px;">${esc(d.categoria)}</div>` : ''}
+      </td>
+      <td>${esc(d.tipo||'—')}</td>
+      <td>${esc(d.calidad||'—')}</td>
+      <td class="num">${fmt(d.precioEst)}</td>
+      <td style="font-size:12px;${dateCls}">${d.lastUpdated||'—'}</td>
+      <td>${esc(d.notas||'—')}</td>
+    </tr>`;
+  }).join('');
 }
 
-// Event delegation para el botón de eliminar
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('tbl-body').addEventListener('click', e => {
-    const btn = e.target.closest('button[data-action="delete"]');
-    if (btn) deleteEntry(btn.dataset.id);
-  });
-});
-
-function enterEditMode() {
-  editMode = true;
-  updateHeader();
-  render();
+// ── Modal item management ───────────────────────────────────────────
+function setModalSelect(id, val) {
+  const el = document.getElementById(id);
+  el.value = val||'';
+  el._ssSync?.();
 }
 
-function cancelEditMode() {
-  DATA = DATA.filter(d => !d._isNew);
-  editMode = false;
-  cleanupSS();
-  updateHeader();
-  render();
-}
+function openModal(id) {
+  document.getElementById('mod-overlay').style.display = 'flex';
+  const item = id ? DATA.find(x => x.id === id) : null;
 
-function addRow() {
-  const id = 'new-' + Date.now().toString(36);
-  DATA.push({ id, _isNew: true, nombre: '', tipo: '', categoria: '', calidad: '', unidad: '', precioEst: 0, notas: '' });
-  render();
-  setTimeout(() => document.getElementById(`e-nombre-${id}`)?.focus(), 60);
-}
+  document.getElementById('btn-delete-item').style.display = item ? 'block' : 'none';
 
-async function saveAll() {
-  const saves = [];
-
-  for (const d of DATA) {
-    const nombreEl = document.getElementById(`e-nombre-${d.id}`);
-    if (!nombreEl) continue; // fila filtrada, no modificar
-
-    const nombre = nombreEl.value.trim();
-    if (d._isNew && !nombre) continue; // fila nueva vacía, ignorar
-
-    d.nombre    = nombre || d.nombre;
-    d.tipo      = document.getElementById(`e-tipo-${d.id}`)?.value     || '';
-    d.categoria = document.getElementById(`e-cat-${d.id}`)?.value      || '';
-    d.calidad   = document.getElementById(`e-calidad-${d.id}`)?.value  || '';
-    d.unidad    = document.getElementById(`e-unidad-${d.id}`)?.value   || '';
-    d.precioEst = parseFloat(document.getElementById(`e-precio-${d.id}`)?.value) || 0;
-    d.notas     = document.getElementById(`e-notas-${d.id}`)?.value.trim() || '';
-    delete d._isNew;
-
-    const payload = { ...d };
-    saves.push(window.parent.setDocumentInFirebase(COL, d.id, payload));
+  if (!item) {
+    document.getElementById('mod-title').textContent = 'Nuevo Concepto de Madera';
+    document.getElementById('m-id').value = '';
+    document.getElementById('m-nombre').value = '';
+    document.getElementById('m-precio').value = '';
+    document.getElementById('m-notas').value = '';
+    setModalSelect('m-tipo', TIPOS[0]||'');
+    setModalSelect('m-categoria', CATS[0]||'');
+    setModalSelect('m-calidad', QUALS[0]||'');
+    return;
   }
 
-  // Limpiar filas nuevas vacías que no se guardaron
-  DATA = DATA.filter(d => !d._isNew);
+  document.getElementById('mod-title').textContent = 'Editar Concepto de Madera';
+  document.getElementById('m-id').value = item.id;
+  document.getElementById('m-nombre').value = item.nombre||'';
+  document.getElementById('m-precio').value = item.precioEst||'';
+  document.getElementById('m-notas').value = item.notas||'';
+  setModalSelect('m-tipo', item.tipo||'');
+  setModalSelect('m-categoria', item.categoria||'');
+  setModalSelect('m-calidad', item.calidad||'');
+}
 
-  await Promise.all(saves);
+function closeModal() {
+  document.getElementById('mod-overlay').style.display = 'none';
+}
 
-  // Sincronizar DB_STATE
+async function saveItem() {
+  const id = document.getElementById('m-id').value;
+  const nombre = document.getElementById('m-nombre').value.trim();
+  if (!nombre) { alert('El nombre es requerido.'); return; }
+
+  let item = id ? DATA.find(x => x.id === id) : null;
+  if (!item) item = { id: crypto.randomUUID() };
+
+  item.nombre = nombre;
+  item.tipo = document.getElementById('m-tipo').value;
+  item.categoria = document.getElementById('m-categoria').value;
+  item.calidad = document.getElementById('m-calidad').value;
+  item.unidad = unitForFormat(item.categoria);
+  item.precioEst = parseFloat(document.getElementById('m-precio').value) || 0;
+  item.notas = document.getElementById('m-notas').value.trim();
+  item.lastUpdated = todayStr();
+
+  const payload = { ...item };
+  await window.parent.setDocumentInFirebase(COL, item.id, payload);
+
+  // Sync locally
   if (window.parent?.DB_STATE) {
     if (!window.parent.DB_STATE[COL]) window.parent.DB_STATE[COL] = [];
-    for (const d of DATA) {
-      const idx = window.parent.DB_STATE[COL].findIndex(x => (x.id || x._id) === d.id);
-      if (idx >= 0) window.parent.DB_STATE[COL][idx] = { ...d };
-      else window.parent.DB_STATE[COL].push({ ...d });
-    }
+    const idx = window.parent.DB_STATE[COL].findIndex(x => (x.id || x._id) === item.id);
+    if (idx >= 0) window.parent.DB_STATE[COL][idx] = { ...item };
+    else window.parent.DB_STATE[COL].push({ ...item });
   }
 
-  editMode = false;
-  cleanupSS();
-  DATA.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
-  updateHeader();
+  const existIdx = DATA.findIndex(x => x.id === item.id);
+  if (existIdx >= 0) DATA[existIdx] = item;
+  else DATA.push(item);
+
+  closeModal();
   render();
-  toast(`${saves.length} precio${saves.length !== 1 ? 's' : ''} guardado${saves.length !== 1 ? 's' : ''}.`);
+  toast('Concepto guardado correctamente.');
 }
 
-async function deleteEntry(id) {
-  const d = DATA.find(x => x.id === id);
-  if (!d) return;
+async function deleteItem() {
+  const id = document.getElementById('m-id').value;
+  const item = DATA.find(x => x.id === id);
+  if (!id || !item) return;
 
-  if (!d._isNew) {
-    const confirmed = await new Promise(resolve =>
-      window.parent.showConfirm('Eliminar precio', `¿Eliminar "${d.nombre}"?`, 'Eliminar', 'btn-red',
-        () => resolve(true), () => resolve(false))
-    );
-    if (!confirmed) return;
+  async function doDelete() {
     await window.parent.deleteDocumentFromFirebase(COL, id);
-    if (window.parent?.DB_STATE?.[COL])
+    if (window.parent?.DB_STATE?.[COL]) {
       window.parent.DB_STATE[COL] = window.parent.DB_STATE[COL].filter(x => (x.id || x._id) !== id);
+    }
+    DATA = DATA.filter(x => x.id !== id);
+    closeModal();
+    render();
+    toast('Concepto eliminado.');
   }
 
-  DATA = DATA.filter(x => x.id !== id);
-  render();
+  if (window.parent?.showConfirm) {
+    window.parent.showConfirm(
+      'Eliminar concepto',
+      `¿Eliminar "${item.nombre}"?\nEsta acción no se puede deshacer.`,
+      'Eliminar', 'btn-red',
+      doDelete
+    );
+  } else if (confirm(`¿Eliminar "${item.nombre}"?`)) {
+    doDelete();
+  }
 }
 
-function cleanupSS() {
-  // Remover dropdowns huérfanos de SearchableSelect del body
-  document.querySelectorAll('.ss-dropdown').forEach(el => el.remove());
-}
+function initSelects() {
+  function initSel(id, list) {
+    const el = document.getElementById(id);
+    el.innerHTML = list.map(v => `<option value="${v}">${v}</option>`).join('');
+    if (el._ssInit) el._ssRefresh(); else SearchableSelect.init(el);
+  }
 
-function populateFilter(id, list, allLabel) {
-  const sel = document.getElementById(id);
-  sel.innerHTML = `<option value="all">${allLabel}</option>` +
-    list.map(v => `<option value="${v}">${v}</option>`).join('');
+  initSel('m-tipo',      TIPOS);
+  initSel('m-categoria', CATS);
+  initSel('m-calidad',   QUALS);
 }
 
 async function init() {
@@ -319,36 +371,30 @@ async function init() {
     window.DB.query('wood_types'),
     window.DB.query('wood_formats'),
     window.DB.query('wood_quality'),
-    window.DB.query('concept_units'),
   ]);
 
   const DEFAULTS = {
-    wood_types:    ['Pino','Cedro','Parota','Encino','Mezquite','Fresno','Caoba','Nogal','Hule'],
-    wood_formats:  ['Tabla','Tablón','Tabloncillo','Duela','Viga','Cuartón','Triplay','MDF'],
-    wood_quality:  ['Extra','Primera','Segunda','Tercera'],
-    concept_units: ['pt','lámina','m²','pieza','pza','ml','kg'],
+    wood_types:   ['Pino','Cedro','Parota','Encino','Mezquite','Fresno','Caoba','Nogal','Hule'],
+    wood_formats: ['Tabla','Tablón','Tabloncillo','Duela','Viga','Cuartón','Triplay','MDF','Deck'],
+    wood_quality: ['Extra','Primera','Segunda','Tercera'],
   };
   for (const [key, vals] of Object.entries(DEFAULTS)) {
     if (!getList(key).length && p?.setDocumentInFirebase)
       p.setDocumentInFirebase(key, 'main', { list: vals });
   }
 
-  TIPOS = getList('wood_types')    || DEFAULTS.wood_types;
-  CATS  = getList('wood_formats')  || DEFAULTS.wood_formats;
-  QUALS = getList('wood_quality')  || DEFAULTS.wood_quality;
-  UNITS = getList('concept_units') || DEFAULTS.concept_units;
+  TIPOS = getList('wood_types')   || DEFAULTS.wood_types;
+  CATS  = getList('wood_formats').map(x => typeof x === 'object' ? x.name : x).filter(Boolean) || DEFAULTS.wood_formats;
+  QUALS = getList('wood_quality') || DEFAULTS.wood_quality;
+  buildFormatUnitMap();
 
-  populateFilter('tipo-filter', TIPOS, 'Todas las especies');
-  populateFilter('cat-filter',  CATS,  'Todos los formatos');
-  populateFilter('unit-filter', UNITS, 'Todas las unidades');
+  initSelects();
 
   if (p?.DB_STATE) delete p.DB_STATE[COL];
   if (p?.cargar_coleccion) await p.cargar_coleccion(COL);
   const raw = await window.DB.query(COL, {});
   DATA = raw.map(d => ({ ...d, id: d.id || d._id })).filter(d => d.id);
-  DATA.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'','es'));
 
-  updateHeader();
   render();
 }
 

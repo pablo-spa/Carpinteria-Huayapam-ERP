@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mantenimiento — Carpintería Huayapam</title>
+<script src="searchable-select.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -49,7 +50,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     <div class="inline-form">
       <div class="field">
         <label>Máquina / Equipo</label>
-        <select id="m-maquina" class="form-control"></select>
+        <select id="m-maquina" class="form-control" data-searchable></select>
       </div>
       <div class="field">
         <label>Tipo de Evento</label>
@@ -138,6 +139,7 @@ async function init() {
 function populateSelects() {
   const mSel = document.getElementById('m-maquina');
   mSel.innerHTML = EQUIPOS.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  SearchableSelect.init(mSel);
 }
 
 function switchTab(tabId, btn) {

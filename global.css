@@ -50,6 +50,18 @@ body.dark-mode {
   --border-strong: #585b70;
 }
 
+/* Contrast adjustment for buttons in dark mode */
+body.dark-mode .btn-blue {
+  color: #11111b !important;
+}
+body.dark-mode .btn-green {
+  color: #11111b !important;
+}
+body.dark-mode .btn-red {
+  color: #11111b !important;
+}
+
+
 body { 
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
   background: var(--base); 
@@ -156,6 +168,8 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .hdr-title, .hdr h1, .hdr h2 { font-size: 18px; font-weight: 800; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; }
 .back-btn { background: transparent; border: none; font-size: 13px; font-weight: 700; color: var(--subtext); cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: 0.15s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; margin-left: -8px; }
 .back-btn:hover { background: var(--surface0); color: var(--text); }
+.hdr-search { display: flex; align-items: center; background: var(--base); border: 1px solid var(--surface0); border-radius: var(--radius); padding: 0 12px; width: 240px; gap: 8px; height: 38px; }
+.hdr-search input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; height: 100% !important; padding: 0 !important; width: 100%; }
 .main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
 
 /* ── Tarjetas (Cards) ── */
@@ -184,12 +198,24 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 /* ── Tablas Uniformes (UI Toolkit) ── */
 .table-wrapper { width: 100%; overflow-x: auto; margin-bottom: 16px; border: 1px solid var(--crust); border-radius: var(--radius-lg, 12px); background: var(--mantle); }
 table.tbl { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-table.tbl th { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext); padding: 12px 16px; border-bottom: 2px solid var(--crust); background: var(--mantle); letter-spacing: 0.05em; }
-table.tbl td { padding: 12px 16px; border-bottom: 1px solid var(--crust); color: var(--text); vertical-align: middle; }
+table.tbl th {
+  font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--subtext);
+  padding: 10px 14px; border-bottom: 2px solid var(--crust); background: var(--surface0);
+  letter-spacing: 0.05em; white-space: nowrap;
+}
+table.tbl th.sortable { cursor: pointer; user-select: none; }
+table.tbl th.sortable:hover { color: var(--text); }
+table.tbl th.sort-asc::after  { content: ' ↑'; color: var(--blue); }
+table.tbl th.sort-desc::after { content: ' ↓'; color: var(--blue); }
+table.tbl th.sort-asc,
+table.tbl th.sort-desc { color: var(--blue); }
+
+table.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); color: var(--text); vertical-align: middle; }
 table.tbl tr:last-child td { border-bottom: none; }
-table.tbl tr:hover td { background: rgba(30,102,245,0.02); }
-body.dark-mode table.tbl tr:hover td { background: rgba(140,170,238,0.02); }
+table.tbl tr.clickable { cursor: pointer; }
+table.tbl tr:hover td, table.tbl tr.clickable:hover td { background: var(--surface0); }
 table.tbl th.num, table.tbl td.num { text-align: right; }
+table.tbl th.center, table.tbl td.center { text-align: center; }
 
 /* ── Pestañas Uniformes (Tabs System UI Toolkit) ── */
 .tabs-hdr { display: flex; gap: 8px; border-bottom: 1px solid var(--crust); margin-bottom: 24px; padding-bottom: 4px; }
@@ -198,3 +224,18 @@ table.tbl th.num, table.tbl td.num { text-align: right; }
 .tab-btn.active { background: var(--blue-bg); color: var(--blue-text); border-bottom: none; }
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
+
+/* ── Standardized Purchase Items ── */
+.std-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid var(--crust); background: var(--base); border-radius: 8px; margin-top: 6px; }
+.std-item-main { display: flex; flex-direction: column; gap: 4px; }
+.std-item-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.std-item-icon { font-size: 16px; line-height: 1; }
+.std-item-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.std-item-pill { font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 4px; border: 1px solid transparent; line-height: 1.2; display: inline-block; white-space: nowrap; }
+.std-pill-madera { background: rgba(64,160,43,.12); color: var(--green); border-color: var(--green); }
+.std-pill-herr { background: rgba(223,142,29,0.15); color: var(--amber); border-color: var(--amber); }
+.std-pill-insumo { background: rgba(30,102,245,0.15); color: var(--blue); border-color: var(--blue); }
+.std-item-price { font-size: 12px; color: var(--subtext); display: flex; gap: 12px; margin-top: 2px; }
+.std-item-price-unit { opacity: 0.8; }
+.std-item-price-total { font-weight: 700; color: var(--text); }
+.std-item-qty { font-size: 14px; font-weight: 700; color: var(--text); background: var(--mantle); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--crust); white-space: nowrap; }

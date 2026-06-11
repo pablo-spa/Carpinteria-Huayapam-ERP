@@ -88,7 +88,10 @@
     <h2 class="hdr-title">Cotización Fletes / Viáticos</h2>
     <span id="hdr-edit-badge" style="display:none; font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue); padding:3px 9px; border-radius:6px;"></span>
   </div>
-  <button class="btn btn-green" id="btn-save-quote" onclick="saveQuote()">Guardar cotización</button>
+  <div style="display:flex; gap:8px;">
+    <button class="btn btn-ghost" id="btn-edit-quote" style="display:none;" onclick="openEditMode()">Editar</button>
+    <button class="btn btn-green" id="btn-save-quote" onclick="saveQuote()">Guardar cotización</button>
+  </div>
 </div>
 <div style="background:var(--base); border-bottom:1px solid var(--crust); padding:10px 24px; display:flex; gap:8px; align-items:center;">
   <select class="hdr-select" id="clientInput" data-searchable></select>
@@ -261,7 +264,7 @@
 <script src="ui.js"></script>
 <script>
 let EDIT_STATE = { id: null, folio: null, originalStatus: null };
-let Q_state = { isViewMode: false };
+let Q_state = { isViewMode: false, viewId: null };
 let CASETAS = [];
 let EXTRAS = [];
 let currentPrintConds = "";
@@ -310,7 +313,7 @@ function removeArr(typeStr, id) {
 function calcTotals() {
   // 1. Gasolina
   const km = parseFloat(document.getElementById('f-km').value) || 0;
-  const rend = parseFloat(document.getElementById('f-rend').value) || 1;
+  const rend = Math.max(0.1, parseFloat(document.getElementById('f-rend').value) || 1);
   const pGas = parseFloat(document.getElementById('f-precio-gas').value) || 0;
   const subGas = (km / rend) * pGas;
   document.getElementById('st-gas').textContent = fmt(subGas);
@@ -374,13 +377,36 @@ async function loadOptions() {
   SearchableSelect.init(pSel);
 }
 
+function openEditMode() {
+  const params = new URLSearchParams(window.location.search);
+  const from = params.get('from');
+  let url = 'cotizacion_viaticos.html?editId=' + Q_state.viewId;
+  if (from) url += '&from=' + encodeURIComponent(from);
+  if (window.parent?.openModule) window.parent.openModule(url, 'Editar Cotización');
+  else window.location.href = url;
+}
+
 function goBackToProject() {
   const pId = document.getElementById('projectInput').value;
+  const params = new URLSearchParams(window.location.search);
+  const from = params.get('from');
+
+  if (from === 'cotizaciones') {
+    if (window.parent?.openModule) window.parent.openModule('cotizaciones.html', 'Cotizaciones');
+    else window.location.href = 'cotizaciones.html';
+    return;
+  }
+
+  if (pId) {
+    if (window.parent?.openModule) window.parent.openModule('proyecto_detalle.html?id=' + pId, 'Detalle del Proyecto');
+    else window.location.href = 'proyecto_detalle.html?id=' + pId;
+    return;
+  }
+
   if (window.parent?.goBackModule) {
     window.parent.goBackModule();
   } else {
-    if (pId) window.location.href = 'proyecto_detalle.html?id=' + pId;
-    else window.history.back();
+    window.history.back();
   }
 }
 
@@ -488,6 +514,7 @@ function processURLParams() {
   const pId     = params.get('projectId');
   const viewId  = params.get('viewId');
   const editId  = params.get('editId');
+  const from    = params.get('from');
 
   const d = window.DB.get();
 
@@ -498,9 +525,13 @@ function processURLParams() {
     if (el._ssSync) el._ssSync();
   }
 
+  if (from === 'cotizaciones') {
+    document.getElementById('btn-back-project').textContent = '← Volver';
+  }
+
   if (pId) {
     setSel('projectInput', pId);
-    document.getElementById('btn-back-project').textContent = '← Volver al Proyecto';
+    if (from !== 'cotizaciones') document.getElementById('btn-back-project').textContent = '← Volver';
     const proj = d.projects.find(p => p.id === pId);
     if (proj && (proj.contactoId || proj.contactId)) setSel('clientInput', proj.contactoId || proj.contactId);
   }
@@ -520,13 +551,29 @@ function processURLParams() {
   } else if (viewId) {
     loadQ = (d.quotations_viaticos||[]).find(q => q.id === viewId);
     Q_state.isViewMode = true;
+    Q_state.viewId = viewId;
     document.getElementById('btn-save-quote').style.display = 'none';
+    document.getElementById('btn-edit-quote').style.display = '';
     document.querySelectorAll('input').forEach(i => i.disabled = true);
-    document.querySelectorAll('button:not(.back-btn)').forEach(b => b.style.display = 'none');
+    document.querySelectorAll('button:not(.back-btn):not(#btn-edit-quote)').forEach(b => b.style.display = 'none');
   }
 
   if (loadQ) {
-    if (loadQ.projectId) { setSel('projectInput', loadQ.projectId); document.getElementById('btn-back-project').textContent = '← Volver al Proyecto'; }
+    const titleEl = document.querySelector('.hdr-title');
+    if (titleEl) {
+      const proj = d.projects.find(p => p.id === loadQ.projectId);
+      const projDesc = proj ? (proj.codigo || proj.code || '') + ' – ' + (proj.nombre || proj.name || '') : '';
+      const concept = loadQ.concepto || '';
+      let titleParts = [`Cotización ${loadQ.folio || ''}`];
+      if (projDesc) titleParts.push(projDesc);
+      if (concept) titleParts.push(concept);
+      titleEl.textContent = titleParts.join(' — ');
+    }
+
+    if (loadQ.projectId) {
+      setSel('projectInput', loadQ.projectId);
+      if (from !== 'cotizaciones') document.getElementById('btn-back-project').textContent = '← Volver';
+    }
     if (loadQ.clientId) setSel('clientInput', loadQ.clientId);
     
     document.getElementById('f-concepto').value = loadQ.concepto || '';

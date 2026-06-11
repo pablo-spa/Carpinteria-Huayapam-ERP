@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="global.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Papelera General del Sistema</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
+.search-box {
+  display: flex; align-items: center; background: var(--mantle);
+  border: 1px solid var(--crust); border-radius: 8px; padding: 0 12px;
+  height: 36px; width: 260px; gap: 8px; flex-shrink: 0;
+}
+.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-size: 13px; font-family: inherit; height: 100%; }
+.search-box input:focus { border-color: transparent; outline: none; }
+
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--subtext); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+.card { background: var(--mantle); border: 1px solid var(--crust); border-radius: var(--radius-lg); overflow: hidden; }
+.tbl-wrap { overflow-x: auto; width: 100%; }
+.tbl { width: 100%; border-collapse: collapse; min-width: 760px; }
+.tbl th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--subtext); border-bottom: 2px solid var(--crust); background: var(--surface0); white-space: nowrap; }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--crust); font-size: 13px; vertical-align: middle; }
+.tbl tbody tr:hover { background: var(--surface0); }
+.tbl tr:last-child td { border-bottom: none; }
+
+.folio { font-weight: 700; font-size: 13px; }
+.meta  { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+
+.btn-restore { background: var(--green-bg,rgba(64,160,43,.12)); color: var(--green); border: 1px solid transparent; border-radius: var(--radius); padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-restore:hover { filter: brightness(.9); }
+.btn-del { background: var(--red-bg,rgba(210,15,57,.1)); color: var(--red); border: 1px solid transparent; border-radius: var(--radius); padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn-del:hover { filter: brightness(.9); }
+.actions { display: flex; gap: 6px; justify-content: flex-end; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
+    <h2 class="hdr-title">🗑 Papelera General</h2>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="search-box">
+    <span style="color:var(--subtext);font-size:14px;">🔍</span>
+    <input type="text" id="search" placeholder="Buscar elemento..." oninput="render()">
+  </div>
+</div>
+
+<div class="main" id="content"></div>
+
+<script src="db.js"></script>
+<script src="ui.js"></script>
+<script>
+let ALL = [];
+
+const COL_NAMES = {
+  'quotations': 'Cotización Muebles',
+  'quotations_viaticos': 'Cot. Fletes/Viáticos',
+  'projects': 'Proyecto',
+  'inventory': 'Elemento Inventario',
+  'wood': 'Madera',
+  'contacts': 'Contacto/Trabajador',
+  'accounting_movements': 'Mov. Financiero',
+  'documentos': 'Documento',
+  'fichas_tecnicas': 'Ficha Técnica',
+  'machine_logs': 'Mantenimiento',
+  'tool_logs': 'Registro Herramienta',
+  'herramientas': 'Herramienta',
+  'accident_logs': 'Accidente',
+  'workers': 'Trabajador (Auth)',
+  'worker_loans': 'Préstamo Trabajador',
+  'bugs': 'Bug/Reporte',
+  'passwords': 'Contraseña',
+  'viajes': 'Viaje'
+};
+
+const COL_ICONS = {
+  'quotations': '🛋️', 'quotations_viaticos': '🚚', 'projects': '📁', 'inventory': '📦',
+  'wood': '🪵', 'contacts': '👤', 'accounting_movements': '💵', 'documentos': '📄',
+  'fichas_tecnicas': '📐', 'machine_logs': '⚙️', 'tool_logs': '🛠️', 'herramientas': '🛠️',
+  'accident_logs': '🚑', 'workers': '👷', 'worker_loans': '💳', 'bugs': '🐞',
+  'passwords': '🗝️', 'viajes': '🗺️'
+};
+
+async function init() {
+  if (window.parent?.DB_STATE) {
+    // DB_STATE is the source of truth, already loaded in memory by index.html
+    reload();
+  } else {
+    // If running standalone (not inside iframe)
+    await window.DB.query('quotations');
+    reload();
+  }
+}
+
+function getTitle(x) {
+  return x.folio || x.nombre || x.name || x.descripcion || x.concepto || x.concept || x.code || x.codigo || x.modelo || x.title || x.id || '—';
+}
+
+function reload() {
+  const db = window.parent?.DB_STATE || window.DB.get();
+  ALL = [];
+
+  for (const col of Object.keys(db)) {
+    if (!Array.isArray(db[col])) continue;
+    
+    // Si es una colección de elementos (1er nivel)
+    let deletedItems = db[col].filter(x => x.eliminada === true);
+    
+    // Si es una colección empaquetada ({_id: 'main', list: [...]})
+    if (db[col].length === 1 && db[col][0]._id === 'main' && Array.isArray(db[col][0].list)) {
+      deletedItems = deletedItems.concat(db[col][0].list.filter(x => x.eliminada === true));
+    }
+
+    for (const x of deletedItems) {
+      ALL.push({
+        _collection: col,
+        _colName: COL_NAMES[col] || col,
+        _icon: COL_ICONS[col] || '📄',
+        _title: getTitle(x),
+        _date: x.deletedAt ? new Date(x.deletedAt).toLocaleDateString('es-MX', {year:'numeric',month:'short',day:'numeric'}) : (x.date || x.fecha || '—'),
+        _raw: x
+      });
+    }
+  }
+  
+  ALL.sort((a, b) => (b._raw.deletedAt || b._date || '').localeCompare(a._raw.deletedAt || a._date || ''));
+  render();
+}
+
+function render() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const list = q
+    ? ALL.filter(c => c._title.toLowerCase().includes(q) || c._colName.toLowerCase().includes(q))
+    : ALL;
+
+  const cont = document.getElementById('content');
+  if (!list.length) {
+    cont.innerHTML = `<div class="empty-state"><div class="icon">🗑</div><p>${
+      q ? 'Sin resultados para esa búsqueda.' : 'La papelera está vacía.'
+    }</p></div>`;
+    return;
+  }
+
+  const rows = list.map(item => {
+    return `<tr>
+      <td>
+        <div class="folio">${item._icon} ${item._title}</div>
+        <div class="meta">${item._date}</div>
+      </td>
+      <td><span class="pill pill-gray">${item._colName}</span></td>
+      <td>
+        <div class="actions">
+          <button class="btn-restore" onclick="restore('${item._raw.id || item._raw._id}', '${item._collection}')">↩ Restaurar</button>
+          <button class="btn-del"     onclick="eliminate('${item._raw.id || item._raw._id}', '${item._collection}')">✕ Eliminar Permanente</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="card">
+      <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr>
+          <th>Elemento Eliminado</th><th>Colección</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      </div>
+    </div>`;
+}
+
+async function restore(id, collection) {
+  const db = window.parent?.DB_STATE || window.DB.get();
+  const targetArray = db[collection] || [];
+  
+  let q = targetArray.find(x => (x.id || x._id) === id);
+  let isPacked = false;
+  
+  if (!q && targetArray.length === 1 && targetArray[0]._id === 'main' && Array.isArray(targetArray[0].list)) {
+    q = targetArray[0].list.find(x => (x.id || x._id) === id);
+    isPacked = true;
+  }
+  
+  if (!q) return;
+  q.eliminada = false;
+  
+  if (isPacked) {
+    if (window.parent?.setDocumentInFirebase) {
+       await window.parent.setDocumentInFirebase(collection, 'main', targetArray[0]);
+    }
+  } else {
+    if (window.parent?.setDocumentInFirebase) {
+      await window.parent.setDocumentInFirebase(collection, id, q);
+    }
+  }
+  
+  window.DB.save(window.DB.get());
+  toast('Elemento restaurado exitosamente.');
+  reload();
+}
+
+async function eliminate(id, collection) {
+  if (!window.confirm('¿Eliminar definitivamente? Esta acción es irreversible y los datos se perderán para siempre.')) return;
+
+  const dbObj = window.parent?.DB_STATE || window.DB.get();
+  let isPacked = false;
+  if (dbObj[collection] && dbObj[collection].length === 1 && dbObj[collection][0]._id === 'main' && Array.isArray(dbObj[collection][0].list)) {
+    isPacked = true;
+  }
+
+  if (isPacked) {
+    // Para listas empaquetadas, eliminamos de la sublista y guardamos el main document
+    dbObj[collection][0].list = dbObj[collection][0].list.filter(x => (x.id || x._id) !== id);
+    if (window.parent?.setDocumentInFirebase) {
+       await window.parent.setDocumentInFirebase(collection, 'main', dbObj[collection][0]);
+    }
+  } else {
+    if (window.parent?.hardDeleteDocumentFromFirebase) {
+      await window.parent.hardDeleteDocumentFromFirebase(collection, id);
+    } else if (window.parent?.deleteDocumentFromFirebase) {
+      await window.parent.deleteDocumentFromFirebase(collection, id);
+    }
+    if (dbObj[collection]) {
+        dbObj[collection] = dbObj[collection].filter(x => (x.id || x._id) !== id);
+    }
+  }
+  
+  window.DB.save(window.DB.get());
+  toast('Elemento borrado definitivamente.', 'warn');
+  reload();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

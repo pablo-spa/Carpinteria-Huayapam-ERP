@@ -7,6 +7,7 @@
 <title>Reglas y Ajustes</title>
 <script src="db.js"></script>
 <script src="ui.js"></script>
+<script src="searchable-select.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -127,6 +128,48 @@
             <input type="number" id="diasAvisoFalta" min="0" placeholder="Ej. 24">
             <div class="info-text">Tiempo mínimo requerido para considerar una falta justificada o permiso.</div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARJETA: Campo de Búsqueda Estándar -->
+    <div class="card">
+      <div class="card-title" style="font-size:14px; color:var(--text);">🔍 Campo de Búsqueda Estándar</div>
+      <div class="card-body">
+        <div class="info-text" style="margin-bottom:16px;">
+          Componente reutilizable en toda la app (<code>searchable-select.js</code>). Busca por subcadena en cualquier posición.
+          Soporta agregar conceptos nuevos inline sin abrir otro formulario.
+        </div>
+
+        <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start;">
+
+          <!-- Demo en vivo -->
+          <div class="field" style="flex:1; min-width:280px; max-width:420px;">
+            <label>Demo en vivo — Conceptos de Inventario</label>
+            <select id="demo-search" data-searchable data-allow-new>
+              <option value="">— Buscar concepto —</option>
+            </select>
+            <div id="demo-result" class="info-text" style="margin-top:8px; min-height:18px;">Escoge o escribe un concepto nuevo…</div>
+          </div>
+
+          <!-- Referencia de uso -->
+          <div style="flex:1; min-width:260px;">
+            <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--subtext); margin-bottom:10px;">Cómo usarlo en otra página</div>
+            <div class="table-wrap">
+              <table class="conf-table">
+                <thead><tr><th>Paso</th><th>Código</th></tr></thead>
+                <tbody>
+                  <tr><td>1. Script</td><td><code>&lt;script src="searchable-select.js"&gt;&lt;/script&gt;</code></td></tr>
+                  <tr><td>2. Select básico</td><td><code>&lt;select data-searchable&gt;…&lt;/select&gt;</code></td></tr>
+                  <tr><td>3. Permitir nuevo</td><td>Agrega <code>data-allow-new</code> al select</td></tr>
+                  <tr><td>4. Init dinámico</td><td><code>SearchableSelect.init(miSelect)</code></td></tr>
+                  <tr><td>5. Refrescar opciones</td><td><code>miSelect._ssRefresh()</code></td></tr>
+                  <tr><td>6. Solo nombre</td><td>El texto del <code>&lt;option&gt;</code> es lo que ve el usuario — no pongas el código ahí</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -253,9 +296,40 @@
     }
   }
 
+  async function loadDemoSearch() {
+    const inv = await window.DB.query('inventory');
+    const sel = document.getElementById('demo-search');
+    inv
+      .filter(i => i.code && i.name)
+      .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+      .forEach(i => {
+        const opt = document.createElement('option');
+        opt.value = i.code;
+        opt.textContent = i.name;
+        sel.appendChild(opt);
+      });
+    SearchableSelect.init(sel);
+    sel.addEventListener('change', () => {
+      const res = document.getElementById('demo-result');
+      if (sel.value === '_new') {
+        const typed = sel.dataset.allowNewText || '';
+        res.textContent = `Nuevo concepto a crear: "${typed}"`;
+        res.style.color = 'var(--blue)';
+      } else if (sel.value) {
+        const txt = sel.options[sel.selectedIndex]?.text || '';
+        res.textContent = `Seleccionado: ${txt} (código interno: ${sel.value})`;
+        res.style.color = 'var(--green)';
+      } else {
+        res.textContent = 'Escoge o escribe un concepto nuevo…';
+        res.style.color = '';
+      }
+    });
+  }
+
   async function init() {
     await window.DB.query('settings');
     loadSettings();
+    loadDemoSearch();
   }
   document.addEventListener('DOMContentLoaded', init);
 </script>

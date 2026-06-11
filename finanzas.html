@@ -163,11 +163,11 @@
   <!-- Filtros -->
   <div class="filters">
     <input type="text" id="f-search" class="filter-input" placeholder="Buscar concepto, cantidad..." style="flex:1; min-width:200px;" oninput="renderList()">
-    <select id="f-cat" class="filter-input" onchange="renderList()">
+    <select id="f-cat" class="filter-input" onchange="renderList()" data-searchable>
       <option value="">Todas las categorías</option>
       <option value="pending">⚠️ Solo pendientes categorizar</option>
     </select>
-    <select id="f-type" class="filter-input" onchange="renderList()">
+    <select id="f-type" class="filter-input" onchange="renderList()" data-searchable>
       <option value="">Todos los tipos</option>
       <option value="Ingreso">Ingresos</option>
       <option value="Gasto">Gastos</option>
@@ -476,10 +476,12 @@
     ingHtmlInput += '</optgroup>'; gasHtmlInput += '</optgroup>'; transHtmlInput += '</optgroup>';
 
     const sinCat = (_allMovements||[]).filter(m => !m.category || m.category === '' || m.category === 'pending').length;
-    document.getElementById('f-cat').innerHTML =
+    const fCatEl = document.getElementById('f-cat');
+    fCatEl.innerHTML =
       `<option value="">Todas las categorías</option>` +
       `<option value="pending">⚠️ Pendientes de categorizar${sinCat ? ' (' + sinCat + ')' : ''}</option>` +
       ingHtml + gasHtml + transHtml;
+    if (fCatEl._ssInit) fCatEl._ssRefresh(); else SearchableSelect.init(fCatEl);
     const catInputEl = document.getElementById('f-cat-input');
     catInputEl.innerHTML = '<option value="">-- Sin categorizar (Pendiente) --</option>' + ingHtmlInput + gasHtmlInput + transHtmlInput;
     if (catInputEl._ssInit) catInputEl._ssRefresh(); else SearchableSelect.init(catInputEl);
@@ -536,16 +538,25 @@
   function populateContacts() {
     const cSel = document.getElementById('f-entity');
     const prev = cSel.value;
-    const opts = STATE_CONTACTS
-      .filter(c => c.tipo !== 'trabajador')   // trabajadores no son beneficiarios financieros
-      .map(c => {
+
+    const byTipo = { cliente: [], proveedor: [], otro: [] };
+    STATE_CONTACTS
+      .filter(c => c.tipo !== 'trabajador')
+      .forEach(c => {
         const n = contactDisplayName(c);
-        const tipoLabel = c.tipo ? ` · ${c.tipo}` : '';
-        return n ? `<option value="${n}">${n}${tipoLabel}</option>` : '';
-      })
-      .filter(Boolean)
-      .join('');
-    cSel.innerHTML = '<option value="">— Seleccionar —</option>' + opts;
+        if (!n) return;
+        const opt = `<option value="${n}">${n}</option>`;
+        if (c.tipo === 'cliente')        byTipo.cliente.push(opt);
+        else if (c.tipo === 'proveedor') byTipo.proveedor.push(opt);
+        else                             byTipo.otro.push(opt);
+      });
+
+    let html = '<option value="">— Seleccionar —</option>';
+    if (byTipo.cliente.length)   html += `<optgroup label="Clientes">${byTipo.cliente.join('')}</optgroup>`;
+    if (byTipo.proveedor.length) html += `<optgroup label="Proveedores">${byTipo.proveedor.join('')}</optgroup>`;
+    if (byTipo.otro.length)      html += `<optgroup label="Otros">${byTipo.otro.join('')}</optgroup>`;
+
+    cSel.innerHTML = html;
     if (prev) cSel.value = prev;
     if (cSel._ssInit) cSel._ssRefresh(); else SearchableSelect.init(cSel);
   }
@@ -1371,8 +1382,12 @@
 
     // Actualizar el select de cuentas en el formulario
     const opt = `<option value="${name}">${name}</option>`;
-    document.getElementById('f-acc').innerHTML  += opt;
-    document.getElementById('f-dest').innerHTML += opt;
+    const accEl2  = document.getElementById('f-acc');
+    const destEl2 = document.getElementById('f-dest');
+    accEl2.innerHTML  += opt;
+    destEl2.innerHTML += opt;
+    if (accEl2._ssInit)  accEl2._ssRefresh();
+    if (destEl2._ssInit) destEl2._ssRefresh();
 
     renderDynamicCards();
     calcBalances();

@@ -224,7 +224,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       section: 'Almacén de Madera',
       items: [
         { key: 'wood_types',     col: 'wood_types',     type: 'list', name: 'Especies de Madera',   desc: 'Pino, Cedro, Parota, Encino…' },
-        { key: 'wood_formats',   col: 'wood_formats',   type: 'list', name: 'Formatos de Madera',   desc: 'Tabla, Tablón, Duela, Viga…' },
+        { key: 'wood_formats',   col: 'wood_formats',   type: 'unitlist', name: 'Formatos de Madera',   desc: 'Tabla, Tablón, Duela, Viga… con su unidad de medida' },
         { key: 'wood_quality',   col: 'wood_quality',   type: 'list', name: 'Calidades de Madera',  desc: 'Primera, Segunda, Extra…' },
         { key: 'wood_locations', col: 'wood_locations', type: 'list', name: 'Ubicaciones en Bodega', desc: 'Área Principal, Bodega, Exterior…' },
       ]
@@ -279,6 +279,29 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
               window.parent.setDocumentInFirebase(def.col, 'main', { list: DEFAULT_STATES });
             if (window.parent?.DB_STATE)
               window.parent.DB_STATE[def.key] = [{ _id: 'main', list: DEFAULT_STATES }];
+          }
+        } else if (def.type === 'unitlist') {
+          const rawList = raw[0]?.list || raw.filter(x => typeof x === 'string' || x?.name);
+          STATE[def.key] = rawList.map(x =>
+            typeof x === 'string' ? { name: x, unit: 'pt' } : { name: x.name||'', unit: x.unit||'pt' }
+          );
+          if (!STATE[def.key].length) {
+            const UNITLIST_DEFAULTS = [
+              { name: 'Tabla',       unit: 'pt'     },
+              { name: 'Tablón',      unit: 'pt'     },
+              { name: 'Tabloncillo', unit: 'pt'     },
+              { name: 'Duela',       unit: 'pt'     },
+              { name: 'Viga',        unit: 'pt'     },
+              { name: 'Cuartón',     unit: 'pt'     },
+              { name: 'MDF',         unit: 'lámina' },
+              { name: 'Triplay',     unit: 'lámina' },
+              { name: 'Deck',        unit: 'm²'     },
+            ];
+            STATE[def.key] = UNITLIST_DEFAULTS;
+            if (window.parent?.setDocumentInFirebase)
+              window.parent.setDocumentInFirebase(def.col, 'main', { list: UNITLIST_DEFAULTS });
+            if (window.parent?.DB_STATE)
+              window.parent.DB_STATE[def.key] = [{ _id: 'main', list: UNITLIST_DEFAULTS }];
           }
         } else if (def.type === 'list') {
           STATE[def.key] = raw[0]?.list || raw.filter(x => typeof x === 'string');
@@ -372,6 +395,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         <input type="text" id="new-icon" value="🧰" style="width:52px;text-align:center;font-size:18px;padding:6px 8px;border:1px solid var(--crust);border-radius:6px;background:var(--base);color:var(--text);" title="Emoji">
         <input type="text" id="new-val" placeholder="Nombre de categoría…" style="flex:1;" onkeydown="if(event.key==='Enter') addItem()">
         <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
+    } else if (currentDef.type === 'unitlist') {
+      bar.innerHTML = `
+        <input type="text" id="new-val" placeholder="Nombre del formato…" style="flex:2;" onkeydown="if(event.key==='Enter') addItem()">
+        <input type="text" id="new-unit" placeholder="Unidad (ej: pt, hoja)" style="width:120px; padding:8px; border:1px solid var(--crust); border-radius:6px; background:var(--base); color:var(--text);" onkeydown="if(event.key==='Enter') addItem()">
+        <label style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; cursor:pointer; color:var(--subtext); margin:0 8px;">
+          <input type="checkbox" id="new-panel" style="width:16px; height:16px; cursor:pointer;">
+          Panel
+        </label>
+        <button class="btn btn-blue" onclick="addItem()">+ Agregar</button>`;
     } else if (currentDef.type === 'list') {
       bar.innerHTML = `
         <input type="text" id="new-val" placeholder="Nuevo valor…" onkeydown="if(event.key==='Enter') addItem()">
@@ -435,7 +467,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 
     if (currentDef.type === 'iconlist') {
       container.innerHTML = `
-        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--crust);">
           <span style="width:52px;text-align:center;">Emoji</span>
           <span style="flex:1;">Nombre de Categoría</span>
           <span style="width:32px;"></span>
@@ -450,6 +482,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
             onchange="updateItem(${i}, this.value, 'label')" onblur="updateItem(${i}, this.value, 'label')">
           <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
         </div>`).join('');
+    } else if (currentDef.type === 'unitlist') {
+      container.innerHTML = `
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--crust);">
+          <span style="flex:2;">Formato</span>
+          <span style="width:120px;text-align:left;">Unidad</span>
+          <span style="width:60px;text-align:center;">Panel</span>
+          <span style="width:32px;"></span>
+        </div>` +
+        items.map((item, i) => `
+        <div class="item-row">
+          <input class="item-inp" value="${escHtml(item.name||'')}" style="flex:2;"
+            onchange="updateItem(${i}, this.value, 'name')" onblur="updateItem(${i}, this.value, 'name')">
+          <input class="item-inp" value="${escHtml(item.unit||'pt')}" style="width:120px;"
+            onchange="updateItem(${i}, this.value, 'unit')" onblur="updateItem(${i}, this.value, 'unit')">
+          <div style="width:60px; display:flex; justify-content:center; align-items:center;">
+            <input type="checkbox" ${item.panel ? 'checked' : ''} style="width:16px; height:16px; cursor:pointer;"
+              onchange="updateItemCheckbox(${i}, this.checked, 'panel')">
+          </div>
+          <button class="rm-btn" onclick="deleteItem(${i})">✕</button>
+        </div>`).join('');
     } else if (currentDef.type === 'list') {
       container.innerHTML = items.map((val, i) => `
         <div class="item-row">
@@ -458,7 +510,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         </div>`).join('');
     } else if (currentDef.type === 'catlist') {
       container.innerHTML = `
-        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--crust);">
           <span style="width:52px;text-align:center;">Emoji</span>
           <span style="flex:1;">Nombre de Categoría</span>
           <span style="width:60px;text-align:center;">Cód. (2 díg.)</span>
@@ -477,7 +529,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         </div>`).join('');
     } else if (currentDef.type === 'brand') {
       container.innerHTML = `
-        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--crust);">
           <span style="width:70px;text-align:center;">Cód. (3 díg.)</span>
           <span style="flex:1;">Nombre de Marca</span>
           <span style="width:32px;"></span>
@@ -512,7 +564,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         </div>`).join('');
     } else if (currentDef.type === 'woodcat') {
       container.innerHTML = `
-        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--crust);">
           <span style="flex:2;">Tipo de Madera</span>
           <span style="width:80px;text-align:center;">Unidad</span>
           <span style="width:100px;text-align:right;">$ Precio Est.</span>
@@ -532,7 +584,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
         </div>`).join('');
     } else if (currentDef.type === 'att-state') {
       container.innerHTML = `
-        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--crust);">
+        <div class="item-row" style="font-size:10px;font-weight:700;color:var(--subtext);text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--crust);">
           <span style="width:52px;text-align:center;">Emoji</span>
           <span style="flex:1;">Nombre del Estado</span>
           <span style="width:140px;text-align:center;">Código Interno</span>
@@ -561,6 +613,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       STATE[currentDef.key].push({ label: val, icon });
       await saveList();
       document.getElementById('new-icon').value = '🧰';
+    } else if (currentDef.type === 'unitlist') {
+      const unit = document.getElementById('new-unit')?.value.trim() || 'pt';
+      const panel = document.getElementById('new-panel')?.checked || false;
+      if (STATE[currentDef.key].some(x => x.name === val)) return alert('Ya existe ese formato.');
+      STATE[currentDef.key].push({ name: val, unit, panel });
+      await saveList();
     } else if (currentDef.type === 'list') {
       if (STATE[currentDef.key].includes(val)) return alert('Ya existe ese valor.');
       STATE[currentDef.key].push(val);
@@ -609,6 +667,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     renderSidebar();
   }
 
+  async function updateItemCheckbox(idx, newVal, field) {
+    if (currentDef.type === 'unitlist') {
+      STATE[currentDef.key][idx][field] = !!newVal;
+      await saveList();
+    }
+  }
+
   async function updateItem(idx, newVal, field) {
     newVal = newVal.trim();
     if (!newVal) return;
@@ -617,6 +682,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
       STATE[currentDef.key][idx][field] = newVal;
       await saveList();
     } else if (currentDef.type === 'att-state') {
+      STATE[currentDef.key][idx][field] = newVal;
+      await saveList();
+    } else if (currentDef.type === 'unitlist') {
       STATE[currentDef.key][idx][field] = newVal;
       await saveList();
     } else if (currentDef.type === 'list') {
@@ -643,6 +711,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
     if (!confirm(`¿Eliminar "${label}"?`)) return;
 
     if (currentDef.type === 'iconlist') {
+      items.splice(idx, 1);
+      await saveList();
+    } else if (currentDef.type === 'unitlist') {
       items.splice(idx, 1);
       await saveList();
     } else if (currentDef.type === 'list') {

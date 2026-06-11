@@ -100,10 +100,9 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     <table class="items-table">
       <thead>
         <tr>
-          <th style="width:50%">Artículo / Concepto</th>
-          <th style="width:18%">Cantidad</th>
-          <th style="width:20%">Unidad</th>
-          <th style="width:12%"></th>
+          <th style="width:60%">Artículo / Concepto</th>
+          <th style="width:30%">Cantidad</th>
+          <th style="width:10%"></th>
         </tr>
       </thead>
       <tbody id="itemsList"></tbody>
@@ -124,7 +123,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   let INV   = [];
   let UNITS = [];
   let ORDERS = [];
-  let WOOD_SPECIES = [];
+  let WOOD_NAMES = [];
   const WOOD_UNITS = ['pza','m3','pt','tablon','viga','regla','carga'];
 
   // INIT_STATUS: 'Pedido' (default), 'Confirmado' (from compras), 'Autorizado' (from admin)
@@ -157,15 +156,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
 
     let html = `<div class="sec-lbl">Pedidos Enviados (${pedidos.length})</div>`;
     pedidos.forEach(o => {
-      const itemsHtml = (o.items||[]).map(i => i.tipo === 'madera' ? `
-        <div class="ficha-item">
-          <span class="ficha-item-name">🪵 ${i.especie||'Madera'}<span class="wood-badge">Madera</span></span>
-          <span class="ficha-item-qty">${i.cantidad||1} ${i.unit||'pza'}</span>
-        </div>` : `
-        <div class="ficha-item">
-          <span class="ficha-item-name">${i.name||i.code||'—'}${i.esHerramienta?'<span class="herr-badge">🔧</span>':''}</span>
-          <span class="ficha-item-qty">${i.qty} ${i.unit||'pza'}</span>
-        </div>`).join('');
+      const itemsHtml = (o.items||[]).map(i => window.renderPurchaseCardItem(i, { showPrice: false })).join('');
       html += `
         <div class="ficha" id="rq-${o.id}">
           <div class="ficha-hdr">
@@ -282,12 +273,17 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       btn.className = 'btn btn-green';
     }
 
-    const [projects, contacts, inventory, conceptUnits, woodDb] = await Promise.all([
+    if (window.parent?.cargar_coleccion) {
+      await window.parent.cargar_coleccion('wood_price_catalog');
+    }
+    const [projects, contacts, inventory, conceptUnits, woodFormats, woodTypes, woodQuality] = await Promise.all([
       window.DB.query('projects'),
       window.DB.query('contacts'),
       window.DB.query('inventory'),
       window.DB.query('concept_units'),
-      window.DB.query('wood').catch(() => []),
+      window.DB.query('wood_formats').catch(() => []),
+      window.DB.query('wood_types').catch(() => []),
+      window.DB.query('wood_quality').catch(() => []),
     ]);
 
     // Projects dropdown
@@ -318,18 +314,29 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const rawUnits = conceptUnits[0]?.list || [];
     UNITS = rawUnits.length ? rawUnits : ['pza','caja','mt','mt2','lt','kg','gln','rollo','par','juego','bolsa'];
 
-    // Wood species
-    const speciesSet = new Set(['Cedro','Parota','Encino','Pino','Tzalam','Macuil','Mezquite','Tepeguaje','Guanacaste','Primavera','Caoba','Nogal']);
-    woodDb.forEach(w => { if (w.especie) speciesSet.add(w.especie); if (w.species) speciesSet.add(w.species); });
-    WOOD_SPECIES = [...speciesSet].sort();
+    // Wood catalogs
+    const extractList = arr => {
+      const list = arr?.[0]?.list || arr || [];
+      return list.map(x => typeof x === 'object' ? (x.name || x.nombre) : x).filter(Boolean);
+    };
+
+    const wf = extractList(woodFormats);
+    if (wf.length) WOOD_FORMATS = [...new Set(wf)].sort((a,b) => a.localeCompare(b, 'es'));
+
+    const wt = extractList(woodTypes);
+    if (wt.length) WOOD_SPECIES = [...new Set(wt)].sort((a,b) => a.localeCompare(b, 'es'));
+
+    const wq = extractList(woodQuality);
+    if (wq.length) WOOD_QUALS = [...new Set(wq)].sort((a,b) => a.localeCompare(b, 'es'));
 
     addRow();
     await loadOrders();
   }
 
+  // Helper logic for custom concept options
   function buildInvOptions(selectedCode) {
     return `<option value="">— Buscar concepto —</option>` +
-      INV.map(i => `<option value="${i.code}" data-unit="${i.unit||'pza'}" ${i.code===selectedCode?'selected':''}>${i.code} – ${i.name}</option>`).join('') +
+      INV.map(i => `<option value="${i.code}" data-unit="${i.unit||'pza'}" ${i.code===selectedCode?'selected':''}>${i.name}</option>`).join('') +
       `<option value="_new" style="font-weight:700;color:var(--blue);">+ Concepto nuevo…</option>`;
   }
 
@@ -341,14 +348,25 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     return WOOD_UNITS.map(u => `<option value="${u}" ${u===selected?'selected':''}>${u}</option>`).join('');
   }
 
-  function buildSpeciesOptions(selected) {
+  let WOOD_FORMATS = [];
+  let WOOD_SPECIES = ['Cedro','Parota','Encino','Pino','Tzalam','Macuil','Mezquite','Tepeguaje','Guanacaste','Primavera','Caoba','Nogal'];
+  let WOOD_QUALS = ['Primera', 'Segunda', 'Tercera'];
+
+  function buildWoodFormatOptions(selected) {
+    return `<option value="">— Formato —</option>` +
+      WOOD_FORMATS.map(s => `<option value="${s}" ${s===selected?'selected':''}>${s}</option>`).join('');
+  }
+  function buildWoodSpeciesOptions(selected) {
     return `<option value="">— Especie —</option>` +
-      WOOD_SPECIES.map(s => `<option value="${s}" ${s===selected?'selected':''}>${s}</option>`).join('') +
-      `<option value="_otro" style="font-weight:700;color:var(--blue);">+ Otra…</option>`;
+      WOOD_SPECIES.map(s => `<option value="${s}" ${s===selected?'selected':''}>${s}</option>`).join('');
+  }
+  function buildWoodQualOptions(selected) {
+    return `<option value="">— Calidad —</option>` +
+      WOOD_QUALS.map(s => `<option value="${s}" ${s===selected?'selected':''}>${s}</option>`).join('');
   }
 
   function addRow(tipo='material', data={}) {
-    const { code='', name='', qty=1, unit='pza', especie='', woodUnit='pza', notas='' } = data;
+    const { code='', name='', qty=1, unit='pza', especie='', nombre='', calidad='', woodUnit='pza', notas='' } = data;
     const tbody = document.getElementById('itemsList');
     const tr = document.createElement('tr');
     tr.dataset.tipo = tipo;
@@ -357,11 +375,10 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     const isWood  = tipo === 'madera';
     const isMat   = !isHerr && !isWood;
     const isCustom = isMat && (!code || !INV.find(i => i.code === code));
-    const isCustomEspecie = isWood && especie && !WOOD_SPECIES.includes(especie);
 
     tr.innerHTML = `
-      <td>
-        <div class="tipo-toggle">
+      <td style="vertical-align:bottom; padding-bottom:10px;">
+        <div class="tipo-toggle" style="margin-bottom:8px;">
           <span class="${isMat?'active-mat':''}"  onclick="setTipoRow(this.closest('tr'),'material')">📦 Material</span>
           <span class="${isHerr?'active-herr':''}" onclick="setTipoRow(this.closest('tr'),'herramienta')">🔧 Herramienta</span>
           <span class="${isWood?'active-wood':''}" onclick="setTipoRow(this.closest('tr'),'madera')">🪵 Madera</span>
@@ -375,29 +392,46 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
         </div>
         <input type="text" class="i-herr-name" placeholder="Nombre de la herramienta…" value="${isHerr?name:''}"
           style="display:${isHerr?'block':'none'};">
-        <div class="i-wood-wrap" style="${isWood?'':'display:none'}">
-          <select class="i-especie" onchange="handleEspecieChange(this)">
-            ${buildSpeciesOptions(isCustomEspecie?'':especie)}
-          </select>
-          <input type="text" class="i-especie-custom" placeholder="Escribe la especie…"
-            value="${isCustomEspecie?especie:''}"
-            style="display:${isCustomEspecie?'block':'none'}; margin-top:4px;">
+        <div class="i-wood-wrap" style="display:${isWood?'flex':'none'}; gap:4px; flex-wrap:wrap; margin-top:4px;">
+          <div style="flex:1; min-width:90px;">
+            <select class="i-wood-format" data-searchable>
+              ${buildWoodFormatOptions(nombre)}
+            </select>
+          </div>
+          <div style="flex:1; min-width:90px;">
+            <select class="i-wood-species" data-searchable>
+              ${buildWoodSpeciesOptions(especie)}
+            </select>
+          </div>
+          <div style="flex:1; min-width:90px;">
+            <select class="i-wood-qual" data-searchable>
+              ${buildWoodQualOptions(calidad)}
+            </select>
+          </div>
         </div>
       </td>
-      <td><input type="number" class="i-qty" value="${isWood?1:qty}" min="0.01" step="any" style="width:80px;"></td>
-      <td>
+      <td style="vertical-align:bottom; padding-bottom:10px;">
+        <input type="number" class="i-qty" value="${isWood?1:qty}" min="0.01" step="any" style="width:90px;">
+      </td>
+      <td style="display:none;">
         <select class="i-unit" data-searchable style="${isWood?'display:none':''}">${buildUnitOptions(unit)}</select>
         <select class="i-wood-unit" style="${isWood?'':'display:none'}">${buildWoodUnitOptions(woodUnit)}</select>
       </td>
-      <td><button class="rm-btn" onclick="this.closest('tr').remove()">✕</button></td>
+      <td style="vertical-align:bottom; padding-bottom:10px; text-align:right;">
+        <button class="rm-btn" onclick="this.closest('tr').remove()">✕</button>
+      </td>
     `;
     tbody.appendChild(tr);
     if (isMat) SearchableSelect.init(tr.querySelector('.i-sel'));
     if (!isWood) SearchableSelect.init(tr.querySelector('.i-unit'));
+    if (isWood) {
+      SearchableSelect.init(tr.querySelector('.i-wood-format'));
+      SearchableSelect.init(tr.querySelector('.i-wood-species'));
+      SearchableSelect.init(tr.querySelector('.i-wood-qual'));
+    }
   }
 
   function unitEl(tr) {
-    // SearchableSelect wraps the select in .ss-wrap — hide that instead of the raw select
     const sel = tr.querySelector('.i-unit');
     return sel.closest('.ss-wrap') || sel;
   }
@@ -437,9 +471,18 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       herrName.focus();
     } else { // madera
       spans[2].className = 'active-wood';
-      woodWrap.style.display    = '';
+      woodWrap.style.display    = 'flex';
       unitEl(tr).style.display  = 'none';
       woodUnitSel.style.display = '';
+      
+      const wf = tr.querySelector('.i-wood-format');
+      if (!wf._ssInit) SearchableSelect.init(wf); else wf._ssSync?.();
+      
+      const ws = tr.querySelector('.i-wood-species');
+      if (!ws._ssInit) SearchableSelect.init(ws); else ws._ssSync?.();
+      
+      const wq = tr.querySelector('.i-wood-qual');
+      if (!wq._ssInit) SearchableSelect.init(wq); else wq._ssSync?.();
     }
   }
 
@@ -471,17 +514,6 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     }
   }
 
-  function handleEspecieChange(sel) {
-    const custom = sel.closest('tr').querySelector('.i-especie-custom');
-    if (sel.value === '_otro') {
-      sel.value = '';
-      custom.style.display = 'block';
-      custom.focus();
-    } else {
-      custom.style.display = 'none';
-    }
-  }
-
   function toast(msg, type = 'ok') {
     const wrap = document.getElementById('toast-wrap');
     const bg = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--green)';
@@ -502,20 +534,22 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       const tipo = tr.dataset.tipo || 'material';
 
       if (tipo === 'madera') {
-        const especieSel    = tr.querySelector('.i-especie');
-        const especieCustom = tr.querySelector('.i-especie-custom');
-        const especie = especieSel.value && especieSel.value !== '_otro'
-          ? especieSel.value : especieCustom.value.trim();
+        const fmtSel  = tr.querySelector('.i-wood-format');
+        const spcSel  = tr.querySelector('.i-wood-species');
+        const qualSel = tr.querySelector('.i-wood-qual');
+        
+        const nombre  = fmtSel ? fmtSel.value : '';
+        const especie = spcSel ? spcSel.value : '';
+        const calidad = qualSel ? qualSel.value : '';
+        
         const cantidad = parseFloat(tr.querySelector('.i-qty').value) || 1;
         const unit     = tr.querySelector('.i-wood-unit').value;
-        if (especie) items.push({ tipo: 'madera', especie, cantidad, unit });
-
+        if (nombre || especie) items.push({ tipo: 'madera', nombre, especie, calidad, cantidad, unit });
       } else if (tipo === 'herramienta') {
         const name = tr.querySelector('.i-herr-name').value.trim();
         const qty  = parseFloat(tr.querySelector('.i-qty').value) || 0;
         const unit = tr.querySelector('.i-unit').value;
         if (name && qty > 0) items.push({ tipo: 'herramienta', name, qty, unit, esHerramienta: true });
-
       } else { // material
         const sel    = tr.querySelector('.i-sel');
         const custom = tr.querySelector('.i-custom');

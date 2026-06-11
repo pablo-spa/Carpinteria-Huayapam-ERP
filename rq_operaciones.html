@@ -123,12 +123,8 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
             ${o.notes     ? `<span>📝 ${o.notes}</span>`     : ''}
           </div>
           ${statusFlow(o.status)}
-          <div id="items-view-${o.id}" class="ficha-items">
-            ${(o.items||[]).map(i => `
-              <div class="ficha-item">
-                <span class="ficha-item-name">${i.name || i.code || '—'}${i.esHerramienta?'&nbsp;<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(223,142,29,0.15);color:var(--amber);">🔧 Herramienta</span>':''}</span>
-                <span class="ficha-item-qty">${i.qty} ${i.unit || 'pza'}</span>
-              </div>`).join('')}
+          <div id="items-view-${o.id}" class="ficha-items" style="display:flex; flex-direction:column; gap:8px;">
+            ${(o.items||[]).map(i => window.renderPurchaseCardItem(i, { showPrice: false })).join('')}
           </div>
           <div id="items-edit-${o.id}" style="display:none; margin-top:12px; display:none;">
             <div style="overflow-x:auto;">
@@ -191,20 +187,46 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   }
 
   function editRow(ordId, idx, item) {
+    const isMadera = item.tipo === 'madera';
     const herrAttr = item.esHerramienta ? 'data-herr="1"' : '';
+    const maderaAttr = isMadera ? 'data-madera="1"' : '';
+    const displayName = isMadera ? (item.especie||'Madera') : (item.name||item.code||'');
+    const displayQty  = isMadera ? (item.cantidad||1) : (item.qty||1);
     const herrBadge = item.esHerramienta
       ? `<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(223,142,29,0.15);color:var(--amber);margin-left:4px;">🔧</span>`
       : '';
-    return `<tr id="erow-${ordId}-${idx}" ${herrAttr}>
-      <td style="padding:4px 4px;">
-        <div style="display:flex;align-items:center;gap:4px;">
-          <input type="text" value="${(item.name||item.code||'').replace(/"/g,'&quot;')}"
+    const maderaBadge = isMadera
+      ? `<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(64,160,43,.12);color:var(--green);border:1px solid var(--green);margin-left:4px;">🪵 Madera</span>`
+      : '';
+    let nameInputHtml = '';
+    if (isMadera) {
+      nameInputHtml = `
+        <div style="display:flex;gap:4px;width:100%;flex-wrap:wrap;">
+          <input type="text" class="edit-wood-nombre" value="${(item.nombre||'').replace(/"/g,'&quot;')}" placeholder="Formato (ej. Tabla)"
+            style="flex:1;min-width:70px;padding:6px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
+          <input type="text" class="edit-wood-especie" value="${(item.especie||'').replace(/"/g,'&quot;')}" placeholder="Especie (ej. Pino)"
+            style="flex:1;min-width:70px;padding:6px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
+          <input type="text" class="edit-wood-calidad" value="${(item.calidad||'').replace(/"/g,'&quot;')}" placeholder="Calidad (ej. 1ra)"
+            style="flex:1;min-width:70px;padding:6px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
+          ${maderaBadge}
+        </div>
+      `;
+    } else {
+      nameInputHtml = `
+        <div style="display:flex;align-items:center;gap:4px;width:100%;">
+          <input type="text" class="edit-name" value="${displayName.replace(/"/g,'&quot;')}"
             style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
           ${herrBadge}
         </div>
+      `;
+    }
+
+    return `<tr id="erow-${ordId}-${idx}" ${herrAttr} ${maderaAttr}>
+      <td style="padding:4px 4px;">
+        ${nameInputHtml}
       </td>
       <td style="padding:4px 4px;">
-        <input type="number" value="${item.qty||1}" min="0.01" step="any"
+        <input type="number" value="${displayQty}" min="0.01" step="any"
           style="width:65px;text-align:center;padding:6px 4px;border-radius:6px;border:1px solid var(--crust);background:var(--base);color:var(--text);font-family:inherit;font-size:13px;">
       </td>
       <td style="padding:4px 4px;">
@@ -247,12 +269,31 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       const rows = editEl.querySelectorAll('tbody tr');
       const newItems = [];
       rows.forEach(tr => {
-        const inputs = tr.querySelectorAll('input');
-        const name = inputs[0]?.value.trim();
-        const qty  = parseFloat(inputs[1]?.value) || 0;
-        const unit = inputs[2]?.value.trim() || 'pza';
-        const esHerr = tr.dataset.herr === '1';
-        if (name && qty > 0) newItems.push({ name, qty, unit, price: 0, code: '', esHerramienta: esHerr || undefined });
+        const isMadera = tr.dataset.madera === '1';
+        const esHerr   = tr.dataset.herr === '1';
+        const qtyInputs = tr.querySelectorAll('input[type="number"]');
+        const textInputs = tr.querySelectorAll('input[type="text"]');
+        
+        const qty  = parseFloat(qtyInputs[0]?.value) || 0;
+        const unit = textInputs[textInputs.length - 1]?.value.trim() || 'pza'; // Last text input is always unit
+        
+        if (isMadera) {
+          const nInput = tr.querySelector('.edit-wood-nombre');
+          const eInput = tr.querySelector('.edit-wood-especie');
+          const qInput = tr.querySelector('.edit-wood-calidad');
+          const nombre = nInput ? nInput.value.trim() : '';
+          const especie = eInput ? eInput.value.trim() : '';
+          const calidad = qInput ? qInput.value.trim() : '';
+          
+          if ((nombre || especie) && qty > 0) {
+            newItems.push({ tipo: 'madera', nombre, especie, calidad, cantidad: qty, unit });
+          }
+        } else {
+          const nameVal = tr.querySelector('.edit-name')?.value.trim();
+          if (nameVal && qty > 0) {
+            newItems.push({ name: nameVal, qty, unit, price: 0, code: '', esHerramienta: esHerr || undefined });
+          }
+        }
       });
       if (!newItems.length) { toast('Agrega al menos un renglón antes de confirmar.', 'warn'); return; }
       order.items = newItems;

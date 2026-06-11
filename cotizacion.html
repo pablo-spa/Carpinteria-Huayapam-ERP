@@ -170,7 +170,7 @@ input.mat-price { text-align: right; font-size: 12px; }
   <div class="top-action-bar" style="flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 20px; background: none; border: none; padding: 0;">
     <!-- Fila Manual -->
     <div style="display: flex; gap: 8px; align-items: center; background: var(--mantle); padding: 12px; border: 1px solid var(--crust); border-radius: 12px; flex-wrap:wrap;">
-      <select class="type-sel" id="typeSelect" style="flex:2; min-width:160px;">
+      <select class="type-sel" id="typeSelect" style="flex:2; min-width:160px;" data-searchable>
         <option value="">Tipo de pieza…</option>
       </select>
       <input type="text" id="pieceNameInput" placeholder="Nombre personalizado (ej: Closet cuarto principal)"
@@ -271,7 +271,7 @@ input.mat-price { text-align: right; font-size: 12px; }
     <label>Nombre del Proyecto *</label>
     <input type="text" id="np-nombre" placeholder="Ej: Cocina integral Martínez">
     <label>Cliente</label>
-    <select id="np-cliente"></select>
+    <select id="np-cliente" data-searchable></select>
     <label>Estado</label>
     <select id="np-estado">
       <option value="Planificación">Planificación</option>
@@ -317,8 +317,8 @@ const RATE_LABELS = { maestroA:'Maestro A', maestroB:'Maestro B', oficialA:'Ofic
 let OVERHEAD = 0, TOOL = 0.08;
 let WOOD_CATALOG = []; // { id, nombre, unidad, precioEst, notas }
 
-// Modo de edición: si se abre con ?editId=xxx, editamos la cotización existente
 let EDIT_STATE = { id: null, folio: null, originalStatus: null };
+let Q_state = { baseQuoteId: null, isViewMode: false, viewId: null };
 
 // ID estable para subir imágenes antes de que exista la cotización guardada
 let UPLOAD_SESSION_ID = crypto.randomUUID();
@@ -673,41 +673,44 @@ window.syncMargins = function(el) {
 };
 
 function renderPiece(piece) {
+  const isView = Q_state.isViewMode;
+  const ds = isView ? ' disabled' : '';
+
   const c = calc(piece);
   const matRows = piece.mats.map((m,i) => `
     <div class="mat-row">
-      <select class="mat-name" data-searchable onchange="setMatName(${piece.id},${i},this.value)">
+      <select class="mat-name" data-searchable onchange="setMatName(${piece.id},${i},this.value)"${ds}>
         ${MATS.map(mt=>`<option value="${mt.n}"${mt.n===m.n?' selected':''}>${mt.n}</option>`).join('')}
       </select>
-      <input class="mat-qty" type="number" value="${m.qty}" min="0" step="0.25" onchange="setMatQty(${piece.id},${i},this.value)">
+      <input class="mat-qty" type="number" value="${m.qty}" min="0" step="0.25" onchange="setMatQty(${piece.id},${i},this.value)"${ds}>
       <span class="mat-unit" id="munit-${piece.id}-${i}">${m.u}</span>
-      <input class="mat-price" id="mprice-${piece.id}-${i}" type="number" value="${m.p}" min="0" step="0.01" onchange="setMatPrice(${piece.id},${i},this.value)" title="Precio por unidad">
+      <input class="mat-price" id="mprice-${piece.id}-${i}" type="number" value="${m.p}" min="0" step="0.01" onchange="setMatPrice(${piece.id},${i},this.value)" title="Precio por unidad"${ds}>
       <span class="mat-subtotal" id="mst-${piece.id}-${i}">${fmt((m.qty||0)*m.p)}</span>
-      <button class="mat-del" onclick="delMat(${piece.id},${i})">×</button>
+      ${isView ? '' : `<button class="mat-del" onclick="delMat(${piece.id},${i})">×</button>`}
     </div>`).join('');
 
   const hrRows = (piece.hrRows||[]).map((r,i) => `
     <div class="mat-row">
-      <select class="mat-name" data-searchable onchange="setHrRole(${piece.id},${i},this.value)">
+      <select class="mat-name" data-searchable onchange="setHrRole(${piece.id},${i},this.value)"${ds}>
         ${Object.keys(RATES).map(k=>`<option value="${k}"${k===r.role?' selected':''}>${RATE_LABELS[k]}</option>`).join('')}
       </select>
-      <input class="mat-qty" type="number" value="${r.hrs||''}" min="0" step="0.5" placeholder="0" oninput="setHrHrs(${piece.id},${i},this.value)">
+      <input class="mat-qty" type="number" value="${r.hrs||''}" min="0" step="0.5" placeholder="0" oninput="setHrHrs(${piece.id},${i},this.value)"${ds}>
       <span class="mat-unit">hrs</span>
       <span class="mat-unit" id="hrrate-${piece.id}-${i}" style="font-weight:700;color:var(--text);">$${RATES[r.role]||0}</span>
       <span class="mat-subtotal" id="hrst-${piece.id}-${i}">${fmt((r.hrs||0)*(RATES[r.role]||0))}</span>
-      <button class="mat-del" onclick="delHrRow(${piece.id},${i})">×</button>
+      ${isView ? '' : `<button class="mat-del" onclick="delHrRow(${piece.id},${i})">×</button>`}
     </div>`).join('');
 
   const imgSection = `
     <div class="piece-img-section">
       ${piece.imagen ? `
-        <img src="${piece.imagen}" class="piece-thumb" onclick="document.getElementById('img-${piece.id}').click()" title="Haz clic para cambiar">
-        <div class="piece-img-actions">
+        <img src="${piece.imagen}" class="piece-thumb" ${isView ? '' : `onclick="document.getElementById('img-${piece.id}').click()" title="Haz clic para cambiar"`}>
+        ${isView ? '' : `<div class="piece-img-actions">
           <label for="img-${piece.id}" class="piece-img-label">🔄 Cambiar imagen</label>
           <button class="piece-img-rm" onclick="removeImage(${piece.id})">✕ Quitar</button>
-        </div>` : `
-        <label for="img-${piece.id}" class="piece-img-label">📷 Agregar imagen de referencia</label>`}
-      <input type="file" id="img-${piece.id}" accept="image/*" style="display:none" onchange="setImage(${piece.id}, this)">
+        </div>`}` : (isView ? '' : `
+        <label for="img-${piece.id}" class="piece-img-label">📷 Agregar imagen de referencia</label>`)}
+      ${isView ? '' : `<input type="file" id="img-${piece.id}" accept="image/*" style="display:none" onchange="setImage(${piece.id}, this)">`}
     </div>`;
 
   return `
@@ -719,7 +722,7 @@ function renderPiece(piece) {
           placeholder="Nombre de la pieza…"
           onclick="event.stopPropagation()"
           oninput="setPieceName(${piece.id}, this.value)"
-          style="flex:1; border:none; background:transparent; color:var(--text); font-size:14px; font-weight:700; font-family:inherit; outline:none; min-width:0; padding:0;">
+          style="flex:1; border:none; background:transparent; color:var(--text); font-size:14px; font-weight:700; font-family:inherit; outline:none; min-width:0; padding:0;"${ds}>
         ${(piece.qty||1) > 1 ? `<span style="font-size:11px;font-weight:800;background:var(--blue-bg);color:var(--blue);padding:2px 7px;border-radius:5px;white-space:nowrap;">×${piece.qty}</span>` : ''}
         <span class="p-price" id="pp-${piece.id}">${c.final>0?fmt(c.final*(piece.qty||1)):'—'}</span>
         <span class="p-arrow ${piece.open?'open':''}">▼</span>
@@ -732,13 +735,14 @@ function renderPiece(piece) {
             <span>Cantidad de piezas</span>
             <input type="number" min="1" max="99" value="${piece.qty||1}"
               oninput="setPieceQty(${piece.id}, this.value)"
-              style="width:56px; padding:6px 8px; border:1px solid var(--surface0); border-radius:6px; background:var(--base); color:var(--text); font-size:14px; font-weight:800; font-family:inherit; text-align:center;">
+              style="width:56px; padding:6px 8px; border:1px solid var(--surface0); border-radius:6px; background:var(--base); color:var(--text); font-size:14px; font-weight:800; font-family:inherit; text-align:center;"${ds}>
           </div>
         </div>
         <textarea
           style="width:100%;resize:vertical;min-height:64px;padding:9px 10px;border:1px solid var(--surface0);border-radius:8px;background:var(--base);color:var(--text);font-family:inherit;font-size:13px;line-height:1.5;margin-bottom:18px;"
           placeholder="Descripción, dimensiones, acabados, especificaciones…"
           oninput="setDesc(${piece.id}, this.value)"
+          ${ds}
         >${piece.descripcion || ''}</textarea>
         <div class="sub-hdr">Lista de Materiales</div>
         <div class="table-wrap">
@@ -751,7 +755,7 @@ function renderPiece(piece) {
             <span></span>
           </div>
           ${matRows}
-          <button class="add-mat-btn" onclick="addMat(${piece.id})">+ Agregar material</button>
+          ${isView ? '' : `<button class="add-mat-btn" onclick="addMat(${piece.id})">+ Agregar material</button>`}
         </div>
 
         <div class="sub-hdr" style="margin-top:24px;">Madera</div>
@@ -766,17 +770,17 @@ function renderPiece(piece) {
           </div>
           ${(piece.woodRows||[]).map((w,i) => `
             <div class="mat-row">
-              <select class="mat-name" data-searchable onchange="setWoodType(${piece.id},${i},this.value)">
+              <select class="mat-name" data-searchable onchange="setWoodType(${piece.id},${i},this.value)"${ds}>
                 ${WOOD_CATALOG.map(c=>`<option value="${c.id}"${c.id===w.catalog_id?' selected':''}>${c.nombre}</option>`).join('')}
                 ${!WOOD_CATALOG.find(c=>c.id===w.catalog_id) && w.nombre ? `<option value="${w.catalog_id||''}" selected>${w.nombre}</option>` : ''}
               </select>
-              <input class="mat-qty" type="number" value="${w.qty||1}" min="0" step="0.5" onchange="setWoodQty(${piece.id},${i},this.value)">
+              <input class="mat-qty" type="number" value="${w.qty||1}" min="0" step="0.5" onchange="setWoodQty(${piece.id},${i},this.value)"${ds}>
               <span class="mat-unit" id="woodunit-${piece.id}-${i}">${w.unidad||'pt'}</span>
-              <input class="mat-price" id="woodprice-${piece.id}-${i}" type="number" value="${w.precio||0}" min="0" step="1" onchange="setWoodPrice(${piece.id},${i},this.value)" title="Precio por unidad">
+              <input class="mat-price" id="woodprice-${piece.id}-${i}" type="number" value="${w.precio||0}" min="0" step="1" onchange="setWoodPrice(${piece.id},${i},this.value)" title="Precio por unidad"${ds}>
               <span class="mat-subtotal" id="woodst-${piece.id}-${i}">${fmt((w.qty||0)*(w.precio||0))}</span>
-              <button class="mat-del" onclick="delWoodRow(${piece.id},${i})">×</button>
+              ${isView ? '' : `<button class="mat-del" onclick="delWoodRow(${piece.id},${i})">×</button>`}
             </div>`).join('')}
-          <button class="add-mat-btn" onclick="addWoodRow(${piece.id})">+ Agregar madera</button>
+          ${isView ? '' : `<button class="add-mat-btn" onclick="addWoodRow(${piece.id})">+ Agregar madera</button>`}
         </div>
 
         <div class="sub-hdr" style="margin-top:24px;">Mano de Obra</div>
@@ -790,14 +794,15 @@ function renderPiece(piece) {
             <span></span>
           </div>
           ${hrRows}
-          <button class="add-mat-btn" onclick="addHrRow(${piece.id})">+ Agregar trabajador</button>
+          ${isView ? '' : `<button class="add-mat-btn" onclick="addHrRow(${piece.id})">+ Agregar trabajador</button>`}
         </div>
 
         <div class="breakdown" id="br-${piece.id}">${brHtml(c)}</div>
 
+        ${isView ? '' : `
         <div class="piece-foot">
           <button class="btn" style="color:var(--red);border-color:var(--surface1);background:transparent;" onclick="removePiece(${piece.id})">✕ Eliminar pieza</button>
-        </div>
+        </div>`}
       </div>` : ''}
     </div>`;
 }
@@ -1206,9 +1211,6 @@ function simulatePrintAI() {
   if (condBox) condBox.textContent = currentPrintConds;
 }
 
-// Global DB Load
-let Q_state = { baseQuoteId: null, isViewMode: false, viewId: null };
-
 function openEditMode() {
   const url = 'cotizacion.html?editId=' + Q_state.viewId;
   if (window.parent?.openModule) window.parent.openModule(url, 'Editar Cotización');
@@ -1287,6 +1289,7 @@ async function loadOptions() {
     o.value = code; o.textContent = code+' — '+name;
     document.getElementById('typeSelect').appendChild(o);
   });
+  SearchableSelect.init(document.getElementById('typeSelect'));
 }
 
 let BACK_PROJECT_ID = null;
@@ -1307,8 +1310,7 @@ function goBackToProject() {
 
 function showBackButton(pId) {
   BACK_PROJECT_ID = pId;
-  const btn = document.getElementById('btn-back-project');
-  if (btn) btn.textContent = '← Volver al Proyecto';
+  // Keep the text as "← Volver" to maintain standardization
 }
 
 function linkClientToProject(d, pId, cId) {
@@ -1477,7 +1479,9 @@ function processURLParams() {
   }
 
   if (loadQ) {
-    if (loadQ.projectId) showBackButton(loadQ.projectId);
+    const titleEl = document.querySelector('.hdr-title');
+    if (titleEl) titleEl.textContent = 'Cotización ' + (loadQ.folio || '');
+    
     if (loadQ.globalCfg) {
       EXTRAS     = loadQ.globalCfg.EXTRAS     || 0.07;
       MARGIN     = loadQ.globalCfg.MARGIN     || 0.20;
@@ -1581,6 +1585,7 @@ function openNewProjectModal() {
   });
   // Pre-seleccionar cliente si ya hay uno elegido
   if (cSel.value) npCli.value = cSel.value;
+  if (npCli._ssInit) npCli._ssRefresh(); else SearchableSelect.init(npCli);
 
   document.getElementById('modal-proyecto').classList.add('open');
   setTimeout(() => document.getElementById('np-code').focus(), 50);

@@ -127,7 +127,7 @@ select.state-select:focus { outline: none; border-color: var(--blue); }
   <div class="header-meta">
     <span class="pill pill-amber" id="status-badge">● Pedido en Curso</span>
     <span class="tag" id="folio-tag">OC-0047</span>
-    <select class="state-select" id="estado-global" onchange="onStateChange()">
+    <select class="state-select" id="estado-global" onchange="onStateChange()" data-searchable>
         <option value="pedido">Modo: Compra a Proveedor ( Compras )</option>
         <option value="entaller">Modo: Confirmado En Taller ( Almacén )</option>
         <option value="usado">Modo: Extracción para Uso ( Carpintero )</option>

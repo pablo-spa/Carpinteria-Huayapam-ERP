@@ -653,7 +653,7 @@
         { id: 'nav-hoja-pedido',        html: `<span class="icon">📋</span> Hoja de Pedido`,            file: 'rq_almacen.html',            label: 'Hoja de Pedido' },
         { id: 'nav-recepcion',          html: `<span class="icon">🚚</span> Recepción de Almacén`,      file: 'rq_recepcion.html',          label: 'Recepción de Material' },
         { id: 'nav-herramientas',       html: `<span class="icon">🧰</span> Herramientas`,              file: 'herramientas.html',          label: 'Herramientas' },
-        { id: 'nav-herramientas-salida',html: `<span class="icon">🔧</span> Salida de Herramientas`,    file: 'herramientas_salida.html',   label: 'Salida de Herramientas' },
+        { id: 'nav-herramientas-salida',html: `<span class="icon">🔧</span> Salida Herramientas`,    file: 'herramientas_salida.html',   label: 'Salida Herramientas' },
         { id: 'nav-madera',             html: `<span class="icon">📋</span> Inventario de Madera`,      file: 'control_madera.html',        label: 'Inventario de Madera' },
         { id: 'nav-ingreso-madera',     html: `<span class="icon">🏷️</span> Escanear Madera`,           file: 'ingreso_madera.html',        label: 'Escanear Madera' },
         { id: 'nav-precios-madera',     html: `<span class="icon">🪵</span> Precios de Madera`,          file: 'rq_precios_madera.html',     label: 'Precios de Madera' },
@@ -681,7 +681,7 @@
         { id: 'nav-wiki', html: `<span class="icon">📖</span> Manual del Sistema`, file: 'wiki.html', label: 'Manual del Sistema' },
         { id: 'nav-bugs', html: `<span class="icon">🐞</span> Bugs y Reportes`, file: 'admin_bugs.html', label: 'Bugs y Reportes' },
         { id: 'nav-passwords', html: `<span class="icon">🗝️</span> Contraseñas y Cuentas`, file: 'admin_passwords.html', label: 'Contraseñas y Cuentas' },
-        { id: 'nav-papelera', html: `<span class="icon">🗑</span> Papelera Cotizaciones`, file: 'papelera_cotizaciones.html', label: 'Papelera de Cotizaciones' }
+        { id: 'nav-papelera', html: `<span class="icon">🗑</span> Papelera General`, file: 'papelera.html', label: 'Papelera del Sistema' }
       ]
     }
   ];
@@ -727,7 +727,7 @@
     'wiki.html': 'wiki',
     'fichas_tecnicas.html': 'fichas_tecnicas',
     'documentos.html': 'documentos',
-    'papelera_cotizaciones.html': 'admin_papelera',
+    'papelera.html': 'admin_papelera',
   };
 
   // Mapa id→item completo construido desde defaultMenuLayout (fuente de verdad de items)
@@ -1806,7 +1806,7 @@
           return list;
         };
 
-        window.deleteDocumentFromFirebase = async (col, docId) => {
+        window.hardDeleteDocumentFromFirebase = async (col, docId) => {
           if (col === 'contacts') {
             const c = (window.DB_STATE?.contacts || []).find(x => (x.id || x._id) === docId);
             if (c && window.DB_STATE?.contacts) {
@@ -1829,6 +1829,28 @@
             return;
           }
           await deleteDoc(doc(db, col, docId));
+        };
+
+        window.deleteDocumentFromFirebase = async (col, docId) => {
+          if (!window.DB_STATE || !window.DB_STATE[col]) return;
+          const targetArray = window.DB_STATE[col];
+          
+          // Check for packed lists
+          if (targetArray.length === 1 && targetArray[0]._id === 'main' && Array.isArray(targetArray[0].list)) {
+            const subIdx = targetArray[0].list.findIndex(x => (x.id || x._id) === docId);
+            if (subIdx >= 0) {
+              targetArray[0].list[subIdx] = { ...targetArray[0].list[subIdx], eliminada: true, deletedAt: new Date().toISOString() };
+              await window.setDocumentInFirebase(col, 'main', targetArray[0]);
+            }
+            return;
+          }
+          
+          // Normal top-level elements
+          const idx = targetArray.findIndex(x => (x.id || x._id) === docId);
+          if (idx >= 0) {
+            const data = { ...targetArray[idx], eliminada: true, deletedAt: new Date().toISOString() };
+            await window.setDocumentInFirebase(col, docId, data);
+          }
         };
 
         window.setDocumentInFirebase = async (col, docId, data) => {

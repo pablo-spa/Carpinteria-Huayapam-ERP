@@ -188,7 +188,7 @@ function buildConceptOpts(selectedCode) {
   return `<option value="">— Buscar concepto —</option>` +
     INV.map(i => {
       const nom = i.name || i.nombre || i.code;
-      return `<option value="${i.code}" data-unit="${i.unit||'pza'}" ${i.code===selectedCode?'selected':''}>${i.code} — ${nom}</option>`;
+      return `<option value="${i.code}" data-unit="${i.unit||'pza'}" ${i.code===selectedCode?'selected':''}>${nom}</option>`;
     }).join('') +
     `<option value="_new" style="font-weight:700;color:var(--blue);">✚ Concepto nuevo…</option>`;
 }
@@ -502,7 +502,7 @@ function statusFlow(cur) {
 function buildConceptNameOpts(selectedName) {
   const opts = INV.map(i => {
     const nom = i.name || i.nombre || i.code;
-    return `<option value="${nom}" data-unit="${i.unit||'pza'}" ${nom === selectedName ? 'selected' : ''}>${i.code} — ${nom}</option>`;
+    return `<option value="${nom}" data-unit="${i.unit||'pza'}" ${nom === selectedName ? 'selected' : ''}>${nom}</option>`;
   }).join('');
   // If current name isn't in INV, prepend it as a custom option
   const inCatalog = INV.find(i => (i.name||i.nombre||i.code) === selectedName);
@@ -661,37 +661,15 @@ function iacKey(e, input, key) {
 }
 
 function buildActiveCard(o, mode) {
-  // mode: 'cotizar' (Confirmado) or 'comprar' (Autorizado)
   const isCotizar = mode === 'cotizar';
   const isManual  = o.manual === true;
   const pillCls   = isCotizar ? 'pill-amber' : isManual ? 'pill-blue' : 'pill-green';
   const pillTxt   = isCotizar ? 'Por cotizar' : isManual ? 'Manual' : 'Autorizado';
   const cardCls   = isCotizar ? 'c-pending' : isManual ? 'c-manual' : 'c-ready';
 
-  const pendingHtml = '';
-
   const accts = ACCOUNTS.length ? ACCOUNTS : ['CAJA','CHU','SATP'];
   const cuentaOpts = accts.map(a => `<option value="${a}">${a}</option>`).join('');
-  const cancelBtn = `<button class="btn btn-red" style="font-size:12px;padding:5px 12px;" onclick="cancelOrder('${o.id}')">✕ Cancelar</button>`;
-  const actionBtns = isCotizar
-    ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-         ${cancelBtn}
-         <button class="btn btn-ghost" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
-         <span style="font-size:12px;color:var(--subtext);margin-left:auto;">⏳ Esperando autorización</span>
-       </div>`
-    : `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;justify-content:flex-end;">
-         ${cancelBtn}
-         <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-           <label style="font-size:12px;font-weight:700;color:var(--subtext);white-space:nowrap;">Cuenta de pago:</label>
-           <select class="sel-cuenta-pago" data-searchable>
-             <option value="">— Seleccionar cuenta —</option>
-             ${cuentaOpts}
-           </select>
-         </div>
-         <button class="btn btn-ghost" onclick="guardarPrecios('${o.id}')">💾 Guardar precios</button>
-         <button class="btn btn-blue"  onclick="act('${o.id}','Comprado')">✓ Marcar Comprado</button>
-         <button class="btn btn-green" onclick="act('${o.id}','Recibido')">✓✓ Comprado y Recibido</button>
-       </div>`;
+  const itemsHtml  = (o.items||[]).map(i => window.renderPurchaseCardItem(i, { showPrice: true })).join('');
 
   const card = document.createElement('div');
   card.id        = 'ord-' + o.id;
@@ -706,12 +684,33 @@ function buildActiveCard(o, mode) {
       ${o.requester ? `<span>👤 ${o.requester}</span>` : ''}
       ${o.date ? `<span>📅 ${o.date}</span>` : ''}
       ${o.notes ? `<span>📝 ${o.notes}</span>` : ''}
-      ${(o.items||[]).some(i => i.esHerramienta) ? `<span style="font-size:10px;font-weight:800;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber);border-radius:5px;padding:1px 6px;">🔧 Herramienta</span>` : ''}
+      ${(o.items||[]).some(i=>i.esHerramienta) ? `<span style="font-size:10px;font-weight:800;color:var(--amber);background:var(--amber-bg);border:1px solid var(--amber);border-radius:5px;padding:1px 6px;">🔧 Herramienta</span>` : ''}
     </div>
     ${statusFlow(o.status)}
-    ${pendingHtml}
-    ${buildItemsTable(o)}
-    <div class="ficha-actions">${actionBtns}</div>
+    <div id="items-display-${o.id}" class="ficha-items">${itemsHtml || '<span style="color:var(--subtext);font-size:12px;">Sin artículos</span>'}</div>
+    <div id="items-edit-${o.id}" style="display:none; padding-top:8px;"></div>
+    <div id="actions-view-${o.id}" class="ficha-actions" style="display:flex;">
+      <button class="btn btn-dark" style="font-size:12px;padding:5px 12px;margin-right:auto;" onclick="openEditCard('${o.id}')">✏️ Editar</button>
+      ${isCotizar ? `
+        <button class="btn btn-red" style="font-size:12px;padding:5px 12px;" onclick="cancelOrder('${o.id}')">Cancelar</button>
+        <span style="font-size:12px;color:var(--subtext);">Esperando autorización</span>
+      ` : `
+        <div style="display:flex;align-items:center;gap:6px;margin-right:auto;">
+          <label style="font-size:12px;font-weight:700;color:var(--subtext);white-space:nowrap;">Cuenta:</label>
+          <select class="sel-cuenta-pago" data-searchable style="min-width:100px;">
+            <option value="">— Seleccionar —</option>
+            ${cuentaOpts}
+          </select>
+        </div>
+        <button class="btn btn-ghost"  style="font-size:12px;padding:5px 12px;" onclick="cancelOrder('${o.id}')">Cancelar</button>
+        <button class="btn btn-blue"   style="font-size:12px;padding:5px 12px;" onclick="act('${o.id}','Comprado')">Comprado ✓</button>
+        <button class="btn btn-green"  style="font-size:12px;padding:5px 12px;" onclick="act('${o.id}','Recibido')">Comprado y Recibido ✓</button>
+      `}
+    </div>
+    <div id="actions-edit-${o.id}" class="ficha-actions" style="display:none;">
+      <button class="btn btn-dark" style="font-size:12px;padding:5px 12px;" onclick="cancelEditCard('${o.id}')">✕ Cancelar</button>
+      <button class="btn btn-blue" style="font-size:12px;padding:5px 12px;" onclick="saveEditCard('${o.id}')">Guardar cambios ✓</button>
+    </div>
   `;
   return card;
 }
@@ -746,7 +745,7 @@ function renderOrders() {
         <span style="font-size:11px;color:var(--amber-text);font-weight:700;background:var(--amber-bg);padding:2px 8px;border-radius:99px;">${confirmados.length} orden${confirmados.length>1?'es':''}</span>
         <div class="sec-hdr-line"></div>
       </div>`);
-    confirmados.forEach(o => { const c = buildActiveCard(o, 'cotizar'); cont.appendChild(c); SearchableSelect.initAll(c); });
+    confirmados.forEach(o => { const c = buildActiveCard(o, 'cotizar'); cont.appendChild(c); });
   }
 
   // ── Sección 2: Autorizadas / Por Comprar ──
@@ -757,7 +756,12 @@ function renderOrders() {
     </div>`);
 
   if (autorizados.length) {
-    autorizados.forEach(o => { const c = buildActiveCard(o, 'comprar'); cont.appendChild(c); SearchableSelect.initAll(c); });
+    autorizados.forEach(o => {
+      const c = buildActiveCard(o, 'comprar');
+      cont.appendChild(c);
+      const cuentaSel = c.querySelector('.sel-cuenta-pago');
+      if (cuentaSel) SearchableSelect.init(cuentaSel);
+    });
   } else {
     cont.insertAdjacentHTML('beforeend', '<div style="color:var(--subtext);text-align:center;padding:32px;background:var(--mantle);border-radius:12px;border:1px solid var(--crust);margin-bottom:14px;">No hay órdenes autorizadas pendientes.</div>');
   }
@@ -907,7 +911,6 @@ async function act(ordId, newStatus) {
   // Respaldar orden original en caso de error de red
   const originalOrder = JSON.parse(JSON.stringify(order));
 
-  readPricesFromCard(ordId, order);
   order.status      = newStatus;
   order.fechaCompra = new Date().toISOString().slice(0,10);
   order.cuentaPago  = cuentaPago;
@@ -1005,6 +1008,206 @@ async function act(ordId, newStatus) {
     console.error("Error conectando con la nube al procesar la compra:", e);
     Object.assign(order, originalOrder); // Revertimos la orden en memoria
     toast('Error al conectar con la base de datos. Se han revertido los cambios.', 'error');
+  }
+}
+
+// ── Edit card mode ─────────────────────────────────────────────
+let _editRowCnt = 0;
+
+function openEditCard(ordId) {
+  const db    = window.DB.get();
+  const order = (db.purchase_orders||db.orders||[]).find(o => o.id === ordId);
+  if (!order) return;
+
+  const editCont = document.getElementById('items-edit-' + ordId);
+  const dispCont = document.getElementById('items-display-' + ordId);
+  const actView  = document.getElementById('actions-view-' + ordId);
+  const actEdit  = document.getElementById('actions-edit-' + ordId);
+
+  editCont.innerHTML = '';
+  (order.items || []).forEach(item => addEditRow(ordId, editCont, item));
+
+  const addBtn = document.createElement('button');
+  addBtn.id        = 'add-row-btn-' + ordId;
+  addBtn.className = 'add-row-btn';
+  addBtn.textContent = '+ Agregar artículo';
+  addBtn.onclick   = () => addEditRow(ordId, editCont);
+  editCont.appendChild(addBtn);
+
+  dispCont.style.display = 'none';
+  editCont.style.display = '';
+  actView.style.display  = 'none';
+  actEdit.style.display  = 'flex';
+}
+
+function cancelEditCard(ordId) {
+  document.getElementById('items-edit-'   + ordId).style.display = 'none';
+  document.getElementById('items-display-'+ ordId).style.display = '';
+  document.getElementById('actions-view-' + ordId).style.display = 'flex';
+  document.getElementById('actions-edit-' + ordId).style.display = 'none';
+}
+
+function addEditRow(ordId, container, data = {}) {
+  const isMadera = data.tipo === 'madera';
+  const isHerr   = data.esHerramienta || false;
+  const rowId    = `er-${ordId}-${++_editRowCnt}`;
+  const div      = document.createElement('div');
+  div.className  = 'new-item-row';
+  div.id         = rowId;
+
+  if (isMadera) {
+    const parts = [data.nombre, data.especie, data.calidad].filter(Boolean).join(' · ');
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(64,160,43,.06);border-radius:6px;border:1px solid rgba(64,160,43,.2);">
+        <span style="font-size:13px;font-weight:600;">🪵 ${parts||'Madera'}</span>
+        <span style="font-size:11px;color:var(--subtext);">${data.cantidad||1} ${data.unit||'pt'}</span>
+        <span style="font-size:10px;color:var(--green);font-weight:700;background:var(--green-bg);padding:2px 6px;border-radius:4px;margin-left:4px;">Madera</span>
+        <button class="row-rm" onclick="document.getElementById('${rowId}').remove()" style="margin-left:auto;">✕</button>
+      </div>
+      <input type="hidden" class="er-data" value="${encodeURIComponent(JSON.stringify(data))}">
+    `;
+  } else {
+    const hasCode      = !!(data.code && INV.find(i => i.code === data.code));
+    const showCustom   = (!hasCode && !isHerr) ? 'block' : (isHerr ? 'block' : 'none');
+    const customVal    = data.conceptoPendiente?.nombre || (!hasCode ? data.name||'' : '');
+    const provNuevoShow= data.proveedorPendiente ? 'block' : 'none';
+    const provNuevoVal = data.proveedorPendiente?.nombre || '';
+
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <div class="tipo-toggle" id="tipo-${rowId}">
+          <span class="${isHerr?'':'active-mat'}" onclick="setTipo('${rowId}','material')">📦 Material</span>
+          <span class="${isHerr?'active-herr':''}" onclick="setTipo('${rowId}','herramienta')">🔧 Herramienta</span>
+        </div>
+      </div>
+      <div class="new-item-top">
+        <div class="f-field">
+          <label class="ni-concepto-label">${isHerr?'Herramienta':'Concepto'}</label>
+          <div class="ni-concepto-wrap" style="${isHerr?'display:none':''}">
+            <select class="ni-concepto" data-searchable data-allow-new onchange="handleConceptChange('${rowId}',this)">
+              ${buildConceptOpts(hasCode ? data.code : '')}
+            </select>
+          </div>
+          <div class="ni-concepto-nuevo" style="display:${showCustom};margin-top:${isHerr?'0':'4px'};">
+            <input type="text" class="ni-concepto-txt" placeholder="${isHerr?'Nombre herramienta':'Concepto nuevo'}" value="${customVal.replace(/"/g,'&quot;')}">
+          </div>
+        </div>
+        <div class="f-field">
+          <label>Proveedor</label>
+          <div class="ni-proveedor-wrap">
+            <select class="ni-proveedor" data-searchable data-allow-new onchange="handleSupplierChange('${rowId}',this)">
+              ${buildSupplierOpts(data.proveedorId||'')}
+            </select>
+          </div>
+          <div class="ni-proveedor-nuevo" style="display:${provNuevoShow};margin-top:4px;">
+            <input type="text" class="ni-proveedor-txt" placeholder="Nombre proveedor nuevo" value="${provNuevoVal.replace(/"/g,'&quot;')}">
+          </div>
+        </div>
+        <div class="f-field">
+          <label>Cantidad</label>
+          <input type="number" class="ni-qty" value="${data.qty||1}" min="0.01" step="any" style="text-align:center;">
+        </div>
+        <div class="f-field">
+          <label>Unidad</label>
+          <select class="ni-unit" data-searchable ${hasCode?'disabled style="opacity:.6;"':''}>
+            ${buildUnitOpts(data.unit||'pza')}
+          </select>
+        </div>
+      </div>
+      <div class="new-item-bot">
+        <div class="f-field">
+          <label>Precio ($)</label>
+          <input type="number" class="ni-price" value="${data.price||''}" min="0" step="any" placeholder="0.00">
+        </div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:2px;">
+          <button class="row-rm" onclick="document.getElementById('${rowId}').remove()">✕</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const addBtn = document.getElementById('add-row-btn-' + ordId);
+  if (addBtn) container.insertBefore(div, addBtn); else container.appendChild(div);
+
+  if (!isMadera && !isHerr) SearchableSelect.init(div.querySelector('.ni-concepto'));
+  if (!isMadera) {
+    SearchableSelect.init(div.querySelector('.ni-proveedor'));
+    SearchableSelect.init(div.querySelector('.ni-unit'));
+  }
+}
+
+async function saveEditCard(ordId) {
+  const editCont = document.getElementById('items-edit-' + ordId);
+  const db    = window.DB.get();
+  const order = (db.purchase_orders||db.orders||[]).find(o => o.id === ordId);
+  if (!order) return;
+
+  const items = [];
+  editCont.querySelectorAll('.new-item-row').forEach(row => {
+    const erData = row.querySelector('.er-data');
+    if (erData) {
+      try { items.push(JSON.parse(decodeURIComponent(erData.value))); } catch(e) {}
+      return;
+    }
+    const concSel   = row.querySelector('.ni-concepto');
+    const concTxt   = row.querySelector('.ni-concepto-txt');
+    const concNuevo = row.querySelector('.ni-concepto-nuevo')?.style.display !== 'none';
+    const provSel   = row.querySelector('.ni-proveedor');
+    const provTxt   = row.querySelector('.ni-proveedor-txt');
+    const provNuevo = row.querySelector('.ni-proveedor-nuevo')?.style.display !== 'none';
+    const qty   = parseFloat(row.querySelector('.ni-qty')?.value) || 0;
+    const unit  = row.querySelector('.ni-unit')?.value || 'pza';
+    const price = parseFloat(row.querySelector('.ni-price')?.value) || 0;
+    const isHerr = !!row.querySelector('.tipo-toggle .active-herr');
+
+    if (qty <= 0) return;
+
+    const item = { qty, unit, price };
+
+    if (isHerr) {
+      const nombre = concTxt?.value.trim();
+      if (!nombre) return;
+      item.code = ''; item.name = nombre; item.esHerramienta = true;
+    } else if (concNuevo) {
+      const nombre = concTxt?.value.trim();
+      if (!nombre) return;
+      item.code = ''; item.name = nombre;
+      item.conceptoPendiente = { nombre, unidad: unit };
+    } else {
+      item.code = concSel?.value || '';
+      const inv = INV.find(i => i.code === item.code);
+      item.name = inv ? (inv.name||inv.nombre) : '';
+      if (!item.code && !item.name) return;
+    }
+
+    if (provNuevo) {
+      const nombre = provTxt?.value.trim();
+      item.proveedorId = ''; item.proveedorNombre = nombre||'';
+      if (nombre) item.proveedorPendiente = { nombre };
+    } else {
+      item.proveedorId = provSel?.value || '';
+      const sup = SUPPLIERS.find(s => s.id === item.proveedorId);
+      item.proveedorNombre = sup ? (sup.nombre||sup.name) : '';
+    }
+
+    items.push(item);
+  });
+
+  if (!items.length) { toast('Agrega al menos un artículo.', 'error'); return; }
+  order.items = items;
+
+  try {
+    if (window.parent?.setDocumentInFirebase)
+      await window.parent.setDocumentInFirebase('purchase_orders', ordId, order);
+    if (window.parent?.DB_STATE?.purchase_orders) {
+      const idx = window.parent.DB_STATE.purchase_orders.findIndex(x => x.id === ordId);
+      if (idx >= 0) window.parent.DB_STATE.purchase_orders[idx] = order;
+    }
+    toast('✓ Pedido actualizado');
+    renderOrders();
+  } catch(e) {
+    console.error('Error guardando edición:', e);
+    toast('Error al guardar. Intenta de nuevo.', 'error');
   }
 }
 

@@ -155,7 +155,8 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
   function fichaConPrecios(o, d, withActions) {
     const items = o.items || [];
     const allPriced = items.every(i => parseFloat(i.price) > 0);
-    const total = items.reduce((s,i) => s + (parseFloat(i.qty)||0)*(parseFloat(i.price)||0), 0);
+    const iqty = i => parseFloat(i.tipo === 'madera' ? i.cantidad : i.qty) || 0;
+    const total = items.reduce((s,i) => s + iqty(i)*(parseFloat(i.price)||0), 0);
     const canApprove = allPriced && withActions;
     const pill = PILL_MAP[o.status] || 'pill-gray';
     return `
@@ -169,29 +170,10 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
           ${o.notes?`<span>📝 ${o.notes}</span>`:''}
         </div>
         ${statusFlow(o.status)}
-        <table style="width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:13px;">
-          <thead><tr style="border-bottom:2px solid var(--crust);">
-            <th style="text-align:left;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Concepto</th>
-            <th style="text-align:left;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Proveedor</th>
-            <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Cant.</th>
-            <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">P. Unit.</th>
-            <th style="text-align:right;padding:4px 6px;font-size:10px;font-weight:700;color:var(--subtext);">Subtotal</th>
-          </tr></thead>
-          <tbody>
-          ${items.map(i => {
-            const sub = (parseFloat(i.qty)||0)*(parseFloat(i.price)||0);
-            const ps = parseFloat(i.price)>0?fmt(i.price):`<span style="color:var(--amber);font-size:11px;">Sin precio</span>`;
-            return `<tr style="border-top:1px solid var(--crust);">
-              <td style="padding:6px;font-weight:600;">${i.name||i.code||'—'}${i.esHerramienta?'&nbsp;<span style="font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;background:rgba(223,142,29,0.15);color:var(--amber);">🔧 Herramienta</span>':''} <span style="color:var(--subtext);font-size:11px;">(${i.unit||'pza'})</span></td>
-              <td style="padding:6px;color:var(--subtext);font-size:12px;">${i.provider||o.provider||'—'}</td>
-              <td style="padding:6px;text-align:right;">${i.qty}</td>
-              <td style="padding:6px;text-align:right;">${ps}</td>
-              <td style="padding:6px;text-align:right;font-weight:600;">${sub>0?fmt(sub):'—'}</td>
-            </tr>`;
-          }).join('')}
-          </tbody>
-        </table>
-        ${allPriced&&total>0?`<div class="ficha-total"><span>Total:</span><span>${fmt(total)}</span></div>`:''}
+        <div class="ficha-items" style="display:flex; flex-direction:column; gap:8px; margin:12px 0 8px;">
+          ${items.map(i => window.renderPurchaseCardItem(i, { showPrice: true, showSupplier: true, orderProvider: o.provider })).join('')}
+        </div>
+        ${allPriced&&total>0?`<div class="ficha-total" style="display:flex; justify-content:flex-end; font-size:16px; font-weight:800; padding:12px 4px 4px;"><span>Total:</span><span style="margin-left:12px;">${fmt(total)}</span></div>`:''}
         ${withActions ? `
         <div class="ficha-actions">
           <button class="btn btn-red"  onclick="act('${o.id}','Cancelado')">✕ Rechazar</button>

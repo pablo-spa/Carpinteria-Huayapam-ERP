@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cotizaciones</title>
+<script src="searchable-select.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -89,7 +90,7 @@
     <span style="color:var(--subtext);font-size:14px;flex-shrink:0;">🔍</span>
     <input type="text" id="srch" placeholder="Buscar cotización…">
   </div>
-  <select class="filter-select" id="fil-status" onchange="render()">
+  <select class="filter-select" id="fil-status" onchange="render()" data-searchable>
     <option value="">Todos los estados</option>
     <option value="Esperando Autorización">Esperando Autorización</option>
     <option value="Activa">Activa</option>

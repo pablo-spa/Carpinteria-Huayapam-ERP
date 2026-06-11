@@ -8,14 +8,11 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .main { max-width: 1000px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; }
 .card { background: var(--mantle); border: 1px solid var(--crust); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; margin-bottom: 12px; }
 .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; font-size: 13px; color: var(--text); padding: 8px 0; border-top: 1px solid var(--crust); align-items: center; }
 .item-subtext { color: var(--subtext); font-size: 11px; }
 .total-row { display: flex; justify-content: flex-end; font-weight: 700; font-size: 14px; padding-top: 12px; }
-.search-box { display: flex; align-items: center; gap: 6px; background: var(--base); border: 1px solid var(--surface0); border-radius: 8px; padding: 6px 12px; min-width: 240px; }
-.search-box input { border: none; background: transparent; outline: none; color: var(--text); flex: 1; font-family: inherit; font-size: 13px; height: auto; width: 100%; padding: 0; }
 </style>
 </head>
 <body>
@@ -24,11 +21,8 @@
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <h2 class="hdr-title">Historial de Compras</h2>
   </div>
-</div>
-
-<div class="filters">
-  <div class="search-box">
-    <span style="color:var(--subtext);font-size:14px;">🔍</span>
+  <div class="hdr-search">
+    <span style="color:var(--subtext);font-size:13px;flex-shrink:0;">🔍</span>
     <input type="text" id="srch" placeholder="Buscar por Folio, Proveedor..." oninput="applyFilter()">
   </div>
 </div>
@@ -80,11 +74,14 @@
        `;
 
        (o.items || []).forEach(i => {
-          const sub = (i.qty * i.price) || 0;
+          const isMadera = i.tipo === 'madera';
+          const qty  = parseFloat(isMadera ? i.cantidad : i.qty) || 0;
+          const sub  = qty * (parseFloat(i.price) || 0);
+          const nombre = isMadera ? `🪵 ${i.especie||'Madera'}` : (i.name||i.code||'—');
           total += sub;
           itmsHtml += `
             <div class="item-row">
-              <div>${i.qty}x ${i.name} <span class="item-subtext">(${i.unit})</span></div>
+              <div>${qty}x ${nombre} <span class="item-subtext">(${i.unit||'pza'})</span></div>
               <div>${fmt(i.price||0)}</div>
               <div>${fmt(sub)}</div>
             </div>

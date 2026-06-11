@@ -11,9 +11,7 @@
 .hdr-total .lbl { font-size: 10px; text-transform: uppercase; color: var(--subtext); font-weight: 800; letter-spacing: .05em; }
 .hdr-total .val  { font-size: 22px; font-weight: 900; color: var(--green); font-variant-numeric: tabular-nums; line-height: 1.1; }
 
-/* ── Filters ── */
-
-.filters { display: flex; gap: 8px; padding: 12px 24px; background: var(--base); border-bottom: 1px solid var(--crust); align-items: center; position: sticky; top: 97px; z-index: 18; }
+/* ── Week Selector ── */
 .week-lbl { font-size: 13px; font-weight: 800; color: var(--text); }
 .week-sub { font-size: 11px; color: var(--subtext); font-weight: 600; margin-top: 2px; }
 
@@ -182,6 +180,15 @@
 
 /* ── Print ── */
 #print-area { display: none; }
+@media (max-width: 768px) {
+  .dias-tbl th, .dias-tbl td { padding: 8px 4px; }
+  .dst-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .dsbtn { padding: 6px 2px; font-size: 10px; word-break: break-all; }
+  .wrow { grid-template-columns: 40px 1fr; gap: 8px; }
+  .sum-chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+  .row-btns { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
 @media print {
   body > *:not(#print-area) { display: none !important; }
   #print-area { display: block !important; font-family: Arial, sans-serif; }
@@ -228,24 +235,23 @@
   </div>
 </div>
 
-<div class="filters">
-  <div style="display:flex; align-items:center; gap:8px;">
-    <button class="btn btn-ghost" style="padding:4px 8px;font-size:16px;" onclick="chgWeek(-1)">‹</button>
-    <div style="display:flex;flex-direction:column;align-items:center;min-width:140px;">
-      <span class="week-lbl" id="week-lbl">—</span>
-      <span class="week-sub" id="week-sub">—</span>
-    </div>
-    <button class="btn btn-ghost" style="padding:4px 8px;font-size:16px;" onclick="chgWeek(1)">›</button>
-  </div>
-
-</div>
-
 <div class="main">
-  <div class="tabs-hdr">
-    <button class="tab-btn active" onclick="showTab('nomina',this)">💵 Nómina</button>
-    <button class="tab-btn"        onclick="showTab('efectivo',this)">💰 Efectivo</button>
-    <button class="tab-btn"        onclick="showTab('resumen',this)">📊 Resumen General</button>
-    <button class="tab-btn"        onclick="showTab('recibos',this)">📄 Recibos Individuales</button>
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom: 1px solid var(--crust); margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div class="tabs-hdr" style="margin-bottom:0; border-bottom:none; padding-bottom:0;">
+      <button class="tab-btn active" onclick="showTab('nomina',this)">💵 Nómina</button>
+      <button class="tab-btn"        onclick="showTab('efectivo',this)">💰 Efectivo</button>
+      <button class="tab-btn"        onclick="showTab('resumen',this)">📊 Resumen General</button>
+      <button class="tab-btn"        onclick="showTab('recibos',this)">📄 Recibos Individuales</button>
+    </div>
+    
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      <button class="btn btn-ghost" style="padding:4px 8px;font-size:16px;" onclick="chgWeek(-1)">‹</button>
+      <div style="display:flex;flex-direction:column;align-items:center;min-width:140px;">
+        <span class="week-lbl" id="week-lbl">—</span>
+        <span class="week-sub" id="week-sub">—</span>
+      </div>
+      <button class="btn btn-ghost" style="padding:4px 8px;font-size:16px;" onclick="chgWeek(1)">›</button>
+    </div>
   </div>
 
   <!-- ── NÓMINA ── -->
@@ -626,12 +632,13 @@ function tarifa(w){ return w.base/45; }
 function calcW(w){
   const s=S[w.id];
   const t=tarifa(w);
-  let monFriHrs=0, nFalta=0, nVac=0;
+  let monFriHrs=0, nFalta=0, nVac=0, nLibre=0;
 
   for(let i=0;i<5;i++){
     const d=s.dias[i];
     if(d.st==='trabajo' || d.st==='retardo') monFriHrs+=Math.max(0,+d.hrs||0);
     else if(d.st==='vac' || d.st==='vacaciones'){ monFriHrs+=9; nVac++; }
+    else if(d.st==='libre'){ nLibre++; }
     else nFalta++;
   }
 
@@ -656,7 +663,7 @@ function calcW(w){
 
   const total=Math.max(0,Math.round(basePay+ext15Pay+ext2Pay+satPay+sunPay+bonoPay-prestDesc));
 
-  return {hNorm,hVacExtra,hExt15,hExt2c,hExt_all,nFalta,nVac,hSat,hSun,
+  return {hNorm,hVacExtra,hExt15,hExt2c,hExt_all,nFalta,nVac,nLibre,hSat,hSun,
           basePay,ext15Pay,ext2Pay,satPay,sunPay,bonoPay,prestDesc,total};
 }
 
@@ -841,6 +848,7 @@ function renderDias(id){
               const activeCls = getBtnClass(st.id, d.st);
               return `<button class="dsbtn ${activeCls}" onclick="setDia('${id}',${i},'${st.id}')">${st.name}</button>`;
             }).join('')}
+            <button class="dsbtn ${d.st==='libre'?'on-l':''}" onclick="setDia('${id}',${i},'libre')">Libre</button>
           </div>
         </td>
         <td style="text-align:center">${horarioCel}</td>
@@ -934,8 +942,9 @@ function renderDesglose(id){
     <span>Horas normales (${r.hNorm.toFixed(1)}h × $${t.toFixed(0)}/h)</span>
     <span>$${Math.round(r.basePay-r.hVacExtra*t).toLocaleString('es-MX')}</span>
   </div>`;
-  if(r.nFalta>0) rows+=`<div class="ds-row"><span class="dsc">Faltas (${r.nFalta} d)</span><span class="neg">−${r.nFalta*9}h</span></div>`;
-  if(r.nVac>0)   rows+=`<div class="ds-row"><span class="dsc">Vacaciones pagadas (${r.nVac} d)</span><span class="pos">incl. arriba</span></div>`;
+  if(r.nFalta>0)  rows+=`<div class="ds-row"><span class="dsc">Faltas (${r.nFalta} d)</span><span class="neg">−${r.nFalta*9}h</span></div>`;
+  if(r.nVac>0)    rows+=`<div class="ds-row"><span class="dsc">Vacaciones pagadas (${r.nVac} d)</span><span class="pos">incl. arriba</span></div>`;
+  if(r.nLibre>0)  rows+=`<div class="ds-row"><span class="dsc">Días libres / festivos (${r.nLibre} d)</span><span style="color:var(--subtext);font-size:12px;">sin cargo</span></div>`;
   if(r.hVacExtra>0) rows+=`<div class="ds-row"><span class="dsc">Días vac. extra (${s.diasVacExtra} d)</span><span class="pos">+$${Math.round(r.hVacExtra*t).toLocaleString('es-MX')}</span></div>`;
   if(r.hExt15>0) rows+=`<div class="ds-row"><span class="dsc">Horas extra ×1.5 (${r.hExt15.toFixed(1)}h)</span><span class="pos">+$${Math.round(r.ext15Pay).toLocaleString('es-MX')}</span></div>`;
   if(r.hExt2c>0) rows+=`<div class="ds-row"><span class="dsc">Horas extra ×2 (${r.hExt2c.toFixed(1)}h)</span><span class="pos">+$${Math.round(r.ext2Pay).toLocaleString('es-MX')}</span></div>`;
@@ -1159,7 +1168,7 @@ function updateFooter(){
 
 function showTab(name,btn){
   document.querySelectorAll('.tab-pane').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(btn) btn.classList.add('active');
   if(name==='resumen') buildResumenPreview();

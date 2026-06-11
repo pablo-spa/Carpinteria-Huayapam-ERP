@@ -129,7 +129,7 @@ td { color: var(--text); }
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
           <label style="font-size:12px; font-weight:700; color:var(--subtext); white-space:nowrap;">Proyecto:</label>
           <select id="d-project-sel" class="form-control" style="flex:1; max-width:340px; font-size:13px;"
-            onchange="updateViajeProject(this.value)">
+            onchange="updateViajeProject(this.value)" data-searchable>
             <option value="">— General / Sin proyecto —</option>
           </select>
         </div>
@@ -156,7 +156,7 @@ td { color: var(--text); }
     <div class="card" id="card-workers">
       <h3 class="card-title">Personal Asignado al Viaje</h3>
       <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <select id="d-workers-select" class="form-control" style="flex:1;">
+        <select id="d-workers-select" class="form-control" style="flex:1;" data-searchable>
           <option value="">— Seleccionar trabajador —</option>
         </select>
         <button class="btn btn-blue" onclick="agregarTrabajadorViaje()">+ Agregar</button>
@@ -180,20 +180,20 @@ td { color: var(--text); }
         </div>
         <div class="form-group" style="margin:0;">
           <label>Sale de cuenta</label>
-          <select id="fa-cuenta" class="form-control">
+          <select id="fa-cuenta" class="form-control" data-searchable>
             <!-- Poblado por updateTripSelects() con cuentas reales -->
           </select>
         </div>
         <div class="form-group" style="margin:0;">
           <label>Recibió</label>
-          <select id="fa-recibe" class="form-control">
+          <select id="fa-recibe" class="form-control" data-searchable>
             <option value="">— Seleccionar trabajador —</option>
             <!-- Poblado por updateTripSelects() -->
           </select>
         </div>
         <div class="form-group" style="margin:0;">
           <label>Entregó</label>
-          <select id="fa-por" class="form-control"></select>
+          <select id="fa-por" class="form-control" data-searchable></select>
         </div>
         <div class="form-group" style="margin:0;">
           <button id="btn-add-anticipo" class="btn btn-blue" style="width:100%; height:42px;" onclick="addAnticipo()">+ Agregar</button>
@@ -228,7 +228,7 @@ td { color: var(--text); }
         </div>
         <div class="form-group" style="margin:0;">
           <label>Categoría</label>
-          <select id="fg-cat" class="form-control">
+          <select id="fg-cat" class="form-control" data-searchable>
             <option value="">— Categoría —</option>
           </select>
         </div>
@@ -238,7 +238,7 @@ td { color: var(--text); }
         </div>
         <div class="form-group" style="margin:0;">
           <label>Sale de cuenta / Pagó</label>
-          <select id="fg-cuenta" class="form-control">
+          <select id="fg-cuenta" class="form-control" data-searchable>
             <!-- Cuentas empresa + trabajadores del viaje — poblado por updateTripSelects() -->
           </select>
         </div>
@@ -286,6 +286,7 @@ td { color: var(--text); }
 let currentViajeId = null;
 let currentViaje   = null;
 let BANK_ACCOUNTS  = ['CAJA', 'CHU', 'SATP']; // se llena desde Firestore en init()
+let ALL_WORKERS    = []; // { id, name } — poblado en init(), usado como fallback en fa-recibe
 
 const CAT_LABELS = {
   'comida': 'Comida',
@@ -364,6 +365,7 @@ async function init() {
   // Categorías de gastos de viáticos (fijas)
   const VIATICO_CATS = ['Transporte', 'Comidas', 'Alojamiento', 'Gastos Extra'];
   document.getElementById('fg-cat').innerHTML = VIATICO_CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+  SearchableSelect.init(document.getElementById('fg-cat'));
   VIATICO_CATS.forEach(c => { CAT_LABELS[c] = c; });
 
   // Poblar select de trabajadores
@@ -395,12 +397,14 @@ async function init() {
   const seenInit = new Set();
   const uniqueWorkers = enriched.filter(w => { const id = w.id||w._id; if(!id||seenInit.has(id)) return false; seenInit.add(id); return true; });
   uniqueWorkers.sort((a,b) => fullName(a).localeCompare(fullName(b), 'es'));
+  ALL_WORKERS = uniqueWorkers.map(w => ({ id: w.id || w._id, name: fullName(w) }));
   uniqueWorkers.forEach(w => {
     const opt = document.createElement('option');
     opt.value = w.id || w._id;
     opt.textContent = fullName(w);
     sel.appendChild(opt);
   });
+  SearchableSelect.init(sel);
 
   // Init Admin / Contador select — cargar todos los contactos para incluir roles admin
   const allContacts = await window.DB.query('contacts');
@@ -414,12 +418,14 @@ async function init() {
     adminOpts = `<option value="Administración">Administración</option><option value="Contabilidad">Contabilidad</option><option value="Compras">Compras</option>`;
   }
   document.getElementById('fa-por').innerHTML = '<option value="">— Seleccionar —</option>' + adminOpts;
+  SearchableSelect.init(document.getElementById('fa-por'));
 
   // Init projects select (detalle)
   const projects = await window.DB.query('projects');
   const projOpts = '<option value="">— General / Sin proyecto —</option>' +
     projects.filter(p => !p._init).map(p => `<option value="${p.id}">${p.codigo||p.code} - ${p.nombre||p.name}</option>`).join('');
   document.getElementById('d-project-sel').innerHTML = projOpts;
+  SearchableSelect.init(document.getElementById('d-project-sel'));
 
   // Set default dates
   const today = new Date().toISOString().split('T')[0];
@@ -745,24 +751,31 @@ function updateTripSelects() {
   const workers = wids.map(id => ({ id, name: byId[id] ? fullName(byId[id]) : id }))
                        .filter(w => w.name);
 
-  // fa-recibe: select con trabajadores del viaje
+  // fa-recibe: trabajadores del viaje; si no hay asignados, muestra todos
   const prevRecibe = document.getElementById('fa-recibe').value;
-  document.getElementById('fa-recibe').innerHTML =
+  const faRecibeEl = document.getElementById('fa-recibe');
+  const recibeSource = workers.length ? workers : ALL_WORKERS;
+  faRecibeEl.innerHTML =
     '<option value="">— Seleccionar trabajador —</option>' +
-    workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-  if (prevRecibe) document.getElementById('fa-recibe').value = prevRecibe;
+    recibeSource.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+  if (prevRecibe) faRecibeEl.value = prevRecibe;
+  if (faRecibeEl._ssInit) faRecibeEl._ssRefresh(); else SearchableSelect.init(faRecibeEl);
 
   // fa-cuenta: cuentas reales de la empresa
   const accOpts = BANK_ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('');
-  document.getElementById('fa-cuenta').innerHTML = accOpts || '<option value="CAJA">CAJA</option>';
+  const faCuentaEl = document.getElementById('fa-cuenta');
+  faCuentaEl.innerHTML = accOpts || '<option value="CAJA">CAJA</option>';
+  if (faCuentaEl._ssInit) faCuentaEl._ssRefresh(); else SearchableSelect.init(faCuentaEl);
 
   // fg-cuenta: cuentas empresa + trabajadores del viaje
   const workerOpts = workers.map(w =>
     `<option value="${w.id}">👤 ${w.name}</option>`
   ).join('');
-  document.getElementById('fg-cuenta').innerHTML =
+  const fgCuentaEl = document.getElementById('fg-cuenta');
+  fgCuentaEl.innerHTML =
     BANK_ACCOUNTS.map(a => `<option value="${a}">${a}</option>`).join('') +
     (workerOpts ? `<optgroup label="— Pagó el trabajador —">${workerOpts}</optgroup>` : '');
+  if (fgCuentaEl._ssInit) fgCuentaEl._ssRefresh(); else SearchableSelect.init(fgCuentaEl);
 }
 
 function renderDetalles() {

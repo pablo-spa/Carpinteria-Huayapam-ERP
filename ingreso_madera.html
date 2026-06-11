@@ -7,7 +7,7 @@
 <title>Escanear Madera — Carpintería Huayapam</title>
 <style>
 :root { --radius: 10px; --radius-lg: 14px; }
-body { padding-bottom: 60px; min-height: 100vh; }
+body { padding-bottom: 60px; min-height: 100vh; background: var(--base); color: var(--text); }
 
 .main { max-width: 600px; margin: 24px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 20px; }
 
@@ -18,9 +18,7 @@ body { padding-bottom: 60px; min-height: 100vh; }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .input-grp { display: flex; flex-direction: column; gap: 6px; }
 .lbl { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; }
-select.inp, input.inp-txt { padding: 10px 12px; border: 1px solid var(--surface0); border-radius: 8px; background: var(--base); color: var(--text); font-size: 14px; font-weight: 500; font-family: inherit; width: 100%; transition: border-color .15s; }
-select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue); }
-
+select.inp, input.inp-txt { width: 100%; }
 
 /* Inactive State for Scan Card */
 #scan-card { opacity: 0.4; pointer-events: none; }
@@ -47,6 +45,22 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
 .h-det { color: var(--subtext); font-size: 11px; }
 .h-pt { color: var(--green); font-weight: 800; font-size: 14px; }
 
+/* Selection indicator contrast styling */
+.mat-btn-active {
+  background: var(--blue) !important;
+  color: #fff !important;
+  border-color: var(--blue) !important;
+  font-weight: 700 !important;
+}
+body.dark-mode .mat-btn-active {
+  color: #11111b !important;
+}
+
+/* Modal Input and label overrides */
+.modal-input { padding: 9px 10px; border-radius: 6px; border: 1px solid var(--crust); background: var(--base); color: var(--text); font-family: inherit; width: 100%; font-size: 13px; height: 40px; outline: none; }
+.modal-input:focus { border-color: var(--blue); }
+.modal-label { font-size: 11px; font-weight: 700; color: var(--subtext); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; display: block; }
+.field-group { display: flex; flex-direction: column; }
 </style>
 </head>
 <body>
@@ -64,37 +78,60 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
   <div class="card" id="ctx-card">
     <div class="c-title">Paso 1: Contexto del Ingreso <span id="ctx-status">🔓</span></div>
     
+    <div class="row-2" style="grid-template-columns: 1fr; margin-bottom: 12px;">
+      <div class="input-grp">
+        <label class="lbl">Tipo de Material</label>
+        <div style="display:flex; gap:8px; margin-top:2px;">
+          <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 0; border:1px solid var(--crust); border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:.1s;" id="lbl-maciza">
+            <input type="radio" name="ctx-tipo-mat" id="ctx-maciza" value="maciza" checked style="display:none;" onchange="onMaterialTypeChange()">
+            Madera maciza
+          </label>
+          <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 0; border:1px solid var(--crust); border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:.1s;" id="lbl-hojas">
+            <input type="radio" name="ctx-tipo-mat" id="ctx-hojas" value="hojas" style="display:none;" onchange="onMaterialTypeChange()">
+            Hojas
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-2" style="grid-template-columns: 1fr; margin-bottom: 12px;">
+      <div class="input-grp">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="lbl">Concepto de Madera (Precios / Catálogo)</label>
+          <button class="btn btn-ghost" id="btn-add-concept" onclick="openNewConceptModal()" style="padding:2px 8px; font-size:11px; height:24px;" tabindex="-1">+ Nuevo</button>
+        </div>
+        <select class="inp" id="ctx-concept" onchange="onConceptChange()" tabindex="1"></select>
+      </div>
+    </div>
+    
+    <div id="concept-details" style="font-size: 12px; color: var(--subtext); margin-top: -4px; margin-bottom: 16px; padding: 4px 8px; background: var(--base); border-radius: 6px; display: none;"></div>
+
     <div class="row-2">
-      <div class="input-grp">
-        <label class="lbl">Tipo de Pieza</label>
-        <select class="inp" id="ctx-format" tabindex="1"></select>
-      </div>
-      <div class="input-grp">
-        <label class="lbl">Especie / Material</label>
-        <select class="inp" id="ctx-species" tabindex="1"></select>
-      </div>
       <div class="input-grp">
         <label class="lbl">Identificador de Lote</label>
         <input type="text" id="ctx-lote" class="inp-txt" placeholder="Ej: L-805" value="L-805" tabindex="2">
       </div>
+      <div class="input-grp">
+        <label class="lbl">Fecha de Entrada</label>
+        <input type="date" class="inp-txt" id="ctx-date" tabindex="3">
+      </div>
     </div>
 
     <div class="row-2">
-      <div class="input-grp">
-        <label class="lbl">Calidad</label>
-        <select class="inp" id="ctx-quality" tabindex="3"></select>
-      </div>
-      <div class="input-grp">
+      <div class="input-grp" style="grid-column: 1 / -1;">
         <label class="lbl">Ubicación Destino</label>
         <select class="inp" id="ctx-loc" tabindex="4"></select>
       </div>
+    </div>
+
+    <div class="row-2" style="grid-template-columns: 1fr; margin-bottom: 8px;">
       <div class="input-grp">
-        <label class="lbl">Fecha de Entrada</label>
-        <input type="date" class="inp-txt" id="ctx-date" tabindex="5">
+        <label class="lbl">Notas</label>
+        <input type="text" id="ctx-notas" class="inp-txt" placeholder="Observaciones del lote…" tabindex="5">
       </div>
     </div>
 
-    <button class="btn btn-blue" id="btn-lock" onclick="toggleContext()" tabindex="5">Fijar Contexto e Iniciar Escaneo</button>
+    <button class="btn btn-blue" id="btn-lock" onclick="toggleContext()" tabindex="6" style="width: 100%; margin-top: 8px;">Fijar Contexto e Iniciar Escaneo</button>
   </div>
 
   <!-- STEP 2: Dimensions & Scanner -->
@@ -103,27 +140,27 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
 
     <div class="pt-res">
       <div class="pt-big" id="pt-val">6.00</div>
-      <div class="pt-sub">Pies Tablares (Calculado)</div>
+      <div class="pt-sub" id="pt-unit-label">Pies Tablares (Calculado)</div>
     </div>
 
-    <div class="dim-grid">
-      <div class="dim-col"><label>Grosor (plg)</label><input type="number" id="dim-t" value="1.5" step="0.5" oninput="calc()" tabindex="6"></div>
-      <div class="dim-col"><label>Ancho (plg)</label><input type="number" id="dim-w" value="6" step="0.5" oninput="calc()" tabindex="7"></div>
-      <div class="dim-col"><label>Largo (pies)</label><input type="number" id="dim-l" value="8" step="1" oninput="calc()" tabindex="8"></div>
+    <div class="dim-grid" id="dim-grid-container">
+      <div class="dim-col"><label>Grosor (plg)</label><input type="number" id="dim-t" value="1.5" step="0.5" oninput="calc()" tabindex="7"></div>
+      <div class="dim-col"><label>Ancho (plg)</label><input type="number" id="dim-w" value="6" step="0.5" oninput="calc()" tabindex="8"></div>
+      <div class="dim-col"><label>Largo (pies)</label><input type="number" id="dim-l" value="8" step="1" oninput="calc()" tabindex="9"></div>
     </div>
 
     <div class="input-grp">
       <label class="lbl" style="text-align:center;">Escanea la etiqueta / Ingresa ID</label>
-      <input type="text" class="bcode-inp" id="barcode" placeholder="|||| ||| |||||" onkeydown="handleScan(event)" tabindex="9">
+      <input type="text" class="bcode-inp" id="barcode" placeholder="|||| ||| |||||" onkeydown="handleScan(event)" tabindex="10">
     </div>
 
-    <button id="btn-registrar" class="btn btn-green" style="width:100%;margin-top:16px;font-size:16px;padding:14px;" onclick="registrarTabla()" tabindex="10">✚ Registrar Tabla</button>
+    <button id="btn-registrar" class="btn btn-green" style="width:100%;margin-top:16px;font-size:16px;padding:14px;" onclick="registrarTabla()" tabindex="11">✚ Registrar Madera</button>
 
   </div>
 
   <!-- History -->
   <div class="hist">
-    <div class="c-title" style="border:none; margin:0;">Tablas ingresadas (Esta sesión)</div>
+    <div class="c-title" style="border:none; margin:0;">Insumos ingresados (Esta sesión)</div>
     <div id="hist-list"></div>
   </div>
 
@@ -133,45 +170,186 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
 <script src="db.js"></script>
 <script>
   let isLocked = false;
+  let CATALOG = [];
+  let TIPOS = [];
+  let CATS  = [];
+  let QUALS = [];
+  let RAW_FORMATS = [];
+
+  function isFormatPanel(formatName) {
+    if (!formatName) return false;
+    const fmtObj = RAW_FORMATS.find(x => typeof x === 'object' && x.name === formatName);
+    if (fmtObj && fmtObj.panel) return true;
+    const f = formatName.toLowerCase();
+    return f.includes('mdf') || f.includes('triplay') || f.includes('hoja') || f.includes('deck') || f.includes('placa') || f.includes('acotab') || f.includes('ecotab') || f.includes('ocotab');
+  }
+
+  function toggleTipoMat() {
+    const isMaciza = document.getElementById('ctx-maciza').checked;
+    const lblMaciza = document.getElementById('lbl-maciza');
+    const lblHojas = document.getElementById('lbl-hojas');
+    if (isMaciza) {
+      lblMaciza.className = 'mat-btn-active';
+      lblMaciza.style.cssText = 'flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 0; border:1px solid var(--blue); border-radius:8px; cursor:pointer; font-size:13px; transition:.1s;';
+      lblHojas.className = '';
+      lblHojas.style.cssText = 'flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 0; border:1px solid var(--crust); border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:.1s; background:var(--mantle); color:var(--text);';
+    } else {
+      lblHojas.className = 'mat-btn-active';
+      lblHojas.style.cssText = 'flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 0; border:1px solid var(--blue); border-radius:8px; cursor:pointer; font-size:13px; transition:.1s;';
+      lblMaciza.className = '';
+      lblMaciza.style.cssText = 'flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 0; border:1px solid var(--crust); border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; transition:.1s; background:var(--mantle); color:var(--text);';
+    }
+
+    // Show/hide dimensions based on material type
+    const dimGrid = document.getElementById('dim-grid-container');
+    const ptUnitLabel = document.getElementById('pt-unit-label');
+    if (isMaciza) {
+      dimGrid.style.display = 'grid';
+      ptUnitLabel.textContent = 'Pies Tablares (Calculado)';
+    } else {
+      dimGrid.style.display = 'none';
+      ptUnitLabel.textContent = 'Cantidad (Piezas)';
+      document.getElementById('dim-t').value = '';
+      document.getElementById('dim-w').value = '';
+      document.getElementById('dim-l').value = '';
+      document.getElementById('pt-val').textContent = '1.00';
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => setTimeout(toggleTipoMat, 0));
+
+  function onMaterialTypeChange() {
+    toggleTipoMat();
+    populateConcepts();
+  }
+
+  function populateConcepts() {
+    const isMaciza = document.getElementById('ctx-maciza').checked;
+    
+    // Filter CATALOG based on type
+    const filtered = CATALOG.filter(c => {
+      const fmt = (c.categoria || '').toLowerCase();
+      const name = (c.nombre || '').toLowerCase();
+      const isSheet = isFormatPanel(c.categoria) || name.includes('acotab') || name.includes('ecotab') || name.includes('ocotab');
+      return isMaciza ? !isSheet : isSheet;
+    });
+
+    const conceptSel = document.getElementById('ctx-concept');
+    conceptSel.innerHTML = filtered.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+    
+    if (conceptSel._ssInit) {
+      conceptSel._ssRefresh();
+    } else {
+      SearchableSelect.init(conceptSel);
+    }
+    
+    onConceptChange();
+  }
+
+  function onConceptChange() {
+    const id = document.getElementById('ctx-concept').value;
+    const concept = CATALOG.find(c => c.id === id);
+    const detailsEl = document.getElementById('concept-details');
+    if (!concept) {
+      detailsEl.style.display = 'none';
+      return;
+    }
+
+    detailsEl.textContent = `Especie: ${concept.tipo || '—'} | Formato: ${concept.categoria || '—'} | Calidad: ${concept.calidad || '—'}`;
+    detailsEl.style.display = 'block';
+
+    const fmt = (concept.categoria || '').toLowerCase();
+    const name = (concept.nombre || '').toLowerCase();
+    const isSheet = isFormatPanel(concept.categoria) || name.includes('acotab') || name.includes('ecotab') || name.includes('ocotab');
+
+    if (isSheet) {
+      document.getElementById('dim-t').value = '';
+      document.getElementById('dim-w').value = '';
+      document.getElementById('dim-l').value = '';
+      document.getElementById('dim-t').disabled = true;
+      document.getElementById('dim-w').disabled = true;
+      document.getElementById('dim-l').disabled = true;
+    } else {
+      document.getElementById('dim-t').disabled = false;
+      document.getElementById('dim-w').disabled = false;
+      document.getElementById('dim-l').disabled = false;
+      // Pre-fill thickness based on format: Tabla (1"), Tablon (2"), Tabloncillo (1.5")
+      if (fmt.includes('tablón') || fmt.includes('tablon')) {
+        document.getElementById('dim-t').value = 2;
+      } else if (fmt.includes('tabla')) {
+        document.getElementById('dim-t').value = 1;
+      } else if (fmt.includes('tabloncillo')) {
+        document.getElementById('dim-t').value = 1.5;
+      } else {
+        document.getElementById('dim-t').value = 1;
+      }
+      document.getElementById('dim-w').value = 6;
+      document.getElementById('dim-l').value = 8;
+    }
+    calc();
+  }
+
+  function getList(key) {
+    const raw = window.parent?.DB_STATE?.[key] || window.DB.get()[key] || [];
+    return raw[0]?.list || raw.filter(x => typeof x === 'string');
+  }
 
   document.addEventListener("DOMContentLoaded", async () => {
     await window.DB.query('inventory'); // wait for DB_STATE_LOADED
-    // Cargar catálogos de madera (lazy-load)
+    // Cargar catálogos de madera y auxiliares
     await Promise.all([
-      window.DB.query('wood_formats'),
-      window.DB.query('wood_types'),
-      window.DB.query('wood_quality'),
       window.DB.query('wood_locations'),
+      window.DB.query('wood_price_catalog'),
+      window.DB.query('wood_types'),
+      window.DB.query('wood_formats'),
+      window.DB.query('wood_quality'),
     ]);
     const d = window.DB.get();
-    const getList = key => { const raw = d[key]||[]; return raw[0]?.list || raw.filter(x=>typeof x==='string'); };
 
-    // Sembrar defaults si alguna lista está vacía
-    const DEFAULTS = {
-      wood_formats:   ['Tabla', 'Tablón', 'Tabloncillo', 'Duela', 'Viga', 'Cuartón', 'Triplay', 'MDF'],
-      wood_types:     ['Pino', 'Cedro', 'Parota', 'Encino', 'Mezquite', 'Fresno', 'Caoba', 'Nogal', 'Hule'],
-      wood_quality:   ['Extra', 'Primera', 'Segunda', 'Tercera'],
-      wood_locations: ['Bodega Principal', 'Área de Trabajo', 'Área de Secado', 'Exterior'],
-    };
-    for (const [key, vals] of Object.entries(DEFAULTS)) {
-      if (!getList(key).length) {
-        if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase(key, 'main', { list: vals });
-        if (window.parent?.DB_STATE) window.parent.DB_STATE[key] = [{ _id: 'main', list: vals }];
-      }
+    // Sembrar locations default si está vacío
+    if (!getList('wood_locations').length) {
+      const vals = ['Bodega Principal', 'Área de Trabajo', 'Área de Secado', 'Exterior'];
+      if (window.parent?.setDocumentInFirebase) window.parent.setDocumentInFirebase('wood_locations', 'main', { list: vals });
+      if (window.parent?.DB_STATE) window.parent.DB_STATE['wood_locations'] = [{ _id: 'main', list: vals }];
     }
-    const getList2 = key => { const raw = window.parent?.DB_STATE?.[key]||d[key]||[]; return raw[0]?.list || raw.filter(x=>typeof x==='string'); };
 
-    const fmtSel  = document.getElementById('ctx-format');
-    const spSel   = document.getElementById('ctx-species');
-    const qualSel = document.getElementById('ctx-quality');
-    const locSel  = document.getElementById('ctx-loc');
+    const locSel = document.getElementById('ctx-loc');
+    locSel.innerHTML = getList('wood_locations').map(x => `<option value="${x}">${x}</option>`).join('');
+    SearchableSelect.init(locSel);
 
-    fmtSel.innerHTML  = getList2('wood_formats').map(x  => `<option value="${x}">${x}</option>`).join('');
-    spSel.innerHTML   = getList2('wood_types').map(x    => `<option value="${x}">${x}</option>`).join('');
-    qualSel.innerHTML = getList2('wood_quality').map(x  => `<option value="${x}">${x}</option>`).join('');
-    locSel.innerHTML  = getList2('wood_locations').map(x => `<option value="${x}">${x}</option>`).join('');
+    // Cargar y llenar catalogo de precios
+    const rawCatalog = window.parent?.DB_STATE?.wood_price_catalog || d.wood_price_catalog || [];
+    CATALOG = rawCatalog.map(x => ({ ...x, id: x.id || x._id })).filter(x => x.nombre && !x._init);
 
-    [fmtSel, spSel, qualSel, locSel].forEach(sel => SearchableSelect.init(sel));
+    // Poblar catálogos auxiliares para el modal de nuevo concepto
+    const DEFAULTS = {
+      wood_types:   ['Pino','Cedro','Parota','Encino','Mezquite','Fresno','Caoba','Nogal','Hule'],
+      wood_formats: [
+        { name: 'Tabla',       unit: 'pt'     },
+        { name: 'Tablón',      unit: 'pt'     },
+        { name: 'Tabloncillo', unit: 'pt'     },
+        { name: 'Duela',       unit: 'pt'     },
+        { name: 'Viga',        unit: 'pt'     },
+        { name: 'Cuartón',     unit: 'pt'     },
+        { name: 'MDF',         unit: 'lámina', panel: true },
+        { name: 'Triplay',     unit: 'lámina', panel: true },
+        { name: 'Deck',        unit: 'm²'     },
+        { name: 'Acotab',      unit: 'hoja',   panel: true }
+      ],
+      wood_quality: ['Extra','Primera','Segunda','Tercera'],
+    };
+
+    TIPOS = getList('wood_types').length ? getList('wood_types') : DEFAULTS.wood_types;
+    
+    const rawFormats = getList('wood_formats').length ? getList('wood_formats') : DEFAULTS.wood_formats;
+    RAW_FORMATS = rawFormats;
+    CATS = rawFormats.map(x => typeof x === 'object' ? x.name : x).filter(Boolean);
+
+    QUALS = getList('wood_quality').length ? getList('wood_quality') : DEFAULTS.wood_quality;
+
+    initModalSelects();
+
+    // Initial population based on selected radio button
+    populateConcepts();
 
     document.getElementById('ctx-date').value = new Date().toISOString().split('T')[0];
   });
@@ -183,7 +361,7 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     const btn = document.getElementById('btn-lock');
     const status = document.getElementById('ctx-status');
 
-    ctx.querySelectorAll('input, select').forEach(el => el.disabled = isLocked);
+    ctx.querySelectorAll('input, select, button#btn-add-concept').forEach(el => el.disabled = isLocked);
     ctx.querySelectorAll('.ss-wrap').forEach(el => { el.style.pointerEvents = isLocked ? 'none' : ''; el.style.opacity = isLocked ? '0.55' : ''; });
 
     if (isLocked) {
@@ -203,6 +381,11 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
   }
 
   function calc() {
+    const isMaciza = document.getElementById('ctx-maciza').checked;
+    if (!isMaciza) {
+      document.getElementById('pt-val').textContent = '1.00';
+      return;
+    }
     const t = parseFloat(document.getElementById('dim-t').value) || 0;
     const w = parseFloat(document.getElementById('dim-w').value) || 0;
     const l = parseFloat(document.getElementById('dim-l').value) || 0;
@@ -222,27 +405,49 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
 
     const pt = document.getElementById('pt-val').textContent;
-    const fmtType = document.getElementById('ctx-format').value;
-    const sp  = document.getElementById('ctx-species').value;
+    const conceptId = document.getElementById('ctx-concept').value;
+    const concept = CATALOG.find(c => c.id === conceptId);
+
+    const fmtType = concept ? concept.categoria : 'Tabla';
+    const sp  = concept ? concept.tipo : 'Pino';
     const lt  = document.getElementById('ctx-lote').value;
-    const ql  = document.getElementById('ctx-quality').value;
+    const ql  = concept ? concept.calidad : 'Primera';
     const dt  = document.getElementById('ctx-date').value;
     const loc = document.getElementById('ctx-loc').value;
-    const thick  = parseFloat(document.getElementById('dim-t').value) || 0;
-    const width  = parseFloat(document.getElementById('dim-w').value) || 0;
-    const length = parseFloat(document.getElementById('dim-l').value) || 0;
+    const thick    = parseFloat(document.getElementById('dim-t').value) || 0;
+    const width    = parseFloat(document.getElementById('dim-w').value) || 0;
+    const length   = parseFloat(document.getElementById('dim-l').value) || 0;
+    const tipoMat  = document.getElementById('ctx-maciza').checked ? 'maciza' : 'hojas';
+    const notas    = document.getElementById('ctx-notas').value.trim();
+    const cost     = concept ? (concept.precioEst || 0) : 0;
 
-    await window.DB.addWood({ code, lote: lt, format: fmtType, species: sp, t: thick, w: width, l: length, pt: parseFloat(pt), quality: ql, entryDate: dt, location: loc });
+    await window.DB.addWood({
+      code,
+      lote: lt,
+      format: fmtType,
+      species: sp,
+      t: thick,
+      w: width,
+      l: length,
+      pt: parseFloat(pt),
+      quality: ql,
+      entryDate: dt,
+      location: loc,
+      tipoMaterial: tipoMat,
+      notas,
+      cost
+    });
 
     const list = document.getElementById('hist-list');
     const el = document.createElement('div');
     el.className = 'h-item';
+    const desc = tipoMat === 'maciza' ? `${fmtType} | ${sp} (${thick}"x${width}"x${length}')` : `${fmtType} | ${sp}`;
     el.innerHTML = `
       <div>
         <div class="h-id">${code}</div>
-        <div class="h-det">${fmtType} | ${sp} (Lote: ${lt})</div>
+        <div class="h-det">${desc} (Lote: ${lt})</div>
       </div>
-      <div class="h-pt">+${pt} pt</div>
+      <div class="h-pt">${tipoMat === 'maciza' ? `+${pt} pt` : '+1 pza'}</div>
     `;
     list.prepend(el);
 
@@ -251,7 +456,7 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     inp.style.backgroundColor = 'var(--green-bg)';
     setTimeout(() => { inp.style.backgroundColor = 'var(--base)'; inp.focus(); }, 150);
 
-    if (btn) { btn.disabled = false; btn.textContent = '✚ Registrar Tabla'; }
+    if (btn) { btn.disabled = false; btn.textContent = '✚ Registrar Madera'; }
     _saving = false;
   }
 
@@ -259,7 +464,172 @@ select.inp:focus, input.inp-txt:focus { outline: none; border-color: var(--blue)
     if (e.key === 'Enter') registrarTabla();
   }
 
+  // ── Modal de Nuevo Concepto ─────────────────────────────────────────
+  function initModalSelects() {
+    function initSel(id, list) {
+      const el = document.getElementById(id);
+      el.innerHTML = list.map(v => `<option value="${v}">${v}</option>`).join('');
+      if (el._ssInit) el._ssRefresh(); else SearchableSelect.init(el);
+    }
+    initSel('m-tipo',      TIPOS);
+    initSel('m-categoria', CATS);
+    initSel('m-calidad',   QUALS);
+  }
+
+  function openNewConceptModal() {
+    document.getElementById('mod-overlay').style.display = 'flex';
+    document.getElementById('m-nombre').value = '';
+    document.getElementById('m-precio').value = '';
+    document.getElementById('m-notas').value = '';
+    
+    // Predeterminar especie y formato según el tipo seleccionado actualmente
+    const isMaciza = document.getElementById('ctx-maciza').checked;
+    
+    const setModalSelect = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = val || '';
+        el._ssSync?.();
+      }
+    };
+    
+    setModalSelect('m-tipo', TIPOS[0] || 'Pino');
+    setModalSelect('m-categoria', isMaciza ? (CATS.find(c => !['mdf','triplay','hoja','acotab','ecotab','ocotab'].includes(c.toLowerCase())) || CATS[0]) : (CATS.find(c => ['mdf','triplay','hoja','acotab','ecotab','ocotab'].includes(c.toLowerCase())) || CATS[0]));
+    setModalSelect('m-calidad', QUALS[0] || 'Primera');
+    
+    document.getElementById('m-nombre').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('mod-overlay').style.display = 'none';
+  }
+
+  function unitForFormat(fmt) {
+    const f = (fmt || '').toLowerCase();
+    if (f.includes('mdf') || f.includes('triplay') || f.includes('hoja') || f.includes('acotab') || f.includes('ecotab') || f.includes('ocotab')) {
+      return 'hoja';
+    }
+    return 'pt';
+  }
+
+  async function saveNewConcept() {
+    const nombre = document.getElementById('m-nombre').value.trim();
+    if (!nombre) { alert('El nombre es requerido.'); return; }
+
+    const btnSave = document.getElementById('btn-save-concept');
+    if (btnSave) btnSave.disabled = true;
+
+    try {
+      const id = crypto.randomUUID();
+      const tipo = document.getElementById('m-tipo').value;
+      const categoria = document.getElementById('m-categoria').value;
+      const calidad = document.getElementById('m-calidad').value;
+      const precioEst = parseFloat(document.getElementById('m-precio').value) || 0;
+      const notas = document.getElementById('m-notas').value.trim();
+      const lastUpdated = new Date().toLocaleDateString('es-MX');
+
+      const payload = {
+        id,
+        nombre,
+        tipo,
+        categoria,
+        calidad,
+        unidad: unitForFormat(categoria),
+        precioEst,
+        notas,
+        lastUpdated
+      };
+
+      if (window.parent?.setDocumentInFirebase) {
+        await window.parent.setDocumentInFirebase('wood_price_catalog', id, payload);
+      }
+
+      // Sincronizar catálogo local
+      CATALOG.push(payload);
+
+      // Sincronizar DB_STATE del padre
+      if (window.parent?.DB_STATE) {
+        if (!window.parent.DB_STATE.wood_price_catalog) window.parent.DB_STATE.wood_price_catalog = [];
+        window.parent.DB_STATE.wood_price_catalog.push({ ...payload, _id: id });
+      }
+
+      closeModal();
+
+      // Autodetectar tipo de material basado en el concepto guardado
+      const fmtLower = categoria.toLowerCase();
+      const isSheet = fmtLower.includes('mdf') || fmtLower.includes('triplay') || fmtLower.includes('hoja') || fmtLower.includes('deck') || fmtLower.includes('placa') || fmtLower.includes('acotab') || fmtLower.includes('ecotab') || fmtLower.includes('ocotab');
+      
+      if (isSheet) {
+        document.getElementById('ctx-hojas').checked = true;
+      } else {
+        document.getElementById('ctx-maciza').checked = true;
+      }
+
+      onMaterialTypeChange();
+
+      // Auto-seleccionar el concepto recién creado
+      const conceptSel = document.getElementById('ctx-concept');
+      conceptSel.value = id;
+      if (conceptSel._ssInit) {
+        conceptSel._ssRefresh();
+      }
+      onConceptChange();
+    } catch(e) {
+      console.error(e);
+      alert('Error al guardar el concepto.');
+    } finally {
+      if (btnSave) btnSave.disabled = false;
+    }
+  }
+
   calc();
 </script>
+
+<!-- Modal de Nuevo Concepto -->
+<div id="mod-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:var(--mantle); border:1px solid var(--crust); border-radius:14px; width:100%; max-width:500px; padding:24px; display:flex; flex-direction:column; gap:16px; max-height:92vh; overflow-y:auto; box-shadow: 0 8px 32px rgba(0,0,0,0.15);">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--crust);">
+      <h3 style="font-size:16px; font-weight:800; margin:0; color:var(--text);">Nuevo Concepto de Madera</h3>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--subtext);font-size:20px;cursor:pointer;line-height:1;" tabindex="-1">✕</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="field-group">
+        <label class="modal-label">Nombre del Concepto</label>
+        <input type="text" id="m-nombre" class="modal-input" placeholder="Ej. Pino de primera 1x4x10" tabindex="101">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="field-group">
+          <label class="modal-label">Especie</label>
+          <select id="m-tipo" class="modal-input" tabindex="102"></select>
+        </div>
+        <div class="field-group">
+          <label class="modal-label">Formato</label>
+          <select id="m-categoria" class="modal-input" tabindex="103"></select>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="field-group">
+          <label class="modal-label">Calidad</label>
+          <select id="m-calidad" class="modal-input" tabindex="104"></select>
+        </div>
+        <div class="field-group">
+          <label class="modal-label">Precio Estimado ($)</label>
+          <input type="number" id="m-precio" class="modal-input" step="any" min="0" placeholder="0.00" tabindex="105">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="modal-label">Notas</label>
+        <input type="text" id="m-notas" class="modal-input" placeholder="Observaciones..." tabindex="106">
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px; padding-top:14px; border-top:1px solid var(--crust);">
+      <button onclick="closeModal()" class="btn" tabindex="108">Cancelar</button>
+      <button onclick="saveNewConcept()" id="btn-save-concept" class="btn btn-blue" tabindex="107">Guardar Concepto</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

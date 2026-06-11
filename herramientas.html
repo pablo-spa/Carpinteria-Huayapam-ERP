@@ -124,12 +124,12 @@
     <input id="search" placeholder="Buscar herramienta…" oninput="render()">
   </div>
   <select id="fil-cat"    class="filter-select" onchange="render()"><option value="">Todas las categorías</option></select>
-  <select id="fil-tipo"   class="filter-select" onchange="render()">
+  <select id="fil-tipo"   class="filter-select" onchange="render()" data-searchable>
     <option value="">Todos los tipos</option>
     <option value="personal">Personal</option>
     <option value="compartida">Compartida</option>
   </select>
-  <select id="fil-estado" class="filter-select" onchange="render()">
+  <select id="fil-estado" class="filter-select" onchange="render()" data-searchable>
     <option value="">Todos los estados</option>
     <option value="buena">Buena</option>
     <option value="desgaste">Desgaste</option>
@@ -178,8 +178,8 @@
 <!-- ── TAB: Historial ────────────────────────────────── -->
 <div id="tab-historial" class="tab-panel">
   <div class="filters-bar">
-    <select id="fil-log-worker" class="f-select" onchange="renderHistorial()"><option value="">Todos los trabajadores</option></select>
-    <select id="fil-log-tipo"   class="f-select" onchange="renderHistorial()">
+    <select id="fil-log-worker" class="f-select" onchange="renderHistorial()" data-searchable><option value="">Todos los trabajadores</option></select>
+    <select id="fil-log-tipo"   class="f-select" onchange="renderHistorial()" data-searchable>
       <option value="">Todos los movimientos</option>
       <option value="prestamo">Préstamo</option>
       <option value="devolucion">Devolución</option>
@@ -231,7 +231,7 @@
       </div>
       <div>
         <label class="form-label">Tipo</label>
-        <select class="form-input" id="f-tipo" onchange="toggleAssignedTo()">
+        <select class="form-input" id="f-tipo" onchange="toggleAssignedTo()" data-searchable>
           <option value="compartida">Compartida (pool)</option>
           <option value="personal">Personal (asignada a trabajador)</option>
         </select>
@@ -242,7 +242,7 @@
       </div>
       <div>
         <label class="form-label">Estado</label>
-        <select class="form-input" id="f-estado">
+        <select class="form-input" id="f-estado" data-searchable>
           <option value="buena">Buena</option>
           <option value="desgaste">Desgaste</option>
           <option value="reparacion">En reparación</option>
@@ -376,6 +376,7 @@ function populateFilters() {
   wSel.innerHTML  = opts;
   wSel2.innerHTML = opts;
   if (wSel._ssInit) wSel._ssRefresh(); else SearchableSelect.init(wSel);
+  if (wSel2._ssInit) wSel2._ssRefresh(); else SearchableSelect.init(wSel2);
 }
 
 function populateCategoriaSelect() {

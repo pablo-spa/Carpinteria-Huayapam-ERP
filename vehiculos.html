@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vehículos — Carpintería Huayapam</title>
+<script src="searchable-select.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--base); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -50,7 +51,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
     <div class="inline-form">
       <div class="field">
         <label>Vehículo</label>
-        <select id="vg-vehiculo" class="form-control"></select>
+        <select id="vg-vehiculo" class="form-control" data-searchable></select>
       </div>
       <div class="field">
         <label>Monto ($)</label>
@@ -66,7 +67,7 @@ body { background: var(--base); color: var(--text); font-family: -apple-system, 
       </div>
       <div class="field">
         <label>Recibe</label>
-        <select id="vg-recibe" class="form-control">
+        <select id="vg-recibe" class="form-control" data-searchable>
           <option value="">— Seleccionar chofer —</option>
         </select>
       </div>
@@ -200,9 +201,12 @@ function populateSelects() {
 
   gSel.innerHTML = VEHICLES.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
   mSel.innerHTML = VEHICLES.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
-  
-  rSel.innerHTML = `<option value="">— Seleccionar chofer —</option>` + 
+
+  rSel.innerHTML = `<option value="">— Seleccionar chofer —</option>` +
     WORKERS.map(w => `<option value="${w.id}">${w.nombre || w.name}</option>`).join('');
+
+  SearchableSelect.init(gSel);
+  SearchableSelect.init(rSel);
 }
 
 // ── Pestañas ──

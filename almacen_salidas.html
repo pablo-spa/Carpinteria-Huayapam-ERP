@@ -21,7 +21,7 @@
     <button class="back-btn" onclick="if(window.parent?.goBackModule) window.parent.goBackModule(); else window.history.back();">← Volver</button>
     <h2 class="hdr-title">Salidas de Almacén</h2>
   </div>
-  <button class="btn btn-amber" onclick="save()">Registrar Salida</button>
+  <button class="btn btn-blue" onclick="save()">Registrar Salida</button>
 </div>
 <div class="main">
   <div style="display:flex; gap:16px;">
@@ -115,15 +115,28 @@ async function save() {
 
   const rows = document.querySelectorAll('#itemsList tr');
   const items = [];
+  const errors = [];
+
   rows.forEach(tr => {
     const code = tr.querySelector('.i-sel').value;
     const qty = parseFloat(tr.querySelector('.i-qty').value) || 0;
     const unit = tr.querySelector('.i-unit').textContent.trim();
     if (code && qty > 0) {
       const inv = INV.find(i => i.code === code);
-        items.push({ code, name: inv ? inv.name : code, qty, unit, invId: inv ? inv.id : null });
+      if (inv) {
+        const currentStock = parseFloat(inv.stock) || 0;
+        if (currentStock < qty) {
+          errors.push(`Stock insuficiente para ${inv.name} (Disponible: ${currentStock}).`);
+        }
+      }
+      items.push({ code, name: inv ? inv.name : code, qty, unit, invId: inv ? inv.id : null });
     }
   });
+
+  if (errors.length > 0) {
+    toast(errors.join('\n'), 'warn');
+    return;
+  }
 
   if (!items.length) { toast('Agrega al menos un material con cantidad.', 'warn'); return; }
 

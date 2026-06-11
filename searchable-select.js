@@ -141,6 +141,11 @@ const SearchableSelect = (() => {
     // Wrapper
     const wrap = document.createElement('div');
     wrap.className = 'ss-wrap';
+    // Inherit layout-affecting inline styles from the select so flex containers still work
+    if (select.style.flex)     wrap.style.flex     = select.style.flex;
+    if (select.style.flexGrow) wrap.style.flexGrow = select.style.flexGrow;
+    if (select.style.minWidth) wrap.style.minWidth = select.style.minWidth;
+    if (select.style.maxWidth) wrap.style.maxWidth = select.style.maxWidth;
     select.parentNode.insertBefore(wrap, select);
     wrap.appendChild(select);
 
@@ -359,6 +364,8 @@ const SearchableSelect = (() => {
       trigger.disabled = select.disabled;
     });
     disObs.observe(select, { attributes: true, attributeFilter: ['disabled'] });
+
+    trigger.disabled = select.disabled || select.hasAttribute('disabled');
 
     // Set initial display value
     select._ssSync();

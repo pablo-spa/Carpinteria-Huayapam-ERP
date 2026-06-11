@@ -1,10 +1,19 @@
 function getDB() {
   if (window.parent && window.parent.DB_STATE_LOADED) {
-    // Clonación superficial de las colecciones, no un clonado profundo del objeto global
-    // Esto previene que el navegador se congele al tener miles de registros
     const stateClone = { ...window.parent.DB_STATE };
     for (let key in stateClone) {
-      if (Array.isArray(stateClone[key])) stateClone[key] = [...stateClone[key]];
+      if (Array.isArray(stateClone[key])) {
+        // Clonamos el array principal y filtramos eliminadas de 1er nivel
+        stateClone[key] = stateClone[key].filter(x => x.eliminada !== true);
+        
+        // Si es una colección empaquetada ({_id: 'main', list: [...]}), filtramos la sub-lista
+        if (stateClone[key].length === 1 && stateClone[key][0]._id === 'main' && Array.isArray(stateClone[key][0].list)) {
+          stateClone[key][0] = { 
+            ...stateClone[key][0], 
+            list: stateClone[key][0].list.filter(x => x.eliminada !== true) 
+          };
+        }
+      }
     }
     return stateClone;
   }
@@ -163,16 +172,28 @@ window.DB = {
     }
     if(window.parent && window.parent.setDocumentInFirebase) await window.parent.setDocumentInFirebase("wood", item.id, item);
 
+    // Check format database to see if it is configured as panel
+    const formats = d.wood_formats?.[0]?.list || d.wood_formats || [];
+    const fmtObj = formats.find(f => (typeof f === 'object' && f.name === item.format) || (typeof f === 'string' && f === item.format));
+    const isPanel = (fmtObj && typeof fmtObj === 'object' && fmtObj.panel) || 
+                    (item.tipoMaterial === 'hojas') ||
+                    (item.format && ['mdf', 'triplay', 'hoja', 'acotab', 'ecotab', 'ocotab'].some(s => item.format.toLowerCase().includes(s)));
+
     // Map wood entry into inventory collection
-    const nameStr = `${item.format || 'Tabla'} ${item.species} ${item.t}"x${item.w}"x${item.l}' (${item.quality})`;
+    let nameStr = '';
+    if (isPanel || (!item.t && !item.w && !item.l)) {
+      nameStr = `${item.format || 'Hojas'} ${item.species} (${item.quality})`;
+    } else {
+      nameStr = `${item.format || 'Tabla'} ${item.species} ${item.t}"x${item.w}"x${item.l}' (${item.quality})`;
+    }
     const invItem = {
        id: item.id,
        code: item.code,
        name: nameStr,
-       category: 'madera',
+       category: isPanel ? 'panel' : 'madera',
        stock: 1,
        min: 0,
-       unit: 'pieza',
+       unit: isPanel ? (fmtObj && typeof fmtObj === 'object' && fmtObj.unit ? fmtObj.unit : 'hoja') : 'pieza',
        cost: item.cost || 0,
        location: item.location || '',
        details: `Lote: ${item.lote} | PT: ${item.pt ? item.pt.toFixed(2) : '-'}`,
